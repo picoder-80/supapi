@@ -30,57 +30,64 @@ export default function TestPaymentPage() {
         metadata: { type: "test", step: 10 },
       },
       {
-        // Step 1 — approve on server
-        onReadyForServerApproval: async (paymentId: string) => {
+        // ✅ FIRE AND FORGET — must NOT be async, Pi Browser won't show
+        // confirm dialog until this returns. SDK will retry every ~10s automatically.
+        onReadyForServerApproval: (paymentId: string) => {
           setMessage("Approving payment...");
-          try {
-            const res = await fetch("/api/payments/approve", {
-              method:  "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                paymentId,
-                type:        "listing",
-                referenceId: "test-step10",
-                amountPi:    0.001,
-                memo:        "Test payment",
-              }),
+          fetch("/api/payments/approve", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              paymentId,
+              type:        "listing",
+              referenceId: "test-step10",
+              amountPi:    0.001,
+              memo:        "Test payment",
+            }),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (!data.success) throw new Error(data.error);
+              setStatus("approved");
+              setMessage("Approved! Confirm in Pi Browser...");
+            })
+            .catch((err: Error) => {
+              setStatus("error");
+              setMessage(`Approve failed: ${err.message}`);
             });
-            const data = await res.json();
-            if (!data.success) throw new Error(data.error);
-            setStatus("approved");
-            setMessage("Approved! Confirm in Pi Browser...");
-          } catch (err: any) {
-            setStatus("error");
-            setMessage(`Approve failed: ${err.message}`);
-          }
         },
 
-        // Step 2 — complete on server
+        // ✅ Can await here — user already confirmed on blockchain
+        // SDK will also retry every ~10s if this fails
         onReadyForServerCompletion: async (paymentId: string, txId: string) => {
           setMessage("Completing payment...");
           try {
-            const res = await fetch("/api/payments/complete", {
+            const res  = await fetch("/api/payments/complete", {
               method:  "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ paymentId, txid: txId }),
+              body:    JSON.stringify({ paymentId, txid: txId }),
             });
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
             setStatus("completed");
             setTxid(txId);
             setMessage("Payment completed successfully! ✅");
-          } catch (err: any) {
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "Unknown error";
             setStatus("error");
-            setMessage(`Complete failed: ${err.message}`);
+            setMessage(`Complete failed: ${msg}`);
           }
         },
 
-        onCancel: () => {
+        onCancel: (paymentId: string) => {
+          console.log("[Test] Payment cancelled:", paymentId);
           setStatus("idle");
           setMessage("Payment cancelled.");
         },
 
-        onError: (error: any) => {
+        // ✅ onError receives (error, payment?) — payment is optional per SDK docs
+        onError: (error: Error, payment?: unknown) => {
+          console.error("[Test] Payment error:", error, payment);
           setStatus("error");
           setMessage(`Error: ${error.message ?? "Unknown error"}`);
         },
