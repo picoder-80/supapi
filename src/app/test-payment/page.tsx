@@ -6,12 +6,6 @@
 import { useState } from "react";
 import styles from "./page.module.css";
 
-declare global {
-  interface Window {
-    Pi: any;
-  }
-}
-
 type PaymentStatus = "idle" | "waiting" | "approved" | "completed" | "error";
 
 export default function TestPaymentPage() {
