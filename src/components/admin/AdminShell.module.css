@@ -1,22 +1,5 @@
 /* components/admin/AdminShell.module.css */
-
-/* ── Variables ── */
-:root {
-  --admin-bg:        #0D0D0F;
-  --admin-surface:   #141416;
-  --admin-border:    #222226;
-  --admin-muted:     #3A3A40;
-  --admin-text:      #E8E8F0;
-  --admin-sub:       #7A7A8A;
-  --admin-gold:      #F5A623;
-  --admin-gold-dim:  rgba(245,166,35,0.12);
-  --admin-green:     #2ECC71;
-  --admin-red:       #E74C3C;
-  --admin-blue:      #3B82F6;
-  --sidebar-w:       220px;
-  --topbar-h:        56px;
-  --bottomnav-h:     64px;
-}
+/* Admin variables are defined in globals.css */
 
 /* ── Shell container ── */
 .shell {
