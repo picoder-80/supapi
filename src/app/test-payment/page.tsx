@@ -25,25 +25,18 @@ export default function TestPaymentPage() {
 
     window.Pi.createPayment(
       {
-        amount: 0.001,
-        memo:   "Supapi test payment — Step 10 verification",
+        amount:   0.001,
+        memo:     "Supapi test payment — Step 10 verification",
         metadata: { type: "test", step: 10 },
       },
       {
-        // ✅ FIRE AND FORGET — must NOT be async, Pi Browser won't show
-        // confirm dialog until this returns. SDK will retry every ~10s automatically.
+        // ✅ Fire-and-forget — uses /test-approve (no auth needed)
         onReadyForServerApproval: (paymentId: string) => {
           setMessage("Approving payment...");
-          fetch("/api/payments/approve", {
+          fetch("/api/payments/test-approve", {
             method:  "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              paymentId,
-              type:        "listing",
-              referenceId: "test-step10",
-              amountPi:    0.001,
-              memo:        "Test payment",
-            }),
+            body:    JSON.stringify({ paymentId }),
           })
             .then((res) => res.json())
             .then((data) => {
@@ -57,12 +50,11 @@ export default function TestPaymentPage() {
             });
         },
 
-        // ✅ Can await here — user already confirmed on blockchain
-        // SDK will also retry every ~10s if this fails
+        // ✅ Uses /test-complete (no auth needed)
         onReadyForServerCompletion: async (paymentId: string, txId: string) => {
           setMessage("Completing payment...");
           try {
-            const res  = await fetch("/api/payments/complete", {
+            const res  = await fetch("/api/payments/test-complete", {
               method:  "POST",
               headers: { "Content-Type": "application/json" },
               body:    JSON.stringify({ paymentId, txid: txId }),
@@ -80,14 +72,13 @@ export default function TestPaymentPage() {
         },
 
         onCancel: (paymentId: string) => {
-          console.log("[Test] Payment cancelled:", paymentId);
+          console.log("[Test] Cancelled:", paymentId);
           setStatus("idle");
           setMessage("Payment cancelled.");
         },
 
-        // ✅ onError receives (error, payment?) — payment is optional per SDK docs
         onError: (error: Error, payment?: unknown) => {
-          console.error("[Test] Payment error:", error, payment);
+          console.error("[Test] Error:", error, payment);
           setStatus("error");
           setMessage(`Error: ${error.message ?? "Unknown error"}`);
         },
