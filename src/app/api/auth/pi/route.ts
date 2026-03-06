@@ -1,36 +1,61 @@
 // app/api/auth/pi/route.ts
-// POST — Sign in with Pi Network
+// POST — Sign in with Pi Network (following official Pi demo flow)
 
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
-import { verifyPiUser } from "@/lib/pi/payments";
 import { signToken } from "@/lib/auth/jwt";
 import { generateReferralCode } from "@/lib/referral";
 import { sendWelcomeEmail } from "@/lib/email";
 import * as R from "@/lib/api";
 
 const schema = z.object({
-  accessToken: z.string().min(1),
+  authResult: z.object({
+    accessToken: z.string().min(1),
+    user: z.object({
+      uid:      z.string().min(1),
+      username: z.string().min(1),
+    }),
+  }),
   referralCode: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body   = await req.json();
     const parsed = schema.safeParse(body);
-    if (!parsed.success) return R.badRequest("Missing required fields");
 
-    const { accessToken, referralCode } = parsed.data;
+    if (!parsed.success) {
+      console.error("[Auth] Invalid payload:", parsed.error.errors);
+      return R.badRequest("Invalid auth payload");
+    }
 
-    // 1. Verify token with Pi API
-    const piUser = await verifyPiUser(accessToken);
-    if (!piUser) return R.unauthorized("Invalid Pi token");
+    const { authResult, referralCode } = parsed.data;
+    const { accessToken, user: piUser } = authResult;
+
+    // 1. Verify accessToken with Pi Platform API GET /v2/me
+    console.log("[Auth] Verifying token with Pi API...");
+    const meRes = await fetch("https://api.minepi.com/v2/me", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!meRes.ok) {
+      console.error("[Auth] Pi API verification failed:", meRes.status);
+      return R.unauthorized("Invalid Pi token");
+    }
+
+    const meData = await meRes.json();
+    console.log("[Auth] Pi API verified:", meData.username);
+
+    // Confirm uid matches
+    if (meData.uid !== piUser.uid) {
+      return R.unauthorized("Token mismatch");
+    }
 
     const supabase = await createAdminClient();
 
-    // 2. Check if user already exists
+    // 2. Find or create user
     const { data: existingUser } = await supabase
       .from("users")
       .select("*")
@@ -43,7 +68,7 @@ export async function POST(req: NextRequest) {
     if (!user) {
       isNewUser = true;
 
-      // 3. Find referrer if referral code provided
+      // Find referrer
       let referrerId: string | null = null;
       if (referralCode) {
         const { data: referrer } = await supabase
@@ -54,17 +79,16 @@ export async function POST(req: NextRequest) {
         referrerId = referrer?.id ?? null;
       }
 
-      // 4. Create new user
+      // Create user
       const newReferralCode = generateReferralCode(piUser.username);
-
       const { data: created, error } = await supabase
         .from("users")
         .insert({
-          pi_uid: piUser.uid,
-          username: piUser.username,
-          display_name: piUser.username,
+          pi_uid:        piUser.uid,
+          username:      piUser.username,
+          display_name:  piUser.username,
           referral_code: newReferralCode,
-          referred_by: referrerId,
+          referred_by:   referrerId,
         })
         .select()
         .single();
@@ -76,45 +100,47 @@ export async function POST(req: NextRequest) {
 
       user = created;
 
-      // 5. Record referral
+      // Record referral
       if (referrerId) {
         await supabase.from("referrals").insert({
           referrer_id: referrerId,
           referred_id: user.id,
-          reward_pi: 0.5,
+          reward_pi:   0.5,
         });
       }
 
-      // 6. Send welcome email if available
+      // Welcome email
       if (user.email) {
         await sendWelcomeEmail(user.email, user.username);
       }
     }
 
-    // 7. Generate JWT
+    // 3. Issue JWT
     const token = signToken({
-      userId: user.id,
-      piUid: user.pi_uid,
+      userId:   user.id,
+      piUid:    user.pi_uid,
       username: user.username,
-      role: user.role,
+      role:     user.role,
     });
 
-    // 8. Set cookie
+    // 4. Set cookie
     const cookieStore = await cookies();
     cookieStore.set("supapi_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure:   process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: "/",
+      maxAge:   60 * 60 * 24 * 7,
+      path:     "/",
     });
+
+    console.log("[Auth] Login success:", user.username, isNewUser ? "(new)" : "(existing)");
 
     return R.ok(
       { user, isNewUser },
       isNewUser ? "Account created successfully" : "Signed in successfully"
     );
   } catch (err) {
-    console.error("[Auth] Error:", err);
+    console.error("[Auth] Unexpected error:", err);
     return R.serverError();
   }
 }

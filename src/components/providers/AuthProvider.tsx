@@ -29,18 +29,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (referralCode?: string) => {
     setIsLoading(true);
     try {
+      // Get full authResult from Pi SDK (same as official demo)
       const authResult = await authenticateWithPi();
+
+      console.log("[Auth] Pi authResult:", authResult);
 
       const res = await fetch("/api/auth/pi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          accessToken: authResult.accessToken,
+          authResult,   // send full object — accessToken + user.uid + user.username
           referralCode,
         }),
       });
 
       const data = await res.json();
+      console.log("[Auth] Server response:", data);
+
       if (data.success) {
         setUser(data.data.user);
       } else {
