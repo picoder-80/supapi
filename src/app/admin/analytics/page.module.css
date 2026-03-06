@@ -1,0 +1,127 @@
+/* app/admin/analytics/page.module.css */
+
+.revenueBlock {
+  background: #141416;
+  border: 1px solid #2A2A2E;
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin-bottom: 28px;
+}
+
+.revenueItem {
+  flex: 1;
+  padding: 0 20px;
+}
+.revenueItem:first-child { padding-left: 0; }
+
+.revenueLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #7A7A8A;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.revenueValue {
+  font-size: 36px;
+  font-weight: 700;
+  color: #F5A623;
+  font-family: 'DM Mono', monospace;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.green { color: #2ECC71 !important; }
+
+.revenueSub {
+  font-size: 12px;
+  color: #7A7A8A;
+}
+
+.revenueDivider {
+  width: 1px;
+  background: #2A2A2E;
+  flex-shrink: 0;
+}
+
+.section {
+  font-size: 12px;
+  font-weight: 600;
+  color: #7A7A8A;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  margin-top: 24px;
+}
+
+.catTable {
+  background: #141416;
+  border: 1px solid #222226;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.catRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.catRank {
+  font-size: 11px;
+  color: #3A3A40;
+  width: 24px;
+  flex-shrink: 0;
+  font-family: 'DM Mono', monospace;
+}
+
+.catName {
+  font-size: 13px;
+  color: #C8C8D0;
+  width: 110px;
+  flex-shrink: 0;
+  text-transform: capitalize;
+}
+
+.catBar {
+  flex: 1;
+  height: 8px;
+  background: #1E1E22;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.catFill {
+  height: 100%;
+  background: linear-gradient(90deg, #F5A623, #D4891A);
+  border-radius: 4px;
+  transition: width 600ms ease;
+}
+
+.catCount {
+  font-size: 12px;
+  color: #7A7A8A;
+  width: 80px;
+  text-align: right;
+  font-family: 'DM Mono', monospace;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .revenueBlock {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .revenueItem { padding: 0; }
+  .revenueDivider { width: 100%; height: 1px; }
+  .revenueValue { font-size: 28px; }
+  .catCount { display: none; }
+}

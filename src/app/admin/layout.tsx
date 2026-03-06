@@ -1,0 +1,14 @@
+// app/admin/layout.tsx
+import type { Metadata } from "next";
+import AdminShell from "@/components/admin/AdminShell";
+import "@/styles/globals.css";
+import "@/styles/admin.css";
+
+export const metadata: Metadata = {
+  title: { default: "Supapi Admin", template: "%s | Admin" },
+  robots: "noindex, nofollow",
+};
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return <AdminShell>{children}</AdminShell>;
+}

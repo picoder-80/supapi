@@ -1,0 +1,266 @@
+/* components/admin/AdminShell.module.css */
+
+/* ── Variables ── */
+:root {
+  --admin-bg:        #0D0D0F;
+  --admin-surface:   #141416;
+  --admin-border:    #222226;
+  --admin-muted:     #3A3A40;
+  --admin-text:      #E8E8F0;
+  --admin-sub:       #7A7A8A;
+  --admin-gold:      #F5A623;
+  --admin-gold-dim:  rgba(245,166,35,0.12);
+  --admin-green:     #2ECC71;
+  --admin-red:       #E74C3C;
+  --admin-blue:      #3B82F6;
+  --sidebar-w:       220px;
+  --topbar-h:        56px;
+  --bottomnav-h:     64px;
+}
+
+/* ── Shell container ── */
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  font-family: 'DM Mono', 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ════════════════════════════════════
+   SIDEBAR — desktop only
+════════════════════════════════════ */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--admin-surface);
+  border-right: 1px solid var(--admin-border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 40;
+  padding: 0 0 24px 0;
+}
+
+.sidebarLogo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--admin-border);
+  margin-bottom: 12px;
+}
+
+.logoMark {
+  font-size: 28px;
+  color: var(--admin-gold);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.logoTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--admin-text);
+  letter-spacing: 0.5px;
+}
+
+.logoBadge {
+  font-size: 10px;
+  color: var(--admin-gold);
+  background: var(--admin-gold-dim);
+  border: 1px solid rgba(245,166,35,0.3);
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-top: 2px;
+  display: inline-block;
+}
+
+.sidebarNav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 10px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--admin-sub);
+  transition: all 150ms ease;
+  position: relative;
+  text-decoration: none;
+}
+.navItem:hover {
+  background: rgba(255,255,255,0.04);
+  color: var(--admin-text);
+}
+
+.navActive {
+  background: var(--admin-gold-dim) !important;
+  color: var(--admin-gold) !important;
+  border: 1px solid rgba(245,166,35,0.2);
+}
+
+.navIcon  { font-size: 16px; width: 20px; text-align: center; }
+.navLabel { flex: 1; }
+
+.navPip {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--admin-gold);
+}
+
+.signOutBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--admin-sub);
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid var(--admin-border);
+  background: none;
+  transition: all 150ms ease;
+}
+.signOutBtn:hover {
+  color: var(--admin-red);
+  border-color: var(--admin-red);
+  background: rgba(231,76,60,0.06);
+}
+
+/* ════════════════════════════════════
+   MAIN CONTENT
+════════════════════════════════════ */
+.main {
+  flex: 1;
+  margin-left: var(--sidebar-w);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: none; /* hidden on desktop */
+}
+
+.content {
+  flex: 1;
+  padding: 28px 32px;
+  max-width: 1400px;
+}
+
+/* ════════════════════════════════════
+   BOTTOM NAV — mobile only
+════════════════════════════════════ */
+.bottomNav { display: none; }
+
+/* ════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Hide sidebar */
+  .sidebar { display: none; }
+
+  /* Main fills full width */
+  .main { margin-left: 0; }
+
+  /* Show topbar */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--topbar-h);
+    padding: 0 16px;
+    background: var(--admin-surface);
+    border-bottom: 1px solid var(--admin-border);
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+
+  .topbarLeft {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .topbarMark {
+    font-size: 22px;
+    color: var(--admin-gold);
+    font-weight: 800;
+  }
+
+  .topbarPage {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--admin-text);
+  }
+
+  .topbarSignOut {
+    font-size: 18px;
+    color: var(--admin-sub);
+    background: none;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 150ms ease;
+  }
+  .topbarSignOut:hover { color: var(--admin-red); border-color: var(--admin-red); }
+
+  /* Content padding */
+  .content {
+    padding: 16px;
+    padding-bottom: calc(var(--bottomnav-h) + 16px);
+  }
+
+  /* Show bottom nav */
+  .bottomNav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: var(--bottomnav-h);
+    background: var(--admin-surface);
+    border-top: 1px solid var(--admin-border);
+    z-index: 40;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .bottomItem {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: var(--admin-sub);
+    text-decoration: none;
+    transition: color 150ms ease;
+    min-height: 44px;
+  }
+  .bottomItem:active { opacity: 0.6; }
+
+  .bottomActive {
+    color: var(--admin-gold) !important;
+  }
+
+  .bottomIcon  { font-size: 18px; }
+  .bottomLabel { font-size: 10px; font-weight: 600; letter-spacing: 0.3px; }
+}

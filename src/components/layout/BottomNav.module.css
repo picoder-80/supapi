@@ -1,0 +1,66 @@
+/* components/layout/BottomNav.module.css */
+
+/* Desktop — hidden */
+.nav {
+  display: none;
+}
+
+/* Mobile — show */
+@media (max-width: 768px) {
+  .nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    z-index: 100;
+    padding: 0 var(--space-2);
+    padding-bottom: env(safe-area-inset-bottom); /* iPhone notch support */
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  }
+
+  .item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: var(--space-2) var(--space-1);
+    position: relative;
+    color: var(--color-text-muted);
+    transition: color var(--transition);
+    min-height: 44px;
+  }
+
+  .item:active {
+    opacity: 0.7;
+  }
+
+  .active {
+    color: var(--color-gold-dark);
+  }
+
+  .icon {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .dot {
+    position: absolute;
+    top: 6px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--color-gold);
+  }
+}
