@@ -2,8 +2,15 @@
 
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = `${process.env.RESEND_FROM_NAME} <${process.env.RESEND_FROM_EMAIL}>`;
+// Lazy init — only create client when actually sending
+function getResend() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) throw new Error("RESEND_API_KEY is not set");
+  return new Resend(key);
+}
+
+const FROM = () =>
+  `${process.env.RESEND_FROM_NAME ?? "Supapi"} <${process.env.RESEND_FROM_EMAIL ?? "noreply@supapi.app"}>`;
 
 interface SendEmailOptions {
   to: string;
@@ -13,7 +20,13 @@ interface SendEmailOptions {
 
 async function sendEmail({ to, subject, html }: SendEmailOptions) {
   try {
-    const { data, error } = await resend.emails.send({ from: FROM, to, subject, html });
+    const resend = getResend();
+    const { data, error } = await resend.emails.send({
+      from: FROM(),
+      to,
+      subject,
+      html,
+    });
 
     if (error) {
       console.error("[Email] Send failed:", error);
