@@ -4,14 +4,20 @@ import Link from "next/link";
 import styles from "./page.module.css";
 
 const modules = [
-  { href: "/market",    emoji: "🛍️",  label: "Marketplace",  desc: "Buy & sell items"       },
-  { href: "/gigs",      emoji: "💼",  label: "Gigs",          desc: "Freelance services"     },
-  { href: "/academy",   emoji: "📚",  label: "Academy",       desc: "Learn & teach"          },
-  { href: "/stay",      emoji: "🏠",  label: "Stay",          desc: "Rent accommodations"    },
-  { href: "/arcade",    emoji: "🎮",  label: "Arcade",        desc: "Play & earn Pi"         },
-  { href: "/community", emoji: "👥",  label: "Community",     desc: "Forum & group buys"     },
-  { href: "/wallet",    emoji: "💰",  label: "Wallet",        desc: "Transactions & history" },
-  { href: "/referral",  emoji: "🤝",  label: "Referral",      desc: "Invite & earn Pi"       },
+  { href: "/market",    emoji: "🛍️",  label: "Marketplace",   desc: "Buy & sell items"                },
+  { href: "/gigs",      emoji: "💼",  label: "Gigs",           desc: "Freelance services"               },
+  { href: "/academy",   emoji: "📚",  label: "Academy",        desc: "Learn & teach"                    },
+  { href: "/stay",      emoji: "🏠",  label: "Stay",           desc: "Rent accommodations"              },
+  { href: "/arcade",    emoji: "🎮",  label: "Arcade",         desc: "Play & earn Pi"                   },
+  { href: "/community", emoji: "👥",  label: "Community",      desc: "Forum & group buys"               },
+  { href: "/wallet",    emoji: "💰",  label: "Wallet",         desc: "Transactions & history"           },
+  { href: "/referral",  emoji: "🤝",  label: "Referral",       desc: "Invite & earn Pi"                 },
+  { href: "/locator",   emoji: "📍",  label: "Locator",        desc: "Find Pi-friendly businesses"      },
+  { href: "/jobs",      emoji: "🧑‍💻",  label: "Jobs",           desc: "Hire & get hired"                },
+  { href: "/rewards",   emoji: "🎁",  label: "Daily Rewards",  desc: "Check-in & earn Pi daily"         },
+  { href: "/content",   emoji: "🎬",  label: "Content",        desc: "Creators & bloggers"              },
+  { href: "/pi-value",  emoji: "📈",  label: "Market Value",   desc: "Pi price & blockchain explorer"   },
+  { href: "/ads",       emoji: "📣",  label: "Ads",            desc: "Promote your business"            },
 ];
 
 export default function HomePage() {
@@ -26,7 +32,7 @@ export default function HomePage() {
           The Pi Network Super App. One platform for everything you need in the Pi ecosystem.
         </p>
         <div className={styles.heroActions}>
-          <Link href="/market" className={styles.btnPrimary}>Explore Now</Link>
+          <Link href="/market"   className={styles.btnPrimary}>Explore Now</Link>
           <Link href="/referral" className={styles.btnOutline}>Earn Pi ↗</Link>
         </div>
       </section>
@@ -45,6 +51,25 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── One Identity Banner ── */}
+      <section className={styles.identity}>
+        <div className="container">
+          <div className={styles.identityBox}>
+            <div className={styles.identityIcon}>π</div>
+            <div className={styles.identityText}>
+              <h3 className={styles.identityTitle}>One Pi Identity. Every Role.</h3>
+              <p className={styles.identityDesc}>
+                Your Pi username is your passport across all Supapi platforms.
+                Be a buyer, seller, student, tutor, host, tenant, freelancer and more —
+                all with <strong>one account</strong>, <strong>one wallet</strong>, <strong>one reputation</strong>.
+              </p>
+            </div>
+            <Link href="/market" className={styles.identityBtn}>Get Started →</Link>
+          </div>
+        </div>
+      </section>
+
     </main>
   );
 }

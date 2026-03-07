@@ -157,7 +157,119 @@
     gap: var(--space-2);
   }
 
-  .card {
-    padding: var(--space-3);
+  .card { padding: var(--space-3); }
+}
+
+/* ── One Identity ── */
+.identity {
+  padding: 0 0 var(--space-16);
+}
+
+.identityBox {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  border-radius: var(--radius-xl);
+  padding: 48px 40px;
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+  flex-wrap: wrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.identityBox::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(245,166,35,0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.identityIcon {
+  font-size: 52px;
+  font-weight: 800;
+  color: var(--color-gold);
+  width: 80px;
+  height: 80px;
+  background: rgba(245,166,35,0.15);
+  border: 1px solid rgba(245,166,35,0.3);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.identityText {
+  flex: 1;
+  min-width: 200px;
+}
+
+.identityTitle {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.identityDesc {
+  font-size: 14px;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+
+.identityDesc strong {
+  color: var(--color-gold);
+  font-weight: 700;
+}
+
+.identityRoles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.roleTag {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.85);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.identityBtn {
+  align-self: center;
+  flex-shrink: 0;
+  background: var(--color-gold);
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 12px 24px;
+  border-radius: var(--radius-full);
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.identityBtn:hover {
+  background: var(--color-gold-dark);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .identityBox {
+    padding: 32px 24px;
+    gap: 24px;
+    flex-direction: column;
+  }
+
+  .identityBtn {
+    align-self: stretch;
+    text-align: center;
   }
 }

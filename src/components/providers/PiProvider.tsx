@@ -6,32 +6,52 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { initPiSDK, isPiBrowser } from "@/lib/pi/sdk";
 
 interface PiContextType {
-  isReady: boolean;
+  isReady:     boolean;
   isPiBrowser: boolean;
 }
 
 const PiContext = createContext<PiContextType>({
-  isReady: false,
+  isReady:     false,
   isPiBrowser: false,
 });
 
 export function PiProvider({ children }: { children: React.ReactNode }) {
-  const [isReady, setIsReady] = useState(false);
+  const [isReady,     setIsReady]     = useState(false);
   const [inPiBrowser, setInPiBrowser] = useState(false);
 
   useEffect(() => {
-    const init = () => {
-      initPiSDK();
-      setInPiBrowser(isPiBrowser());
-      setIsReady(true);
+    let attempts = 0;
+    const maxAttempts = 20; // try for up to 2 seconds
+
+    const tryInit = () => {
+      attempts++;
+
+      if (typeof window !== "undefined" && window.Pi) {
+        // Pi SDK is ready
+        try {
+          initPiSDK();
+        } catch (e) {
+          console.warn("[PiProvider] initPiSDK error:", e);
+        }
+        setInPiBrowser(true);
+        setIsReady(true);
+        console.log("[PiProvider] Pi SDK ready ✅");
+        return;
+      }
+
+      if (attempts >= maxAttempts) {
+        // Not in Pi Browser — show UI anyway
+        console.log("[PiProvider] Pi SDK not found — not in Pi Browser");
+        setInPiBrowser(false);
+        setIsReady(true);
+        return;
+      }
+
+      // Retry every 100ms
+      setTimeout(tryInit, 100);
     };
 
-    if (typeof window !== "undefined" && window.Pi) {
-      init();
-    } else {
-      const timeout = setTimeout(init, 500);
-      return () => clearTimeout(timeout);
-    }
+    tryInit();
   }, []);
 
   return (

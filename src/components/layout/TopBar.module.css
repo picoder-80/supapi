@@ -11,13 +11,13 @@
 }
 
 .inner {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 var(--space-4);
   height: 60px;
   display: flex;
   align-items: center;
-  gap: var(--space-6);
+  gap: var(--space-4);
 }
 
 /* ── Logo ── */
@@ -26,6 +26,7 @@
   align-items: center;
   gap: var(--space-2);
   flex-shrink: 0;
+  text-decoration: none;
 }
 
 .logoSymbol {
@@ -39,21 +40,36 @@
   font-size: 18px;
   font-weight: 800;
   color: var(--color-white);
+  /* NEVER hide — always show Supapi text */
 }
 
-/* ── Desktop nav ── */
+/* ── Desktop nav — scrollable ── */
 .desktopNav {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.navScroll {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
-  flex: 1;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
+}
+
+.navScroll::-webkit-scrollbar {
+  display: none;
 }
 
 .navLink {
+  flex-shrink: 0;
   font-size: 13px;
   font-weight: 500;
-  color: rgba(255,255,255,0.7);
-  padding: var(--space-2) var(--space-3);
+  color: rgba(255,255,255,0.65);
+  padding: 6px 12px;
   border-radius: var(--radius-md);
   transition: var(--transition);
   white-space: nowrap;
@@ -63,13 +79,17 @@
   background: rgba(255,255,255,0.08);
 }
 
+.navActive {
+  color: var(--color-gold) !important;
+  background: rgba(245,166,35,0.1);
+}
+
 /* ── Actions ── */
 .actions {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: var(--space-3);
   margin-left: auto;
-  flex-shrink: 0;
 }
 
 /* ── RESPONSIVE ── */
@@ -87,15 +107,6 @@
 
   .logoText {
     font-size: 16px;
-  }
-}
-
-@media (max-width: 480px) {
-  .logoText {
-    display: none; /* Tunjuk π sahaja pada screen sangat kecil */
-  }
-
-  .logoSymbol {
-    font-size: 28px;
+    /* Keep visible on all mobile sizes */
   }
 }
