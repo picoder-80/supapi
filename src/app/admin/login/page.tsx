@@ -1,5 +1,8 @@
 "use client";
 
+// app/admin/login/page.tsx
+export const dynamic = "force-dynamic";
+
 import { useState } from "react";
 import styles from "./page.module.css";
 
@@ -13,6 +16,7 @@ export default function AdminLoginPage() {
     if (!email || !password) return;
     setError("");
     setLoading(true);
+
     try {
       const res  = await fetch("/api/admin/auth", {
         method:  "POST",
@@ -20,6 +24,7 @@ export default function AdminLoginPage() {
         body:    JSON.stringify({ email, password }),
       });
       const data = await res.json();
+
       if (data.success) {
         window.location.href = "/admin/dashboard";
       } else {
@@ -42,8 +47,10 @@ export default function AdminLoginPage() {
             <div className={styles.logoBadge}>ADMIN ACCESS</div>
           </div>
         </div>
+
         <h1 className={styles.title}>Sign In</h1>
         <p className={styles.sub}>Restricted access — authorised personnel only.</p>
+
         <div className={styles.form}>
           <div className={styles.field}>
             <label className={styles.label}>EMAIL</label>
@@ -57,6 +64,7 @@ export default function AdminLoginPage() {
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             />
           </div>
+
           <div className={styles.field}>
             <label className={styles.label}>PASSWORD</label>
             <input
@@ -69,11 +77,14 @@ export default function AdminLoginPage() {
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             />
           </div>
+
           {error && <div className={styles.error}>⚠ {error}</div>}
+
           <button onClick={handleSubmit} disabled={loading} className={styles.btn}>
             {loading ? "Verifying..." : "Sign In →"}
           </button>
         </div>
+
         <p className={styles.sub} style={{ marginTop: "16px", fontSize: "12px" }}>
           Supapi Admin Panel · v1.0
         </p>
