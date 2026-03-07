@@ -3,18 +3,16 @@
 // app/admin/login/page.tsx
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [error,    setError]    = useState("");
   const [loading,  setLoading]  = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    if (!email || !password) return;
     setError("");
     setLoading(true);
 
@@ -27,7 +25,7 @@ export default function AdminLoginPage() {
       const data = await res.json();
 
       if (data.success) {
-        router.push("/admin/dashboard");
+        window.location.href = "/admin/dashboard";
       } else {
         setError(data.error ?? "Invalid credentials");
       }
@@ -49,44 +47,44 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
-        <h1 className={styles.heading}>Sign In</h1>
+        <h1 className={styles.title}>Sign In</h1>
         <p className={styles.sub}>Restricted access — authorised personnel only.</p>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <div className={styles.form}>
           <div className={styles.field}>
-            <label className={styles.label}>Email</label>
+            <label className={styles.label}>EMAIL</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={styles.input}
               placeholder="admin@supapi.app"
-              required
               autoComplete="email"
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             />
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label}>Password</label>
+            <label className={styles.label}>PASSWORD</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={styles.input}
               placeholder="••••••••••••"
-              required
               autoComplete="current-password"
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             />
           </div>
 
           {error && <div className={styles.error}>⚠ {error}</div>}
 
-          <button type="submit" disabled={loading} className={styles.btn}>
+          <button onClick={handleSubmit} disabled={loading} className={styles.btn}>
             {loading ? "Verifying..." : "Sign In →"}
           </button>
-        </form>
+        </div>
 
-        <p className={styles.footer}>
+        <p className={styles.sub} style={{ marginTop: "16px", fontSize: "12px" }}>
           Supapi Admin Panel · v1.0
         </p>
       </div>
