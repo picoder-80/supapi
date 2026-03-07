@@ -1,4 +1,6 @@
 // app/admin/layout.tsx
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import AdminShell from "@/components/admin/AdminShell";
 import "@/styles/globals.css";
