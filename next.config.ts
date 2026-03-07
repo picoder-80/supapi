@@ -10,8 +10,6 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: { allowedOrigins: ["localhost:3000", "supapi-mocha.vercel.app"] },
   },
-  // Disable static prerendering — app needs dynamic auth
-  staticPageGenerationTimeout: 0,
 };
 
 export default nextConfig;
