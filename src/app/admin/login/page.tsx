@@ -1,6 +1,5 @@
 "use client";
 
-// app/admin/login/page.tsx
 export const dynamic = "force-dynamic";
 
 import { useState } from "react";
@@ -19,14 +18,20 @@ export default function AdminLoginPage() {
 
     try {
       const res  = await fetch("/api/admin/auth", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ email, password }),
+        method:      "POST",
+        credentials: "include",
+        headers:     { "Content-Type": "application/json" },
+        body:        JSON.stringify({ email, password }),
       });
       const data = await res.json();
 
       if (data.success) {
-        window.location.href = "/admin/dashboard";
+        // Store token in sessionStorage as fallback
+        if (data.data?.token) {
+          sessionStorage.setItem("supapi_admin_token", data.data.token);
+        }
+        // Force full page reload so middleware reads cookie
+        window.location.replace("/admin/dashboard");
       } else {
         setError(data.error ?? "Invalid credentials");
       }

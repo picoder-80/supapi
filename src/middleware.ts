@@ -1,5 +1,4 @@
 // middleware.ts
-// Protect /admin routes — redirect to login if no valid admin session
 
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth/jwt";
@@ -7,9 +6,12 @@ import { verifyToken } from "@/lib/auth/jwt";
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Only protect /admin routes (except /admin/login)
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
-    const token = req.cookies.get("supapi_admin_token")?.value;
+    // Check cookie
+    const token = req.cookies.get("supapi_admin_token")?.value
+      // Also check Authorization header as fallback
+      ?? req.headers.get("x-admin-token")
+      ?? undefined;
 
     if (!token) {
       return NextResponse.redirect(new URL("/admin/login", req.url));

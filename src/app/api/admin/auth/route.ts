@@ -12,7 +12,6 @@ const loginSchema = z.object({
   password: z.string().min(8),
 });
 
-// POST — Admin login
 export async function POST(req: NextRequest) {
   try {
     const body   = await req.json();
@@ -22,7 +21,6 @@ export async function POST(req: NextRequest) {
     const { email, password } = parsed.data;
     const supabase = await createAdminClient();
 
-    // Find admin user
     const { data: user, error } = await supabase
       .from("users")
       .select("*")
@@ -32,7 +30,6 @@ export async function POST(req: NextRequest) {
 
     if (error || !user) return R.unauthorized("Invalid credentials");
 
-    // Verify password
     const { data: adminAuth } = await supabase
       .from("admin_credentials")
       .select("password_hash")
@@ -44,13 +41,11 @@ export async function POST(req: NextRequest) {
     const valid = await bcrypt.compare(password, adminAuth.password_hash);
     if (!valid) return R.unauthorized("Invalid credentials");
 
-    // Update last login
     await supabase
       .from("admin_credentials")
       .update({ last_login: new Date().toISOString() })
       .eq("user_id", user.id);
 
-    // Issue admin JWT
     const token = signToken({
       userId:   user.id,
       piUid:    user.pi_uid ?? "",
@@ -58,15 +53,29 @@ export async function POST(req: NextRequest) {
       role:     "admin",
     });
 
-    // Set cookie via NextResponse header directly — more reliable in production
-    const res = NextResponse.json({ success: true, data: { username: user.username }, message: "Signed in successfully" });
-    res.cookies.set("supapi_admin_token", token, {
+    // Try all cookie methods simultaneously
+    const res = NextResponse.json({
+      success: true,
+      data: { username: user.username, token },
+      message: "Signed in successfully"
+    });
+
+    // Method 1: NextResponse cookies
+    res.cookies.set({
+      name:     "supapi_admin_token",
+      value:    token,
       httpOnly: true,
       secure:   true,
-      sameSite: "none",
+      sameSite: "lax",
       maxAge:   60 * 60 * 8,
       path:     "/",
     });
+
+    // Method 2: Set-Cookie header directly
+    res.headers.append(
+      "Set-Cookie",
+      `supapi_admin_token=${token}; Path=/; Max-Age=${60 * 60 * 8}; HttpOnly; Secure; SameSite=Lax`
+    );
 
     return res;
   } catch (err) {
@@ -75,7 +84,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE — Admin logout
 export async function DELETE() {
   const res = NextResponse.json({ success: true });
   res.cookies.delete("supapi_admin_token");
