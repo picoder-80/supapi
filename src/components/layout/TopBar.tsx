@@ -23,6 +23,7 @@ const navLinks = [
   { href: "/wallet",    label: "💰 Wallet"        },
   { href: "/referral",  label: "🤝 Referral"      },
   { href: "/ads",       label: "📣 Ads"           },
+  { href: "/myspace",   label: "🪐 MySpace"       },
 ];
 
 export default function TopBar() {

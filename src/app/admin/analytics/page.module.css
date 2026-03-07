@@ -1,14 +1,15 @@
 /* app/admin/analytics/page.module.css */
 
 .revenueBlock {
-  background: #141416;
-  border: 1px solid #2A2A2E;
-  border-radius: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   padding: 24px;
   display: flex;
   align-items: stretch;
   gap: 0;
   margin-bottom: 28px;
+  box-shadow: var(--shadow-sm);
 }
 
 .revenueItem {
@@ -20,7 +21,7 @@
 .revenueLabel {
   font-size: 11px;
   font-weight: 600;
-  color: #7A7A8A;
+  color: var(--color-text-muted);
   letter-spacing: 0.8px;
   text-transform: uppercase;
   margin-bottom: 8px;
@@ -29,29 +30,28 @@
 .revenueValue {
   font-size: 36px;
   font-weight: 700;
-  color: #F5A623;
-  font-family: 'DM Mono', monospace;
+  color: var(--color-gold);
   line-height: 1;
   margin-bottom: 6px;
 }
 
-.green { color: #2ECC71 !important; }
+.green { color: var(--color-success) !important; }
 
 .revenueSub {
   font-size: 12px;
-  color: #7A7A8A;
+  color: var(--color-text-muted);
 }
 
 .revenueDivider {
   width: 1px;
-  background: #2A2A2E;
+  background: var(--color-border);
   flex-shrink: 0;
 }
 
 .section {
   font-size: 12px;
   font-weight: 600;
-  color: #7A7A8A;
+  color: var(--color-text-muted);
   letter-spacing: 0.8px;
   text-transform: uppercase;
   margin-bottom: 12px;
@@ -59,13 +59,14 @@
 }
 
 .catTable {
-  background: #141416;
-  border: 1px solid #222226;
-  border-radius: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  box-shadow: var(--shadow-sm);
 }
 
 .catRow {
@@ -76,15 +77,14 @@
 
 .catRank {
   font-size: 11px;
-  color: #3A3A40;
+  color: var(--color-text-light);
   width: 24px;
   flex-shrink: 0;
-  font-family: 'DM Mono', monospace;
 }
 
 .catName {
   font-size: 13px;
-  color: #C8C8D0;
+  color: var(--color-text);
   width: 110px;
   flex-shrink: 0;
   text-transform: capitalize;
@@ -93,24 +93,23 @@
 .catBar {
   flex: 1;
   height: 8px;
-  background: #1E1E22;
+  background: var(--color-bg);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .catFill {
   height: 100%;
-  background: linear-gradient(90deg, #F5A623, #D4891A);
+  background: linear-gradient(90deg, var(--color-gold), var(--color-gold-dark));
   border-radius: 4px;
   transition: width 600ms ease;
 }
 
 .catCount {
   font-size: 12px;
-  color: #7A7A8A;
+  color: var(--color-text-muted);
   width: 80px;
   text-align: right;
-  font-family: 'DM Mono', monospace;
   flex-shrink: 0;
 }
 
@@ -119,7 +118,6 @@
     flex-direction: column;
     gap: 20px;
   }
-
   .revenueItem { padding: 0; }
   .revenueDivider { width: 100%; height: 1px; }
   .revenueValue { font-size: 28px; }

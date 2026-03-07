@@ -18,6 +18,7 @@ const modules = [
   { href: "/content",   emoji: "🎬",  label: "Content",        desc: "Creators & bloggers"              },
   { href: "/pi-value",  emoji: "📈",  label: "Market Value",   desc: "Pi price & blockchain explorer"   },
   { href: "/ads",       emoji: "📣",  label: "Ads",            desc: "Promote your business"            },
+  { href: "/myspace",   emoji: "🪐",  label: "MySpace",        desc: "Your personal Pi profile"         },
 ];
 
 export default function HomePage() {
@@ -64,6 +65,11 @@ export default function HomePage() {
                 Be a buyer, seller, student, tutor, host, tenant, freelancer and more —
                 all with <strong>one account</strong>, <strong>one wallet</strong>, <strong>one reputation</strong>.
               </p>
+              <div className={styles.identityRoles}>
+                {["🛍️ Buyer", "🏪 Seller", "🎓 Student", "👨‍🏫 Tutor", "🏠 Host", "🏡 Tenant", "💼 Freelancer", "🧑‍💻 Employer", "🎬 Creator", "🪐 Pioneer"].map((r) => (
+                  <span key={r} className={styles.roleTag}>{r}</span>
+                ))}
+              </div>
             </div>
             <Link href="/market" className={styles.identityBtn}>Get Started →</Link>
           </div>

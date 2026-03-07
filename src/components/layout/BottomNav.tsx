@@ -23,6 +23,7 @@ const navItems = [
   { href: "/wallet",    emoji: "💰",  label: "Wallet"     },
   { href: "/referral",  emoji: "🤝",  label: "Referral"   },
   { href: "/ads",       emoji: "📣",  label: "Ads"        },
+  { href: "/myspace",   emoji: "🪐",  label: "MySpace"    },
 ];
 
 export default function BottomNav() {

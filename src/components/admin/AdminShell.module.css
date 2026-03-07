@@ -1,13 +1,12 @@
 /* components/admin/AdminShell.module.css */
-/* Admin variables are defined in globals.css */
+/* Follows Supapi universal light theme */
 
-/* ── Shell container ── */
 .shell {
   display: flex;
   min-height: 100vh;
-  background: var(--admin-bg);
-  color: var(--admin-text);
-  font-family: 'DM Mono', 'JetBrains Mono', 'Fira Code', monospace;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
 }
 
 /* ════════════════════════════════════
@@ -15,14 +14,15 @@
 ════════════════════════════════════ */
 .sidebar {
   width: var(--sidebar-w);
-  background: var(--admin-surface);
-  border-right: 1px solid var(--admin-border);
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   position: fixed;
   top: 0; left: 0; bottom: 0;
   z-index: 40;
   padding: 0 0 24px 0;
+  box-shadow: var(--shadow-sm);
 }
 
 .sidebarLogo {
@@ -30,13 +30,13 @@
   align-items: center;
   gap: 12px;
   padding: 24px 20px 20px;
-  border-bottom: 1px solid var(--admin-border);
+  border-bottom: 1px solid var(--color-border);
   margin-bottom: 12px;
 }
 
 .logoMark {
   font-size: 28px;
-  color: var(--admin-gold);
+  color: var(--color-gold);
   font-weight: 800;
   line-height: 1;
 }
@@ -44,14 +44,13 @@
 .logoTitle {
   font-size: 15px;
   font-weight: 700;
-  color: var(--admin-text);
-  letter-spacing: 0.5px;
+  color: var(--color-text);
 }
 
 .logoBadge {
   font-size: 10px;
-  color: var(--admin-gold);
-  background: var(--admin-gold-dim);
+  color: var(--color-gold);
+  background: rgba(245,166,35,0.1);
   border: 1px solid rgba(245,166,35,0.3);
   padding: 1px 6px;
   border-radius: 4px;
@@ -74,22 +73,21 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 500;
-  color: var(--admin-sub);
-  transition: all 150ms ease;
-  position: relative;
+  color: var(--color-text-muted);
+  transition: var(--transition);
   text-decoration: none;
 }
 .navItem:hover {
-  background: rgba(255,255,255,0.04);
-  color: var(--admin-text);
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 .navActive {
-  background: var(--admin-gold-dim) !important;
-  color: var(--admin-gold) !important;
+  background: rgba(245,166,35,0.08) !important;
+  color: var(--color-gold-dark) !important;
   border: 1px solid rgba(245,166,35,0.2);
 }
 
@@ -99,7 +97,7 @@
 .navPip {
   width: 6px; height: 6px;
   border-radius: 50%;
-  background: var(--admin-gold);
+  background: var(--color-gold);
 }
 
 .signOutBtn {
@@ -108,19 +106,19 @@
   gap: 8px;
   margin: 0 10px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 13px;
-  color: var(--admin-sub);
+  color: var(--color-text-muted);
   font-family: inherit;
   cursor: pointer;
-  border: 1px solid var(--admin-border);
+  border: 1px solid var(--color-border);
   background: none;
-  transition: all 150ms ease;
+  transition: var(--transition);
 }
 .signOutBtn:hover {
-  color: var(--admin-red);
-  border-color: var(--admin-red);
-  background: rgba(231,76,60,0.06);
+  color: var(--color-error);
+  border-color: var(--color-error);
+  background: rgba(231,76,60,0.05);
 }
 
 /* ════════════════════════════════════
@@ -134,9 +132,7 @@
   flex-direction: column;
 }
 
-.topbar {
-  display: none; /* hidden on desktop */
-}
+.topbar { display: none; }
 
 .content {
   flex: 1;
@@ -153,21 +149,19 @@
    RESPONSIVE
 ════════════════════════════════════ */
 @media (max-width: 768px) {
-  /* Hide sidebar */
   .sidebar { display: none; }
-
-  /* Main fills full width */
   .main { margin-left: 0; }
 
-  /* Show topbar */
   .topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: var(--topbar-h);
+    height: 60px;
     padding: 0 16px;
-    background: var(--admin-surface);
-    border-bottom: 1px solid var(--admin-border);
+    background: rgba(26, 26, 46, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
     position: sticky;
     top: 0;
     z-index: 30;
@@ -181,22 +175,22 @@
 
   .topbarMark {
     font-size: 22px;
-    color: var(--admin-gold);
+    color: var(--color-gold);
     font-weight: 800;
   }
 
   .topbarPage {
     font-size: 15px;
     font-weight: 600;
-    color: var(--admin-text);
+    color: #fff;
   }
 
   .topbarSignOut {
     font-size: 18px;
-    color: var(--admin-sub);
+    color: rgba(255,255,255,0.6);
     background: none;
-    border: 1px solid var(--admin-border);
-    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: var(--radius-md);
     width: 36px;
     height: 36px;
     display: flex;
@@ -204,26 +198,25 @@
     justify-content: center;
     cursor: pointer;
     font-family: inherit;
-    transition: all 150ms ease;
+    transition: var(--transition);
   }
-  .topbarSignOut:hover { color: var(--admin-red); border-color: var(--admin-red); }
+  .topbarSignOut:hover { color: var(--color-error); border-color: var(--color-error); }
 
-  /* Content padding */
   .content {
     padding: 16px;
     padding-bottom: calc(var(--bottomnav-h) + 16px);
   }
 
-  /* Show bottom nav */
   .bottomNav {
     display: flex;
     position: fixed;
     bottom: 0; left: 0; right: 0;
     height: var(--bottomnav-h);
-    background: var(--admin-surface);
-    border-top: 1px solid var(--admin-border);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
     z-index: 40;
     padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
   }
 
   .bottomItem {
@@ -233,16 +226,14 @@
     align-items: center;
     justify-content: center;
     gap: 2px;
-    color: var(--admin-sub);
+    color: var(--color-text-muted);
     text-decoration: none;
     transition: color 150ms ease;
     min-height: 44px;
   }
   .bottomItem:active { opacity: 0.6; }
 
-  .bottomActive {
-    color: var(--admin-gold) !important;
-  }
+  .bottomActive { color: var(--color-gold-dark) !important; }
 
   .bottomIcon  { font-size: 18px; }
   .bottomLabel { font-size: 10px; font-weight: 600; letter-spacing: 0.3px; }
