@@ -5,72 +5,73 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { useAuth } from "@/components/providers/AuthProvider";
+import LoginButton from "@/components/auth/LoginButton";
 import styles from "./TopBar.module.css";
 
-const links = [
-  { href: "/dashboard",   label: "👤 Dashboard"     },
-  { href: "/market",      label: "🛍️ Market"         },
-  { href: "/gigs",        label: "💼 Gigs"           },
-  { href: "/academy",     label: "📚 Academy"        },
-  { href: "/stay",        label: "🏡 Stay"           },
-  { href: "/arcade",      label: "🎮 Arcade"         },
-  { href: "/community",   label: "👥 Community"      },
-  { href: "/wallet",      label: "💰 Wallet"         },
-  { href: "/referral",    label: "🤝 Referral"       },
-  { href: "/locator",     label: "📍 Locator"        },
-  { href: "/jobs",        label: "🧑‍💻 Jobs"           },
-  { href: "/rewards",     label: "🎁 Rewards"        },
-  { href: "/content",     label: "🎬 Content"        },
-  { href: "/pi-value",    label: "📈 Pi Value"       },
-  { href: "/classifieds", label: "📋 Classifieds"    },
-  { href: "/myspace",     label: "🪐 MySpace"        },
+const navLinks = [
+  { href: "/market",    label: "🛍️ Market"       },
+  { href: "/gigs",      label: "💼 Gigs"          },
+  { href: "/academy",   label: "📚 Academy"       },
+  { href: "/stay",      label: "🏡 Stay"          },
+  { href: "/arcade",    label: "🎮 Arcade"        },
+  { href: "/community", label: "👥 Community"     },
+  { href: "/locator",   label: "📍 Locator"       },
+  { href: "/jobs",      label: "🧑‍💻 Jobs"          },
+  { href: "/rewards",   label: "🎁 Rewards"       },
+  { href: "/content",   label: "🎬 Content"       },
+  { href: "/pi-value",  label: "📈 Market Value"  },
+  { href: "/wallet",    label: "💰 Wallet"        },
+  { href: "/referral",  label: "🤝 Referral"      },
+  { href: "/classifieds",   label: "📋 Classifieds"    },
+  { href: "/myspace",   label: "🪐 MySpace"       },
 ];
 
 export default function TopBar() {
-  const pathname = usePathname();
-  const { user }  = useAuth();
-  const navRef    = useRef<HTMLDivElement>(null);
+  const pathname  = usePathname();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef<HTMLAnchorElement>(null);
 
-  // Hide on admin pages
-  if (pathname.startsWith("/admin")) return null;
-
-  // Auto-scroll active item into view
+  // ✅ Auto-scroll to active nav item on route change
   useEffect(() => {
-    const active = navRef.current?.querySelector("[data-active='true']") as HTMLElement;
-    active?.scrollIntoView({ inline: "center", behavior: "smooth", block: "nearest" });
+    if (!scrollRef.current || !activeRef.current) return;
+
+    const container = scrollRef.current;
+    const active    = activeRef.current;
+
+    const scrollTo = active.offsetLeft - container.offsetWidth / 2 + active.offsetWidth / 2;
+    container.scrollTo({ left: scrollTo, behavior: "smooth" });
   }, [pathname]);
 
   return (
-    <header className={styles.topbar}>
-      <Link href="/" className={styles.logo}>
-        <span className={styles.logoMark}>π</span>
-        <span className={styles.logoText}>Supapi</span>
-      </Link>
+    <header className={styles.header}>
+      <div className={styles.inner}>
+        <Link href="/" className={styles.logo}>
+          <span className={styles.logoSymbol}>π</span>
+          <span className={styles.logoText}>Supapi</span>
+        </Link>
 
-      <nav className={styles.nav} ref={navRef}>
-        {links.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            data-active={pathname === l.href || pathname.startsWith(l.href + "/")}
-            className={`${styles.link} ${(pathname === l.href || pathname.startsWith(l.href + "/")) ? styles.active : ""}`}
-          >
-            {l.label}
-          </Link>
-        ))}
-      </nav>
+        <nav className={styles.desktopNav} aria-label="Desktop navigation">
+          <div className={styles.navScroll} ref={scrollRef}>
+            {navLinks.map((l) => {
+              const isActive = pathname === l.href ||
+                (l.href !== "/" && pathname.startsWith(l.href));
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  ref={isActive ? activeRef : undefined}
+                  className={`${styles.navLink} ${isActive ? styles.navActive : ""}`}
+                >
+                  {l.label}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
 
-      <div className={styles.actions}>
-        {user ? (
-          <Link href="/dashboard" className={styles.userBtn}>
-            π {user.username}
-          </Link>
-        ) : (
-          <Link href="/" className={styles.signInBtn}>
-            Sign In
-          </Link>
-        )}
+        <div className={styles.actions}>
+          <LoginButton />
+        </div>
       </div>
     </header>
   );
