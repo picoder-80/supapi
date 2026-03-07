@@ -22,7 +22,7 @@ const navLinks = [
   { href: "/pi-value",  label: "📈 Market Value"  },
   { href: "/wallet",    label: "💰 Wallet"        },
   { href: "/referral",  label: "🤝 Referral"      },
-  { href: "/ads",       label: "📣 Ads"           },
+  { href: "/classifieds",   label: "📋 Classifieds"    },
   { href: "/myspace",   label: "🪐 MySpace"       },
 ];
 

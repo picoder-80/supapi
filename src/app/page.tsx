@@ -17,7 +17,7 @@ const modules = [
   { href: "/rewards",   emoji: "🎁",  label: "Daily Rewards",  desc: "Check-in & earn Pi daily"         },
   { href: "/content",   emoji: "🎬",  label: "Content",        desc: "Creators & bloggers"              },
   { href: "/pi-value",  emoji: "📈",  label: "Market Value",   desc: "Pi price & blockchain explorer"   },
-  { href: "/ads",       emoji: "📣",  label: "Ads",            desc: "Promote your business"            },
+  { href: "/classifieds", emoji: "📋",  label: "Classifieds",     desc: "Promote services & businesses"    },
   { href: "/myspace",   emoji: "🪐",  label: "MySpace",        desc: "Your personal Pi profile"         },
 ];
 

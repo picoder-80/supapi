@@ -107,3 +107,88 @@
 @media (max-width: 768px) {
   .quickGrid { grid-template-columns: 1fr; }
 }
+
+/* ── User Banner ── */
+.userBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #1A1A2E, #0F3460);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  text-decoration: none;
+  transition: var(--transition);
+}
+.userBanner:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.userBannerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.userBannerIcon { font-size: 24px; }
+
+.userBannerTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.userBannerSub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+}
+
+.userBannerArrow {
+  font-size: 18px;
+  color: var(--color-gold);
+}
+
+/* ── Quick Cards ── */
+.quickSub {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+/* ── Platforms Grid ── */
+.platformGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.platformCard {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: var(--transition);
+}
+.platformCard:hover {
+  border-color: var(--color-gold);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.platformEmoji { font-size: 22px; }
+
+.platformLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .platformGrid { grid-template-columns: repeat(3, 1fr); }
+  .quickGrid { grid-template-columns: 1fr 1fr; }
+}

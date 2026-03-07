@@ -22,7 +22,7 @@ const navItems = [
   { href: "/pi-value",  emoji: "📈",  label: "Pi Value"   },
   { href: "/wallet",    emoji: "💰",  label: "Wallet"     },
   { href: "/referral",  emoji: "🤝",  label: "Referral"   },
-  { href: "/ads",       emoji: "📣",  label: "Ads"        },
+  { href: "/classifieds", emoji: "📋",  label: "Classifieds" },
   { href: "/myspace",   emoji: "🪐",  label: "MySpace"    },
 ];
 

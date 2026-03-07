@@ -47,6 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const data = await res.json();
           if (data.success && data.data?.user) {
             setUser(data.data.user);
+        // Redirect to dashboard after login
+        window.location.href = "/dashboard";
           }
         } else {
           // Token invalid — clear it
@@ -81,6 +83,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(TOKEN_KEY, data.data.token);
         }
         setUser(data.data.user);
+        // Redirect to dashboard after login
+        window.location.href = "/dashboard";
       } else {
         throw new Error(data.error ?? "Login failed");
       }
