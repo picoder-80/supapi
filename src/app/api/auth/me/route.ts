@@ -1,29 +1,24 @@
 // app/api/auth/me/route.ts
-// GET — Return current user from session cookie
 
-import { NextRequest } from "next/server";
-import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth/jwt";
 import { createAdminClient } from "@/lib/supabase/server";
-import * as R from "@/lib/api";
 
 export async function GET(req: NextRequest) {
   try {
-    // Read token from cookie
-    const cookieStore = await cookies();
-    const token = cookieStore.get("supapi_token")?.value;
+    // Read token from Authorization header (localStorage flow)
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "") ?? "";
 
     if (!token) {
-      return R.unauthorized("No session");
+      return NextResponse.json({ success: false, error: "No session" }, { status: 401 });
     }
 
-    // Verify JWT
     const payload = verifyToken(token);
     if (!payload) {
-      return R.unauthorized("Invalid session");
+      return NextResponse.json({ success: false, error: "Invalid session" }, { status: 401 });
     }
 
-    // Fetch user using admin client (bypasses RLS)
     const supabase = await createAdminClient();
     const { data: user, error } = await supabase
       .from("users")
@@ -32,13 +27,12 @@ export async function GET(req: NextRequest) {
       .single();
 
     if (error || !user) {
-      console.error("[Me] User not found:", payload.userId, error);
-      return R.unauthorized("User not found");
+      return NextResponse.json({ success: false, error: "User not found" }, { status: 401 });
     }
 
-    return R.ok({ user });
+    return NextResponse.json({ success: true, data: { user } });
   } catch (err) {
     console.error("[Me] Error:", err);
-    return R.serverError();
+    return NextResponse.json({ success: false, error: "Server error" }, { status: 500 });
   }
 }

@@ -2,14 +2,27 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./page.module.css";
+
+const ADMIN_TOKEN_KEY = "supapi_admin_token";
 
 export default function AdminLoginPage() {
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [error,    setError]    = useState("");
   const [loading,  setLoading]  = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  // If already logged in, redirect
+  useEffect(() => {
+    const token = localStorage.getItem(ADMIN_TOKEN_KEY);
+    if (token) {
+      window.location.replace("/admin/dashboard");
+    } else {
+      setChecking(false);
+    }
+  }, []);
 
   const handleSubmit = async () => {
     if (!email || !password) return;
@@ -18,19 +31,14 @@ export default function AdminLoginPage() {
 
     try {
       const res  = await fetch("/api/admin/auth", {
-        method:      "POST",
-        credentials: "include",
-        headers:     { "Content-Type": "application/json" },
-        body:        JSON.stringify({ email, password }),
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ email, password }),
       });
       const data = await res.json();
 
-      if (data.success) {
-        // Store token in sessionStorage as fallback
-        if (data.data?.token) {
-          sessionStorage.setItem("supapi_admin_token", data.data.token);
-        }
-        // Force full page reload so middleware reads cookie
+      if (data.success && data.data?.token) {
+        localStorage.setItem(ADMIN_TOKEN_KEY, data.data.token);
         window.location.replace("/admin/dashboard");
       } else {
         setError(data.error ?? "Invalid credentials");
@@ -41,6 +49,8 @@ export default function AdminLoginPage() {
       setLoading(false);
     }
   };
+
+  if (checking) return null;
 
   return (
     <div className={styles.page}>

@@ -6,13 +6,16 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import { authenticateWithPi } from "@/lib/pi/sdk";
 import type { User } from "@/types";
 
+const TOKEN_KEY       = "supapi_token";
+const ADMIN_TOKEN_KEY = "supapi_admin_token";
+
 interface AuthContextType {
-  user:         User | null;
-  isLoading:    boolean;
-  isHydrating:  boolean; // true while checking existing session on mount
-  login:        (referralCode?: string) => Promise<void>;
-  logout:       () => Promise<void>;
-  setUser:      (user: User | null) => void;
+  user:        User | null;
+  isLoading:   boolean;
+  isHydrating: boolean;
+  login:       (referralCode?: string) => Promise<void>;
+  logout:      () => Promise<void>;
+  setUser:     (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -29,17 +32,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading,   setIsLoading]   = useState(false);
   const [isHydrating, setIsHydrating] = useState(true);
 
-  // ✅ On mount — restore session from cookie if exists
+  // Restore session from localStorage on mount
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const res = await fetch("/api/auth/me");
+        const token = localStorage.getItem(TOKEN_KEY);
+        if (!token) return;
+
+        const res = await fetch("/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
         if (res.ok) {
           const data = await res.json();
           if (data.success && data.data?.user) {
             setUser(data.data.user);
-            console.log("[Auth] Session restored:", data.data.user.username);
           }
+        } else {
+          // Token invalid — clear it
+          localStorage.removeItem(TOKEN_KEY);
         }
       } catch (err) {
         console.warn("[Auth] Could not restore session:", err);
@@ -54,11 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (referralCode?: string) => {
     setIsLoading(true);
     try {
-      console.log("[Auth] Starting Pi.authenticate()...");
       const authResult = await authenticateWithPi();
-      console.log("[Auth] Pi.authenticate() success:", authResult.user.username);
 
-      console.log("[Auth] Calling /api/auth/pi...");
       const res  = await fetch("/api/auth/pi", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -66,11 +74,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const data = await res.json();
-      console.log("[Auth] Server response:", res.status, data);
 
       if (data.success) {
+        // Save token to localStorage
+        if (data.data?.token) {
+          localStorage.setItem(TOKEN_KEY, data.data.token);
+        }
         setUser(data.data.user);
-        console.log("[Auth] Login success:", data.data.user.username);
       } else {
         throw new Error(data.error ?? "Login failed");
       }
@@ -83,9 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
     await fetch("/api/auth/pi", { method: "DELETE" });
     setUser(null);
-    console.log("[Auth] Logged out");
   }, []);
 
   return (
