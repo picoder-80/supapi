@@ -1,18 +1,18 @@
-// app/api/users/[username]/route.ts — Public user profile
-
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { username: string } }
+  { params }: { params: Promise<{ username: string }> }
 ) {
   try {
+    const { username } = await params;
     const supabase = await createAdminClient();
+
     const { data: user, error } = await supabase
       .from("users")
       .select("id, username, display_name, avatar_url, kyc_status, role, created_at, referral_code")
-      .eq("username", params.username)
+      .eq("username", username)
       .single();
 
     if (error || !user) {
@@ -20,7 +20,7 @@ export async function GET(
     }
 
     return NextResponse.json({ success: true, data: { user } });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ success: false, error: "Server error" }, { status: 500 });
   }
 }
