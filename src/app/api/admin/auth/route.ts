@@ -1,7 +1,6 @@
 // app/api/admin/auth/route.ts
 
-import { NextRequest } from "next/server";
-import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
 import { signToken } from "@/lib/auth/jwt";
@@ -59,16 +58,17 @@ export async function POST(req: NextRequest) {
       role:     "admin",
     });
 
-    const cookieStore = await cookies();
-    cookieStore.set("supapi_admin_token", token, {
+    // Set cookie via NextResponse header directly — more reliable in production
+    const res = NextResponse.json({ success: true, data: { username: user.username }, message: "Signed in successfully" });
+    res.cookies.set("supapi_admin_token", token, {
       httpOnly: true,
-      secure:   process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge:   60 * 60 * 8, // 8 hours
+      secure:   true,
+      sameSite: "none",
+      maxAge:   60 * 60 * 8,
       path:     "/",
     });
 
-    return R.ok({ username: user.username }, "Signed in successfully");
+    return res;
   } catch (err) {
     console.error("[Admin Auth]", err);
     return R.serverError();
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
 
 // DELETE — Admin logout
 export async function DELETE() {
-  const cookieStore = await cookies();
-  cookieStore.delete("supapi_admin_token");
-  return R.ok(null, "Signed out");
+  const res = NextResponse.json({ success: true });
+  res.cookies.delete("supapi_admin_token");
+  return res;
 }
