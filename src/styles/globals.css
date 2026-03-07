@@ -148,7 +148,7 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 }
 
 /* ─── PREVENT horizontal scroll ──────────────────────────── */
-html, body {
+body {
   overflow-x: hidden;
   max-width: 100vw;
 }

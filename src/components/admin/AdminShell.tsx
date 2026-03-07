@@ -9,28 +9,44 @@ import styles from "./AdminShell.module.css";
 
 const ADMIN_TOKEN_KEY = "supapi_admin_token";
 
-const navItems = [
-  { href: "/admin/dashboard",  icon: "▦",  label: "Dashboard"  },
-  { href: "/admin/users",      icon: "👥", label: "Users"       },
-  { href: "/admin/listings",   icon: "🛍️", label: "Listings"    },
-  { href: "/admin/orders",     icon: "📦", label: "Orders"      },
-  { href: "/admin/analytics",  icon: "📊", label: "Analytics"   },
+const ADMIN_NAV = [
+  { href: "/admin/dashboard",  icon: "▦",  label: "Dashboard"   },
+  { href: "/admin/users",      icon: "👥", label: "Users"        },
+  { href: "/admin/listings",   icon: "🛍️", label: "Listings"     },
+  { href: "/admin/orders",     icon: "📦", label: "Orders"       },
+  { href: "/admin/analytics",  icon: "📊", label: "Analytics"    },
+];
+
+const PLATFORMS_NAV = [
+  { href: "/market",      icon: "🛍️", label: "Marketplace"  },
+  { href: "/gigs",        icon: "💼", label: "Gigs"          },
+  { href: "/academy",     icon: "📚", label: "Academy"       },
+  { href: "/stay",        icon: "🏡", label: "Stay"          },
+  { href: "/arcade",      icon: "🎮", label: "Arcade"        },
+  { href: "/community",   icon: "👥", label: "Community"     },
+  { href: "/wallet",      icon: "💰", label: "Wallet"        },
+  { href: "/referral",    icon: "🤝", label: "Referral"      },
+  { href: "/locator",     icon: "📍", label: "Locator"       },
+  { href: "/jobs",        icon: "🧑‍💻", label: "Jobs"          },
+  { href: "/rewards",     icon: "🎁", label: "Rewards"       },
+  { href: "/content",     icon: "🎬", label: "Content"       },
+  { href: "/pi-value",    icon: "📈", label: "Pi Value"      },
+  { href: "/classifieds", icon: "📋", label: "Classifieds"   },
+  { href: "/myspace",     icon: "🪐", label: "MySpace"       },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname    = usePathname();
   const router      = useRouter();
-  const [signingOut, setSigningOut]   = useState(false);
-  const [authorized, setAuthorized]   = useState(false);
-  const [checking,   setChecking]     = useState(true);
+  const [signingOut, setSigningOut] = useState(false);
+  const [authorized, setAuthorized] = useState(false);
+  const [checking,   setChecking]   = useState(true);
 
-  // Check admin token in localStorage
   useEffect(() => {
     if (pathname === "/admin/login") {
       setChecking(false);
       return;
     }
-
     const token = localStorage.getItem(ADMIN_TOKEN_KEY);
     if (!token) {
       router.replace("/admin/login");
@@ -47,24 +63,21 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     window.location.replace("/admin/login");
   };
 
-  // Login page — no shell
   if (pathname === "/admin/login") return <>{children}</>;
 
-  // Checking auth
   if (checking) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--color-bg)" }}>
       <span style={{ color: "var(--color-text-muted)", fontSize: 14 }}>Loading...</span>
     </div>
   );
 
-  // Not authorized
   if (!authorized) return null;
 
-  const currentLabel = navItems.find(n => pathname.startsWith(n.href))?.label ?? "Admin";
+  const currentLabel = [...ADMIN_NAV, ...PLATFORMS_NAV].find(n => pathname.startsWith(n.href))?.label ?? "Admin";
 
   return (
     <div className={styles.shell}>
-      {/* ── Sidebar (desktop) ── */}
+      {/* ── Sidebar ── */}
       <aside className={styles.sidebar}>
         <div className={styles.sidebarLogo}>
           <span className={styles.logoMark}>π</span>
@@ -74,20 +87,49 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </div>
         </div>
 
-        <nav className={styles.sidebarNav}>
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`${styles.navItem} ${pathname.startsWith(item.href) ? styles.navActive : ""}`}
-            >
-              <span className={styles.navIcon}>{item.icon}</span>
-              <span className={styles.navLabel}>{item.label}</span>
-              {pathname.startsWith(item.href) && <span className={styles.navPip} />}
-            </Link>
-          ))}
-        </nav>
+        {/* Scrollable nav area */}
+        <div className={styles.sidebarScroll}>
+          {/* Admin Tools */}
+          <div className={styles.navGroup}>
+            <div className={styles.navGroupLabel}>ADMIN TOOLS</div>
+            {ADMIN_NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`${styles.navItem} ${pathname.startsWith(item.href) ? styles.navActive : ""}`}
+              >
+                <span className={styles.navIcon}>{item.icon}</span>
+                <span className={styles.navLabel}>{item.label}</span>
+                {pathname.startsWith(item.href) && <span className={styles.navPip} />}
+              </Link>
+            ))}
+          </div>
 
+          {/* Platforms */}
+          <div className={styles.navGroup}>
+            <div className={styles.navGroupLabel}>15 PLATFORMS</div>
+            {PLATFORMS_NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`${styles.navItem} ${pathname === item.href ? styles.navActive : ""}`}
+              >
+                <span className={styles.navIcon}>{item.icon}</span>
+                <span className={styles.navLabel}>{item.label}</span>
+              </Link>
+            ))}
+          </div>
+
+          {/* User Dashboard */}
+          <div className={styles.navGroup}>
+            <Link href="/dashboard" className={styles.navItem}>
+              <span className={styles.navIcon}>🪐</span>
+              <span className={styles.navLabel}>My Dashboard</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Sign out — always at bottom */}
         <button onClick={handleSignOut} disabled={signingOut} className={styles.signOutBtn}>
           <span>🚪</span>
           <span>{signingOut ? "Signing out..." : "Sign Out"}</span>
@@ -96,7 +138,6 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
       {/* ── Main ── */}
       <main className={styles.main}>
-        {/* Mobile topbar */}
         <div className={styles.topbar}>
           <div className={styles.topbarLeft}>
             <span className={styles.topbarMark}>π</span>
@@ -105,13 +146,10 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           <button onClick={handleSignOut} className={styles.topbarSignOut}>🚪</button>
         </div>
 
-        <div className={styles.content}>
-          {children}
-        </div>
+        <div className={styles.content}>{children}</div>
 
-        {/* Mobile bottom nav */}
         <nav className={styles.bottomNav}>
-          {navItems.map((item) => (
+          {ADMIN_NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}

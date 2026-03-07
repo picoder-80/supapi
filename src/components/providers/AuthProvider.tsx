@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading,   setIsLoading]   = useState(false);
   const [isHydrating, setIsHydrating] = useState(true);
 
-  // Restore session from localStorage on mount
+  // Restore session from localStorage on mount — NO redirect here
   useEffect(() => {
     const restoreSession = async () => {
       try {
@@ -47,11 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const data = await res.json();
           if (data.success && data.data?.user) {
             setUser(data.data.user);
-        // Redirect to dashboard after login
-        window.location.href = "/dashboard";
           }
         } else {
-          // Token invalid — clear it
           localStorage.removeItem(TOKEN_KEY);
         }
       } catch (err) {
@@ -78,12 +75,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
 
       if (data.success) {
-        // Save token to localStorage
         if (data.data?.token) {
           localStorage.setItem(TOKEN_KEY, data.data.token);
         }
         setUser(data.data.user);
-        // Redirect to dashboard after login
+        // Redirect to dashboard ONLY after fresh login
         window.location.href = "/dashboard";
       } else {
         throw new Error(data.error ?? "Login failed");
