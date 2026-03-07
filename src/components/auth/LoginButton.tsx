@@ -3,17 +3,17 @@
 // components/auth/LoginButton.tsx
 
 import { useAuth } from "@/components/providers/AuthProvider";
-import { usePi } from "@/components/providers/PiProvider";
+import { usePi }  from "@/components/providers/PiProvider";
 import styles from "./LoginButton.module.css";
 
 interface Props {
   referralCode?: string;
-  onSuccess?: () => void;
+  onSuccess?:    () => void;
 }
 
 export default function LoginButton({ referralCode, onSuccess }: Props) {
-  const { user, login, logout, isLoading } = useAuth();
-  const { isPiBrowser: inPi } = usePi();
+  const { user, login, logout, isLoading, isHydrating } = useAuth();
+  const { isReady, isPiBrowser: inPi }                  = usePi();
 
   const handleLogin = async () => {
     try {
@@ -25,6 +25,16 @@ export default function LoginButton({ referralCode, onSuccess }: Props) {
     }
   };
 
+  // Checking existing session or waiting for Pi SDK
+  if (isHydrating || !isReady) {
+    return (
+      <button disabled className={styles.loginBtn}>
+        Loading...
+      </button>
+    );
+  }
+
+  // Already logged in
   if (user) {
     return (
       <div className={styles.userBox}>
@@ -34,6 +44,7 @@ export default function LoginButton({ referralCode, onSuccess }: Props) {
     );
   }
 
+  // Not in Pi Browser
   if (!inPi) {
     return (
       <div className={styles.warning}>
@@ -42,8 +53,13 @@ export default function LoginButton({ referralCode, onSuccess }: Props) {
     );
   }
 
+  // Ready to login
   return (
-    <button onClick={handleLogin} disabled={isLoading} className={styles.loginBtn}>
+    <button
+      onClick={handleLogin}
+      disabled={isLoading}
+      className={styles.loginBtn}
+    >
       {isLoading ? "Signing in..." : "π Sign in with Pi"}
     </button>
   );
