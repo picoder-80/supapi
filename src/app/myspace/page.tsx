@@ -18,12 +18,12 @@ const OVERVIEW_ITEMS = [
   { key: "gigs",       href: "/gigs",        emoji: "💼", label: "Gigs"          },
   { key: "courses",    href: "/academy",     emoji: "📚", label: "Courses"       },
   { key: "stays",      href: "/stay",        emoji: "🏡", label: "Properties"    },
-  { key: "content",    href: "/content",     emoji: "🎬", label: "Content"       },
+  { key: "reels",    href: "/reels",     emoji: "🎬", label: "Reels"       },
   { key: "classifieds",href: "/classifieds", emoji: "📋", label: "Classifieds"   },
   { key: "jobs",       href: "/jobs",        emoji: "🧑‍💻", label: "Jobs"          },
   { key: "locator",    href: "/locator",     emoji: "📍", label: "Locator"       },
   { key: "referral",   href: "/referral",    emoji: "🤝", label: "Referrals"     },
-  { key: "community",  href: "/community",   emoji: "👥", label: "Community"     },
+  { key: "newsfeed",  href: "/newsfeed",   emoji: "📰", label: "Newsfeed"     },
   { key: "arcade",     href: "/arcade",      emoji: "🎮", label: "Arcade"        },
   { key: "rewards",    href: "/rewards",     emoji: "🎁", label: "Rewards"       },
 ];
@@ -306,7 +306,7 @@ export default function MySpacePage() {
               <div className={styles.emptyIcon}>📰</div>
               <div className={styles.emptyTitle}>No posts yet</div>
               <div className={styles.emptyDesc}>Share updates with your followers.</div>
-              <Link href="/community" className={styles.emptyBtn}>+ Create Post</Link>
+              <Link href="/newsfeed" className={styles.emptyBtn}>+ Create Post</Link>
             </div>
           )}
 
@@ -315,7 +315,7 @@ export default function MySpacePage() {
               <div className={styles.emptyIcon}>🎬</div>
               <div className={styles.emptyTitle}>No reels yet</div>
               <div className={styles.emptyDesc}>Share short videos with the Pi community.</div>
-              <Link href="/content" className={styles.emptyBtn}>+ Upload Reel</Link>
+              <Link href="/reels" className={styles.emptyBtn}>+ Upload Reel</Link>
             </div>
           )}
 
@@ -332,7 +332,7 @@ export default function MySpacePage() {
               <div className={styles.emptyIcon}>📰</div>
               <div className={styles.emptyTitle}>No posts yet</div>
               <div className={styles.emptyDesc}>Share updates with your followers.</div>
-              <Link href="/content" className={styles.emptyBtn}>+ Create Post</Link>
+              <Link href="/reels" className={styles.emptyBtn}>+ Create Post</Link>
             </div>
           )}
 
@@ -341,7 +341,7 @@ export default function MySpacePage() {
               <div className={styles.emptyIcon}>🎬</div>
               <div className={styles.emptyTitle}>No reels yet</div>
               <div className={styles.emptyDesc}>Share short videos with the Pi community.</div>
-              <Link href="/content" className={styles.emptyBtn}>+ Upload Reel</Link>
+              <Link href="/reels" className={styles.emptyBtn}>+ Upload Reel</Link>
             </div>
           )}
 
