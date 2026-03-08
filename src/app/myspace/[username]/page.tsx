@@ -92,6 +92,7 @@ export default function PublicProfilePage() {
   }, [username]);
 
   const isOwnProfile   = me?.username === username;
+  // profile.id available after fetch — hook re-runs when it changes
   const isOnline        = useIsOnline(profile?.id ?? null);
 
   const handleFollow = async () => {

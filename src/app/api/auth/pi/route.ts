@@ -22,8 +22,9 @@ const schema = z.object({
 function mapKycStatus(piKyc: string | undefined): "unverified" | "pending" | "verified" {
   if (!piKyc) return "unverified";
   const v = piKyc.toLowerCase();
-  if (v === "verified" || v === "passed") return "verified";
-  if (v === "pending")                    return "pending";
+  // Pi API returns various strings — cover all known values
+  if (["verified", "passed", "approved", "complete", "completed", "done", "true"].includes(v)) return "verified";
+  if (["pending", "in_review", "inreview", "submitted", "processing"].includes(v)) return "pending";
   return "unverified";
 }
 
@@ -55,7 +56,19 @@ export async function POST(req: NextRequest) {
 
     // ── Extract KYC + wallet from Pi API response ───────────
     // Pi API returns: credentials.kyc (bool or string), wallet_address (string)
-    const kycRaw       = meData.credentials?.kyc ?? meData.kyc_status ?? meData.kyc ?? null;
+    // Pi API KYC can be in multiple places — check all
+    const kycRaw =
+      meData.credentials?.kyc ??
+      meData.credentials?.kyc_status ??
+      meData.kyc_verified ??
+      meData.kyc_status ??
+      meData.kyc ??
+      null;
+
+    // Log full meData for debugging — remove after confirming KYC works
+    console.log("[Auth] meData keys:", Object.keys(meData));
+    console.log("[Auth] credentials:", JSON.stringify(meData.credentials ?? {}));
+    console.log("[Auth] kycRaw:", kycRaw, "type:", typeof kycRaw);
     const kycStatus    = typeof kycRaw === "boolean"
       ? (kycRaw ? "verified" : "unverified")
       : mapKycStatus(kycRaw as string | undefined);

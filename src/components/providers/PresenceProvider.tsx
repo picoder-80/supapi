@@ -1,11 +1,11 @@
-// components/providers/PresenceProvider.tsx
-// Broadcasts current user's presence across the app
-
 "use client";
 
 import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "./AuthProvider";
+
+// Single shared channel name — must match useIsOnline
+export const PRESENCE_CHANNEL = "online-users";
 
 export default function PresenceProvider() {
   const { user } = useAuth();
@@ -15,23 +15,25 @@ export default function PresenceProvider() {
     if (!user?.id) return;
 
     const supabase = createClient();
-    const channel  = supabase.channel("online-users", {
+
+    // Use user.id as the presence key
+    const channel = supabase.channel(PRESENCE_CHANNEL, {
       config: { presence: { key: user.id } },
     });
 
-    channel.subscribe(async (status) => {
+    channel.subscribe(async (status: string) => {
       if (status === "SUBSCRIBED") {
         await channel.track({
           userId:    user.id,
           username:  user.username,
           online_at: new Date().toISOString(),
         });
+        console.log(`✅ [Presence] SUBSCRIBED & tracking ${user.username} (${user.id})`);
       }
     });
 
     channelRef.current = channel;
 
-    // Untrack on tab close / logout
     const handleUnload = () => { channel.untrack(); };
     window.addEventListener("beforeunload", handleUnload);
 
@@ -42,5 +44,5 @@ export default function PresenceProvider() {
     };
   }, [user?.id]);
 
-  return null; // no UI
+  return null;
 }
