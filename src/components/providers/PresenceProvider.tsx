@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState , ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "./AuthProvider";
 
@@ -22,7 +22,7 @@ export function useOnlineStatus(userId: string | null) {
   return isOnline(userId);
 }
 
-export default function PresenceProvider() {
+export default function PresenceProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const channelRef = useRef<any>(null);
@@ -78,6 +78,7 @@ export default function PresenceProvider() {
       onlineUsers,
       isOnline: (id: string) => onlineUsers.has(id),
     }}>
+      {children}
     </PresenceContext.Provider>
   );
 }
