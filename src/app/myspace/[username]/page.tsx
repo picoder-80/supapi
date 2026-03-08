@@ -92,7 +92,7 @@ export default function PublicProfilePage() {
   }, [username]);
 
   const isOwnProfile   = me?.username === username;
-  const isOnline        = useOnlineStatus(profile?.id ?? null);
+  const isOnline        = useProfileOnline(profile?.id ?? null);
 
   const handleFollow = async () => {
     if (!token || !me) return;
