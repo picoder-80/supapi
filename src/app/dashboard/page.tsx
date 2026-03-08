@@ -68,14 +68,14 @@ interface Profile {
   display_name: string; bio: string; phone: string; email: string;
   address_line1: string; address_line2: string; city: string;
   state: string; postcode: string; country: string;
-  kyc_status: string; wallet_address: string;
+  kyc_status: string; wallet_address: string; avatar_url: string;
 }
 
 const EMPTY_PROFILE: Profile = {
   display_name: "", bio: "", phone: "", email: "",
   address_line1: "", address_line2: "", city: "",
   state: "", postcode: "", country: "",
-  kyc_status: "", wallet_address: "",
+  kyc_status: "", wallet_address: "", avatar_url: "",
 };
 
 const PROFILE_SECTIONS = [
@@ -212,7 +212,12 @@ export default function DashboardPage() {
             <div className={styles.greeting}>{getGreeting()},</div>
             <div className={styles.username}><span className={styles.usernamePi}>π</span> {user.username}</div>
           </div>
-          <Link href="/myspace" className={styles.avatar}>{getInitial(user.username)}</Link>
+          <Link href="/myspace" className={styles.avatar}>
+            {profile.avatar_url
+              ? <img src={profile.avatar_url} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+              : getInitial(user.username)
+            }
+          </Link>
         </div>
         <div className={styles.statRow}>
           <div className={styles.statCard}>
@@ -255,7 +260,12 @@ export default function DashboardPage() {
 
           {/* Profile card */}
           <div className={styles.profileCard}>
-            <div className={styles.profileAvatar}>{getInitial(user.username)}</div>
+            <div className={styles.profileAvatar}>
+            {profile.avatar_url
+              ? <img src={profile.avatar_url} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+              : getInitial(user.username)
+            }
+          </div>
             <div className={styles.profileInfo}>
               <div className={styles.profileName}>{profile.display_name || user.display_name || user.username}</div>
               <div className={styles.profilePiId}>@{user.username}</div>
@@ -309,31 +319,7 @@ export default function DashboardPage() {
             );
           })}
 
-          {/* Wallet / KYC info */}
-          <div className={styles.infoCards}>
-            <div className={styles.infoCard}>
-              <div className={styles.infoCardIcon}>💳</div>
-              <div className={styles.infoCardInfo}>
-                <div className={styles.infoCardLabel}>Pi Wallet</div>
-                <div className={styles.infoCardValue}>
-                  {profile.wallet_address
-                    ? `${profile.wallet_address.slice(0,8)}...${profile.wallet_address.slice(-6)}`
-                    : "Not linked"}
-                </div>
-              </div>
-            </div>
-            <div className={styles.infoCard}>
-              <div className={styles.infoCardIcon}>🛡️</div>
-              <div className={styles.infoCardInfo}>
-                <div className={styles.infoCardLabel}>KYC Status</div>
-                <div className={styles.infoCardValue} style={{
-                  color: (profile.kyc_status || user.kyc_status) === "verified" ? "#27ae60" : "var(--color-text-muted)"
-                }}>
-                  {(profile.kyc_status || user.kyc_status) === "verified" ? "✅ Verified" : "⏳ Pending"}
-                </div>
-              </div>
-            </div>
-          </div>
+
         </div>
 
         {/* Quick Actions */}

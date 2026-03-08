@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const supabase = await createAdminClient();
     const { data } = await supabase
       .from("users")
-      .select("id, username, display_name, avatar_url, bio, kyc_status, wallet_address, role, created_at, phone, email, address_line1, address_line2, city, state, postcode, country")
+      .select("id, username, display_name, avatar_url, bio, kyc_status, wallet_address, role, created_at, phone, email, address_line1, address_line2, city, state, postcode, country, last_seen")
       .eq("id", payload.userId)
       .single();
 

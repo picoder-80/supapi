@@ -1,12 +1,14 @@
 "use client";
 
+// components/layout/TopBar.tsx
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { useAuth } from "@/components/providers/AuthProvider";
+import LoginButton from "@/components/auth/LoginButton";
 import styles from "./TopBar.module.css";
 
-const links = [
+const navLinks = [
   { href: "/",            label: "🏠 Home"         },
   { href: "/dashboard",   label: "👤 Dashboard"     },
   { href: "/market",      label: "🛍️ Market"        },
@@ -26,30 +28,21 @@ const links = [
   { href: "/myspace",     label: "🪐 MySpace"       },
 ];
 
-function scrollActiveIntoView(container: HTMLDivElement | null) {
-  if (!container) return;
-  const active = container.querySelector("[data-active='true']") as HTMLElement | null;
-  if (!active) return;
-  const containerRect = container.getBoundingClientRect();
-  const activeRect    = active.getBoundingClientRect();
-  const scrollTo = container.scrollLeft
-    + (activeRect.left - containerRect.left)
-    - (containerRect.width / 2)
-    + (activeRect.width / 2);
-  container.scrollTo({ left: scrollTo, behavior: "instant" });
-}
-
 export default function TopBar() {
-  const pathname = usePathname();
-  const { user } = useAuth();
-  const navRef   = useRef<HTMLDivElement>(null);
+  const pathname  = usePathname();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef<HTMLAnchorElement>(null);
 
+  // ✅ Auto-scroll to active nav item on route change
   useEffect(() => {
-    if (pathname.startsWith("/admin")) return;
-    scrollActiveIntoView(navRef.current);
-  }, [pathname]);
+    if (!scrollRef.current || !activeRef.current) return;
 
-  if (pathname.startsWith("/admin")) return null;
+    const container = scrollRef.current;
+    const active    = activeRef.current;
+
+    const scrollTo = active.offsetLeft - container.offsetWidth / 2 + active.offsetWidth / 2;
+    container.scrollTo({ left: scrollTo, behavior: "smooth" });
+  }, [pathname]);
 
   return (
     <header className={styles.header}>
@@ -59,17 +52,16 @@ export default function TopBar() {
           <span className={styles.logoText}>Supapi</span>
         </Link>
 
-        <div className={styles.desktopNav}>
-          <div className={styles.navScroll} ref={navRef}>
-            {links.map((l) => {
-              const isActive = l.href === "/"
-                ? pathname === "/"
-                : pathname === l.href || pathname.startsWith(l.href + "/");
+        <nav className={styles.desktopNav} aria-label="Desktop navigation">
+          <div className={styles.navScroll} ref={scrollRef}>
+            {navLinks.map((l) => {
+              const isActive = pathname === l.href ||
+                (l.href !== "/" && pathname.startsWith(l.href));
               return (
                 <Link
                   key={l.href}
                   href={l.href}
-                  data-active={isActive}
+                  ref={isActive ? activeRef : undefined}
                   className={`${styles.navLink} ${isActive ? styles.navActive : ""}`}
                 >
                   {l.label}
@@ -77,18 +69,10 @@ export default function TopBar() {
               );
             })}
           </div>
-        </div>
+        </nav>
 
         <div className={styles.actions}>
-          {user ? (
-            <Link href="/dashboard" className={styles.userBtn}>
-              π {user.username}
-            </Link>
-          ) : (
-            <Link href="/" className={styles.signInBtn}>
-              Sign In
-            </Link>
-          )}
+          <LoginButton />
         </div>
       </div>
     </header>
