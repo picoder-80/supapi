@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useOnlineStatus } from "@/components/providers/PresenceProvider";
+import { useProfileOnline } from "@/components/providers/PresenceProvider";
 import styles from "../page.module.css";
 
 const TABS = [

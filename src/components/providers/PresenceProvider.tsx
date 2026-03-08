@@ -1,92 +1,118 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useAuth } from "./AuthProvider";
 
-const CHANNEL = "online-users";
+// User is "online" if last_seen within 2 minutes
+const ONLINE_THRESHOLD_MS = 2 * 60 * 1000;
+const HEARTBEAT_INTERVAL  = 30 * 1000; // 30s
 
 interface PresenceContextType {
-  onlineUsers: Set<string>;
   isOnline: (userId: string) => boolean;
+  lastSeenMap: Record<string, string>;
 }
 
 const PresenceContext = createContext<PresenceContextType>({
-  onlineUsers: new Set(),
   isOnline: () => false,
+  lastSeenMap: {},
 });
 
 export function useOnlineStatus(userId: string | null | undefined): boolean {
-  const { onlineUsers } = useContext(PresenceContext);
+  const { lastSeenMap } = useContext(PresenceContext);
   if (!userId) return false;
-  return onlineUsers.has(userId);
+  const lastSeen = lastSeenMap[userId];
+  if (!lastSeen) return false;
+  return Date.now() - new Date(lastSeen).getTime() < ONLINE_THRESHOLD_MS;
 }
 
 export default function PresenceProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
-  const channelRef = useRef<any>(null);
+  const [lastSeenMap, setLastSeenMap] = useState<Record<string, string>>({});
 
+  // Heartbeat — update own last_seen every 30s
   useEffect(() => {
-    // Clean up previous channel if user changes
-    if (channelRef.current) {
-      channelRef.current.untrack();
-      createClient().removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-
     if (!user?.id) return;
 
-    const supabase = createClient();
-    const channel  = supabase.channel(CHANNEL, {
-      config: { presence: { key: user.id } },
-    });
+    const token = localStorage.getItem("supapi_token");
+    if (!token) return;
 
-    channel
-      .on("presence", { event: "sync" }, () => {
-        const ids = new Set(Object.keys(channel.presenceState()));
-        console.log("✅ [Presence] sync — online:", [...ids]);
-        setOnlineUsers(new Set(ids));
-      })
-      .on("presence", { event: "join" }, ({ key }: { key: string }) => {
-        console.log("✅ [Presence] join:", key);
-        setOnlineUsers(prev => new Set([...prev, key]));
-      })
-      .on("presence", { event: "leave" }, ({ key }: { key: string }) => {
-        console.log("⬇️ [Presence] leave:", key);
-        setOnlineUsers(prev => { const s = new Set(prev); s.delete(key); return s; });
-      })
-      .subscribe(async (status: string) => {
-        console.log("[Presence] channel status:", status);
-        if (status === "SUBSCRIBED") {
-          const trackResult = await channel.track({
-            userId:    user.id,
-            username:  user.username,
-            online_at: new Date().toISOString(),
-          });
-          console.log("✅ [Presence] track result:", trackResult);
-        }
-      });
-
-    channelRef.current = channel;
-
-    const handleUnload = () => { channel.untrack(); };
-    window.addEventListener("beforeunload", handleUnload);
-
-    return () => {
-      channel.untrack();
-      supabase.removeChannel(channel);
-      window.removeEventListener("beforeunload", handleUnload);
-      channelRef.current = null;
+    const beat = async () => {
+      try {
+        await fetch("/api/myspace/heartbeat", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // Update own entry in map immediately
+        setLastSeenMap(prev => ({
+          ...prev,
+          [user.id]: new Date().toISOString(),
+        }));
+      } catch {}
     };
+
+    beat(); // immediate on login
+    const interval = setInterval(beat, HEARTBEAT_INTERVAL);
+    return () => clearInterval(interval);
   }, [user?.id]);
+
+  // Fetch last_seen for a specific user — called by useProfileOnline
+  const fetchLastSeen = async (userId: string) => {
+    try {
+      const r = await fetch(`/api/myspace/lastseen/${userId}`);
+      const d = await r.json();
+      if (d.success && d.data?.last_seen) {
+        setLastSeenMap(prev => ({ ...prev, [userId]: d.data.last_seen }));
+      }
+    } catch {}
+  };
 
   return (
     <PresenceContext.Provider value={{
-      onlineUsers,
-      isOnline: (id: string) => onlineUsers.has(id),
+      isOnline: (id) => {
+        const lastSeen = lastSeenMap[id];
+        if (!lastSeen) return false;
+        return Date.now() - new Date(lastSeen).getTime() < ONLINE_THRESHOLD_MS;
+      },
+      lastSeenMap,
     }}>
       {children}
     </PresenceContext.Provider>
   );
+}
+
+// Hook untuk check specific user online status — fetches from API
+export function useProfileOnline(userId: string | null | undefined): boolean {
+  const [isOnline, setIsOnline] = useState(false);
+  const { lastSeenMap } = useContext(PresenceContext);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const check = async () => {
+      try {
+        const r = await fetch(`/api/myspace/lastseen/${userId}`);
+        const d = await r.json();
+        if (d.success && d.data?.last_seen) {
+          const diff = Date.now() - new Date(d.data.last_seen).getTime();
+          setIsOnline(diff < ONLINE_THRESHOLD_MS);
+        } else {
+          setIsOnline(false);
+        }
+      } catch { setIsOnline(false); }
+    };
+
+    check();
+    const interval = setInterval(check, HEARTBEAT_INTERVAL);
+    return () => clearInterval(interval);
+  }, [userId]);
+
+  // Also check local map (updates faster for own user)
+  useEffect(() => {
+    if (!userId) return;
+    const lastSeen = lastSeenMap[userId];
+    if (!lastSeen) return;
+    setIsOnline(Date.now() - new Date(lastSeen).getTime() < ONLINE_THRESHOLD_MS);
+  }, [userId, lastSeenMap]);
+
+  return isOnline;
 }

@@ -152,13 +152,19 @@ export async function POST(req: NextRequest) {
       // ── Existing user — update KYC + wallet every login ──
       const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
-      // Always update KYC — user might have passed KYC since last login
-      if (kycStatus !== user.kyc_status) {
+      // Only upgrade KYC — never downgrade (Pi API may return null even if verified)
+      // verified > pending > unverified
+      const kycRank: Record<string, number> = { unverified: 0, pending: 1, verified: 2 };
+      const currentRank = kycRank[user.kyc_status] ?? 0;
+      const newRank     = kycRank[kycStatus] ?? 0;
+      if (newRank > currentRank) {
         updates.kyc_status = kycStatus;
-        console.log(`[Auth] KYC updated: ${user.kyc_status} → ${kycStatus}`);
+        console.log(`[Auth] KYC upgraded: ${user.kyc_status} → ${kycStatus}`);
+      } else {
+        console.log(`[Auth] KYC kept: ${user.kyc_status} (Pi returned: ${kycStatus})`);
       }
 
-      // Always update wallet if changed or missing
+      // Update wallet only if Pi returns a value (never overwrite with null)
       if (walletAddress && walletAddress !== user.wallet_address) {
         updates.wallet_address = walletAddress;
         console.log(`[Auth] Wallet updated: ${walletAddress}`);
