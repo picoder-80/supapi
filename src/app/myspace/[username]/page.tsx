@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useIsOnline } from "@/hooks/usePresence";
+import { useOnlineStatus } from "@/components/providers/PresenceProvider";
 import styles from "../page.module.css";
 
 const TABS = [
@@ -92,8 +92,7 @@ export default function PublicProfilePage() {
   }, [username]);
 
   const isOwnProfile   = me?.username === username;
-  // profile.id available after fetch — hook re-runs when it changes
-  const isOnline        = useIsOnline(profile?.id ?? null);
+  const isOnline        = useOnlineStatus(profile?.id ?? null);
 
   const handleFollow = async () => {
     if (!token || !me) return;

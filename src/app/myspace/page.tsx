@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useIsOnline } from "@/hooks/usePresence";
+import { useOnlineStatus } from "@/components/providers/PresenceProvider";
 import styles from "./page.module.css";
 
 const TABS = [
@@ -52,7 +52,7 @@ function formatDate(d: string) {
 export default function MySpacePage() {
   const { user, isHydrating, login, isLoading } = useAuth();
   const token = typeof window !== "undefined" ? localStorage.getItem("supapi_token") : null;
-  const iAmOnline = useIsOnline(user?.id ?? null);
+  const iAmOnline = useOnlineStatus(user?.id ?? null);
 
   const [activeTab,    setActiveTab]   = useState("overview");
   const [showEdit,     setShowEdit]    = useState(false);

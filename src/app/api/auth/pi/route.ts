@@ -13,8 +13,8 @@ const schema = z.object({
     user: z.object({
       uid:      z.string().min(1),
       username: z.string().min(1),
-    }),
-  }),
+    }).passthrough(), // preserve KYC + extra fields Pi returns
+  }).passthrough(),
   referralCode: z.string().optional(),
 });
 
@@ -56,26 +56,36 @@ export async function POST(req: NextRequest) {
 
     // ── Extract KYC + wallet from Pi API response ───────────
     // Pi API returns: credentials.kyc (bool or string), wallet_address (string)
-    // Pi API KYC can be in multiple places — check all
+    // Pi /me API does NOT return KYC — must get from authResult directly
+    // authResult.user has KYC data when "payments" scope is requested
+    const authUser = parsed.data.authResult?.user ?? {};
     const kycRaw =
+      authUser.kyc_verified ??
+      authUser.kyc ??
+      authUser.kyc_status ??
       meData.credentials?.kyc ??
-      meData.credentials?.kyc_status ??
       meData.kyc_verified ??
       meData.kyc_status ??
       meData.kyc ??
       null;
 
-    // Log full meData for debugging — remove after confirming KYC works
-    console.log("[Auth] meData keys:", Object.keys(meData));
-    console.log("[Auth] credentials:", JSON.stringify(meData.credentials ?? {}));
+    // Debug log — shows what Pi actually returns
+    console.log("[Auth] authResult.user:", JSON.stringify(authUser));
+    console.log("[Auth] meData:", JSON.stringify(meData));
     console.log("[Auth] kycRaw:", kycRaw, "type:", typeof kycRaw);
     const kycStatus    = typeof kycRaw === "boolean"
       ? (kycRaw ? "verified" : "unverified")
       : mapKycStatus(kycRaw as string | undefined);
 
-    const walletAddress = meData.wallet_address
-      ?? meData.credentials?.wallet_address
-      ?? null;
+    // Wallet address — from authResult.user or meData
+    const walletAddress =
+      authUser.wallet_address ??
+      authUser.walletAddress ??
+      meData.wallet_address ??
+      meData.credentials?.wallet_address ??
+      null;
+
+    console.log("[Auth] walletAddress:", walletAddress);
 
     console.log(`[Auth] uid=${piUser.uid} kyc=${kycStatus} wallet=${walletAddress}`);
 

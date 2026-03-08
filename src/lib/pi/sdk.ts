@@ -28,7 +28,7 @@ export async function authenticateWithPi() {
 
   // Pass full onIncompletePaymentFound handler per SDK docs
   return window.Pi.authenticate(
-    ["username", "payments"],
+    ["username", "payments", "wallet_address", "roles"],
     onIncompletePaymentFound
   );
 }

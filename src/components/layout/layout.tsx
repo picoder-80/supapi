@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <PiProvider>
           <AuthProvider>
-            <PresenceProvider />
+            <PresenceProvider>
             <TopBar />
             <main>
               {children}
@@ -46,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {/* Spacer supaya content tak tertutup BottomNav */}
             <div className="bottom-nav-spacer" />
             <BottomNav />
+            </PresenceProvider>
           </AuthProvider>
         </PiProvider>
       </body>
