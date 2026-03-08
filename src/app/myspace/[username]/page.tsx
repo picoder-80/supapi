@@ -5,7 +5,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useProfileOnline } from "@/components/providers/PresenceProvider";
 import styles from "../page.module.css";
 
 const TABS = [
@@ -14,7 +13,7 @@ const TABS = [
   { id: "gigs",     label: "Gigs",     emoji: "💼" },
   { id: "content",  label: "Content",  emoji: "🎬" },
   { id: "reviews",  label: "Reviews",  emoji: "⭐" },
-  { id: "badges",   label: "Badges",   emoji: "🏆" },
+
 ];
 
 const OVERVIEW_ITEMS = [
@@ -32,18 +31,7 @@ const OVERVIEW_ITEMS = [
   { key: "rewards",    href: "/rewards",     emoji: "🎁", label: "Rewards"       },
 ];
 
-const ALL_BADGES = [
-  { emoji: "🪐", name: "Pioneer",      desc: "First login",             key: "pioneer" },
-  { emoji: "✅", name: "KYC Verified", desc: "Identity verified",       key: "kyc"     },
-  { emoji: "🛍️", name: "First Sale",   desc: "Sold first item",         key: "sale"    },
-  { emoji: "💼", name: "Gigmaster",    desc: "Complete 10 gigs",        key: "gigs"    },
-  { emoji: "📚", name: "Scholar",      desc: "Enroll in a course",      key: "scholar" },
-  { emoji: "🤝", name: "Connector",    desc: "Refer 5 friends",         key: "refer"   },
-  { emoji: "🎁", name: "Daily Streak", desc: "7-day check-in streak",   key: "streak"  },
-  { emoji: "⭐", name: "Top Rated",    desc: "Avg rating above 4.8",    key: "rated"   },
-  { emoji: "💰", name: "Pi Rich",      desc: "Earn 100π total",         key: "rich"    },
-  { emoji: "🏆", name: "Legend",       desc: "Complete all challenges", key: "legend"  },
-];
+
 
 function getInitial(name: string) { return name?.charAt(0).toUpperCase() ?? "?"; }
 function formatDate(d: string) { return new Date(d).toLocaleDateString("en-MY", { month: "long", year: "numeric" }); }
@@ -92,7 +80,6 @@ export default function PublicProfilePage() {
   }, [username]);
 
   const isOwnProfile   = me?.username === username;
-  const isOnline        = useProfileOnline(profile?.id ?? null);
 
   const handleFollow = async () => {
     if (!token || !me) return;
@@ -138,8 +125,6 @@ export default function PublicProfilePage() {
   );
 
   const name   = profile?.display_name || profile?.username || username;
-  const isKyc  = profile?.kyc_status === "verified";
-  const earnedBadges = new Set(["pioneer", ...(isKyc ? ["kyc"] : []), ...((stats.listings as number) > 0 ? ["sale"] : [])]);
 
   return (
     <div>
@@ -195,15 +180,7 @@ export default function PublicProfilePage() {
           </div>
         </div>
 
-        <div className={styles.nameRow}>
-          <div className={styles.displayName}>{name}</div>
-          <div className={styles.onlineIndicator}>
-            <div className={`${styles.onlineDot} ${isOnline ? styles.onlineDotActive : styles.onlineDotOffline}`} />
-            <span className={`${styles.onlineLabel} ${isOnline ? styles.onlineLabelActive : styles.onlineLabelOffline}`}>
-              {isOnline ? "Online" : "Offline"}
-            </span>
-          </div>
-        </div>
+        <div className={styles.displayName}>{name}</div>
         <div className={styles.username}><span className={styles.usernamePi}>π</span> @{username}</div>
 
         {profile?.bio && <div className={styles.bio}>{profile.bio}</div>}
@@ -215,14 +192,7 @@ export default function PublicProfilePage() {
           <span className={styles.metaItem}><span className={styles.metaIcon}>📍</span> Pi Network</span>
         </div>
 
-        {/* Badges — never show admin */}
-        <div className={styles.badgesRow}>
-          <span className={styles.badge}>🪐 Pioneer</span>
-          {isKyc && <span className={`${styles.badge} ${styles.badgeKyc}`}>✅ KYC Verified</span>}
-          {profile?.role === "seller" && <span className={`${styles.badge} ${styles.badgeSeller}`}>🏪 Seller</span>}
-          {profile?.role === "instructor" && <span className={`${styles.badge} ${styles.badgeSeller}`}>👨‍🏫 Instructor</span>}
-          {profile?.role === "host" && <span className={`${styles.badge} ${styles.badgeSeller}`}>🏠 Host</span>}
-        </div>
+
 
         {/* Stats — real data */}
         <div className={styles.statsBar}>
@@ -299,26 +269,7 @@ export default function PublicProfilePage() {
               <div className={styles.emptyDesc}>@{username} has not received any reviews yet.</div>
             </div>
           )}
-          {activeTab === "badges" && (
-            <div>
-              <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 16 }}>
-                {earnedBadges.size} / {ALL_BADGES.length} badges earned
-              </div>
-              <div className={styles.badgesGrid}>
-                {ALL_BADGES.map((badge) => {
-                  const earned = earnedBadges.has(badge.key);
-                  return (
-                    <div key={badge.key} className={`${styles.badgeCard} ${!earned ? styles.badgeCardLocked : ""}`}>
-                      <div className={styles.badgeCardEmoji}>{badge.emoji}</div>
-                      <div className={styles.badgeCardName}>{badge.name}</div>
-                      <div className={styles.badgeCardDesc}>{badge.desc}</div>
-                      {!earned && <div style={{ fontSize: 10, color: "var(--color-text-muted)", marginTop: 4 }}>🔒 Locked</div>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+
         </div>
       </div>
 

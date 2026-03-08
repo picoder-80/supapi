@@ -4,7 +4,6 @@ export const dynamic = "force-dynamic";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useProfileOnline } from "@/components/providers/PresenceProvider";
 import styles from "./page.module.css";
 
 const TABS = [
@@ -13,7 +12,7 @@ const TABS = [
   { id: "gigs",     label: "Gigs",     emoji: "💼" },
   { id: "content",  label: "Content",  emoji: "🎬" },
   { id: "reviews",  label: "Reviews",  emoji: "⭐" },
-  { id: "badges",   label: "Badges",   emoji: "🏆" },
+
 ];
 
 const OVERVIEW_ITEMS = [
@@ -31,18 +30,7 @@ const OVERVIEW_ITEMS = [
   { key: "rewards",    href: "/rewards",     emoji: "🎁", label: "Rewards"       },
 ];
 
-const ALL_BADGES = [
-  { emoji: "🪐", name: "Pioneer",      desc: "First login",             key: "pioneer"  },
-  { emoji: "✅", name: "KYC Verified", desc: "Identity verified",       key: "kyc"      },
-  { emoji: "🛍️", name: "First Sale",   desc: "Sold first item",         key: "sale"     },
-  { emoji: "💼", name: "Gigmaster",    desc: "Complete 10 gigs",        key: "gigs"     },
-  { emoji: "📚", name: "Scholar",      desc: "Enroll in a course",      key: "scholar"  },
-  { emoji: "🤝", name: "Connector",    desc: "Refer 5 friends",         key: "refer"    },
-  { emoji: "🎁", name: "Daily Streak", desc: "7-day check-in streak",   key: "streak"   },
-  { emoji: "⭐", name: "Top Rated",    desc: "Avg rating above 4.8",    key: "rated"    },
-  { emoji: "💰", name: "Pi Rich",      desc: "Earn 100π total",         key: "rich"     },
-  { emoji: "🏆", name: "Legend",       desc: "Complete all challenges", key: "legend"   },
-];
+
 
 function getInitial(name: string) { return name?.charAt(0).toUpperCase() ?? "?"; }
 function formatDate(d: string) {
@@ -52,7 +40,6 @@ function formatDate(d: string) {
 export default function MySpacePage() {
   const { user, isHydrating, login, isLoading } = useAuth();
   const token = typeof window !== "undefined" ? localStorage.getItem("supapi_token") : null;
-  const iAmOnline = useProfileOnline(user?.id ?? null);
 
   const [activeTab,    setActiveTab]   = useState("overview");
   const [showEdit,     setShowEdit]    = useState(false);
@@ -180,8 +167,6 @@ export default function MySpacePage() {
     </div>
   );
 
-  const isKyc = user?.kyc_status === "verified";
-  const earnedBadges = new Set(["pioneer", ...(isKyc ? ["kyc"] : []), ...((stats.listings as number) > 0 ? ["sale"] : []), ...((stats.gigs as number) >= 10 ? ["gigs"] : []), ...((stats.avg_rating as string) >= "4.8" ? ["rated"] : [])]);
 
   return (
     <div>
@@ -233,15 +218,7 @@ export default function MySpacePage() {
           </div>
         </div>
 
-        <div className={styles.nameRow}>
-          <div className={styles.displayName}>{displayName}</div>
-          <div className={styles.onlineIndicator}>
-            <div className={`${styles.onlineDot} ${iAmOnline ? styles.onlineDotActive : styles.onlineDotOffline}`} />
-            <span className={`${styles.onlineLabel} ${iAmOnline ? styles.onlineLabelActive : styles.onlineLabelOffline}`}>
-              {iAmOnline ? "Online" : "Offline"}
-            </span>
-          </div>
-        </div>
+        <div className={styles.displayName}>{displayName}</div>
         <div className={styles.username}><span className={styles.usernamePi}>π</span> @{user.username}</div>
 
         {bio ? (
@@ -264,14 +241,7 @@ export default function MySpacePage() {
           )}
         </div>
 
-        {/* Badges — no admin */}
-        <div className={styles.badgesRow}>
-          <span className={styles.badge}>🪐 Pioneer</span>
-          {isKyc && <span className={`${styles.badge} ${styles.badgeKyc}`}>✅ KYC Verified</span>}
-          {user.role === "seller" && <span className={`${styles.badge} ${styles.badgeSeller}`}>🏪 Seller</span>}
-          {user.role === "instructor" && <span className={`${styles.badge} ${styles.badgeSeller}`}>👨‍🏫 Instructor</span>}
-          {user.role === "host" && <span className={`${styles.badge} ${styles.badgeSeller}`}>🏠 Host</span>}
-        </div>
+
 
         {/* Stats — real data */}
         <div className={styles.statsBar}>
@@ -368,26 +338,7 @@ export default function MySpacePage() {
             </div>
           )}
 
-          {activeTab === "badges" && (
-            <div>
-              <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 16 }}>
-                {earnedBadges.size} / {ALL_BADGES.length} badges earned
-              </div>
-              <div className={styles.badgesGrid}>
-                {ALL_BADGES.map((badge) => {
-                  const earned = earnedBadges.has(badge.key);
-                  return (
-                    <div key={badge.key} className={`${styles.badgeCard} ${!earned ? styles.badgeCardLocked : ""}`}>
-                      <div className={styles.badgeCardEmoji}>{badge.emoji}</div>
-                      <div className={styles.badgeCardName}>{badge.name}</div>
-                      <div className={styles.badgeCardDesc}>{badge.desc}</div>
-                      {!earned && <div style={{ fontSize: 10, color: "var(--color-text-muted)", marginTop: 4 }}>🔒 Locked</div>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+
         </div>
       </div>
 
