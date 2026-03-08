@@ -10,9 +10,12 @@ export interface User {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
+  cover_url: string | null;
+  bio: string | null;
   email: string | null;
   role: UserRole;
   kyc_status: KycStatus;
+  wallet_address: string | null;
   pi_balance_pending: number;
   referral_code: string;
   referred_by: string | null;

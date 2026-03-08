@@ -819,3 +819,12 @@
   0%, 100% { box-shadow: 0 0 0 2px rgba(39,174,96,0.25); }
   50%       { box-shadow: 0 0 0 4px rgba(39,174,96,0.1);  }
 }
+
+/* ── Wallet copy ── */
+.walletCopy {
+  cursor: pointer;
+  transition: color 150ms;
+  font-family: monospace;
+  letter-spacing: 0.3px;
+}
+.walletCopy:hover { color: var(--color-gold); }

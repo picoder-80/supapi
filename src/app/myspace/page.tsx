@@ -83,9 +83,9 @@ export default function MySpacePage() {
   useEffect(() => {
     if (!user) return;
     setDisplayName(user.display_name ?? user.username);
-    setBio((user as any).bio ?? "");
+    setBio(user.bio ?? "");
     setAvatarUrl(user.avatar_url ?? null);
-    setCoverUrl((user as any).cover_url ?? null);
+    setCoverUrl(user.cover_url ?? null);
   }, [user]);
 
   // Fetch real stats
@@ -180,7 +180,7 @@ export default function MySpacePage() {
     </div>
   );
 
-  const isKyc = user.kyc_status === "verified";
+  const isKyc = user?.kyc_status === "verified";
   const earnedBadges = new Set(["pioneer", ...(isKyc ? ["kyc"] : []), ...((stats.listings as number) > 0 ? ["sale"] : []), ...((stats.gigs as number) >= 10 ? ["gigs"] : []), ...((stats.avg_rating as string) >= "4.8" ? ["rated"] : [])]);
 
   return (
@@ -252,8 +252,15 @@ export default function MySpacePage() {
 
         <div className={styles.metaRow}>
           <span className={styles.metaItem}><span className={styles.metaIcon}>📅</span> Joined {formatDate(user.created_at)}</span>
-          {(user as any).wallet_address && (
-            <span className={styles.metaItem}><span className={styles.metaIcon}>💎</span> {((user as any).wallet_address as string).slice(0, 8)}...{((user as any).wallet_address as string).slice(-6)}</span>
+          {user.wallet_address && (
+            <span
+              className={`${styles.metaItem} ${styles.walletCopy}`}
+              onClick={() => { navigator.clipboard.writeText(user.wallet_address!); alert("Wallet address copied!"); }}
+              title="Click to copy wallet address"
+            >
+              <span className={styles.metaIcon}>⧉</span>
+              {user.wallet_address.slice(0, 8)}...{user.wallet_address.slice(-6)}
+            </span>
           )}
         </div>
 

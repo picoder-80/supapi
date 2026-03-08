@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState , ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "./AuthProvider";
 
@@ -16,10 +16,10 @@ const PresenceContext = createContext<PresenceContextType>({
   isOnline: () => false,
 });
 
-export function useOnlineStatus(userId: string | null) {
-  const { isOnline } = useContext(PresenceContext);
+export function useOnlineStatus(userId: string | null | undefined): boolean {
+  const { onlineUsers } = useContext(PresenceContext);
   if (!userId) return false;
-  return isOnline(userId);
+  return onlineUsers.has(userId);
 }
 
 export default function PresenceProvider({ children }: { children: ReactNode }) {
@@ -28,21 +28,25 @@ export default function PresenceProvider({ children }: { children: ReactNode }) 
   const channelRef = useRef<any>(null);
 
   useEffect(() => {
+    // Clean up previous channel if user changes
+    if (channelRef.current) {
+      channelRef.current.untrack();
+      createClient().removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
     if (!user?.id) return;
 
     const supabase = createClient();
-
-    // Join channel with own userId as presence key
-    const channel = supabase.channel(CHANNEL, {
+    const channel  = supabase.channel(CHANNEL, {
       config: { presence: { key: user.id } },
     });
 
     channel
       .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState();
-        const ids = new Set(Object.keys(state));
+        const ids = new Set(Object.keys(channel.presenceState()));
         console.log("✅ [Presence] sync — online:", [...ids]);
-        setOnlineUsers(ids);
+        setOnlineUsers(new Set(ids));
       })
       .on("presence", { event: "join" }, ({ key }: { key: string }) => {
         console.log("✅ [Presence] join:", key);
@@ -53,23 +57,27 @@ export default function PresenceProvider({ children }: { children: ReactNode }) 
         setOnlineUsers(prev => { const s = new Set(prev); s.delete(key); return s; });
       })
       .subscribe(async (status: string) => {
-        console.log("[Presence] status:", status);
+        console.log("[Presence] channel status:", status);
         if (status === "SUBSCRIBED") {
-          await channel.track({
-            userId: user.id,
-            username: user.username,
+          const trackResult = await channel.track({
+            userId:    user.id,
+            username:  user.username,
             online_at: new Date().toISOString(),
           });
-          console.log("✅ [Presence] tracking", user.username);
+          console.log("✅ [Presence] track result:", trackResult);
         }
       });
 
     channelRef.current = channel;
-    window.addEventListener("beforeunload", () => channel.untrack());
+
+    const handleUnload = () => { channel.untrack(); };
+    window.addEventListener("beforeunload", handleUnload);
 
     return () => {
       channel.untrack();
       supabase.removeChannel(channel);
+      window.removeEventListener("beforeunload", handleUnload);
+      channelRef.current = null;
     };
   }, [user?.id]);
 
