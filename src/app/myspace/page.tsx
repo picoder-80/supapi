@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useIsOnline } from "@/hooks/usePresence";
 import styles from "./page.module.css";
 
 const TABS = [
@@ -51,6 +52,7 @@ function formatDate(d: string) {
 export default function MySpacePage() {
   const { user, isHydrating, login, isLoading } = useAuth();
   const token = typeof window !== "undefined" ? localStorage.getItem("supapi_token") : null;
+  const iAmOnline = useIsOnline(user?.id ?? null);
 
   const [activeTab,    setActiveTab]   = useState("overview");
   const [showEdit,     setShowEdit]    = useState(false);
@@ -183,31 +185,30 @@ export default function MySpacePage() {
 
   return (
     <div>
-      {/* Cover */}
-      <div
-        className={styles.cover}
-        style={coverUrl ? { backgroundImage: `url(${coverUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
-      >
-        {!coverUrl && (
-          <>
-            <div className={`${styles.coverOrb} ${styles.coverOrb1}`} />
-            <div className={`${styles.coverOrb} ${styles.coverOrb2}`} />
-            <div className={`${styles.coverOrb} ${styles.coverOrb3}`} />
-          </>
-        )}
-        <div className={styles.coverActions}>
-          <button className={styles.coverEditBtn} onClick={() => coverFileRef.current?.click()} disabled={coverUploading}>
-            {coverUploading ? "⏳ Uploading..." : "📷 Change Cover"}
-          </button>
-          <button className={styles.coverEditBtn} onClick={() => setShowEdit(true)}>✏️ Edit Profile</button>
+      {/* Cover + Avatar overlap */}
+      <div className={styles.coverSection}>
+        <div
+          className={styles.cover}
+          style={coverUrl ? { backgroundImage: `url(${coverUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+        >
+          {!coverUrl && (
+            <>
+              <div className={`${styles.coverOrb} ${styles.coverOrb1}`} />
+              <div className={`${styles.coverOrb} ${styles.coverOrb2}`} />
+              <div className={`${styles.coverOrb} ${styles.coverOrb3}`} />
+            </>
+          )}
+          <div className={styles.coverActions}>
+            <button className={styles.coverEditBtn} onClick={() => coverFileRef.current?.click()} disabled={coverUploading}>
+              {coverUploading ? "⏳ Uploading..." : "📷 Change Cover"}
+            </button>
+            <button className={styles.coverEditBtn} onClick={() => setShowEdit(true)}>✏️ Edit Profile</button>
+          </div>
+          <input ref={coverFileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleCoverChange} />
         </div>
-        <input ref={coverFileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleCoverChange} />
-      </div>
 
-      {/* Profile Header */}
-      <div className={styles.profileHeader}>
-        <div className={styles.avatarRow}>
-          {/* Clickable avatar — tap to upload */}
+        {/* Avatar anchored to bottom of cover, overlapping */}
+        <div className={styles.avatarAnchor}>
           <div className={styles.avatarWrapper} onClick={() => fileRef.current?.click()}>
             {avatarUrl ? (
               <img src={avatarUrl} alt={displayName} className={styles.avatarImg} />
@@ -217,17 +218,30 @@ export default function MySpacePage() {
               </div>
             )}
             <div className={styles.avatarEditOverlay}>📷</div>
-            <div className={styles.avatarOnline} />
           </div>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarChange} />
+        </div>
+      </div>
 
+      {/* Profile Header */}
+      <div className={styles.profileHeader}>
+        <div className={styles.avatarRow}>
+          {/* Buttons below avatar */}
           <div className={styles.avatarActions}>
             <button className={styles.messageBtn} onClick={() => setShowMsg(true)}>💬 Message</button>
             <button className={styles.shareBtn} onClick={handleShare}>🔗 Share</button>
           </div>
         </div>
 
-        <div className={styles.displayName}>{displayName}</div>
+        <div className={styles.nameRow}>
+          <div className={styles.displayName}>{displayName}</div>
+          <div className={styles.onlineIndicator}>
+            <div className={`${styles.onlineDot} ${iAmOnline ? styles.onlineDotActive : styles.onlineDotOffline}`} />
+            <span className={`${styles.onlineLabel} ${iAmOnline ? styles.onlineLabelActive : styles.onlineLabelOffline}`}>
+              {iAmOnline ? "Online" : "Offline"}
+            </span>
+          </div>
+        </div>
         <div className={styles.username}><span className={styles.usernamePi}>π</span> @{user.username}</div>
 
         {bio ? (

@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useIsOnline } from "@/hooks/usePresence";
 import styles from "../page.module.css";
 
 const TABS = [
@@ -90,7 +91,8 @@ export default function PublicProfilePage() {
       .catch(() => {});
   }, [username]);
 
-  const isOwnProfile = me?.username === username;
+  const isOwnProfile   = me?.username === username;
+  const isOnline        = useIsOnline(profile?.id ?? null);
 
   const handleFollow = async () => {
     if (!token || !me) return;
@@ -141,37 +143,43 @@ export default function PublicProfilePage() {
 
   return (
     <div>
-      {/* Cover */}
-      <div
-        className={styles.cover}
-        style={profile?.cover_url ? { backgroundImage: `url(${profile.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
-      >
-        {!profile?.cover_url && (
-          <>
-            <div className={`${styles.coverOrb} ${styles.coverOrb1}`} />
-            <div className={`${styles.coverOrb} ${styles.coverOrb2}`} />
-            <div className={`${styles.coverOrb} ${styles.coverOrb3}`} />
-          </>
-        )}
-        {isOwnProfile && (
-          <div className={styles.coverActions}>
-            <Link href="/myspace" className={styles.coverEditBtn}>✏️ Edit Profile</Link>
-          </div>
-        )}
-      </div>
+      {/* Cover + Avatar overlap */}
+      <div className={styles.coverSection}>
+        <div
+          className={styles.cover}
+          style={profile?.cover_url ? { backgroundImage: `url(${profile.cover_url})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+        >
+          {!profile?.cover_url && (
+            <>
+              <div className={`${styles.coverOrb} ${styles.coverOrb1}`} />
+              <div className={`${styles.coverOrb} ${styles.coverOrb2}`} />
+              <div className={`${styles.coverOrb} ${styles.coverOrb3}`} />
+            </>
+          )}
+          {isOwnProfile && (
+            <div className={styles.coverActions}>
+              <Link href="/myspace" className={styles.coverEditBtn}>✏️ Edit Profile</Link>
+            </div>
+          )}
+        </div>
 
-      {/* Profile Header */}
-      <div className={styles.profileHeader}>
-        <div className={styles.avatarRow}>
+        {/* Avatar anchored to bottom of cover */}
+        <div className={styles.avatarAnchor}>
           <div className={styles.avatarWrapper} style={{ cursor: "default" }}>
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt={name} className={styles.avatarImg} />
             ) : (
               <div className={styles.avatar}>{getInitial(name)}</div>
             )}
-            <div className={styles.avatarOnline} />
-          </div>
 
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Header */}
+      <div className={styles.profileHeader}>
+        <div className={styles.avatarRow}>
+          {/* Buttons below avatar space */}
           <div className={styles.avatarActions}>
             {!isOwnProfile && (
               <button
@@ -187,7 +195,15 @@ export default function PublicProfilePage() {
           </div>
         </div>
 
-        <div className={styles.displayName}>{name}</div>
+        <div className={styles.nameRow}>
+          <div className={styles.displayName}>{name}</div>
+          <div className={styles.onlineIndicator}>
+            <div className={`${styles.onlineDot} ${isOnline ? styles.onlineDotActive : styles.onlineDotOffline}`} />
+            <span className={`${styles.onlineLabel} ${isOnline ? styles.onlineLabelActive : styles.onlineLabelOffline}`}>
+              {isOnline ? "Online" : "Offline"}
+            </span>
+          </div>
+        </div>
         <div className={styles.username}><span className={styles.usernamePi}>π</span> @{username}</div>
 
         {profile?.bio && <div className={styles.bio}>{profile.bio}</div>}
