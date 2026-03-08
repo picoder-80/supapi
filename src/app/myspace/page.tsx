@@ -7,12 +7,10 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import styles from "./page.module.css";
 
 const TABS = [
-  { id: "overview", label: "Overview", emoji: "🪐" },
-  { id: "listings", label: "Market",   emoji: "🛍️" },
-  { id: "gigs",     label: "Gigs",     emoji: "💼" },
-  { id: "content",  label: "Content",  emoji: "🎬" },
-  { id: "reviews",  label: "Reviews",  emoji: "⭐" },
-
+  { id: "overview",  label: "Overview",  emoji: "🪐" },
+  { id: "reviews",   label: "Reviews",   emoji: "⭐" },
+  { id: "newsfeed",  label: "Newsfeed",  emoji: "📰" },
+  { id: "reels",     label: "Reels",     emoji: "🎬" },
 ];
 
 const OVERVIEW_ITEMS = [
@@ -303,30 +301,21 @@ export default function MySpacePage() {
             </div>
           )}
 
-          {activeTab === "listings" && (
+          {activeTab === "newsfeed" && (
             <div className={styles.empty}>
-              <div className={styles.emptyIcon}>🛍️</div>
-              <div className={styles.emptyTitle}>{stats.listings ? `${stats.listings} active listings` : "No listings yet"}</div>
-              <div className={styles.emptyDesc}>Start selling items on the Marketplace.</div>
-              <Link href="/market" className={styles.emptyBtn}>+ Create Listing</Link>
+              <div className={styles.emptyIcon}>📰</div>
+              <div className={styles.emptyTitle}>No posts yet</div>
+              <div className={styles.emptyDesc}>Share updates with your followers.</div>
+              <Link href="/community" className={styles.emptyBtn}>+ Create Post</Link>
             </div>
           )}
 
-          {activeTab === "gigs" && (
-            <div className={styles.empty}>
-              <div className={styles.emptyIcon}>💼</div>
-              <div className={styles.emptyTitle}>{stats.gigs ? `${stats.gigs} active gigs` : "No gigs yet"}</div>
-              <div className={styles.emptyDesc}>Offer your freelance services and earn Pi.</div>
-              <Link href="/gigs" className={styles.emptyBtn}>+ Create Gig</Link>
-            </div>
-          )}
-
-          {activeTab === "content" && (
+          {activeTab === "reels" && (
             <div className={styles.empty}>
               <div className={styles.emptyIcon}>🎬</div>
-              <div className={styles.emptyTitle}>No content yet</div>
-              <div className={styles.emptyDesc}>Share your knowledge with the Pi community.</div>
-              <Link href="/content" className={styles.emptyBtn}>+ Create Post</Link>
+              <div className={styles.emptyTitle}>No reels yet</div>
+              <div className={styles.emptyDesc}>Share short videos with the Pi community.</div>
+              <Link href="/content" className={styles.emptyBtn}>+ Upload Reel</Link>
             </div>
           )}
 
@@ -335,6 +324,24 @@ export default function MySpacePage() {
               <div className={styles.emptyIcon}>⭐</div>
               <div className={styles.emptyTitle}>{stats.reviews ? `${stats.reviews} reviews` : "No reviews yet"}</div>
               <div className={styles.emptyDesc}>Complete transactions to receive reviews.</div>
+            </div>
+          )}
+
+          {activeTab === "newsfeed" && (
+            <div className={styles.empty}>
+              <div className={styles.emptyIcon}>📰</div>
+              <div className={styles.emptyTitle}>No posts yet</div>
+              <div className={styles.emptyDesc}>Share updates with your followers.</div>
+              <Link href="/content" className={styles.emptyBtn}>+ Create Post</Link>
+            </div>
+          )}
+
+          {activeTab === "reels" && (
+            <div className={styles.empty}>
+              <div className={styles.emptyIcon}>🎬</div>
+              <div className={styles.emptyTitle}>No reels yet</div>
+              <div className={styles.emptyDesc}>Share short videos with the Pi community.</div>
+              <Link href="/content" className={styles.emptyBtn}>+ Upload Reel</Link>
             </div>
           )}
 

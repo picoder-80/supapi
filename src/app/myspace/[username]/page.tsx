@@ -8,12 +8,10 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import styles from "../page.module.css";
 
 const TABS = [
-  { id: "overview", label: "Overview", emoji: "🪐" },
-  { id: "listings", label: "Market",   emoji: "🛍️" },
-  { id: "gigs",     label: "Gigs",     emoji: "💼" },
-  { id: "content",  label: "Content",  emoji: "🎬" },
-  { id: "reviews",  label: "Reviews",  emoji: "⭐" },
-
+  { id: "overview",  label: "Overview",  emoji: "🪐" },
+  { id: "reviews",   label: "Reviews",   emoji: "⭐" },
+  { id: "newsfeed",  label: "Newsfeed",  emoji: "📰" },
+  { id: "reels",     label: "Reels",     emoji: "🎬" },
 ];
 
 const OVERVIEW_ITEMS = [
@@ -241,32 +239,41 @@ export default function PublicProfilePage() {
               ))}
             </div>
           )}
-          {activeTab === "listings" && (
+          {activeTab === "newsfeed" && (
             <div className={styles.empty}>
-              <div className={styles.emptyIcon}>🛍️</div>
-              <div className={styles.emptyTitle}>{stats.listings ? `${stats.listings} active listings` : "No listings yet"}</div>
-              <div className={styles.emptyDesc}>@{username} has not listed anything for sale yet.</div>
+              <div className={styles.emptyIcon}>📰</div>
+              <div className={styles.emptyTitle}>No posts yet</div>
+              <div className={styles.emptyDesc}>@{username} has not posted anything yet.</div>
             </div>
           )}
-          {activeTab === "gigs" && (
-            <div className={styles.empty}>
-              <div className={styles.emptyIcon}>💼</div>
-              <div className={styles.emptyTitle}>{stats.gigs ? `${stats.gigs} active gigs` : "No gigs yet"}</div>
-              <div className={styles.emptyDesc}>@{username} has not offered any services yet.</div>
-            </div>
-          )}
-          {activeTab === "content" && (
+
+          {activeTab === "reels" && (
             <div className={styles.empty}>
               <div className={styles.emptyIcon}>🎬</div>
-              <div className={styles.emptyTitle}>No content yet</div>
-              <div className={styles.emptyDesc}>@{username} has not posted any content yet.</div>
+              <div className={styles.emptyTitle}>No reels yet</div>
+              <div className={styles.emptyDesc}>@{username} has not uploaded any reels yet.</div>
             </div>
           )}
+
           {activeTab === "reviews" && (
             <div className={styles.empty}>
               <div className={styles.emptyIcon}>⭐</div>
               <div className={styles.emptyTitle}>{stats.reviews ? `${stats.reviews} reviews` : "No reviews yet"}</div>
               <div className={styles.emptyDesc}>@{username} has not received any reviews yet.</div>
+            </div>
+          )}
+          {activeTab === "newsfeed" && (
+            <div className={styles.empty}>
+              <div className={styles.emptyIcon}>📰</div>
+              <div className={styles.emptyTitle}>No posts yet</div>
+              <div className={styles.emptyDesc}>@{username} has not posted anything yet.</div>
+            </div>
+          )}
+          {activeTab === "reels" && (
+            <div className={styles.empty}>
+              <div className={styles.emptyIcon}>🎬</div>
+              <div className={styles.emptyTitle}>No reels yet</div>
+              <div className={styles.emptyDesc}>@{username} has not uploaded any reels yet.</div>
             </div>
           )}
 

@@ -1,19 +1,16 @@
 "use client";
-
 export const dynamic = "force-dynamic";
 
-// app/dashboard/page.tsx
-// Pi User Dashboard — cross all 15 platforms + admin shortcut
-
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
 
 const QUICK_ACTIONS = [
-  { href: "/market",     emoji: "🛍️", label: "Market"    },
-  { href: "/wallet",     emoji: "💰", label: "Wallet"    },
-  { href: "/referral",   emoji: "🤝", label: "Referral"  },
-  { href: "/rewards",    emoji: "🎁", label: "Rewards"   },
+  { href: "/market",   emoji: "🛍️", label: "Market"   },
+  { href: "/wallet",   emoji: "💰", label: "Wallet"   },
+  { href: "/referral", emoji: "🤝", label: "Referral" },
+  { href: "/rewards",  emoji: "🎁", label: "Rewards"  },
 ];
 
 const PLATFORMS = [
@@ -30,99 +27,142 @@ const PLATFORMS = [
   { href: "/rewards",     emoji: "🎁", label: "Rewards"     },
   { href: "/content",     emoji: "🎬", label: "Content"     },
   { href: "/pi-value",    emoji: "📈", label: "Pi Value"    },
-  { href: "/classifieds",  emoji: "📋", label: "Classifieds" },
+  { href: "/classifieds", emoji: "📋", label: "Classifieds" },
   { href: "/myspace",     emoji: "🪐", label: "MySpace"     },
 ];
 
-// Mock recent activity — replace with real data later
-const MOCK_ACTIVITY = [
-  { icon: "🛍️", title: "Sold: iPhone 13 Case",       sub: "2 hours ago",    amount: "+2.5π",  neg: false },
-  { icon: "🎁", title: "Daily Reward Claimed",        sub: "Today 8:00 AM",  amount: "+0.1π",  neg: false },
-  { icon: "🤝", title: "Referral Bonus — @ahmad123",  sub: "Yesterday",      amount: "+0.5π",  neg: false },
-  { icon: "💼", title: "Gig Payment — Logo Design",   sub: "2 days ago",     amount: "+5π",    neg: false },
-];
+const TX_ICONS: Record<string, string> = {
+  sale:              "💰",
+  purchase:          "🛍️",
+  referral_reward:   "🤝",
+  game_reward:       "🎮",
+  course_enrollment: "📚",
+  stay_booking:      "🏡",
+  escrow_release:    "🔓",
+  platform_fee:      "⚙️",
+};
 
-function getInitial(username: string) {
-  return username?.charAt(0).toUpperCase() ?? "?";
-}
+const TX_LABELS: Record<string, string> = {
+  sale:              "Sale earnings",
+  purchase:          "Purchase",
+  referral_reward:   "Referral reward",
+  game_reward:       "Game reward",
+  course_enrollment: "Course enrolled",
+  stay_booking:      "Stay booking",
+  escrow_release:    "Escrow released",
+  platform_fee:      "Platform fee",
+};
 
-function getTimeGreeting() {
+function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
+function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
   if (h < 17) return "Good afternoon";
   return "Good evening";
 }
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)  return "Just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+interface Stats {
+  orders: number;
+  referrals: number;
+  earned: string;
+  transactions: Array<{
+    id: string;
+    type: string;
+    amount_pi: number;
+    memo: string;
+    status: string;
+    created_at: string;
+  }>;
+}
 
 export default function DashboardPage() {
   const { user, isHydrating, login, isLoading } = useAuth();
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
 
-  // Loading state
-  if (isHydrating) {
-    return (
-      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#1A1A2E,#0F3460)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 14 }}>Loading...</span>
-      </div>
-    );
-  }
+  const fetchStats = useCallback(async () => {
+    const token = localStorage.getItem("supapi_token");
+    if (!token) return;
+    setLoadingStats(true);
+    try {
+      const r = await fetch("/api/dashboard/stats", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const d = await r.json();
+      if (d.success) setStats(d.data);
+    } catch {}
+    setLoadingStats(false);
+  }, []);
 
-  // Guest — not logged in
-  if (!user) {
-    return (
-      <div className={styles.guestPage}>
-        <div className={styles.guestIcon}>🪐</div>
-        <h1 className={styles.guestTitle}>Your Pi Dashboard</h1>
-        <p className={styles.guestSub}>
-          Login with your Pi account to access all 15 platforms with one identity.
-        </p>
-        <button
-          className={styles.guestBtn}
-          onClick={() => login()}
-          disabled={isLoading}
-        >
-          {isLoading ? "Connecting..." : "π  Sign in with Pi"}
-        </button>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (user) fetchStats();
+  }, [user, fetchStats]);
+
+  if (isHydrating) return (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#1A1A2E,#0F3460)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 14 }}>Loading...</span>
+    </div>
+  );
+
+  if (!user) return (
+    <div className={styles.guestPage}>
+      <div className={styles.guestIcon}>🪐</div>
+      <h1 className={styles.guestTitle}>Your Pi Dashboard</h1>
+      <p className={styles.guestSub}>Login with your Pi account to access all 15 platforms.</p>
+      <button className={styles.guestBtn} onClick={() => login()} disabled={isLoading}>
+        {isLoading ? "Connecting..." : "π  Sign in with Pi"}
+      </button>
+    </div>
+  );
 
   const isAdmin = user.role === "admin";
+  const txList  = stats?.transactions ?? [];
 
   return (
     <div>
-      {/* ── Hero ── */}
+      {/* Hero */}
       <div className={styles.hero}>
         <div className={styles.heroTop}>
           <div>
-            <div className={styles.greeting}>{getTimeGreeting()},</div>
+            <div className={styles.greeting}>{getGreeting()},</div>
             <div className={styles.username}>
               <span className={styles.usernamePi}>π</span> {user.username}
             </div>
           </div>
-          <Link href="/myspace" className={styles.avatar}>
-            {getInitial(user.username)}
-          </Link>
+          <Link href="/myspace" className={styles.avatar}>{getInitial(user.username)}</Link>
         </div>
 
         <div className={styles.statRow}>
           <div className={styles.statCard}>
-            <div className={styles.statValue}>0.0π</div>
-            <div className={styles.statLabel}>Balance</div>
+            <div className={styles.statValue}>
+              {loadingStats ? "..." : `${stats?.earned ?? "0.00"}π`}
+            </div>
+            <div className={styles.statLabel}>Supapi Earnings</div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statValue}>0</div>
+            <div className={styles.statValue}>{loadingStats ? "..." : (stats?.orders ?? 0)}</div>
             <div className={styles.statLabel}>Orders</div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statValue}>0</div>
+            <div className={styles.statValue}>{loadingStats ? "..." : (stats?.referrals ?? 0)}</div>
             <div className={styles.statLabel}>Referrals</div>
           </div>
         </div>
       </div>
 
-      {/* ── Body ── */}
+      {/* Body */}
       <div className={styles.body}>
 
-        {/* Admin shortcut — only show if admin */}
+        {/* Admin shortcut */}
         {isAdmin && (
           <Link href="/admin/dashboard" className={styles.adminBanner}>
             <div className={styles.adminBannerLeft}>
@@ -168,34 +208,57 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Transaction History */}
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
-            <div className={styles.sectionTitle}>Recent Activity</div>
+            <div className={styles.sectionTitle}>Transaction History</div>
             <Link href="/wallet" className={styles.sectionLink}>See all →</Link>
           </div>
-          <div className={styles.activityList}>
-            {MOCK_ACTIVITY.length > 0 ? MOCK_ACTIVITY.map((item, i) => (
-              <div key={i} className={styles.activityItem}>
-                <div className={styles.activityIcon}>{item.icon}</div>
-                <div className={styles.activityInfo}>
-                  <div className={styles.activityTitle}>{item.title}</div>
-                  <div className={styles.activitySub}>{item.sub}</div>
-                </div>
-                <div className={`${styles.activityAmount} ${item.neg ? styles.activityAmountNeg : ""}`}>
-                  {item.amount}
-                </div>
+
+          {loadingStats ? (
+            <div className={styles.empty}>
+              <div className={styles.emptyIcon}>⏳</div>
+              Loading...
+            </div>
+          ) : txList.length > 0 ? (
+            <div className={styles.activityList}>
+              {txList.map((tx) => {
+                const isEarning = ["sale", "referral_reward", "game_reward", "escrow_release"].includes(tx.type);
+                return (
+                  <div key={tx.id} className={styles.activityItem}>
+                    <div className={styles.activityIcon}>{TX_ICONS[tx.type] ?? "💳"}</div>
+                    <div className={styles.activityInfo}>
+                      <div className={styles.activityTitle}>
+                        {tx.memo || TX_LABELS[tx.type] || tx.type}
+                      </div>
+                      <div className={styles.activitySub}>
+                        {timeAgo(tx.created_at)}
+                        {tx.status !== "completed" && (
+                          <span style={{ marginLeft: 6, fontSize: 10, color: "var(--color-text-muted)", background: "var(--color-bg)", padding: "1px 6px", borderRadius: 6 }}>
+                            {tx.status}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className={`${styles.activityAmount} ${!isEarning ? styles.activityAmountNeg : ""}`}>
+                      {isEarning ? "+" : "-"}{Number(tx.amount_pi).toFixed(2)}π
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className={styles.empty}>
+              <div className={styles.emptyIcon}>📋</div>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>No transactions yet</div>
+              <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+                Your Supapi earnings and purchases will appear here
               </div>
-            )) : (
-              <div className={styles.empty}>
-                <div className={styles.emptyIcon}>💰</div>
-                No activity yet
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* All 15 Platforms */}
+        {/* All Platforms */}
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <div className={styles.sectionTitle}>All Platforms</div>
