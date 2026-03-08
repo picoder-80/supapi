@@ -618,6 +618,7 @@
 }
 .sheetBody {
   padding: 20px;
+  padding-bottom: calc(var(--bottomnav-h) + 24px);
   overflow-y: auto;
   flex: 1;
 }

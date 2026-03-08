@@ -213,8 +213,8 @@ export default function DashboardPage() {
             <div className={styles.username}><span className={styles.usernamePi}>π</span> {user.username}</div>
           </div>
           <Link href="/myspace" className={styles.avatar}>
-            {profile.avatar_url
-              ? <img src={profile.avatar_url} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+            {(profile.avatar_url || user.avatar_url)
+              ? <img src={profile.avatar_url || user.avatar_url!} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
               : getInitial(user.username)
             }
           </Link>
@@ -261,8 +261,8 @@ export default function DashboardPage() {
           {/* Profile card */}
           <div className={styles.profileCard}>
             <div className={styles.profileAvatar}>
-            {profile.avatar_url
-              ? <img src={profile.avatar_url} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+            {(profile.avatar_url || user.avatar_url)
+              ? <img src={profile.avatar_url || user.avatar_url!} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
               : getInitial(user.username)
             }
           </div>
