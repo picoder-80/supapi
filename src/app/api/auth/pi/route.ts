@@ -18,6 +18,15 @@ const schema = z.object({
   referralCode: z.string().optional(),
 });
 
+// Map Pi API KYC value → our enum
+function mapKycStatus(piKyc: string | undefined): "unverified" | "pending" | "verified" {
+  if (!piKyc) return "unverified";
+  const v = piKyc.toLowerCase();
+  if (v === "verified" || v === "passed") return "verified";
+  if (v === "pending")                    return "pending";
+  return "unverified";
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body   = await req.json();
@@ -29,7 +38,7 @@ export async function POST(req: NextRequest) {
     const { authResult, referralCode } = parsed.data;
     const { accessToken, user: piUser } = authResult;
 
-    // Verify with Pi API
+    // ── Verify with Pi API ──────────────────────────────────
     const meRes = await fetch("https://api.minepi.com/v2/me", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
@@ -38,9 +47,24 @@ export async function POST(req: NextRequest) {
     }
 
     const meData = await meRes.json();
+    console.log("[Auth] Pi /me response:", JSON.stringify(meData));
+
     if (meData.uid !== piUser.uid) {
       return NextResponse.json({ success: false, error: "Token mismatch" }, { status: 401 });
     }
+
+    // ── Extract KYC + wallet from Pi API response ───────────
+    // Pi API returns: credentials.kyc (bool or string), wallet_address (string)
+    const kycRaw       = meData.credentials?.kyc ?? meData.kyc_status ?? meData.kyc ?? null;
+    const kycStatus    = typeof kycRaw === "boolean"
+      ? (kycRaw ? "verified" : "unverified")
+      : mapKycStatus(kycRaw as string | undefined);
+
+    const walletAddress = meData.wallet_address
+      ?? meData.credentials?.wallet_address
+      ?? null;
+
+    console.log(`[Auth] uid=${piUser.uid} kyc=${kycStatus} wallet=${walletAddress}`);
 
     const supabase = await createAdminClient();
 
@@ -54,6 +78,7 @@ export async function POST(req: NextRequest) {
     let isNewUser = false;
 
     if (!user) {
+      // ── New user — create account ────────────────────────
       isNewUser = true;
       let referrerId: string | null = null;
 
@@ -70,16 +95,19 @@ export async function POST(req: NextRequest) {
       const { data: created, error } = await supabase
         .from("users")
         .insert({
-          pi_uid:        piUser.uid,
-          username:      piUser.username,
-          display_name:  piUser.username,
-          referral_code: newReferralCode,
-          referred_by:   referrerId,
+          pi_uid:         piUser.uid,
+          username:       piUser.username,
+          display_name:   piUser.username,
+          referral_code:  newReferralCode,
+          referred_by:    referrerId,
+          kyc_status:     kycStatus,
+          wallet_address: walletAddress,
         })
         .select()
         .single();
 
       if (error || !created) {
+        console.error("[Auth] Create user error:", error);
         return NextResponse.json({ success: false, error: "Failed to create account" }, { status: 500 });
       }
 
@@ -96,6 +124,32 @@ export async function POST(req: NextRequest) {
       if (user.email) {
         await sendWelcomeEmail(user.email, user.username);
       }
+
+    } else {
+      // ── Existing user — update KYC + wallet every login ──
+      const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+
+      // Always update KYC — user might have passed KYC since last login
+      if (kycStatus !== user.kyc_status) {
+        updates.kyc_status = kycStatus;
+        console.log(`[Auth] KYC updated: ${user.kyc_status} → ${kycStatus}`);
+      }
+
+      // Always update wallet if changed or missing
+      if (walletAddress && walletAddress !== user.wallet_address) {
+        updates.wallet_address = walletAddress;
+        console.log(`[Auth] Wallet updated: ${walletAddress}`);
+      }
+
+      if (Object.keys(updates).length > 1) {
+        const { data: updated } = await supabase
+          .from("users")
+          .update(updates)
+          .eq("id", user.id)
+          .select()
+          .single();
+        if (updated) user = updated;
+      }
     }
 
     const token = signToken({
@@ -105,7 +159,6 @@ export async function POST(req: NextRequest) {
       role:     user.role ?? "user",
     });
 
-    // Return token in response body — client stores in localStorage
     return NextResponse.json({
       success: true,
       data:    { user, token, isNewUser },

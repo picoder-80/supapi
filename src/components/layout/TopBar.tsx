@@ -9,7 +9,9 @@ import LoginButton from "@/components/auth/LoginButton";
 import styles from "./TopBar.module.css";
 
 const navLinks = [
-  { href: "/market",    label: "🛍️ Market"       },
+  { href: "/",            label: "🏠 Home"        },
+  { href: "/dashboard",   label: "👤 Dashboard"   },
+  { href: "/market",    label: "🛍️ Market"        },
   { href: "/gigs",      label: "💼 Gigs"          },
   { href: "/academy",   label: "📚 Academy"       },
   { href: "/stay",      label: "🏡 Stay"          },

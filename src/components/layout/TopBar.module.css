@@ -110,3 +110,31 @@
     /* Keep visible on all mobile sizes */
   }
 }
+
+/* ── User / Sign In buttons ── */
+.userBtn {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-gold);
+  background: rgba(245,166,35,0.1);
+  border: 1px solid rgba(245,166,35,0.25);
+  padding: 6px 14px;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: all 150ms;
+  white-space: nowrap;
+}
+.userBtn:hover { background: rgba(245,166,35,0.2); }
+
+.signInBtn {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1A1A2E;
+  background: var(--color-gold);
+  padding: 6px 16px;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: all 150ms;
+  white-space: nowrap;
+}
+.signInBtn:hover { background: var(--color-gold-dark); }

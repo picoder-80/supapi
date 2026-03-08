@@ -6,22 +6,22 @@ import { useEffect, useRef } from "react";
 import styles from "./BottomNav.module.css";
 
 const SCROLL_ITEMS = [
-  { href: "/",           emoji: "🏠",  label: "Home"       },
-  { href: "/market",     emoji: "🛍️",  label: "Market"     },
-  { href: "/gigs",       emoji: "💼",  label: "Gigs"       },
-  { href: "/academy",    emoji: "📚",  label: "Academy"    },
-  { href: "/stay",       emoji: "🏡",  label: "Stay"       },
-  { href: "/arcade",     emoji: "🎮",  label: "Arcade"     },
-  { href: "/community",  emoji: "👥",  label: "Community"  },
-  { href: "/wallet",     emoji: "💰",  label: "Wallet"     },
-  { href: "/referral",   emoji: "🤝",  label: "Referral"   },
-  { href: "/locator",    emoji: "📍",  label: "Locator"    },
-  { href: "/jobs",       emoji: "🧑‍💻",  label: "Jobs"       },
-  { href: "/rewards",    emoji: "🎁",  label: "Rewards"    },
-  { href: "/content",    emoji: "🎬",  label: "Content"    },
-  { href: "/pi-value",   emoji: "📈",  label: "Pi Value"   },
-  { href: "/classifieds",emoji: "📋",  label: "Classifieds"},
-  { href: "/myspace",    emoji: "🪐",  label: "MySpace"    },
+  { href: "/",            emoji: "🏠",  label: "Home"       },
+  { href: "/market",      emoji: "🛍️",  label: "Market"     },
+  { href: "/gigs",        emoji: "💼",  label: "Gigs"       },
+  { href: "/academy",     emoji: "📚",  label: "Academy"    },
+  { href: "/stay",        emoji: "🏡",  label: "Stay"       },
+  { href: "/arcade",      emoji: "🎮",  label: "Arcade"     },
+  { href: "/community",   emoji: "👥",  label: "Community"  },
+  { href: "/wallet",      emoji: "💰",  label: "Wallet"     },
+  { href: "/referral",    emoji: "🤝",  label: "Referral"   },
+  { href: "/locator",     emoji: "📍",  label: "Locator"    },
+  { href: "/jobs",        emoji: "🧑‍💻",  label: "Jobs"       },
+  { href: "/rewards",     emoji: "🎁",  label: "Rewards"    },
+  { href: "/content",     emoji: "🎬",  label: "Content"    },
+  { href: "/pi-value",    emoji: "📈",  label: "Pi Value"   },
+  { href: "/classifieds", emoji: "📋",  label: "Classifieds"},
+  { href: "/myspace",     emoji: "🪐",  label: "MySpace"    },
 ];
 
 export default function BottomNav() {
@@ -30,8 +30,23 @@ export default function BottomNav() {
 
   useEffect(() => {
     if (pathname.startsWith("/admin")) return;
-    const active = scrollRef.current?.querySelector("[data-active='true']") as HTMLElement;
-    active?.scrollIntoView({ inline: "center", behavior: "smooth", block: "nearest" });
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const active = container.querySelector("[data-active='true']") as HTMLElement | null;
+    if (!active) return;
+
+    // getBoundingClientRect gives position relative to viewport — reliable
+    const containerRect = container.getBoundingClientRect();
+    const activeRect    = active.getBoundingClientRect();
+
+    // Current scroll + offset of active item center - half container width
+    const scrollTo = container.scrollLeft
+      + (activeRect.left - containerRect.left)
+      - (containerRect.width / 2)
+      + (activeRect.width / 2);
+
+    container.scrollTo({ left: scrollTo, behavior: "instant" });
   }, [pathname]);
 
   if (pathname.startsWith("/admin")) return null;
@@ -40,7 +55,6 @@ export default function BottomNav() {
 
   return (
     <nav className={styles.nav}>
-      {/* Fixed Dashboard button */}
       <Link
         href="/dashboard"
         className={`${styles.fixed} ${isDashboard ? styles.active : ""}`}
@@ -49,10 +63,8 @@ export default function BottomNav() {
         <span className={styles.label}>Dashboard</span>
       </Link>
 
-      {/* Divider */}
       <div className={styles.divider} />
 
-      {/* Scrollable rest */}
       <div className={styles.scroll} ref={scrollRef}>
         {SCROLL_ITEMS.map((item) => {
           const isActive = item.href === "/"
