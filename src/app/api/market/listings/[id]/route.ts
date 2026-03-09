@@ -11,8 +11,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     const supabase = await createAdminClient();
 
     // Increment view count
-    await supabase.from("listings").update({ views: supabase.rpc ? undefined : undefined }).eq("id", id);
-    await supabase.rpc("increment_listing_views", { listing_id: id }).catch(() => {});
+    await supabase.rpc("increment_listing_views", { listing_id: id });
 
     const { data, error } = await supabase
       .from("listings")
