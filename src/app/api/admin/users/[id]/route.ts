@@ -34,7 +34,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     updates.is_banned  = body.is_banned;
     updates.ban_reason = body.ban_reason ?? null;
     updates.banned_at  = body.is_banned ? new Date().toISOString() : null;
-    updates.banned_by  = body.is_banned ? auth.adminId : null;
+    updates.banned_by  = body.is_banned ? auth.userId : null;
     // Suspend all their active listings if banned
     if (body.is_banned) {
       await supabase.from("listings").update({ status: "paused" }).eq("seller_id", id).eq("status","active");
