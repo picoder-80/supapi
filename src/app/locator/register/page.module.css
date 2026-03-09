@@ -1,0 +1,45 @@
+/* Register Business — Supapi Theme */
+.page { min-height:100vh; background:#F8F9FD; padding-bottom:40px; }
+
+.header { background:linear-gradient(135deg,#1A1A2E,#0F3460); padding:20px 16px; display:flex; align-items:center; gap:12px; position:sticky; top:60px; z-index:10; }
+.backBtn { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:8px; width:36px; height:36px; font-size:16px; cursor:pointer; font-family:inherit; flex-shrink:0; }
+.headerTitle { font-size:18px; font-weight:800; color:#fff; }
+.headerSub { font-size:12px; color:rgba(255,255,255,0.5); margin-top:2px; }
+
+.body { padding:16px; display:flex; flex-direction:column; gap:14px; }
+
+/* Field groups */
+.fieldGroup { background:#fff; border:1.5px solid #E2E8F0; border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:12px; }
+.groupTitle { font-size:13px; font-weight:800; color:var(--color-text); margin-bottom:4px; }
+.field { display:flex; flex-direction:column; gap:4px; }
+.fieldLabel { font-size:11px; font-weight:700; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.4px; }
+.input { padding:10px 12px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; color:var(--color-text); background:#F8F9FD; font-family:inherit; resize:vertical; }
+.input:focus { outline:none; border-color:var(--color-gold); }
+
+/* Category grid */
+.catGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.catOption { display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 6px; border:1.5px solid #E2E8F0; border-radius:12px; background:#F8F9FD; cursor:pointer; font-family:inherit; transition:all 0.2s; }
+.catOptionActive { border-color:var(--color-gold); background:rgba(245,166,35,0.08); }
+.catEmoji { font-size:22px; }
+.catLabel { font-size:10px; font-weight:700; color:var(--color-text-muted); text-align:center; }
+.catOptionActive .catLabel { color:var(--color-gold-dark); }
+
+/* Row 2 col */
+.row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+/* GPS */
+.gpsRow { display:flex; flex-direction:column; gap:8px; }
+.gpsBtn { padding:10px; border:1.5px dashed #E2E8F0; border-radius:10px; background:none; font-size:13px; font-weight:700; color:var(--color-text-muted); cursor:pointer; font-family:inherit; }
+.gpsBtn:hover { border-color:var(--color-gold); color:var(--color-gold-dark); }
+
+/* Submit */
+.submitNote { font-size:12px; color:var(--color-text-muted); text-align:center; background:#fff; border:1.5px solid #E2E8F0; border-radius:10px; padding:10px; }
+.submitBtn { width:100%; padding:16px; background:linear-gradient(135deg,#1A1A2E,#0F3460); color:#fff; border:none; border-radius:14px; font-size:16px; font-weight:800; cursor:pointer; font-family:inherit; }
+.submitBtn:disabled { opacity:0.6; }
+.msg { text-align:center; font-size:13px; font-weight:700; padding:10px; border-radius:10px; background:#fff; border:1.5px solid #E2E8F0; }
+
+/* Guest */
+.guestWrap { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px; gap:12px; }
+.guestIcon { font-size:48px; }
+.guestTitle { font-size:20px; font-weight:800; color:var(--color-text); }
+.guestSub { font-size:13px; color:var(--color-text-muted); text-align:center; }
