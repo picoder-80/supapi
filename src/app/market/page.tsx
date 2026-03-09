@@ -151,6 +151,9 @@ export default function MarketPage() {
           <Link href="/market/create" className={styles.sellBtn}>+ Sell</Link>
         </div>
 
+        <div className={styles.countryRow}>
+          <CountrySelect value={country} onChange={(code) => { setCountry(code); setPage(1); }} />
+        </div>
         <form onSubmit={handleSearch} className={styles.searchRow}>
           <div className={styles.searchBox}>
             <span className={styles.searchIcon}>🔍</span>
@@ -164,7 +167,6 @@ export default function MarketPage() {
               <button type="button" className={styles.searchClear} onClick={() => { setSearchInput(""); setQ(""); }}>✕</button>
             )}
           </div>
-          <CountrySelect value={country} onChange={(code) => { setCountry(code); setPage(1); }} />
           <button type="button" className={`${styles.filterBtn} ${showFilters ? styles.filterBtnActive : ""}`} onClick={() => setShowFilters(p => !p)}>
             ⚙️ {hasFilters ? "•" : ""}
           </button>

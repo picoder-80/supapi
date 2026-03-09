@@ -7,7 +7,9 @@
 .sellBtn { background: var(--color-gold); color: #1A1A2E; font-weight: 800; font-size: 13px; padding: 8px 16px; border-radius: 999px; white-space: nowrap; }
 
 /* Search */
-.searchRow { display: flex; gap: 8px; margin-bottom: 14px; }
+.searchRow { display: flex; gap: 8px; margin-bottom: 8px; }
+.countryRow { margin-bottom: 14px; }
+.countryRowBtn { width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 14px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; font-family: inherit; display: flex; align-items: center; gap: 8px; }
 .searchBox { flex: 1; display: flex; align-items: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 0 12px; gap: 8px; }
 .searchIcon { font-size: 14px; opacity: 0.6; }
 .searchInput { flex: 1; background: none; border: none; outline: none; color: #fff; font-size: 14px; padding: 10px 0; font-family: inherit; }
@@ -18,7 +20,7 @@
 
 /* Country Select */
 .countrySelect { position: relative; flex-shrink: 0; }
-.countryBtn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 12px; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.countryBtn { width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 14px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; text-align: left; display: flex; align-items: center; gap: 8px; }
 .countryDropdown { position: absolute; top: calc(100% + 6px); right: 0; background: #fff; border: 1.5px solid #E2E8F0; border-radius: 14px; width: 240px; z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,0.12); overflow: hidden; }
 .countrySearch { width: 100%; padding: 10px 14px; border: none; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: var(--color-text); font-family: inherit; box-sizing: border-box; }
 .countrySearch:focus { outline: none; }
