@@ -1,13 +1,67 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { CATEGORIES, CONDITIONS, BUYING_METHODS } from "@/lib/market/categories";
+import { ALL_COUNTRIES, getCountry } from "@/lib/market/countries";
 import styles from "./page.module.css";
 
 const MAX_IMAGES = 5;
+
+function CountrySelect({ value, onChange }: { value: string; onChange: (code: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  const filtered = ALL_COUNTRIES.filter(c =>
+    c.code !== "WORLDWIDE" && (
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.code.toLowerCase().includes(search.toLowerCase())
+    )
+  );
+  const selected = getCountry(value);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className={styles.countrySelect}>
+      <button type="button" className={styles.input} style={{ textAlign: "left", cursor: "pointer" }} onClick={() => setOpen(p => !p)}>
+        {selected.flag} {selected.name} ▾
+      </button>
+      {open && (
+        <div className={styles.countryDropdown}>
+          <input
+            className={styles.countrySearch}
+            placeholder="Search country..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            autoFocus
+          />
+          <div className={styles.countryList}>
+            {filtered.map(c => (
+              <button
+                key={c.code}
+                type="button"
+                className={`${styles.countryOption} ${value === c.code ? styles.countryOptionActive : ""}`}
+                onClick={() => { onChange(c.code); setOpen(false); setSearch(""); }}
+              >
+                {c.flag} {c.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function CreateListingPage() {
   const { user } = useAuth();
@@ -19,13 +73,21 @@ export default function CreateListingPage() {
     category: "", subcategory: "", condition: "new",
     buying_method: "both", location: "", stock: "1", type: "physical",
   });
-  const [images, setImages]     = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState("");
-  const [step, setStep]         = useState<"details" | "images" | "preview">("details");
+  const [countryCode, setCountryCode]     = useState("MY");
+  const [shipWorldwide, setShipWorldwide] = useState(false);
+  const [images, setImages]               = useState<string[]>([]);
+  const [uploading, setUploading]         = useState(false);
+  const [saving, setSaving]               = useState(false);
+  const [error, setError]                 = useState("");
+  const [step, setStep]                   = useState<"details" | "images" | "preview">("details");
 
   const selectedCat = CATEGORIES.find(c => c.id === form.category);
+
+  useEffect(() => {
+    fetch("/api/geo").then(r => r.json()).then(d => {
+      if (d.success) setCountryCode(d.data.code);
+    }).catch(() => {});
+  }, []);
 
   const set = (key: string, val: string) => setForm(prev => ({ ...prev, [key]: val }));
 
@@ -35,7 +97,6 @@ export default function CreateListingPage() {
     const token = localStorage.getItem("supapi_token");
     if (!token) return;
     setUploading(true); setError("");
-
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const fd   = new FormData();
@@ -63,7 +124,14 @@ export default function CreateListingPage() {
       const r = await fetch("/api/market/listings", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ...form, price_pi: parseFloat(form.price_pi), stock: parseInt(form.stock), images }),
+        body: JSON.stringify({
+          ...form,
+          price_pi: parseFloat(form.price_pi),
+          stock: parseInt(form.stock),
+          images,
+          country_code: countryCode,
+          ship_worldwide: shipWorldwide,
+        }),
       });
       const d = await r.json();
       if (d.success) router.push(`/market/${d.data.id}`);
@@ -88,7 +156,6 @@ export default function CreateListingPage() {
         <div />
       </div>
 
-      {/* Step tabs */}
       <div className={styles.steps}>
         {["details", "images", "preview"].map((s, i) => (
           <button key={s} className={`${styles.step} ${step === s ? styles.stepActive : ""} ${["details","images","preview"].indexOf(step) > i ? styles.stepDone : ""}`}
@@ -100,7 +167,7 @@ export default function CreateListingPage() {
       </div>
 
       <div className={styles.body}>
-        {/* STEP 1: Details */}
+
         {step === "details" && (
           <div className={styles.form}>
             <div className={styles.formField}>
@@ -168,6 +235,27 @@ export default function CreateListingPage() {
             </div>
 
             <div className={styles.formField}>
+              <label className={styles.label}>Your Country</label>
+              <CountrySelect value={countryCode} onChange={setCountryCode} />
+            </div>
+
+            <div className={styles.formField}>
+              <div className={styles.toggleRow}>
+                <div>
+                  <div className={styles.toggleLabel}>🌍 Ship Worldwide</div>
+                  <div className={styles.toggleSub}>Allow buyers from other countries to purchase</div>
+                </div>
+                <button
+                  type="button"
+                  className={`${styles.toggle} ${shipWorldwide ? styles.toggleOn : ""}`}
+                  onClick={() => setShipWorldwide(p => !p)}
+                >
+                  {shipWorldwide ? "ON" : "OFF"}
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.formField}>
               <label className={styles.label}>Description</label>
               <textarea className={styles.input} rows={4} placeholder="Describe your item — condition, brand, specs, reason for selling..."
                 value={form.description} onChange={e => set("description", e.target.value)} />
@@ -181,14 +269,12 @@ export default function CreateListingPage() {
           </div>
         )}
 
-        {/* STEP 2: Images */}
         {step === "images" && (
           <div className={styles.form}>
             <div className={styles.imgHeader}>
               <div className={styles.imgTitle}>Product Photos</div>
               <div className={styles.imgSub}>{images.length}/{MAX_IMAGES} photos · First photo is cover</div>
             </div>
-
             <div className={styles.imgGrid}>
               {images.map((url, i) => (
                 <div key={i} className={styles.imgItem}>
@@ -204,21 +290,16 @@ export default function CreateListingPage() {
                 </button>
               )}
             </div>
-
             <input ref={fileRef} type="file" accept="image/*" multiple hidden
               onChange={e => handleImageUpload(e.target.files)} />
-
             {error && <div className={styles.error}>{error}</div>}
             <div className={styles.btnRow}>
               <button className={styles.prevBtn} onClick={() => setStep("details")}>← Back</button>
-              <button className={styles.nextBtn} onClick={() => { setError(""); setStep("preview"); }}>
-                Preview Listing →
-              </button>
+              <button className={styles.nextBtn} onClick={() => { setError(""); setStep("preview"); }}>Preview Listing →</button>
             </div>
           </div>
         )}
 
-        {/* STEP 3: Preview */}
         {step === "preview" && (
           <div className={styles.form}>
             <div className={styles.previewCard}>
@@ -232,11 +313,12 @@ export default function CreateListingPage() {
                   <span className={styles.tag}>{CONDITIONS.find(c=>c.id===form.condition)?.label}</span>
                   <span className={styles.tag}>{BUYING_METHODS.find(m=>m.id===form.buying_method)?.emoji} {BUYING_METHODS.find(m=>m.id===form.buying_method)?.label}</span>
                   {form.location && <span className={styles.tag}>📍 {form.location}</span>}
+                  <span className={styles.tag}>{getCountry(countryCode).flag} {getCountry(countryCode).name}</span>
+                  {shipWorldwide && <span className={styles.tag}>🌍 Ships Worldwide</span>}
                 </div>
                 {form.description && <div className={styles.previewDesc}>{form.description}</div>}
               </div>
             </div>
-
             {images.length > 1 && (
               <div className={styles.previewImgRow}>
                 {images.slice(1).map((url, i) => (
@@ -244,7 +326,6 @@ export default function CreateListingPage() {
                 ))}
               </div>
             )}
-
             {error && <div className={styles.error}>{error}</div>}
             <div className={styles.btnRow}>
               <button className={styles.prevBtn} onClick={() => setStep("images")}>← Back</button>
@@ -254,6 +335,7 @@ export default function CreateListingPage() {
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

@@ -1,16 +1,18 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { CATEGORIES, CONDITIONS, BUYING_METHODS } from "@/lib/market/categories";
+import { ALL_COUNTRIES, getCountry } from "@/lib/market/countries";
 import styles from "./page.module.css";
 
 interface Listing {
   id: string; title: string; price_pi: number; images: string[];
   category: string; condition: string; buying_method: string;
   location: string; views: number; likes: number; created_at: string;
+  country_code: string; ship_worldwide: boolean;
   seller: { id: string; username: string; display_name: string | null; avatar_url: string | null; kyc_status: string };
 }
 
@@ -31,30 +33,87 @@ function timeAgo(iso: string) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+function CountrySelect({ value, onChange }: { value: string; onChange: (code: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  const filtered = ALL_COUNTRIES.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.code.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const selected = getCountry(value);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className={styles.countrySelect}>
+      <button className={styles.countryBtn} onClick={() => setOpen(p => !p)}>
+        {selected.flag} {selected.name} ▾
+      </button>
+      {open && (
+        <div className={styles.countryDropdown}>
+          <input
+            className={styles.countrySearch}
+            placeholder="Search country..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            autoFocus
+          />
+          <div className={styles.countryList}>
+            {filtered.map(c => (
+              <button
+                key={c.code}
+                className={`${styles.countryOption} ${value === c.code ? styles.countryOptionActive : ""}`}
+                onClick={() => { onChange(c.code); setOpen(false); setSearch(""); }}
+              >
+                {c.flag} {c.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function MarketPage() {
   const { user } = useAuth();
   const [listings, setListings]     = useState<Listing[]>([]);
   const [total, setTotal]           = useState(0);
   const [loading, setLoading]       = useState(true);
   const [page, setPage]             = useState(1);
+  const [country, setCountry]       = useState("MY");
 
-  // Filters
-  const [q, setQ]               = useState("");
+  const [q, setQ]                   = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory]     = useState("");
   const [subcategory, setSubcategory] = useState("");
-  const [condition, setCondition] = useState("");
-  const [method, setMethod]     = useState("");
-  const [sort, setSort]         = useState("newest");
+  const [condition, setCondition]   = useState("");
+  const [method, setMethod]         = useState("");
+  const [sort, setSort]             = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
 
   const selectedCat = CATEGORIES.find(c => c.id === category);
+
+  useEffect(() => {
+    fetch("/api/geo").then(r => r.json()).then(d => {
+      if (d.success) setCountry(d.data.code);
+    }).catch(() => {});
+  }, []);
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        page: String(page), sort,
+        page: String(page), sort, country,
         ...(q && { q }),
         ...(category && { category }),
         ...(subcategory && { subcategory }),
@@ -66,7 +125,7 @@ export default function MarketPage() {
       if (d.success) { setListings(d.data.listings); setTotal(d.data.total); }
     } catch {}
     setLoading(false);
-  }, [page, q, category, subcategory, condition, method, sort]);
+  }, [page, q, category, subcategory, condition, method, sort, country]);
 
   useEffect(() => { fetchListings(); }, [fetchListings]);
 
@@ -86,14 +145,12 @@ export default function MarketPage() {
   return (
     <div className={styles.page}>
 
-      {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerTop}>
           <h1 className={styles.title}>🛍️ Marketplace</h1>
           <Link href="/market/create" className={styles.sellBtn}>+ Sell</Link>
         </div>
 
-        {/* Search */}
         <form onSubmit={handleSearch} className={styles.searchRow}>
           <div className={styles.searchBox}>
             <span className={styles.searchIcon}>🔍</span>
@@ -107,12 +164,18 @@ export default function MarketPage() {
               <button type="button" className={styles.searchClear} onClick={() => { setSearchInput(""); setQ(""); }}>✕</button>
             )}
           </div>
+          <CountrySelect value={country} onChange={(code) => { setCountry(code); setPage(1); }} />
           <button type="button" className={`${styles.filterBtn} ${showFilters ? styles.filterBtnActive : ""}`} onClick={() => setShowFilters(p => !p)}>
             ⚙️ {hasFilters ? "•" : ""}
           </button>
         </form>
 
-        {/* Category Pills */}
+        {country === "WORLDWIDE" && (
+          <div className={styles.worldwideBanner}>
+            🌍 Showing listings with international shipping
+          </div>
+        )}
+
         <div className={styles.catScroll}>
           <button className={`${styles.catPill} ${!category ? styles.catPillActive : ""}`} onClick={() => { setCategory(""); setSubcategory(""); setPage(1); }}>
             All
@@ -125,7 +188,6 @@ export default function MarketPage() {
           ))}
         </div>
 
-        {/* Subcategory pills */}
         {selectedCat && (
           <div className={styles.catScroll}>
             <button className={`${styles.subPill} ${!subcategory ? styles.subPillActive : ""}`} onClick={() => { setSubcategory(""); setPage(1); }}>
@@ -141,7 +203,6 @@ export default function MarketPage() {
         )}
       </div>
 
-      {/* Filter Panel */}
       {showFilters && (
         <div className={styles.filterPanel}>
           <div className={styles.filterRow}>
@@ -187,7 +248,6 @@ export default function MarketPage() {
         </div>
       )}
 
-      {/* Results */}
       <div className={styles.body}>
         <div className={styles.resultsHeader}>
           <span className={styles.resultsCount}>{loading ? "..." : `${total} listings`}</span>
@@ -202,7 +262,14 @@ export default function MarketPage() {
           <div className={styles.empty}>
             <div className={styles.emptyIcon}>🛍️</div>
             <div className={styles.emptyTitle}>No listings found</div>
-            <div className={styles.emptyDesc}>Try different filters or be the first to sell!</div>
+            <div className={styles.emptyDesc}>
+              {country !== "WORLDWIDE" ? "Try switching to 🌍 Worldwide!" : "Be the first to sell!"}
+            </div>
+            {country !== "WORLDWIDE" && (
+              <button className={styles.worldwideBtn} onClick={() => { setCountry("WORLDWIDE"); setPage(1); }}>
+                🌍 Try Worldwide
+              </button>
+            )}
             <Link href="/market/create" className={styles.emptyBtn}>+ Create Listing</Link>
           </div>
         ) : (
@@ -218,6 +285,10 @@ export default function MarketPage() {
                     <div className={styles.cardMethod}>
                       {l.buying_method === "meetup" ? "📍" : l.buying_method === "ship" ? "📦" : "🤝"}
                     </div>
+                    {l.ship_worldwide && <div className={styles.cardWorldwide}>🌍</div>}
+                    {l.country_code && l.country_code !== "WORLDWIDE" && (
+                      <div className={styles.cardFlag}>{getCountry(l.country_code).flag}</div>
+                    )}
                   </div>
                   <div className={styles.cardBody}>
                     <div className={styles.cardTitle}>{l.title}</div>
@@ -244,7 +315,6 @@ export default function MarketPage() {
               ))}
             </div>
 
-            {/* Pagination */}
             {total > 20 && (
               <div className={styles.pagination}>
                 <button className={styles.pageBtn} disabled={page === 1} onClick={() => setPage(p => p - 1)}>← Prev</button>
@@ -255,7 +325,6 @@ export default function MarketPage() {
           </>
         )}
 
-        {/* Sell CTA for logged in users */}
         {user && listings.length > 0 && (
           <div className={styles.sellCta}>
             <div className={styles.sellCtaText}>Have something to sell?</div>

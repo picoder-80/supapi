@@ -44,7 +44,7 @@
 }
 
 .avatar {
-  width: 52px; height: 52px;
+  width: 80px; height: 80px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--color-gold), #D4891A);
   display: flex;

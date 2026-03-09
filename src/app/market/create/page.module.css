@@ -34,6 +34,23 @@
 .optBtn { padding:7px 14px; border-radius:999px; font-size:12px; font-weight:600; border:1.5px solid #E2E8F0; background:#F8F9FD; color:var(--color-text-muted); cursor:pointer; transition:all 0.2s; }
 .optBtnActive { background:#1A1A2E; color:#fff; border-color:#1A1A2E; }
 
+/* Country searchable dropdown */
+.countrySelect { position:relative; }
+.countryDropdown { position:absolute; top:calc(100% + 4px); left:0; right:0; background:#fff; border:1.5px solid #E2E8F0; border-radius:12px; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.1); overflow:hidden; }
+.countrySearch { width:100%; padding:10px 14px; border:none; border-bottom:1px solid #E2E8F0; font-size:13px; color:var(--color-text); font-family:inherit; box-sizing:border-box; }
+.countrySearch:focus { outline:none; }
+.countryList { max-height:200px; overflow-y:auto; }
+.countryOption { width:100%; text-align:left; padding:10px 14px; background:none; border:none; font-size:13px; color:var(--color-text); cursor:pointer; font-family:inherit; display:block; }
+.countryOption:hover { background:#F8F9FD; }
+.countryOptionActive { background:rgba(245,166,35,0.08); color:var(--color-gold-dark); font-weight:600; }
+
+/* Ship Worldwide toggle */
+.toggleRow { display:flex; align-items:center; justify-content:space-between; background:#fff; border:1.5px solid #E2E8F0; border-radius:10px; padding:12px 14px; }
+.toggleLabel { font-size:14px; font-weight:700; color:var(--color-text); margin-bottom:2px; }
+.toggleSub { font-size:11px; color:var(--color-text-muted); }
+.toggle { padding:6px 16px; border-radius:999px; font-size:12px; font-weight:800; border:1.5px solid #E2E8F0; background:#F8F9FD; color:var(--color-text-muted); cursor:pointer; font-family:inherit; transition:all 0.2s; flex-shrink:0; }
+.toggleOn { background:var(--color-gold); color:#1A1A2E; border-color:var(--color-gold); }
+
 /* Images */
 .imgHeader { margin-bottom:16px; }
 .imgTitle { font-size:16px; font-weight:800; color:var(--color-text); margin-bottom:4px; }

@@ -16,6 +16,23 @@
 .filterBtn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 14px; color: #fff; font-size: 14px; cursor: pointer; white-space: nowrap; }
 .filterBtnActive { background: rgba(245,166,35,0.2); border-color: var(--color-gold); color: var(--color-gold); }
 
+/* Country Select */
+.countrySelect { position: relative; flex-shrink: 0; }
+.countryBtn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 12px; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.countryDropdown { position: absolute; top: calc(100% + 6px); right: 0; background: #fff; border: 1.5px solid #E2E8F0; border-radius: 14px; width: 240px; z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,0.12); overflow: hidden; }
+.countrySearch { width: 100%; padding: 10px 14px; border: none; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: var(--color-text); font-family: inherit; box-sizing: border-box; }
+.countrySearch:focus { outline: none; }
+.countryList { max-height: 240px; overflow-y: auto; }
+.countryOption { width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; font-size: 13px; color: var(--color-text); cursor: pointer; font-family: inherit; display: block; }
+.countryOption:hover { background: #F8F9FD; }
+.countryOptionActive { background: rgba(245,166,35,0.08); color: var(--color-gold-dark); font-weight: 600; }
+
+/* Worldwide */
+.worldwideBanner { background: rgba(245,166,35,0.15); border-bottom: 1px solid rgba(245,166,35,0.2); padding: 8px 16px; font-size: 12px; font-weight: 600; color: var(--color-gold); }
+.worldwideBtn { display: inline-block; background: rgba(245,166,35,0.15); color: var(--color-gold-dark); font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 999px; border: none; cursor: pointer; margin-bottom: 12px; font-family: inherit; }
+.cardFlag { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); border-radius: 6px; padding: 3px 6px; font-size: 14px; }
+.cardWorldwide { position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.6); border-radius: 6px; padding: 3px 6px; font-size: 12px; }
+
 /* Category scroll */
 .catScroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; }
 .catScroll::-webkit-scrollbar { display: none; }
