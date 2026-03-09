@@ -8,10 +8,7 @@ export async function GET(req: NextRequest) {
 
   const supabase = await createAdminClient();
 
-  // Orders per day (last 30 days)
-  const { data: ordersByDay } = await supabase.rpc("orders_by_day").catch(() => ({ data: null }));
-
-  // Fallback: manual query last 30 days
+  // Orders per day (last 30 days) — manual query
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const { data: recentOrders } = await supabase
     .from("orders")
@@ -64,10 +61,10 @@ export async function GET(req: NextRequest) {
     sellerMap[o.seller_id].total += Number(o.amount_pi);
     sellerMap[o.seller_id].count++;
   }
-  const topSellersList = Object.entries(sellerMap)
+  const top_sellers = Object.entries(sellerMap)
     .sort((a, b) => b[1].total - a[1].total)
     .slice(0, 5)
     .map(([id, v]) => ({ seller_id: id, ...v }));
 
-  return NextResponse.json({ success: true, data: { days, categories, statuses, top_sellers: topSellersList } });
+  return NextResponse.json({ success: true, data: { days, categories, statuses, top_sellers } });
 }
