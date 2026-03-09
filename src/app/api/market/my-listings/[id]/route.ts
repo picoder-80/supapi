@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const supabase = await createAdminClient();
 
   // Increment view count
-  await supabase.rpc("increment_listing_views", { listing_id: id }).catch(() => {});
+  try { await supabase.rpc("increment_listing_views", { listing_id: id }); } catch {}
 
   const { data, error } = await supabase
     .from("listings")
