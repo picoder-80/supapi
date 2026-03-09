@@ -19,7 +19,7 @@ const modules = [
   { href: "/jobs",        emoji: "🧑‍💻",  label: "Jobs",          desc: "Hire & get hired"                 },
   { href: "/rewards",     emoji: "🎁",  label: "Daily Rewards", desc: "Check-in & earn Pi daily"         },
   { href: "/reels",     emoji: "🎬",  label: "Reels",       desc: "Short videos from pioneers"              },
-  { href: "/pi-value",    emoji: "📈",  label: "Market Value",  desc: "Pi price & blockchain explorer"   },
+  { href: "/pi-value",    emoji: "📈",  label: "Market Value",  desc: "Pi Live Market Data & Pi USD Converter"   },
   { href: "/classifieds", emoji: "📋",  label: "Classifieds",   desc: "Promote services & businesses"    },
   { href: "/myspace",     emoji: "🪐",  label: "MySpace",       desc: "Your personal Pi profile"         },
 ];

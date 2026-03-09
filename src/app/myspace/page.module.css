@@ -94,7 +94,7 @@
 }
 
 .avatar {
-  width: 120px; height: 120px;
+  width: 150px; height: 150px;
   border-radius: 50%;
   background: linear-gradient(135deg, #F5A623, #D4891A);
   border: 5px solid var(--color-surface);

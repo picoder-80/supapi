@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import PiPriceWidget from "@/components/PiPriceWidget";
 import styles from "./page.module.css";
 
 const QUICK_ACTIONS = [
@@ -318,9 +319,10 @@ export default function DashboardPage() {
               </div>
             );
           })}
-
-
         </div>
+
+        {/* ── Pi Price Widget ── */}
+        <PiPriceWidget />
 
         {/* Quick Actions */}
         <div className={styles.section}>
