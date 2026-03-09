@@ -37,7 +37,7 @@ export async function PATCH(req: NextRequest) {
   await supabase.from("platform_config").update({
     value: String(commission_pct),
     updated_at: new Date().toISOString(),
-    updated_by: auth.adminId,
+    updated_by: auth.userId,
   }).eq("key", "market_commission_pct");
 
   return NextResponse.json({ success: true, data: { commission_pct } });
