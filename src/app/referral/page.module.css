@@ -1,0 +1,162 @@
+/* Referral Page — Supapi Theme */
+.page { min-height:100vh; background:#F8F9FD; padding-bottom:calc(var(--bottomnav-h) + 24px); }
+
+/* Guest */
+.guestPage { min-height:100vh; background:#F8F9FD; }
+.guestHero { background:linear-gradient(135deg,#1A1A2E,#0F3460); padding:60px 24px 40px; text-align:center; }
+.guestEmoji { font-size:56px; margin-bottom:16px; }
+.guestTitle { font-size:26px; font-weight:900; color:#fff; margin-bottom:12px; line-height:1.3; }
+.guestSub { font-size:14px; color:rgba(255,255,255,0.6); margin-bottom:28px; }
+.guestBtn { background:var(--color-gold); color:#1A1A2E; border:none; border-radius:14px; padding:16px 32px; font-size:16px; font-weight:800; cursor:pointer; font-family:inherit; }
+
+/* Hero */
+.hero { background:linear-gradient(135deg,#1A1A2E,#0F3460); padding:20px 16px 0; }
+.heroTop { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.rankBadge { display:flex; align-items:center; gap:6px; padding:6px 14px; border-radius:999px; border:1px solid; font-size:13px; font-weight:800; }
+.nextRank { font-size:11px; color:rgba(255,255,255,0.4); }
+.heroEarnings { text-align:center; margin-bottom:16px; }
+.heroEarningsMain { font-size:40px; font-weight:900; color:#fff; letter-spacing:-1px; }
+.heroEarningsSub { font-size:12px; color:rgba(255,255,255,0.5); margin-top:2px; }
+.heroStats { display:flex; align-items:center; background:rgba(255,255,255,0.08); border-radius:12px; padding:14px; margin-bottom:16px; }
+.heroStat { flex:1; text-align:center; }
+.heroStatVal { font-size:18px; font-weight:900; color:#fff; }
+.heroStatLabel { font-size:10px; color:rgba(255,255,255,0.5); text-transform:uppercase; margin-top:2px; }
+.heroStatDiv { width:1px; height:32px; background:rgba(255,255,255,0.15); flex-shrink:0; }
+
+/* Ref link */
+.refLinkBox { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:12px; margin-bottom:0; }
+.refLink { font-size:12px; color:rgba(255,255,255,0.6); font-family:monospace; margin-bottom:10px; word-break:break-all; }
+.refLinkBtns { display:flex; gap:8px; }
+.copyBtn { flex:1; padding:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:8px; color:#fff; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+.shareBtn { flex:1; padding:10px; background:var(--color-gold); border:none; border-radius:8px; color:#1A1A2E; font-size:13px; font-weight:800; cursor:pointer; font-family:inherit; }
+
+/* Tabs */
+.tabs { display:flex; background:linear-gradient(135deg,#1A1A2E,#0F3460); overflow-x:auto; scrollbar-width:none; }
+.tabs::-webkit-scrollbar { display:none; }
+.tab { flex-shrink:0; padding:12px 14px; font-size:12px; font-weight:700; color:rgba(255,255,255,0.5); background:none; border:none; border-bottom:3px solid transparent; cursor:pointer; font-family:inherit; white-space:nowrap; }
+.tabActive { color:#fff; border-bottom-color:var(--color-gold); }
+
+.body { padding:16px; display:flex; flex-direction:column; gap:14px; }
+
+/* Rates card */
+.ratesCard { background:linear-gradient(135deg,#1A1A2E,#0F3460); border-radius:16px; padding:16px; }
+.ratesTitle { font-size:13px; font-weight:800; color:#fff; margin-bottom:14px; }
+.ratesRow { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+.rateItem { flex:1; background:rgba(255,255,255,0.08); border-radius:12px; padding:12px 8px; text-align:center; }
+.rateLevel { font-size:10px; font-weight:700; color:rgba(255,255,255,0.5); text-transform:uppercase; margin-bottom:4px; }
+.ratePct { font-size:24px; font-weight:900; }
+.rateDesc { font-size:10px; color:rgba(255,255,255,0.4); margin-top:2px; }
+.rateArrow { color:rgba(255,255,255,0.3); font-size:16px; flex-shrink:0; }
+.ratesNote { font-size:11px; color:rgba(255,255,255,0.4); line-height:1.5; }
+.ratesNote b { color:rgba(255,255,255,0.7); }
+
+/* Rank card */
+.rankCard { background:#fff; border:1.5px solid #E2E8F0; border-radius:16px; padding:16px; }
+.rankCardTitle { font-size:13px; font-weight:800; color:var(--color-text); margin-bottom:12px; }
+.rankList { display:flex; flex-direction:column; gap:8px; }
+.rankRow { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; background:#F8F9FD; border:1.5px solid transparent; }
+.rankRowActive { background:rgba(245,166,35,0.06); border-color:rgba(245,166,35,0.3); }
+.rankRowDone { opacity:0.5; }
+.rankEmoji { font-size:20px; flex-shrink:0; }
+.rankInfo { flex:1; }
+.rankName { font-size:13px; font-weight:800; color:var(--color-text); }
+.rankReq { font-size:11px; color:var(--color-text-muted); margin-top:1px; }
+.rankCheck { font-size:14px; flex-shrink:0; }
+
+/* Calculator */
+.calculator { background:#fff; border:1.5px solid #E2E8F0; border-radius:16px; padding:16px; }
+.calcTitle { font-size:13px; font-weight:800; color:var(--color-text); margin-bottom:14px; }
+.calcRow { margin-bottom:10px; }
+.calcLabel { font-size:12px; color:var(--color-text-muted); display:block; margin-bottom:6px; }
+.slider { width:100%; accent-color:var(--color-gold); }
+.calcResult { background:#F8F9FD; border-radius:12px; padding:12px; margin-top:12px; }
+.calcBreakdown { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; border-bottom:1px solid #E2E8F0; padding-bottom:10px; }
+.calcLine { display:flex; justify-content:space-between; font-size:12px; color:var(--color-text-muted); }
+.calcLine span:last-child { font-weight:700; }
+.calcTotal { display:flex; justify-content:space-between; align-items:center; }
+.calcTotal span { font-size:13px; color:var(--color-text-muted); }
+.calcTotalVal { font-size:22px; font-weight:900; color:var(--color-gold-dark); }
+.calcCap { font-size:11px; color:var(--color-text-muted); text-align:center; margin-top:8px; }
+
+/* Earnings list */
+.earningsList { display:flex; flex-direction:column; gap:10px; }
+.earningsSummary { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.summaryCard { background:#fff; border:1.5px solid #E2E8F0; border-radius:12px; padding:12px; text-align:center; }
+.summaryVal { font-size:16px; font-weight:900; color:var(--color-text); }
+.summaryLabel { font-size:10px; font-weight:700; color:var(--color-text-muted); text-transform:uppercase; margin-top:2px; }
+.earningRow { background:#fff; border:1.5px solid #E2E8F0; border-radius:12px; padding:12px; display:flex; align-items:center; gap:12px; }
+.earningIcon { font-size:24px; flex-shrink:0; }
+.earningInfo { flex:1; min-width:0; }
+.earningTitle { font-size:13px; font-weight:700; color:var(--color-text); display:flex; align-items:center; gap:6px; }
+.earningLevel { font-size:10px; font-weight:800; background:rgba(245,166,35,0.1); color:var(--color-gold-dark); padding:1px 6px; border-radius:999px; }
+.earningMeta { font-size:11px; color:var(--color-text-muted); margin-top:2px; }
+.earningRight { text-align:right; flex-shrink:0; }
+.earningAmt { font-size:14px; font-weight:800; color:#27ae60; }
+.earningStatus { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; margin-top:2px; display:inline-block; }
+.paid { background:rgba(39,174,96,0.1); color:#27ae60; }
+.pending { background:rgba(243,156,18,0.1); color:#f39c12; }
+
+/* Team */
+.teamList { display:flex; flex-direction:column; gap:8px; }
+.teamRow { background:#fff; border:1.5px solid #E2E8F0; border-radius:12px; padding:12px; display:flex; align-items:center; gap:10px; }
+.teamRank { font-size:12px; font-weight:900; color:var(--color-text-muted); width:24px; flex-shrink:0; }
+.teamAvatar { width:36px; height:36px; border-radius:50%; background:var(--color-gold); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; color:#1A1A2E; overflow:hidden; flex-shrink:0; }
+.avatarImg { width:100%; height:100%; object-fit:cover; }
+.teamInfo { flex:1; min-width:0; }
+.teamName { font-size:13px; font-weight:700; color:var(--color-text); }
+.teamMeta { font-size:11px; color:var(--color-text-muted); margin-top:1px; }
+.teamBadge { font-size:10px; font-weight:800; background:rgba(245,166,35,0.1); color:var(--color-gold-dark); padding:3px 8px; border-radius:999px; flex-shrink:0; }
+.shareBtn2 { margin-top:12px; padding:12px 24px; background:var(--color-gold); color:#1A1A2E; border:none; border-radius:12px; font-size:14px; font-weight:800; cursor:pointer; font-family:inherit; }
+
+/* Leaderboard */
+.leaderboard { display:flex; flex-direction:column; gap:8px; }
+.leaderboardTitle { font-size:14px; font-weight:800; color:var(--color-text); margin-bottom:4px; }
+.leaderRow { background:#fff; border:1.5px solid #E2E8F0; border-radius:12px; padding:12px; display:flex; align-items:center; gap:10px; transition:all 0.2s; }
+.leaderRowMe { border-color:var(--color-gold); background:rgba(245,166,35,0.04); }
+.leaderPos { font-size:16px; width:28px; flex-shrink:0; text-align:center; }
+.leaderAvatar { width:36px; height:36px; border-radius:50%; background:var(--color-gold); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; color:#1A1A2E; overflow:hidden; flex-shrink:0; }
+.leaderInfo { flex:1; min-width:0; }
+.leaderName { font-size:13px; font-weight:700; color:var(--color-text); display:flex; align-items:center; gap:6px; }
+.leaderMeta { font-size:11px; color:var(--color-text-muted); margin-top:1px; }
+.leaderEarned { font-size:14px; font-weight:800; color:var(--color-gold-dark); flex-shrink:0; }
+.meTag { font-size:10px; font-weight:800; background:var(--color-gold); color:#1A1A2E; padding:1px 6px; border-radius:999px; }
+
+/* How it works */
+.howItWorks { display:flex; flex-direction:column; gap:16px; }
+.howTitle { font-size:20px; font-weight:900; color:var(--color-text); text-align:center; }
+.steps { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.step { background:#fff; border:1.5px solid #E2E8F0; border-radius:14px; padding:14px; text-align:center; }
+.stepNum { font-size:10px; font-weight:900; color:var(--color-gold-dark); letter-spacing:1px; margin-bottom:6px; }
+.stepEmoji { font-size:28px; margin-bottom:8px; }
+.stepTitle { font-size:13px; font-weight:800; color:var(--color-text); margin-bottom:4px; }
+.stepDesc { font-size:11px; color:var(--color-text-muted); line-height:1.5; }
+
+/* Level tree */
+.levelExplain { background:linear-gradient(135deg,#1A1A2E,#0F3460); border-radius:16px; padding:20px; }
+.levelExplainTitle { font-size:14px; font-weight:800; color:#fff; text-align:center; margin-bottom:16px; }
+.levelTree { display:flex; flex-direction:column; align-items:center; gap:0; }
+.levelTreeRow { width:100%; display:flex; justify-content:center; }
+.levelTreeYou { background:var(--color-gold); color:#1A1A2E; font-size:13px; font-weight:900; padding:8px 20px; border-radius:999px; }
+.levelTreeLine { width:2px; height:16px; background:rgba(255,255,255,0.2); }
+.levelTreeNode { border:1.5px solid; border-radius:14px; padding:12px 20px; text-align:center; min-width:160px; }
+.levelTreePct { font-size:22px; font-weight:900; }
+.levelTreeLabel { font-size:12px; color:rgba(255,255,255,0.7); margin-top:2px; }
+.levelTreeSub { font-size:10px; color:rgba(255,255,255,0.4); margin-top:2px; }
+.levelNote { font-size:11px; color:rgba(255,255,255,0.5); text-align:center; margin-top:14px; line-height:1.6; }
+.levelNote b { color:rgba(255,255,255,0.8); }
+
+/* FAQ */
+.faq { background:#fff; border:1.5px solid #E2E8F0; border-radius:16px; overflow:hidden; }
+.faqTitle { font-size:13px; font-weight:800; color:var(--color-text); padding:14px 16px; border-bottom:1px solid #E2E8F0; }
+.faqItem { border-bottom:1px solid #E2E8F0; }
+.faqItem:last-child { border-bottom:none; }
+.faqQ { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; font-size:13px; font-weight:700; color:var(--color-text); cursor:pointer; gap:8px; }
+.faqA { padding:0 16px 12px; font-size:12px; color:var(--color-text-muted); line-height:1.6; }
+
+/* Empty */
+.empty { text-align:center; padding:48px 20px; }
+.emptyIcon { font-size:40px; margin-bottom:10px; }
+.emptyTitle { font-size:15px; font-weight:800; color:var(--color-text); margin-bottom:6px; }
+.emptySub { font-size:13px; color:var(--color-text-muted); }
+
+@keyframes shimmer { 0%,100%{opacity:1}50%{opacity:0.4} }

@@ -16,11 +16,12 @@ function getUser(req: Request) {
 }
 
 // GET /api/locator/[id]/reviews
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const { data, error } = await supabase
     .from("business_reviews")
     .select("id,rating,comment,created_at,users(username,avatar_url)")
-    .eq("business_id", params.id)
+    .eq("business_id", id)
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -29,7 +30,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 }
 
 // POST /api/locator/[id]/reviews
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const user = getUser(req);
   if (!user) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
@@ -40,7 +42,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const { error } = await supabase
     .from("business_reviews")
-    .upsert({ business_id: params.id, user_id: user.userId, rating, comment });
+    .upsert({ business_id: id, user_id: user.userId, rating, comment });
 
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
 
@@ -48,14 +50,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const { data: reviews } = await supabase
     .from("business_reviews")
     .select("rating")
-    .eq("business_id", params.id);
+    .eq("business_id", id);
 
   if (reviews) {
     const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
     await supabase.from("businesses").update({
       avg_rating: Math.round(avg * 100) / 100,
       review_count: reviews.length,
-    }).eq("id", params.id);
+    }).eq("id", id);
   }
 
   return NextResponse.json({ success: true });
