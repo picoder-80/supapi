@@ -8,7 +8,7 @@
 .fullAdminBtn:hover { background:rgba(245,166,35,0.2); }
 
 .loadingRow { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:20px; }
-.skeleton { height:88px; border-radius:14px; background:rgba(255,255,255,0.04); animation:shimmer 1.5s infinite; }
+.skeleton { height:88px; border-radius:14px; background:rgba(0,0,0,0.02); animation:shimmer 1.5s infinite; }
 @keyframes shimmer { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
 
 .statsGrid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:20px; }

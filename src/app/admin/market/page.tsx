@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import AdminTabs from "@/components/admin/AdminTabs";
 import styles from "./page.module.css";
 
 interface Stats {
@@ -38,6 +39,15 @@ function Stat({ label, value, sub, color }: { label:string; value:string|number;
 function fmt(iso: string) { return new Date(iso).toLocaleDateString("en-MY", { day:"numeric", month:"short", year:"numeric" }); }
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
 
+const TABS = [
+  { id:"overview",   label:"📊 Overview"   },
+  { id:"listings",   label:"🛍️ Listings"   },
+  { id:"orders",     label:"📦 Orders"     },
+  { id:"disputes",   label:"⚖️ Disputes"   },
+  { id:"users",      label:"👥 Users"      },
+  { id:"commission", label:"💰 Commission" },
+];
+
 export default function AdminMarketPage() {
   const [tab, setTab] = useState<"overview"|"listings"|"orders"|"disputes"|"users"|"commission">("overview");
   const [loading, setLoading] = useState(false);
@@ -62,7 +72,7 @@ export default function AdminMarketPage() {
   const [banUserId, setBanUserId] = useState<string|null>(null); const [banReason, setBanReason] = useState("");
   const [userActionMsg, setUserActionMsg] = useState<Record<string,string>>({});
 
-  useEffect(() => { setToken(localStorage.getItem("supapi_token") ?? ""); }, []);
+  useEffect(() => { setToken(localStorage.getItem("supapi_admin_token") ?? ""); }, []);
 
   const adminFetch = useCallback(async (url: string, opts?: RequestInit) =>
     fetch(url, { ...opts, headers: { "Content-Type":"application/json", Authorization:`Bearer ${token}`, ...(opts?.headers??{}) } }), [token]);
@@ -71,7 +81,7 @@ export default function AdminMarketPage() {
   useEffect(() => { if (!token || tab !== "listings") return; setLoading(true); adminFetch(`/api/admin/market/listings?q=${listQ}&status=${listStatus}`).then(r=>r.json()).then(d=>{if(d.success){setListings(d.data.listings);setListTotal(d.data.total);}}).finally(()=>setLoading(false)); }, [token,tab,listQ,listStatus,adminFetch]);
   useEffect(() => { if (!token || tab !== "orders") return; setLoading(true); adminFetch(`/api/admin/market/orders?status=${orderStatus}`).then(r=>r.json()).then(d=>{if(d.success){setOrders(d.data.orders);setOrderTotal(d.data.total);}}).finally(()=>setLoading(false)); }, [token,tab,orderStatus,adminFetch]);
   useEffect(() => { if (!token || tab !== "disputes") return; setLoading(true); adminFetch(`/api/admin/market/disputes?status=${disputeStatus}`).then(r=>r.json()).then(d=>{if(d.success)setDisputes(d.data.disputes);}).finally(()=>setLoading(false)); }, [token,tab,disputeStatus,adminFetch]);
-  useEffect(() => { if (!token || tab !== "users") return; setLoading(true); adminFetch(`/api/admin/users?q=${userQ}&filter=${userFilter}`).then(r=>r.json()).then(d=>{if(d.success){setUsers(d.data.users);setUserTotal(d.data.total);}}).finally(()=>setLoading(false)); }, [token,tab,userQ,userFilter,adminFetch]);
+  useEffect(() => { if (!token || tab !== "users") return; setLoading(true); adminFetch(`/api/admin/users?q=${userQ}&filter=${userFilter}`).then(r=>r.json()).then(d=>{if(d.success){setUsers(d.data.users??[]);setUserTotal(d.data.total??0);}}).finally(()=>setLoading(false)); }, [token,tab,userQ,userFilter,adminFetch]);
   useEffect(() => { if (!token || tab !== "commission") return; setLoading(true); adminFetch("/api/admin/market/commission").then(r=>r.json()).then(d=>{if(d.success){setCommConfig(d.data);setCommPct(String(d.data.commission_pct));}}).finally(()=>setLoading(false)); }, [token,tab,adminFetch]);
 
   const suspendListing = async (id: string, status: string) => { await adminFetch(`/api/admin/market/listings/${id}`,{method:"PATCH",body:JSON.stringify({status})}); setListings(prev=>prev.map(l=>l.id===id?{...l,status}:l)); };
@@ -79,18 +89,14 @@ export default function AdminMarketPage() {
   const updateUser = async (userId: string, patch: object, msg: string) => { const r=await adminFetch(`/api/admin/users/${userId}`,{method:"PATCH",body:JSON.stringify(patch)}); const d=await r.json(); if(d.success){setUsers(prev=>prev.map(u=>u.id===userId?{...u,...d.data}:u));setUserActionMsg(prev=>({...prev,[userId]:msg}));setTimeout(()=>setUserActionMsg(prev=>{const n={...prev};delete n[userId];return n;}),2500);} setBanUserId(null);setBanReason(""); };
   const saveCommission = async () => { const pct=parseFloat(commPct); if(isNaN(pct)||pct<0||pct>50){setCommMsg("Enter 0–50");return;} setSavingComm(true); const r=await adminFetch("/api/admin/market/commission",{method:"PATCH",body:JSON.stringify({commission_pct:pct})}); const d=await r.json(); setCommMsg(d.success?"✅ Saved!":"❌ Failed"); if(d.success&&commConfig)setCommConfig({...commConfig,commission_pct:pct}); setTimeout(()=>setCommMsg(""),2500); setSavingComm(false); };
 
-  const TABS = [{id:"overview",label:"📊 Overview"},{id:"listings",label:"🛍️ Listings"},{id:"orders",label:"📦 Orders"},{id:"disputes",label:"⚖️ Disputes"},{id:"users",label:"👥 Users"},{id:"commission",label:"💰 Commission"}];
-
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <Link href="/admin" className={styles.backBtn}>← Admin</Link>
+        <Link href="/admin/dashboard" className={styles.backBtn}>← Admin</Link>
         <h1 className={styles.title}>🛍️ Marketplace Admin</h1>
       </div>
 
-      <div className={styles.tabs}>
-        {TABS.map(t=><button key={t.id} className={`${styles.tab} ${tab===t.id?styles.tabActive:""}`} onClick={()=>setTab(t.id as any)}>{t.label}</button>)}
-      </div>
+      <AdminTabs tabs={TABS} active={tab} onChange={(id) => setTab(id as any)} />
 
       <div className={styles.body}>
         {loading && <div className={styles.loadingBar}/>}
@@ -102,7 +108,7 @@ export default function AdminMarketPage() {
               <Stat label="Total Orders"    value={stats.orders.total}     sub={`${stats.orders.pending} pending`}/>
               <Stat label="Completed Sales" value={stats.orders.completed} color="#27ae60"/>
               <Stat label="Open Disputes"   value={stats.orders.disputed}  color={stats.orders.disputed>0?"#e74c3c":undefined}/>
-              <Stat label="Total GMV"       value={`${stats.revenue.total_pi.toFixed(2)} π`} sub="Gross merchandise value" color="var(--color-gold-dark)"/>
+              <Stat label="Total GMV"       value={`${stats.revenue.total_pi.toFixed(2)} π`} sub="Gross merchandise value" color="#F5A623"/>
               <Stat label="Est. Commission" value={`${stats.revenue.estimated_commission.toFixed(4)} π`} sub={`@ ${stats.revenue.commission_pct}%`} color="#2980b9"/>
             </div>
             <div className={styles.section}>
@@ -235,7 +241,7 @@ export default function AdminMarketPage() {
             <div className={styles.sectionTitle}>Platform Commission Settings</div>
             <div className={styles.commCard}>
               <div className={styles.commStatGrid}>
-                <Stat label="Current Rate"       value={`${commConfig.commission_pct}%`}                         color="var(--color-gold-dark)"/>
+                <Stat label="Current Rate"       value={`${commConfig.commission_pct}%`}                         color="#F5A623"/>
                 <Stat label="Total Collected"    value={`${Number(commConfig.total_collected_pi).toFixed(4)} π`} color="#27ae60"/>
                 <Stat label="Pending Collection" value={`${Number(commConfig.total_pending_pi).toFixed(4)} π`}   color="#f39c12"/>
               </div>

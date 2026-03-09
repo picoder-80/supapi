@@ -1,9 +1,8 @@
 "use client";
 
-// app/admin/users/page.tsx
-
 import { useEffect, useState, useCallback } from "react";
-import "@/styles/admin.css";
+import Link from "next/link";
+import styles from "./page.module.css";
 
 interface User {
   id: string; username: string; email: string | null;
@@ -22,13 +21,16 @@ export default function UsersPage() {
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
+    const token = localStorage.getItem("supapi_admin_token") ?? "";
     const params = new URLSearchParams({
       page: String(page), limit: "20",
       ...(search && { search }),
       ...(role   && { role }),
       ...(kyc    && { kyc }),
     });
-    const res  = await fetch(`/api/admin/users?${params}`);
+    const res  = await fetch(`/api/admin/users?${params}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     const data = await res.json();
     if (data.success) { setUsers(data.data.data); setTotal(data.data.total); }
     setLoading(false);
@@ -37,9 +39,10 @@ export default function UsersPage() {
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const action = async (userId: string, act: string) => {
+    const token = localStorage.getItem("supapi_admin_token") ?? "";
     const res  = await fetch("/api/admin/users", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ userId, action: act }),
     });
     const data = await res.json();
@@ -47,36 +50,35 @@ export default function UsersPage() {
     else alert(data.error);
   };
 
-  const kycBadge = (s: string) =>
-    s === "verified" ? "badgeGreen" : s === "pending" ? "badgeGold" : "badgeGray";
-
-  const roleBadge = (r: string) =>
-    r === "admin" ? "badgeBlue" : r === "banned" ? "badgeRed" : "badgeGray";
+  const kycColor: Record<string, string> = {
+    verified: "#27ae60", pending: "#f39c12", unverified: "#999"
+  };
+  const roleColor: Record<string, string> = {
+    admin: "#F5A623", banned: "#e74c3c", seller: "#3498db", pioneer: "#999"
+  };
 
   return (
-    <div>
-      <div className="pageHeader">
-        <div>
-          <h1 className="pageTitle">Users</h1>
-          <p className="pageSub">{total.toLocaleString()} total users</p>
-        </div>
+    <div className={styles.page}>
+
+      <div className={styles.header}>
+        <h1 className={styles.title}>👥 Users</h1>
       </div>
 
-      <div className="filters">
+      <div className={styles.filterBar}>
         <input
-          className="filterInput"
+          className={styles.searchInput}
           placeholder="Search username or email..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
         />
-        <select className="filterSelect" value={role} onChange={(e) => { setRole(e.target.value); setPage(1); }}>
+        <select className={styles.select} value={role} onChange={(e) => { setRole(e.target.value); setPage(1); }}>
           <option value="">All roles</option>
           <option value="pioneer">Pioneer</option>
           <option value="seller">Seller</option>
           <option value="admin">Admin</option>
           <option value="banned">Banned</option>
         </select>
-        <select className="filterSelect" value={kyc} onChange={(e) => { setKyc(e.target.value); setPage(1); }}>
+        <select className={styles.select} value={kyc} onChange={(e) => { setKyc(e.target.value); setPage(1); }}>
           <option value="">All KYC</option>
           <option value="verified">Verified</option>
           <option value="pending">Pending</option>
@@ -84,66 +86,56 @@ export default function UsersPage() {
         </select>
       </div>
 
-      <div className="tableWrap">
-        {loading ? (
-          <div className="loading">Loading users...</div>
-        ) : !users.length ? (
-          <div className="empty">No users found.</div>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>KYC</th>
-                <th>Joined</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td style={{ fontWeight: 600, color: "#E8E8F0" }}>
-                    π {u.username}
-                  </td>
-                  <td style={{ color: "#7A7A8A" }}>{u.email ?? "—"}</td>
-                  <td><span className={`badge ${roleBadge(u.role)}`}>{u.role}</span></td>
-                  <td><span className={`badge ${kycBadge(u.kyc_status)}`}>{u.kyc_status}</span></td>
-                  <td style={{ color: "#7A7A8A" }}>{new Date(u.created_at).toLocaleDateString()}</td>
-                  <td>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {u.kyc_status !== "verified" && (
-                        <button className="actionBtn actionApprove" onClick={() => action(u.id, "verify_kyc")}>
-                          Verify KYC
-                        </button>
-                      )}
-                      {u.role !== "banned" && u.role !== "admin" && (
-                        <button className="actionBtn actionRemove" onClick={() => action(u.id, "ban")}>
-                          Ban
-                        </button>
-                      )}
-                      {u.role === "banned" && (
-                        <button className="actionBtn actionApprove" onClick={() => action(u.id, "unban")}>
-                          Unban
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      <div className={styles.userCount}>{total.toLocaleString()} total users</div>
 
-        <div className="pagination">
-          <span>Page {page} · {total} total</span>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="pageBtn" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>← Prev</button>
-            <button className="pageBtn" disabled={users.length < 20} onClick={() => setPage((p) => p + 1)}>Next →</button>
-          </div>
+      {loading ? (
+        <div className={styles.loading}>Loading users...</div>
+      ) : !users.length ? (
+        <div className={styles.empty}>No users found.</div>
+      ) : (
+        <div className={styles.userList}>
+          {users.map((u) => (
+            <div key={u.id} className={`${styles.userRow} ${u.role === "banned" ? styles.userRowBanned : ""}`}>
+              <div className={styles.userAvatar}>
+                {u.username?.charAt(0).toUpperCase()}
+              </div>
+              <div className={styles.userInfo}>
+                <div className={styles.userName}>
+                  π {u.username}
+                  <span className={styles.adminTag} style={{ background: `${roleColor[u.role] ?? "#999"}18`, color: roleColor[u.role] ?? "#999" }}>
+                    {u.role}
+                  </span>
+                  <span className={styles.bannedTag} style={{ background: `${kycColor[u.kyc_status] ?? "#999"}18`, color: kycColor[u.kyc_status] ?? "#999" }}>
+                    {u.kyc_status}
+                  </span>
+                </div>
+                <div className={styles.userSub}>{u.email ?? "—"} · Joined {new Date(u.created_at).toLocaleDateString()}</div>
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                {u.kyc_status !== "verified" && (
+                  <button className={styles.okBtn} onClick={() => action(u.id, "verify_kyc")}>Verify KYC</button>
+                )}
+                {u.role !== "banned" && u.role !== "admin" && (
+                  <button className={styles.dangerBtn} onClick={() => action(u.id, "ban")}>Ban</button>
+                )}
+                {u.role === "banned" && (
+                  <button className={styles.okBtn} onClick={() => action(u.id, "unban")}>Unban</button>
+                )}
+                <Link href={`/admin/users/${u.id}`} className={styles.viewBtn}>View →</Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className={styles.pagination}>
+        <span>Page {page} · {total} total</span>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className={styles.pageBtn} disabled={page === 1} onClick={() => setPage((p) => p - 1)}>← Prev</button>
+          <button className={styles.pageBtn} disabled={users.length < 20} onClick={() => setPage((p) => p + 1)}>Next →</button>
         </div>
       </div>
+
     </div>
   );
 }
