@@ -259,3 +259,39 @@
   .bottomIcon  { font-size: 18px; }
   .bottomLabel { font-size: 10px; font-weight: 600; letter-spacing: 0.3px; white-space: nowrap; }
 }
+
+/* ── Mobile sidebar toggle ── */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 49;
+}
+.menuBtn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--color-text);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.menuBtn:hover { background: rgba(255,255,255,0.06); }
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: -260px;
+    top: 0;
+    bottom: 0;
+    z-index: 50;
+    transition: left 0.25s ease;
+  }
+  .sidebarOpen {
+    left: 0;
+  }
+  .overlay { display: block; }
+  .menuBtn { display: flex; align-items: center; }
+}
