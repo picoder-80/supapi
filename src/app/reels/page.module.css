@@ -1,0 +1,142 @@
+.page {
+  min-height: 100vh;
+  background: #F8F9FD;
+  padding-bottom: calc(var(--bottomnav-h) + 24px);
+}
+
+.header {
+  background: linear-gradient(135deg, #1A1A2E 0%, #0F3460 100%);
+  padding: 28px 20px 0;
+}
+.headerTop { margin-bottom: 20px; }
+.title { font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+.headerSub { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+.tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.tab {
+  padding: 12px 20px; font-size: 13px; font-weight: 600;
+  color: rgba(255,255,255,0.5); background: none; border: none;
+  cursor: pointer; border-bottom: 3px solid transparent;
+  transition: all 0.2s; margin-bottom: -1px;
+}
+.tabActive { color: var(--color-gold); border-bottom-color: var(--color-gold); }
+
+.body { padding: 20px 16px; }
+
+.comingSoonBanner {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(245,166,35,0.08); border: 1.5px solid rgba(245,166,35,0.2);
+  border-radius: 14px; padding: 16px; margin-bottom: 20px;
+}
+.comingSoonIcon { font-size: 24px; flex-shrink: 0; }
+.comingSoonTitle { font-size: 13px; font-weight: 700; color: var(--color-text); margin-bottom: 4px; }
+.comingSoonDesc { font-size: 12px; color: var(--color-text-muted); line-height: 1.5; }
+
+/* Placeholder reel cards */
+.reelPlaceholders {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.reelPlaceholder {
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.reelThumb {
+  height: 140px;
+  background: linear-gradient(135deg, #1A1A2E, #0F3460);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.reelPlayIcon {
+  width: 44px; height: 44px;
+  background: rgba(245,166,35,0.2);
+  border: 2px solid rgba(245,166,35,0.4);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: var(--color-gold);
+  padding-left: 3px;
+}
+.reelInfo { padding: 10px 12px 12px; }
+.reelTitle {
+  height: 10px; background: #E2E8F0; border-radius: 6px; margin-bottom: 6px;
+  animation: shimmer 1.5s infinite;
+}
+.reelMeta {
+  height: 8px; background: #F0F4F8; border-radius: 6px;
+  animation: shimmer 1.5s infinite 0.2s;
+}
+@keyframes shimmer {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Discover section */
+.discoverSection {
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 16px;
+}
+.discoverTitle {
+  font-size: 14px; font-weight: 800; color: var(--color-text);
+  margin-bottom: 12px;
+}
+.tabs2 {
+  display: flex; gap: 8px; margin-bottom: 16px;
+}
+.tab2 {
+  padding: 6px 16px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  border: 1.5px solid #E2E8F0; background: #F8F9FD;
+  color: var(--color-text-muted); cursor: pointer; transition: all 0.2s;
+}
+.tab2Active {
+  background: var(--color-primary); color: #fff; border-color: var(--color-primary);
+}
+
+.pioneerList { display: flex; flex-direction: column; gap: 10px; }
+.pioneerRow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid #F0F4F8;
+}
+.pioneerRow:last-child { border-bottom: none; }
+.avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--color-gold);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0;
+}
+.avatarImg { width: 100%; height: 100%; object-fit: cover; }
+.avatarInitial { font-size: 16px; font-weight: 800; color: #1A1A2E; }
+.pioneerInfo { flex: 1; }
+.displayName {
+  font-size: 13px; font-weight: 700; color: var(--color-text);
+  display: flex; align-items: center; gap: 4px;
+}
+.kycBadge { font-size: 11px; }
+.username { font-size: 11px; color: var(--color-text-muted); }
+.viewProfile { font-size: 12px; color: var(--color-gold); font-weight: 600; }
+
+.loginPrompt, .empty {
+  text-align: center; padding: 32px 16px;
+}
+.loginIcon, .emptyIcon { font-size: 32px; margin-bottom: 10px; }
+.loginTitle, .emptyTitle {
+  font-size: 14px; font-weight: 700; color: var(--color-text); margin-bottom: 12px;
+}
+.loginBtn {
+  display: inline-block; background: var(--color-gold); color: #1A1A2E;
+  font-weight: 700; font-size: 13px; padding: 10px 24px; border-radius: 999px;
+}
+.emptyBtn {
+  background: var(--color-primary); color: #fff; font-weight: 700;
+  font-size: 13px; padding: 8px 20px; border-radius: 999px;
+  border: none; cursor: pointer;
+}
+
+@media (max-width: 380px) {
+  .reelPlaceholders { grid-template-columns: 1fr; }
+}

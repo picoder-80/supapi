@@ -1,0 +1,140 @@
+/* components/layout/TopBar.module.css */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(26, 26, 46, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* ── Logo ── */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.logoSymbol {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-gold);
+  line-height: 1;
+}
+
+.logoText {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-white);
+  /* NEVER hide — always show Supapi text */
+}
+
+/* ── Desktop nav — scrollable ── */
+.desktopNav {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.navScroll {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
+}
+
+.navScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.navLink {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.65);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.navLink:hover {
+  color: var(--color-white);
+  background: rgba(255,255,255,0.08);
+}
+
+.navActive {
+  color: var(--color-gold) !important;
+  background: rgba(245,166,35,0.1);
+}
+
+/* ── Actions ── */
+.actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .inner {
+    padding: 0 var(--space-3);
+    height: 54px;
+    gap: var(--space-3);
+  }
+
+  /* Hide desktop nav on mobile — guna BottomNav */
+  .desktopNav {
+    display: none;
+  }
+
+  .logoText {
+    font-size: 16px;
+    /* Keep visible on all mobile sizes */
+  }
+}
+
+/* ── User / Sign In buttons ── */
+.userBtn {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-gold);
+  background: rgba(245,166,35,0.1);
+  border: 1px solid rgba(245,166,35,0.25);
+  padding: 6px 14px;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: all 150ms;
+  white-space: nowrap;
+}
+.userBtn:hover { background: rgba(245,166,35,0.2); }
+
+.signInBtn {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1A1A2E;
+  background: var(--color-gold);
+  padding: 6px 16px;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: all 150ms;
+  white-space: nowrap;
+}
+.signInBtn:hover { background: var(--color-gold-dark); }

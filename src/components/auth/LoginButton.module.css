@@ -1,0 +1,63 @@
+/* components/auth/LoginButton.module.css */
+
+.loginBtn {
+  background: linear-gradient(135deg, var(--color-gold), var(--color-gold-dark));
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 15px;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-full);
+  transition: var(--transition);
+  box-shadow: 0 2px 8px rgba(245,166,35,0.35);
+  min-height: 44px;
+}
+.loginBtn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(245,166,35,0.45); }
+.loginBtn:active:not(:disabled) { transform: scale(0.97); }
+.loginBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.userBox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.username {
+  font-weight: 700;
+  color: var(--color-gold);
+  font-size: 14px;
+}
+.logoutBtn {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  transition: var(--transition);
+  min-height: 36px;
+}
+.logoutBtn:hover { color: var(--color-error); border-color: var(--color-error); }
+
+.warning {
+  font-size: 13px;
+  color: var(--color-warning);
+  background: rgba(243,156,18,0.1);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(243,156,18,0.3);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .loginBtn {
+    font-size: 14px;
+    padding: var(--space-3) var(--space-5);
+  }
+
+  .username {
+    font-size: 13px;
+    /* Truncate panjang username */
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
