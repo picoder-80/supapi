@@ -25,9 +25,7 @@ export async function POST(req: Request) {
     if (!file) return NextResponse.json({ success: false, error: "No file" }, { status: 400 });
 
     // Max 2MB
-    if (file.size > 2 * 1024 * 1024) {
-      return NextResponse.json({ success: false, error: "File too large (max 2MB)" }, { status: 400 });
-    }
+    
 
     const ext      = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
     const filename = `${user.userId}-${Date.now()}.${ext}`;

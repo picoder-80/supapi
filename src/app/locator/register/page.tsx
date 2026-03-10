@@ -17,7 +17,7 @@ const CATEGORIES = [
 ];
 
 const MAX_IMAGES = 4;
-const MAX_SIZE_MB = 2;
+
 
 export default function RegisterBusinessPage() {
   const router    = useRouter();
@@ -47,10 +47,7 @@ export default function RegisterBusinessPage() {
 
     const toAdd: { file: File; preview: string }[] = [];
     for (const file of files.slice(0, remaining)) {
-      if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-        setMsg(`❌ ${file.name} exceeds ${MAX_SIZE_MB}MB limit`);
-        continue;
-      }
+      
       if (!file.type.startsWith("image/")) continue;
       toAdd.push({ file, preview: URL.createObjectURL(file) });
     }
@@ -219,7 +216,7 @@ export default function RegisterBusinessPage() {
         {/* Photos */}
         <div className={styles.fieldGroup}>
           <div className={styles.groupTitle}>📸 Business Photos</div>
-          <div className={styles.photoSub}>Upload up to {MAX_IMAGES} photos (max {MAX_SIZE_MB}MB each)</div>
+          <div className={styles.photoSub}>Upload up to {MAX_IMAGES} photos</div>
 
           <div className={styles.photoGrid}>
             {images.map((img, idx) => (

@@ -86,7 +86,7 @@ export default function MyListingsPage() {
     const remaining = MAX_IMAGES - images.length;
     const toAdd: { file: File; preview: string }[] = [];
     for (const file of files.slice(0, remaining)) {
-      if (file.size > 2 * 1024 * 1024) continue;
+      
       if (!file.type.startsWith("image/")) continue;
       toAdd.push({ file, preview: URL.createObjectURL(file) });
     }
