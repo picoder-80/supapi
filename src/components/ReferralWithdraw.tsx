@@ -21,13 +21,7 @@ interface Withdrawal {
   note:       string | null;
 }
 
-declare global {
-  interface Window {
-    Pi?: {
-      createPayment: (data: object, callbacks: object) => void;
-    };
-  }
-}
+
 
 const STATUS_COLOR: Record<string, string> = {
   completed: "#27ae60",
