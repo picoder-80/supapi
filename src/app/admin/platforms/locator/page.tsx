@@ -19,6 +19,8 @@ interface Business {
   avg_rating: number;
   review_count: number;
   created_at: string;
+  image_url: string | null;
+  images: string[];
   owner?: { username: string; avatar_url: string | null };
 }
 
@@ -227,6 +229,15 @@ export default function AdminLocatorPage() {
               {/* Expanded detail */}
               {selected?.id === b.id && (
                 <div className={styles.cardDetail}>
+                  {/* Photos */}
+                  {((b.images?.length > 0) || b.image_url) && (
+                    <div className={styles.photoRow}>
+                      {(b.images?.length > 0 ? b.images : [b.image_url]).map((url, i) => (
+                        <img key={i} src={url!} alt={b.name} className={styles.photoThumb} />
+                      ))}
+                    </div>
+                  )}
+
                   <div className={styles.detailGrid}>
                     {b.description && (
                       <div className={styles.detailRow}>

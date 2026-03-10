@@ -355,8 +355,9 @@ export default function LocatorPage() {
 
       {/* Business Detail Sheet */}
       {selected && (
-        <div className={styles.overlay} onClick={() => setSelected(null)}>
-          <div className={styles.sheet} onClick={e => e.stopPropagation()}>
+        <div className={styles.overlay}>
+          <div className={styles.backdrop} onClick={() => setSelected(null)} />
+          <div className={styles.sheet}>
             <div className={styles.sheetHandle} />
             <div className={styles.sheetHeader}>
               <div className={styles.sheetName}>{selected.name}</div>
@@ -400,18 +401,17 @@ export default function LocatorPage() {
                   <div className={styles.sheetInfo}><span>📏</span>{selected.distance.toFixed(1)} km from you</div>
                 )}
               </div>
-            </div>
 
-            {selected.lat && selected.lng && (
-              <div className={styles.sheetFooter}>
+              {selected.lat && selected.lng && (
                 <a
                   href={`https://www.google.com/maps?q=${selected.lat},${selected.lng}`}
                   target="_blank"
                   rel="noreferrer"
                   className={styles.directionBtn}
+                  style={{marginTop:"16px"}}
                 >🗺️ Get Directions</a>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -75,3 +75,7 @@
 .unverifyBtn { background:rgba(127,140,141,0.1); color:#7f8c8d; border:1px solid rgba(127,140,141,0.3); }
 .deleteBtn { background:rgba(231,76,60,0.06); color:#e74c3c; border:1px solid rgba(231,76,60,0.15); margin-left:auto; }
 .deleteBtn:hover:not(:disabled) { background:rgba(231,76,60,0.15); }
+/* Business photos in admin detail */
+.photoRow { display:flex; gap:8px; overflow-x:auto; margin-bottom:14px; scrollbar-width:none; }
+.photoRow::-webkit-scrollbar { display:none; }
+.photoThumb { width:120px; height:90px; object-fit:cover; border-radius:10px; flex-shrink:0; border:1.5px solid var(--color-border); }

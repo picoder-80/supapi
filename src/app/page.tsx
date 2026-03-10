@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 
 const modules = [
+  { href: "/about",       emoji: "ℹ️",  label: "About Us",      desc: "Our story, mission & vision"      },
+  { href: "/myspace",     emoji: "🪐",  label: "MySpace",       desc: "Your personal Pi profile"         },
   { href: "/market",      emoji: "🛍️",  label: "Marketplace",  desc: "Buy & sell items"                },
   { href: "/gigs",        emoji: "💼",  label: "Gigs",          desc: "Freelance services"               },
   { href: "/academy",     emoji: "📚",  label: "Academy",       desc: "Learn & teach"                    },
@@ -21,7 +23,6 @@ const modules = [
   { href: "/reels",     emoji: "🎬",  label: "Reels",       desc: "Short videos from pioneers"              },
   { href: "/pi-value",    emoji: "📈",  label: "Market Value",  desc: "Pi Live Market Data & Pi USD Converter"   },
   { href: "/classifieds", emoji: "📋",  label: "Classifieds",   desc: "Promote services & businesses"    },
-  { href: "/myspace",     emoji: "🪐",  label: "MySpace",       desc: "Your personal Pi profile"         },
 ];
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
