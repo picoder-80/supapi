@@ -168,11 +168,11 @@ export default function MyListingsPage() {
       const d = await r.json();
       if (d.success) {
         setMsg("✅ Saved! Listing is now under review.");
-        setTimeout(() => { setEditing(null); load(); }, 1500);
+        setTimeout(() => { setEditing(null); load(); }, 1800);
       } else {
-        setMsg(`❌ ${d.error}`);
+        setMsg(`❌ ${d.error}${d.debug ? ` (${JSON.stringify(d.debug)})` : ""}`);
       }
-    } catch { setMsg("❌ Network error"); }
+    } catch (e: any) { setMsg(`❌ Network error: ${e.message}`); }
     setSaving(false);
   };
 
@@ -189,8 +189,10 @@ export default function MyListingsPage() {
       if (d.success) {
         setDeleting(null);
         load();
+      } else {
+        alert(`❌ ${d.error}`);
       }
-    } catch {}
+    } catch (e: any) { alert(`❌ Network error: ${e.message}`); }
     setDeletingId(false);
   };
 
@@ -236,8 +238,8 @@ export default function MyListingsPage() {
             return (
               <div key={b.id} className={styles.listingCard}>
                 <div className={styles.listingTop}>
-                  {b.image_url
-                    ? <img src={b.image_url} alt={b.name} className={styles.listingImg} />
+                  {(b.images?.length > 0 ? b.images[0] : b.image_url)
+                    ? <img src={b.images?.length > 0 ? b.images[0] : b.image_url} alt={b.name} className={styles.listingImg} />
                     : <div className={styles.listingImgPlaceholder}>{cat?.emoji ?? "📍"}</div>
                   }
                   <div className={styles.listingInfo}>

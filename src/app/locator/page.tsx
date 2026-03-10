@@ -400,16 +400,18 @@ export default function LocatorPage() {
                   <div className={styles.sheetInfo}><span>📏</span>{selected.distance.toFixed(1)} km from you</div>
                 )}
               </div>
+            </div>
 
-              {selected.lat && selected.lng && (
+            {selected.lat && selected.lng && (
+              <div className={styles.sheetFooter}>
                 <a
                   href={`https://www.google.com/maps?q=${selected.lat},${selected.lng}`}
                   target="_blank"
                   rel="noreferrer"
                   className={styles.directionBtn}
                 >🗺️ Get Directions</a>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}

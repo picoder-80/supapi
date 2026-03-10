@@ -11,7 +11,8 @@ function getUser(req: Request) {
   try {
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
     if (!token) return null;
-    return jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    return decoded;
   } catch { return null; }
 }
 
@@ -21,11 +22,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const user = getUser(req);
   if (!user) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
+  const userId = user.userId ?? user.id ?? user.sub;
+  if (!userId) return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 });
+
   // Verify ownership
-  const { data: existing } = await supabase
+  const { data: existing, error: fetchErr } = await supabase
     .from("businesses").select("owner_id").eq("id", id).single();
-  if (!existing) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
-  if (String(existing.owner_id) !== String(user.userId)) return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  if (fetchErr || !existing) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
+  if (String(existing.owner_id) !== String(userId)) {
+    return NextResponse.json({ success: false, error: "Forbidden", debug: { owner: existing.owner_id, user: userId } }, { status: 403 });
+  }
 
   const body = await req.json();
   const { name, category, description, address, city, state, country, lat, lng, phone, website, pi_wallet, image_url, images } = body;
@@ -34,11 +40,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     .from("businesses")
     .update({
       name, category, description, address, city, state, country,
-      lat: lat ?? null, lng: lng ?? null,
-      phone, website, pi_wallet, image_url,
+      lat: lat ? parseFloat(String(lat)) : null,
+      lng: lng ? parseFloat(String(lng)) : null,
+      phone: phone || null,
+      website: website || null,
+      pi_wallet: pi_wallet || null,
+      image_url: image_url || null,
       images: images ?? [],
-      status: "pending",      // back to pending after edit
-      verified: false,         // unverify until re-approved
+      status: "pending",
+      verified: false,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
@@ -53,11 +63,16 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   const user = getUser(req);
   if (!user) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
+  const userId = user.userId ?? user.id ?? user.sub;
+  if (!userId) return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 });
+
   // Verify ownership
-  const { data: existing } = await supabase
+  const { data: existing, error: fetchErr } = await supabase
     .from("businesses").select("owner_id").eq("id", id).single();
-  if (!existing) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
-  if (String(existing.owner_id) !== String(user.userId)) return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  if (fetchErr || !existing) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
+  if (String(existing.owner_id) !== String(userId)) {
+    return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  }
 
   const { error } = await supabase.from("businesses").delete().eq("id", id);
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
