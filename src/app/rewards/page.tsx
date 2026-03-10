@@ -246,13 +246,78 @@ export default function RewardsPage() {
   if (!user) {
     return (
       <div className={styles.page}>
-        <div className={styles.loginPrompt}>
-          <div className={styles.loginIcon}>🎁</div>
-          <h2 className={styles.loginTitle}>Sign in to earn Supapi Credits</h2>
-          <p className={styles.loginSub}>Check in daily, complete tasks, and earn SC to use across the platform.</p>
-          <button className={styles.loginBtn} onClick={() => router.push("/dashboard")}>
-            π Sign in with Pi
-          </button>
+        {/* Introducing Screen */}
+        <div className={styles.introPage}>
+          {/* Hero */}
+          <div className={styles.introHero}>
+            <div className={styles.introHeroBg} />
+            <div className={styles.introHeroContent}>
+              <div className={styles.introBadge}>✨ Introducing</div>
+              <div className={styles.introCoin}>💎</div>
+              <h1 className={styles.introTitle}>Supapi Credits</h1>
+              <p className={styles.introSub}>The reward currency of the Pi ecosystem</p>
+              <div className={styles.introValueRow}>
+                <div className={styles.introValueTag}>1 SC = $0.01 USD</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Features */}
+          <div className={styles.introFeatures}>
+            <div className={styles.introFeatureCard}>
+              <span className={styles.introFeatureEmoji}>📅</span>
+              <div>
+                <div className={styles.introFeatureTitle}>Daily Check-in</div>
+                <div className={styles.introFeatureDesc}>Earn 10 SC every day. Hit 7-day streak for bonus 50 SC</div>
+              </div>
+            </div>
+            <div className={styles.introFeatureCard}>
+              <span className={styles.introFeatureEmoji}>🎯</span>
+              <div>
+                <div className={styles.introFeatureTitle}>Complete Tasks</div>
+                <div className={styles.introFeatureDesc}>Review businesses, watch Reels, complete your profile</div>
+              </div>
+            </div>
+            <div className={styles.introFeatureCard}>
+              <span className={styles.introFeatureEmoji}>🎁</span>
+              <div>
+                <div className={styles.introFeatureTitle}>Send Gifts</div>
+                <div className={styles.introFeatureDesc}>Gift SC to creators & Pioneers you appreciate</div>
+              </div>
+            </div>
+            <div className={styles.introFeatureCard}>
+              <span className={styles.introFeatureEmoji}>💸</span>
+              <div>
+                <div className={styles.introFeatureTitle}>P2P Transfer</div>
+                <div className={styles.introFeatureDesc}>Send SC to any Pioneer — 0% fee, instant</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Earn preview */}
+          <div className={styles.introEarnBox}>
+            <div className={styles.introEarnTitle}>🚀 Start earning today</div>
+            <div className={styles.introEarnRow}>
+              <span>📅 Daily check-in</span><span className={styles.introEarnSc}>+10 SC</span>
+            </div>
+            <div className={styles.introEarnRow}>
+              <span>🔥 7-day streak bonus</span><span className={styles.introEarnSc}>+50 SC</span>
+            </div>
+            <div className={styles.introEarnRow}>
+              <span>👤 Complete profile</span><span className={styles.introEarnSc}>+100 SC</span>
+            </div>
+            <div className={styles.introEarnRow}>
+              <span>⭐ Leave a review</span><span className={styles.introEarnSc}>+20 SC</span>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div className={styles.introCta}>
+            <button className={styles.introCtaBtn} onClick={() => router.push("/dashboard")}>
+              π Sign in with Pi to Start Earning
+            </button>
+            <p className={styles.introCtaNote}>Free to join · Powered by Pi Network</p>
+          </div>
         </div>
       </div>
     );

@@ -149,30 +149,28 @@
 .giftItemName { font-size:11px; font-weight:700; color:#1A1A2E; margin-bottom:2px; }
 .giftItemSc { font-size:11px; font-weight:800; color:#F5A623; }
 
-/* Transfer section */
+/* Transfer section — FIXED for mobile */
 .transferCard { background:#fff; border:1.5px solid #E2E8F0; border-radius:16px; padding:16px; }
 .transferTitle { font-size:14px; font-weight:800; color:#1A1A2E; margin-bottom:4px; }
 .transferSub { font-size:12px; color:#718096; margin-bottom:14px; }
-.transferRow { display:flex; gap:8px; }
-.transferInput { flex:1; padding:12px 14px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; color:#1A1A2E; font-family:inherit; background:#F8F9FD; }
+.transferRow { width:100%; }
+.transferInput { width:100%; padding:12px 14px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; color:#1A1A2E; font-family:inherit; background:#F8F9FD; box-sizing:border-box; }
 .transferInput:focus { outline:none; border-color:#F5A623; }
-.transferAmountRow { display:flex; gap:8px; margin-top:8px; }
-.transferAmountInput { flex:1; padding:12px 14px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; color:#1A1A2E; font-family:inherit; background:#F8F9FD; }
+.transferAmountRow { display:flex; gap:8px; margin-top:8px; align-items:center; }
+.transferAmountInput { flex:1; min-width:0; padding:12px 14px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; color:#1A1A2E; font-family:inherit; background:#F8F9FD; box-sizing:border-box; }
 .transferAmountInput:focus { outline:none; border-color:#F5A623; }
-.transferBtn { padding:12px 20px; background:linear-gradient(135deg,#1A1A2E,#0F3460); color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:800; cursor:pointer; font-family:inherit; white-space:nowrap; }
+.transferBtn { flex-shrink:0; padding:12px 16px; background:linear-gradient(135deg,#1A1A2E,#0F3460); color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:800; cursor:pointer; font-family:inherit; white-space:nowrap; }
 .transferBtn:disabled { opacity:0.6; cursor:not-allowed; }
 .transferNote { font-size:11px; color:#718096; margin-top:8px; text-align:center; }
 
 /* Gift modal */
-.giftModal { position:fixed; inset:0; z-index:200; display:flex; align-items:flex-end; }
-.giftModalBackdrop { position:absolute; inset:0; background:rgba(0,0,0,0.5); }
-.giftModalSheet { background:#fff; border-radius:20px 20px 0 0; width:100%; padding:24px; position:relative; z-index:1; max-height:80vh; overflow-y:auto; }
+.giftModal { position:fixed; inset:0; bottom:var(--bottomnav-h,60px); z-index:90; display:flex; align-items:flex-end; pointer-events:none; }
+.giftModalBackdrop { position:absolute; inset:0; background:rgba(0,0,0,0.5); pointer-events:all; }
+.giftModalSheet { background:#fff; border-radius:20px 20px 0 0; width:100%; padding:24px; position:relative; pointer-events:all; max-height:80vh; overflow-y:auto; }
 .giftModalHandle { width:40px; height:4px; background:#E2E8F0; border-radius:2px; margin:0 auto 20px; }
 .giftModalEmoji { font-size:48px; text-align:center; margin-bottom:8px; }
 .giftModalTitle { font-size:18px; font-weight:900; color:#1A1A2E; text-align:center; margin-bottom:4px; }
 .giftModalSub { font-size:13px; color:#718096; text-align:center; margin-bottom:20px; }
-.giftModalTo { background:#F8F9FD; border:1px solid #E2E8F0; border-radius:10px; padding:12px 16px; margin-bottom:12px; font-size:13px; color:#718096; }
-.giftModalTo strong { color:#1A1A2E; }
 .giftModalInfo { background:#F8F9FD; border:1px solid #E2E8F0; border-radius:12px; padding:16px; margin-bottom:16px; display:flex; flex-direction:column; gap:8px; }
 .giftModalRow { display:flex; justify-content:space-between; font-size:14px; }
 .giftModalLabel { color:#718096; }
@@ -183,3 +181,39 @@
 .giftModalCancelBtn { width:100%; padding:12px; background:none; border:none; font-size:14px; color:#718096; cursor:pointer; font-family:inherit; }
 .giftUsernameInput { width:100%; padding:12px 14px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; color:#1A1A2E; font-family:inherit; background:#F8F9FD; margin-bottom:12px; box-sizing:border-box; }
 .giftUsernameInput:focus { outline:none; border-color:#F5A623; }
+
+/* ── Introducing Screen ── */
+.introPage { min-height:100vh; background:#F8F9FD; padding-bottom:calc(var(--bottomnav-h,60px) + 32px); }
+
+/* Hero */
+.introHero { position:relative; overflow:hidden; padding:60px 24px 48px; text-align:center; }
+.introHeroBg { position:absolute; inset:0; background:linear-gradient(160deg,#1A1A2E 0%,#0F3460 60%,#16213E 100%); }
+.introHeroBg::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 50% 80%,rgba(245,166,35,0.15) 0%,transparent 70%); }
+.introHeroContent { position:relative; z-index:1; }
+.introBadge { display:inline-block; background:rgba(245,166,35,0.2); border:1px solid rgba(245,166,35,0.4); color:#F5A623; font-size:12px; font-weight:800; padding:5px 14px; border-radius:999px; margin-bottom:20px; letter-spacing:0.5px; }
+.introCoin { font-size:72px; margin-bottom:12px; filter:drop-shadow(0 8px 24px rgba(245,166,35,0.4)); animation:floatCoin 3s ease-in-out infinite; }
+@keyframes floatCoin { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+.introTitle { font-size:32px; font-weight:900; color:#fff; margin:0 0 8px; letter-spacing:-0.5px; }
+.introSub { font-size:15px; color:rgba(255,255,255,0.65); margin:0 0 20px; }
+.introValueRow { display:flex; justify-content:center; }
+.introValueTag { background:rgba(245,166,35,0.15); border:1.5px solid rgba(245,166,35,0.5); color:#F5A623; font-size:14px; font-weight:800; padding:8px 20px; border-radius:999px; }
+
+/* Features */
+.introFeatures { padding:24px 16px 0; display:flex; flex-direction:column; gap:10px; }
+.introFeatureCard { background:#fff; border:1.5px solid #E2E8F0; border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:14px; }
+.introFeatureEmoji { font-size:28px; flex-shrink:0; }
+.introFeatureTitle { font-size:14px; font-weight:800; color:#1A1A2E; margin-bottom:2px; }
+.introFeatureDesc { font-size:12px; color:#718096; line-height:1.5; }
+
+/* Earn preview box */
+.introEarnBox { margin:16px 16px 0; background:linear-gradient(135deg,#1A1A2E,#0F3460); border-radius:16px; padding:20px; }
+.introEarnTitle { font-size:14px; font-weight:800; color:#fff; margin-bottom:14px; }
+.introEarnRow { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.08); font-size:13px; color:rgba(255,255,255,0.75); }
+.introEarnRow:last-child { border-bottom:none; }
+.introEarnSc { font-size:13px; font-weight:800; color:#F5A623; }
+
+/* CTA */
+.introCta { padding:24px 16px 0; }
+.introCtaBtn { width:100%; padding:18px; background:linear-gradient(135deg,#F5A623,#e6951a); color:#1A1A2E; border:none; border-radius:16px; font-size:16px; font-weight:900; cursor:pointer; font-family:inherit; box-shadow:0 8px 24px rgba(245,166,35,0.35); transition:all 0.2s; }
+.introCtaBtn:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(245,166,35,0.45); }
+.introCtaNote { text-align:center; font-size:12px; color:#718096; margin-top:10px; }
