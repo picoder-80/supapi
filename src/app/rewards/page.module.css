@@ -129,3 +129,57 @@
 .buyModalConfirmBtn { width:100%; padding:16px; background:linear-gradient(135deg,#1A1A2E,#0F3460); color:#fff; border:none; border-radius:14px; font-size:16px; font-weight:800; cursor:pointer; font-family:inherit; margin-bottom:10px; }
 .buyModalConfirmBtn:disabled { opacity:0.6; cursor:not-allowed; }
 .buyModalCancelBtn { width:100%; padding:12px; background:none; border:none; font-size:14px; color:#718096; cursor:pointer; font-family:inherit; }
+
+/* ── Gift System (Phase 3) ── */
+.giftSection {}
+.giftInfoBox { background:linear-gradient(135deg,#1A1A2E,#0F3460); border-radius:16px; padding:20px; margin-bottom:14px; display:flex; gap:14px; align-items:flex-start; }
+.giftInfoIcon { font-size:32px; flex-shrink:0; }
+.giftInfoTitle { font-size:15px; font-weight:800; color:#fff; margin-bottom:4px; }
+.giftInfoDesc { font-size:12px; color:rgba(255,255,255,0.65); line-height:1.6; }
+.giftInfoSplit { display:flex; gap:8px; margin-top:10px; }
+.giftSplitTag { font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; }
+.giftSplitCreator { background:rgba(39,174,96,0.2); color:#27ae60; border:1px solid rgba(39,174,96,0.3); }
+.giftSplitPlatform { background:rgba(245,166,35,0.2); color:#F5A623; border:1px solid rgba(245,166,35,0.3); }
+
+/* Gift items grid */
+.giftGrid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.giftItem { background:#fff; border:1.5px solid #E2E8F0; border-radius:14px; padding:12px 8px; text-align:center; cursor:pointer; transition:all 0.2s; }
+.giftItem:hover { border-color:#F5A623; transform:translateY(-2px); }
+.giftItemEmoji { font-size:28px; margin-bottom:4px; }
+.giftItemName { font-size:11px; font-weight:700; color:#1A1A2E; margin-bottom:2px; }
+.giftItemSc { font-size:11px; font-weight:800; color:#F5A623; }
+
+/* Transfer section */
+.transferCard { background:#fff; border:1.5px solid #E2E8F0; border-radius:16px; padding:16px; }
+.transferTitle { font-size:14px; font-weight:800; color:#1A1A2E; margin-bottom:4px; }
+.transferSub { font-size:12px; color:#718096; margin-bottom:14px; }
+.transferRow { display:flex; gap:8px; }
+.transferInput { flex:1; padding:12px 14px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; color:#1A1A2E; font-family:inherit; background:#F8F9FD; }
+.transferInput:focus { outline:none; border-color:#F5A623; }
+.transferAmountRow { display:flex; gap:8px; margin-top:8px; }
+.transferAmountInput { flex:1; padding:12px 14px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; color:#1A1A2E; font-family:inherit; background:#F8F9FD; }
+.transferAmountInput:focus { outline:none; border-color:#F5A623; }
+.transferBtn { padding:12px 20px; background:linear-gradient(135deg,#1A1A2E,#0F3460); color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:800; cursor:pointer; font-family:inherit; white-space:nowrap; }
+.transferBtn:disabled { opacity:0.6; cursor:not-allowed; }
+.transferNote { font-size:11px; color:#718096; margin-top:8px; text-align:center; }
+
+/* Gift modal */
+.giftModal { position:fixed; inset:0; z-index:200; display:flex; align-items:flex-end; }
+.giftModalBackdrop { position:absolute; inset:0; background:rgba(0,0,0,0.5); }
+.giftModalSheet { background:#fff; border-radius:20px 20px 0 0; width:100%; padding:24px; position:relative; z-index:1; max-height:80vh; overflow-y:auto; }
+.giftModalHandle { width:40px; height:4px; background:#E2E8F0; border-radius:2px; margin:0 auto 20px; }
+.giftModalEmoji { font-size:48px; text-align:center; margin-bottom:8px; }
+.giftModalTitle { font-size:18px; font-weight:900; color:#1A1A2E; text-align:center; margin-bottom:4px; }
+.giftModalSub { font-size:13px; color:#718096; text-align:center; margin-bottom:20px; }
+.giftModalTo { background:#F8F9FD; border:1px solid #E2E8F0; border-radius:10px; padding:12px 16px; margin-bottom:12px; font-size:13px; color:#718096; }
+.giftModalTo strong { color:#1A1A2E; }
+.giftModalInfo { background:#F8F9FD; border:1px solid #E2E8F0; border-radius:12px; padding:16px; margin-bottom:16px; display:flex; flex-direction:column; gap:8px; }
+.giftModalRow { display:flex; justify-content:space-between; font-size:14px; }
+.giftModalLabel { color:#718096; }
+.giftModalVal { font-weight:700; color:#1A1A2E; }
+.giftModalValGold { font-weight:800; color:#F5A623; }
+.giftModalConfirmBtn { width:100%; padding:16px; background:linear-gradient(135deg,#F5A623,#e6951a); color:#1A1A2E; border:none; border-radius:14px; font-size:16px; font-weight:800; cursor:pointer; font-family:inherit; margin-bottom:10px; }
+.giftModalConfirmBtn:disabled { opacity:0.6; cursor:not-allowed; }
+.giftModalCancelBtn { width:100%; padding:12px; background:none; border:none; font-size:14px; color:#718096; cursor:pointer; font-family:inherit; }
+.giftUsernameInput { width:100%; padding:12px 14px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; color:#1A1A2E; font-family:inherit; background:#F8F9FD; margin-bottom:12px; box-sizing:border-box; }
+.giftUsernameInput:focus { outline:none; border-color:#F5A623; }

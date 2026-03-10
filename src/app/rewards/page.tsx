@@ -13,6 +13,17 @@ const SC_PACKAGES = [
   { id: "whale",   sc: 5000, usd: 50.00, label: "Whale",   popular: false },
 ];
 
+const GIFT_ITEMS = [
+  { id: "rose",      emoji: "🌹", name: "Rose",       sc: 10  },
+  { id: "heart",     emoji: "💖", name: "Heart",      sc: 20  },
+  { id: "star",      emoji: "⭐", name: "Star",       sc: 50  },
+  { id: "crown",     emoji: "👑", name: "Crown",      sc: 100 },
+  { id: "diamond",   emoji: "💎", name: "Diamond",    sc: 200 },
+  { id: "rocket",    emoji: "🚀", name: "Rocket",     sc: 500 },
+  { id: "trophy",    emoji: "🏆", name: "Trophy",     sc: 1000},
+  { id: "unicorn",   emoji: "🦄", name: "Unicorn",    sc: 2000},
+];
+
 interface Wallet {
   balance: number;
   total_earned: number;
@@ -75,6 +86,13 @@ export default function RewardsPage() {
   const [piRate, setPiRate] = useState<number>(1.50); // Pi/USD rate
   const [buyPkg, setBuyPkg] = useState<typeof SC_PACKAGES[0] | null>(null);
   const [buying, setBuying] = useState(false);
+  // Phase 3 — Gift & Transfer
+  const [giftItem, setGiftItem] = useState<typeof GIFT_ITEMS[0] | null>(null);
+  const [giftUsername, setGiftUsername] = useState("");
+  const [gifting, setGifting] = useState(false);
+  const [transferUsername, setTransferUsername] = useState("");
+  const [transferAmount, setTransferAmount] = useState("");
+  const [transferring, setTransferring] = useState(false);
 
   const token = () => typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "";
 
@@ -173,6 +191,53 @@ export default function RewardsPage() {
       showToast("Payment error", "error");
     }
     setBuying(false);
+  };
+
+  const handleGift = async () => {
+    if (!giftItem || !giftUsername.trim() || gifting) return;
+    if ((wallet?.balance ?? 0) < giftItem.sc) { showToast("Insufficient SC balance", "error"); return; }
+    setGifting(true);
+    try {
+      const r = await fetch("/api/credits/gift", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+        body: JSON.stringify({ toUsername: giftUsername.trim(), giftId: giftItem.id, sc: giftItem.sc, emoji: giftItem.emoji, name: giftItem.name }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        showToast(`${giftItem.emoji} Gift sent to @${giftUsername}!`);
+        setGiftItem(null);
+        setGiftUsername("");
+        fetchData();
+      } else {
+        showToast(d.error ?? "Gift failed", "error");
+      }
+    } catch { showToast("Something went wrong", "error"); }
+    setGifting(false);
+  };
+
+  const handleTransfer = async () => {
+    const amt = parseInt(transferAmount);
+    if (!transferUsername.trim() || !amt || amt < 1 || transferring) return;
+    if ((wallet?.balance ?? 0) < amt) { showToast("Insufficient SC balance", "error"); return; }
+    setTransferring(true);
+    try {
+      const r = await fetch("/api/credits/transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+        body: JSON.stringify({ toUsername: transferUsername.trim(), amount: amt }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        showToast(`💸 ${amt} SC sent to @${transferUsername}!`);
+        setTransferUsername("");
+        setTransferAmount("");
+        fetchData();
+      } else {
+        showToast(d.error ?? "Transfer failed", "error");
+      }
+    } catch { showToast("Something went wrong", "error"); }
+    setTransferring(false);
   };
 
   const streakDays = Array.from({ length: 7 }, (_, i) => i + 1);
@@ -330,6 +395,66 @@ export default function RewardsPage() {
           </div>
         </div>
 
+        {/* Gift */}
+        <div className={styles.giftSection}>
+          <div className={styles.sectionTitle}>🎁 Send a Gift</div>
+          <div className={styles.giftInfoBox}>
+            <div className={styles.giftInfoIcon}>🎁</div>
+            <div>
+              <div className={styles.giftInfoTitle}>Gift SC to Creators & Pioneers</div>
+              <div className={styles.giftInfoDesc}>Send gifts during LIVE, on Reels, or directly to any Pioneer's profile. Creators receive 70% of the SC value.</div>
+              <div className={styles.giftInfoSplit}>
+                <span className={`${styles.giftSplitTag} ${styles.giftSplitCreator}`}>👤 Creator 70%</span>
+                <span className={`${styles.giftSplitTag} ${styles.giftSplitPlatform}`}>🏛️ Supapi 30%</span>
+              </div>
+            </div>
+          </div>
+          <div className={styles.giftGrid}>
+            {GIFT_ITEMS.map(g => (
+              <div key={g.id} className={styles.giftItem} onClick={() => setGiftItem(g)}>
+                <div className={styles.giftItemEmoji}>{g.emoji}</div>
+                <div className={styles.giftItemName}>{g.name}</div>
+                <div className={styles.giftItemSc}>{g.sc} SC</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Transfer */}
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>💸 Transfer SC</div>
+          <div className={styles.transferCard}>
+            <div className={styles.transferTitle}>Send SC to Any Pioneer</div>
+            <div className={styles.transferSub}>Free P2P transfer within Supapi ecosystem · 0% fee</div>
+            <div className={styles.transferRow}>
+              <input
+                className={styles.transferInput}
+                placeholder="@username"
+                value={transferUsername}
+                onChange={e => setTransferUsername(e.target.value.replace("@", ""))}
+              />
+            </div>
+            <div className={styles.transferAmountRow}>
+              <input
+                className={styles.transferAmountInput}
+                placeholder="Amount (SC)"
+                type="number"
+                min="1"
+                value={transferAmount}
+                onChange={e => setTransferAmount(e.target.value)}
+              />
+              <button
+                className={styles.transferBtn}
+                onClick={handleTransfer}
+                disabled={transferring || !transferUsername || !transferAmount}
+              >
+                {transferring ? "Sending..." : "Send →"}
+              </button>
+            </div>
+            <div className={styles.transferNote}>Your balance: 💎 {(wallet?.balance ?? 0).toLocaleString()} SC</div>
+          </div>
+        </div>
+
         {/* Transaction History */}
         <div className={styles.section}>
           <div className={styles.sectionTitle}>📋 History</div>
@@ -361,6 +486,53 @@ export default function RewardsPage() {
         </div>
 
       </div>
+      {/* Gift Modal */}
+      {giftItem && (
+        <div className={styles.giftModal}>
+          <div className={styles.giftModalBackdrop} onClick={() => !gifting && setGiftItem(null)} />
+          <div className={styles.giftModalSheet}>
+            <div className={styles.giftModalHandle} />
+            <div className={styles.giftModalEmoji}>{giftItem.emoji}</div>
+            <div className={styles.giftModalTitle}>Send {giftItem.name}</div>
+            <div className={styles.giftModalSub}>Gift {giftItem.sc} SC to a Pioneer or Creator</div>
+            <input
+              className={styles.giftUsernameInput}
+              placeholder="Enter @username"
+              value={giftUsername}
+              onChange={e => setGiftUsername(e.target.value.replace("@", ""))}
+            />
+            <div className={styles.giftModalInfo}>
+              <div className={styles.giftModalRow}>
+                <span className={styles.giftModalLabel}>Gift</span>
+                <span className={styles.giftModalVal}>{giftItem.emoji} {giftItem.name}</span>
+              </div>
+              <div className={styles.giftModalRow}>
+                <span className={styles.giftModalLabel}>Cost</span>
+                <span className={styles.giftModalValGold}>💎 {giftItem.sc} SC</span>
+              </div>
+              <div className={styles.giftModalRow}>
+                <span className={styles.giftModalLabel}>Creator gets</span>
+                <span className={styles.giftModalVal}>{Math.floor(giftItem.sc * 0.7)} SC (70%)</span>
+              </div>
+              <div className={styles.giftModalRow}>
+                <span className={styles.giftModalLabel}>Your balance after</span>
+                <span className={styles.giftModalVal}>💎 {((wallet?.balance ?? 0) - giftItem.sc).toLocaleString()} SC</span>
+              </div>
+            </div>
+            <button
+              className={styles.giftModalConfirmBtn}
+              onClick={handleGift}
+              disabled={gifting || !giftUsername.trim() || (wallet?.balance ?? 0) < giftItem.sc}
+            >
+              {gifting ? "Sending..." : `Send ${giftItem.emoji} Gift`}
+            </button>
+            <button className={styles.giftModalCancelBtn} onClick={() => setGiftItem(null)} disabled={gifting}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Buy Modal */}
       {buyPkg && (
         <div className={styles.buyModal}>
