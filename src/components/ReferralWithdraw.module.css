@@ -1,0 +1,57 @@
+.wrap { display:flex; flex-direction:column; gap:12px; }
+.skeleton { height:140px; background:rgba(0,0,0,0.04); border-radius:16px; animation:shimmer 1.4s infinite; }
+@keyframes shimmer { 0%,100%{opacity:0.4}50%{opacity:0.8} }
+
+/* Balance card */
+.balanceCard { background:linear-gradient(135deg,#1A1A2E,#0F3460); border-radius:16px; padding:20px; }
+.balanceRow { display:flex; align-items:center; margin-bottom:14px; }
+.balanceItem { flex:1; text-align:center; }
+.balanceVal { font-size:22px; font-weight:900; color:#fff; }
+.balanceLabel { font-size:11px; color:rgba(255,255,255,0.5); margin-top:3px; text-transform:uppercase; }
+.balanceDivider { width:1px; height:40px; background:rgba(255,255,255,0.15); }
+.holdNote { font-size:12px; color:rgba(255,255,255,0.5); text-align:center; margin-bottom:12px; }
+.holdNote b { color:rgba(255,255,255,0.8); }
+.minNote { font-size:11px; color:rgba(245,166,35,0.7); text-align:center; margin-bottom:10px; }
+.minNote b { color:var(--color-gold); }
+
+.withdrawBtn { width:100%; padding:14px; border:none; border-radius:12px; font-size:15px; font-weight:800; cursor:pointer; font-family:inherit; transition:all 0.2s; background:var(--color-gold); color:#1A1A2E; }
+.withdrawBtn:disabled { background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.3); cursor:not-allowed; }
+
+/* History */
+.history { background:#fff; border:1.5px solid #E2E8F0; border-radius:16px; overflow:hidden; }
+.historyTitle { font-size:13px; font-weight:800; color:var(--color-text); padding:12px 16px; border-bottom:1px solid #E2E8F0; }
+.historyRow { display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid #F8F9FD; }
+.historyRow:last-child { border-bottom:none; }
+.historyIcon { font-size:18px; flex-shrink:0; }
+.historyInfo { flex:1; min-width:0; }
+.historyAmt { font-size:14px; font-weight:800; color:var(--color-text); }
+.historyMeta { font-size:11px; color:var(--color-text-muted); margin-top:1px; }
+.txid { font-family:monospace; font-size:10px; }
+.historyStatus { font-size:11px; font-weight:700; text-transform:capitalize; flex-shrink:0; }
+
+/* Modal */
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; display:flex; align-items:flex-end; justify-content:center; }
+.modal { background:#fff; border-radius:24px 24px 0 0; padding:24px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
+.modalTitle { font-size:18px; font-weight:900; color:var(--color-text); text-align:center; margin-bottom:20px; }
+.modalBody { text-align:center; margin-bottom:20px; }
+.modalAmount { font-size:36px; font-weight:900; color:var(--color-gold-dark); }
+.modalSub { font-size:13px; color:var(--color-text-muted); margin-top:4px; margin-bottom:16px; }
+.modalInfo { background:#F8F9FD; border-radius:12px; padding:14px; text-align:left; margin-bottom:14px; }
+.modalInfoRow { display:flex; justify-content:space-between; font-size:13px; padding:6px 0; border-bottom:1px solid #E2E8F0; color:var(--color-text-muted); }
+.modalInfoRow:last-child { border-bottom:none; }
+.modalInfoRow span:last-child { font-weight:700; color:var(--color-text); }
+.modalNote { font-size:12px; color:var(--color-text-muted); line-height:1.6; }
+.modalBtns { display:flex; gap:10px; }
+.cancelBtn { flex:1; padding:14px; background:#F8F9FD; border:1.5px solid #E2E8F0; border-radius:12px; font-size:14px; font-weight:700; color:var(--color-text-muted); cursor:pointer; font-family:inherit; }
+.confirmBtn { flex:2; padding:14px; background:var(--color-gold); border:none; border-radius:12px; font-size:14px; font-weight:800; color:#1A1A2E; cursor:pointer; font-family:inherit; }
+
+/* Processing */
+.spinner { width:48px; height:48px; border:4px solid #E2E8F0; border-top-color:var(--color-gold); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 16px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.processingText { font-size:14px; color:var(--color-text-muted); line-height:1.6; }
+
+/* Success / Error */
+.successIcon { font-size:48px; margin-bottom:12px; }
+.errorIcon { font-size:48px; margin-bottom:12px; }
+.errorMsg { font-size:13px; color:#e74c3c; line-height:1.6; }
+.txidFull { font-size:11px; font-family:monospace; color:var(--color-text-muted); margin-top:10px; word-break:break-all; background:#F8F9FD; padding:8px; border-radius:8px; }

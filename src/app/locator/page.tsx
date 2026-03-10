@@ -131,61 +131,128 @@ export default function LocatorPage() {
     setPage(1);
   };
 
-  // Init Leaflet map
+  // Init Leaflet map (free, no API key needed)
   useEffect(() => {
     if (view !== "map" || !mapRef.current) return;
     if (leafletRef.current) return;
 
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
-    script.onload = () => {
+    // Load Leaflet CSS
+    if (!document.querySelector("link[href*='leaflet']")) {
       const link = document.createElement("link");
       link.rel = "stylesheet";
       link.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
       document.head.appendChild(link);
+    }
 
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+    script.onload = () => {
       const L = (window as any).L;
-      const map = L.map(mapRef.current).setView(
-        [userLat ?? 3.147, userLng ?? 101.693], 12
+
+      const map = L.map(mapRef.current, { zoomControl: true }).setView(
+        [userLat ?? 3.147, userLng ?? 101.693], 13
       );
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap"
+
+      // CartoDB Positron — clean, modern, free tile layer
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+        subdomains: "abcd",
+        maxZoom: 20,
       }).addTo(map);
+
       leafletRef.current = map;
 
-      // Add markers
+      // User location marker (gold pulse)
+      if (userLat && userLng) {
+        const userIcon = L.divIcon({
+          html: `<div style="width:18px;height:18px;background:#F5A623;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 4px rgba(245,166,35,0.3)"></div>`,
+          className: "",
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+        });
+        L.marker([userLat, userLng], { icon: userIcon })
+          .addTo(map)
+          .bindPopup("<b>You are here</b>");
+      }
+
+      // Business markers with emoji + popup
       businesses.forEach(b => {
         if (!b.lat || !b.lng) return;
-        const marker = L.marker([b.lat, b.lng])
+        const cat = CATEGORIES.find(c => c.key === b.category);
+        const icon = L.divIcon({
+          html: `<div style="background:#1A1A2E;border:2.5px solid #F5A623;border-radius:50% 50% 50% 0;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 3px 10px rgba(0,0,0,0.35);transform:rotate(-45deg)"><span style="transform:rotate(45deg)">${cat?.emoji ?? "📍"}</span></div>`,
+          className: "",
+          iconSize: [36, 36],
+          iconAnchor: [10, 36],
+          popupAnchor: [8, -36],
+        });
+
+        const popupHtml = `
+          <div style="font-family:-apple-system,sans-serif;min-width:180px;padding:2px">
+            <div style="font-weight:800;font-size:14px;color:#1A1A2E;margin-bottom:4px">${b.name}</div>
+            ${b.image_url ? `<img src="${b.image_url}" style="width:100%;height:80px;object-fit:cover;border-radius:8px;margin-bottom:6px">` : ""}
+            <div style="font-size:12px;color:#718096;margin-bottom:4px">📍 ${b.address}, ${b.city}</div>
+            ${b.avg_rating > 0 ? `<div style="font-size:12px;margin-bottom:4px">⭐ ${b.avg_rating.toFixed(1)} (${b.review_count} reviews)</div>` : ""}
+            <div style="font-size:11px;font-weight:700;color:#F5A623;margin-bottom:6px">π Accepts Pi</div>
+            <button onclick="window.__selectBusiness('${b.id}')" style="background:#F5A623;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%">View Details</button>
+          </div>`;
+
+        L.marker([b.lat, b.lng], { icon })
           .addTo(map)
-          .bindPopup(`<b>${b.name}</b><br>${b.address}`);
-        markersRef.current.push(marker);
+          .bindPopup(popupHtml, { maxWidth: 220 });
       });
 
-      if (userLat && userLng) {
-        L.circleMarker([userLat, userLng], { radius: 8, color: "#F5A623", fillOpacity: 0.9 })
-          .addTo(map)
-          .bindPopup("You are here");
-      }
+      // Global handler for popup button
+      (window as any).__selectBusiness = (id: string) => {
+        const b = businesses.find(x => x.id === id);
+        if (b) setSelected(b);
+      };
     };
     document.head.appendChild(script);
 
-    return () => { leafletRef.current?.remove(); leafletRef.current = null; };
+    return () => {
+      leafletRef.current?.remove();
+      leafletRef.current = null;
+      markersRef.current = [];
+      delete (window as any).__selectBusiness;
+    };
   }, [view]);
 
-  // Update markers when businesses change
+  // Refresh markers when businesses change
   useEffect(() => {
     if (!leafletRef.current) return;
     const L = (window as any).L;
+    if (!L) return;
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
     businesses.forEach(b => {
       if (!b.lat || !b.lng) return;
-      const marker = L.marker([b.lat, b.lng])
+      const cat = CATEGORIES.find(c => c.key === b.category);
+      const icon = L.divIcon({
+        html: `<div style="background:#1A1A2E;border:2.5px solid #F5A623;border-radius:50% 50% 50% 0;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 3px 10px rgba(0,0,0,0.35);transform:rotate(-45deg)"><span style="transform:rotate(45deg)">${cat?.emoji ?? "📍"}</span></div>`,
+        className: "",
+        iconSize: [36, 36],
+        iconAnchor: [10, 36],
+        popupAnchor: [8, -36],
+      });
+      const popupHtml = `
+        <div style="font-family:-apple-system,sans-serif;min-width:180px;padding:2px">
+          <div style="font-weight:800;font-size:14px;color:#1A1A2E;margin-bottom:4px">${b.name}</div>
+          ${b.image_url ? `<img src="${b.image_url}" style="width:100%;height:80px;object-fit:cover;border-radius:8px;margin-bottom:6px">` : ""}
+          <div style="font-size:12px;color:#718096;margin-bottom:4px">📍 ${b.address}, ${b.city}</div>
+          ${b.avg_rating > 0 ? `<div style="font-size:12px;margin-bottom:4px">⭐ ${b.avg_rating.toFixed(1)} (${b.review_count} reviews)</div>` : ""}
+          <div style="font-size:11px;font-weight:700;color:#F5A623;margin-bottom:6px">π Accepts Pi</div>
+          <button onclick="window.__selectBusiness('${b.id}')" style="background:#F5A623;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%">View Details</button>
+        </div>`;
+      const marker = L.marker([b.lat, b.lng], { icon })
         .addTo(leafletRef.current)
-        .bindPopup(`<b>${b.name}</b><br>${b.address}`);
+        .bindPopup(popupHtml, { maxWidth: 220 });
       markersRef.current.push(marker);
     });
+    (window as any).__selectBusiness = (id: string) => {
+      const b = businesses.find(x => x.id === id);
+      if (b) setSelected(b);
+    };
   }, [businesses]);
 
   return (

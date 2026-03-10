@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
+import ReferralWithdraw from "@/components/ReferralWithdraw";
 import styles from "./page.module.css";
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -248,6 +249,7 @@ export default function ReferralPage() {
         {/* ── EARNINGS ── */}
         {tab === "earnings" && (
           <div className={styles.earningsList}>
+            <ReferralWithdraw />
             <div className={styles.earningsSummary}>
               <div className={styles.summaryCard}>
                 <div className={styles.summaryVal}>{(stats?.pending_pi ?? 0).toFixed(4)}π</div>
@@ -380,7 +382,7 @@ function HowItWorksSection({ config }: { config: Config | null }) {
       </div>
 
       <div className={styles.levelExplain}>
-        <div className={styles.levelExplainTitle}>3 Level Commission</div>
+        <div className={styles.levelExplainTitle}>3-Level Commission</div>
         <div className={styles.levelTree}>
           <div className={styles.levelTreeRow}>
             <div className={styles.levelTreeYou}>You 👤</div>
@@ -417,7 +419,7 @@ function HowItWorksSection({ config }: { config: Config | null }) {
       </div>
 
       <div className={styles.faq}>
-        <div className={styles.faqTitle}>❓FAQ</div>
+        <div className={styles.faqTitle}>❓ Frequently Asked Questions</div>
         {[
           { q: "Where does the commission come from?", a: "From the platform fee Supapi collects on every transaction. Sellers lose nothing." },
           { q: "How long is commission active?", a: "As long as your friend stays active on Supapi — no time limit!" },
