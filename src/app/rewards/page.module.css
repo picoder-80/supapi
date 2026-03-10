@@ -1,0 +1,131 @@
+/* app/rewards/page.module.css — Supapi Theme */
+.page { min-height:100vh; background:#F8F9FD; padding-bottom:calc(var(--bottomnav-h,60px) + 24px); }
+
+/* Header */
+.header { background:linear-gradient(135deg,#1A1A2E,#0F3460); padding:20px 16px 0; position:sticky; top:60px; z-index:20; }
+.headerTop { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.headerTitle { font-size:18px; font-weight:900; color:#fff; margin:0; }
+
+/* Login prompt */
+.loginPrompt { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; padding:40px 24px; text-align:center; }
+.loginIcon { font-size:56px; margin-bottom:16px; }
+.loginTitle { font-size:20px; font-weight:900; color:#1A1A2E; margin-bottom:8px; }
+.loginSub { font-size:14px; color:#718096; margin-bottom:24px; line-height:1.6; }
+.loginBtn { background:#F5A623; color:#1A1A2E; border:none; border-radius:999px; padding:14px 32px; font-size:15px; font-weight:800; cursor:pointer; font-family:inherit; }
+
+/* Toast */
+.toast { position:fixed; top:80px; left:50%; transform:translateX(-50%); z-index:999; padding:12px 24px; border-radius:12px; font-size:14px; font-weight:700; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,0.15); }
+.toastSuccess { background:#27ae60; color:#fff; }
+.toastError { background:#e74c3c; color:#fff; }
+
+/* Balance Card */
+.balanceSection { padding:0 16px; margin-top:-1px; background:linear-gradient(135deg,#1A1A2E,#0F3460); padding-bottom:24px; }
+.balanceCard { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:20px; padding:24px; text-align:center; }
+.balanceLabel { font-size:12px; font-weight:700; color:rgba(255,255,255,0.5); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+.balanceAmount { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:20px; }
+.balanceCoin { font-size:32px; }
+.balanceNum { font-size:48px; font-weight:900; color:#fff; line-height:1; }
+.balanceSc { font-size:20px; font-weight:800; color:#F5A623; align-self:flex-end; padding-bottom:6px; }
+.balanceStats { display:flex; align-items:center; justify-content:center; gap:0; }
+.balanceStat { flex:1; text-align:center; }
+.balanceStatNum { display:block; font-size:18px; font-weight:900; color:#fff; }
+.balanceStatLabel { display:block; font-size:10px; color:rgba(255,255,255,0.5); font-weight:600; margin-top:2px; }
+.balanceStatDivider { width:1px; height:32px; background:rgba(255,255,255,0.15); }
+
+/* Body */
+.body { padding:16px; display:flex; flex-direction:column; gap:16px; }
+
+/* Section */
+.section {}
+.sectionTitle { font-size:15px; font-weight:800; color:#1A1A2E; margin-bottom:12px; }
+
+/* Check-in Card */
+.checkinCard { background:#fff; border:1.5px solid #E2E8F0; border-radius:20px; padding:20px; }
+.checkinHeader { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px; }
+.checkinTitle { font-size:15px; font-weight:800; color:#1A1A2E; margin-bottom:4px; }
+.checkinSub { font-size:12px; color:#718096; }
+.checkinReward { background:rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.3); color:#e6951a; font-size:13px; font-weight:800; padding:6px 14px; border-radius:999px; white-space:nowrap; }
+
+/* Streak row */
+.streakRow { display:flex; gap:6px; justify-content:space-between; margin-bottom:16px; }
+.streakDay { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:#F8F9FD; border:1.5px solid #E2E8F0; border-radius:10px; padding:8px 4px; transition:all 0.2s; }
+.streakDayDone { background:rgba(245,166,35,0.1); border-color:#F5A623; }
+.streakDayBonus { background:rgba(231,76,60,0.05); border-color:#e74c3c; }
+.streakDayBonus.streakDayDone { background:rgba(231,76,60,0.15); border-color:#e74c3c; }
+.streakDayNum { font-size:10px; font-weight:800; color:#718096; }
+.streakDayIcon { font-size:14px; }
+.streakBonusLabel { font-size:9px; font-weight:800; color:#e74c3c; }
+
+/* Check-in button */
+.checkinBtn { width:100%; padding:14px; background:linear-gradient(135deg,#F5A623,#e6951a); color:#1A1A2E; border:none; border-radius:12px; font-size:15px; font-weight:800; cursor:pointer; font-family:inherit; transition:all 0.2s; }
+.checkinBtn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 4px 16px rgba(245,166,35,0.35); }
+.checkinBtn:disabled { opacity:0.7; cursor:not-allowed; }
+.checkinBtnDone { background:#E2E8F0; color:#718096; }
+.checkinBtnDone:hover:not(:disabled) { transform:none; box-shadow:none; }
+
+/* Task List */
+.taskList { display:flex; flex-direction:column; gap:8px; }
+.taskCard { background:#fff; border:1.5px solid #E2E8F0; border-radius:14px; padding:14px; display:flex; align-items:center; gap:12px; transition:all 0.2s; }
+.taskCard:hover { border-color:#F5A623; }
+.taskCardDone { opacity:0.6; }
+.taskEmoji { font-size:28px; flex-shrink:0; }
+.taskInfo { flex:1; min-width:0; }
+.taskLabel { font-size:14px; font-weight:800; color:#1A1A2E; margin-bottom:2px; }
+.taskDesc { font-size:12px; color:#718096; }
+.taskRight { text-align:right; flex-shrink:0; }
+.taskSc { font-size:14px; font-weight:900; color:#F5A623; margin-bottom:4px; }
+.taskRepeat { font-size:10px; font-weight:600; color:#718096; background:#F8F9FD; padding:2px 8px; border-radius:999px; }
+.taskDoneBadge { font-size:10px; font-weight:700; color:#27ae60; background:rgba(39,174,96,0.1); padding:2px 8px; border-radius:999px; }
+
+/* TX History */
+.txList { display:flex; flex-direction:column; gap:2px; background:#fff; border:1.5px solid #E2E8F0; border-radius:16px; overflow:hidden; }
+.txRow { display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid #F8F9FD; }
+.txRow:last-child { border-bottom:none; }
+.txEmoji { font-size:24px; flex-shrink:0; width:36px; text-align:center; }
+.txInfo { flex:1; min-width:0; }
+.txLabel { font-size:13px; font-weight:700; color:#1A1A2E; }
+.txTime { font-size:11px; color:#718096; margin-top:2px; }
+.txAmount { font-size:15px; font-weight:900; flex-shrink:0; }
+.txEarn { color:#27ae60; }
+.txSpend { color:#e74c3c; }
+
+/* Empty */
+.emptyHistory { text-align:center; padding:40px 20px; background:#fff; border:1.5px solid #E2E8F0; border-radius:16px; }
+.emptyIcon { font-size:36px; margin-bottom:8px; }
+.emptyText { font-size:13px; color:#718096; }
+
+/* ── Buy SC Packages (Phase 2) ── */
+.buySection {}
+.packageGrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.packageCard { background:#fff; border:1.5px solid #E2E8F0; border-radius:16px; padding:16px 12px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative; }
+.packageCard:hover { border-color:#F5A623; transform:translateY(-2px); box-shadow:0 4px 16px rgba(245,166,35,0.12); }
+.packageCardPopular { border-color:#F5A623; background:rgba(245,166,35,0.03); }
+.packagePopularBadge { position:absolute; top:-10px; left:50%; transform:translateX(-50%); background:#F5A623; color:#1A1A2E; font-size:10px; font-weight:800; padding:3px 10px; border-radius:999px; white-space:nowrap; }
+.packageSc { font-size:28px; font-weight:900; color:#1A1A2E; line-height:1; margin-bottom:2px; }
+.packageScLabel { font-size:11px; font-weight:700; color:#F5A623; margin-bottom:8px; }
+.packageUsd { font-size:12px; color:#718096; margin-bottom:6px; }
+.packagePi { font-size:14px; font-weight:800; color:#1A1A2E; margin-bottom:10px; }
+.packageBtn { width:100%; padding:8px; background:linear-gradient(135deg,#F5A623,#e6951a); color:#1A1A2E; border:none; border-radius:8px; font-size:12px; font-weight:800; cursor:pointer; font-family:inherit; transition:all 0.2s; }
+.packageBtn:disabled { opacity:0.6; cursor:not-allowed; }
+.packageNote { font-size:11px; color:#718096; text-align:center; margin-top:10px; background:rgba(245,166,35,0.06); border:1px solid rgba(245,166,35,0.15); border-radius:10px; padding:8px 12px; }
+
+/* Pi rate badge */
+.piRateBadge { display:flex; align-items:center; justify-content:center; gap:6px; font-size:12px; color:#718096; margin-bottom:12px; }
+.piRateDot { width:6px; height:6px; background:#27ae60; border-radius:50%; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* Buy modal overlay */
+.buyModal { position:fixed; inset:0; z-index:200; display:flex; align-items:flex-end; }
+.buyModalBackdrop { position:absolute; inset:0; background:rgba(0,0,0,0.5); }
+.buyModalSheet { background:#fff; border-radius:20px 20px 0 0; width:100%; padding:24px; position:relative; z-index:1; }
+.buyModalHandle { width:40px; height:4px; background:#E2E8F0; border-radius:2px; margin:0 auto 20px; }
+.buyModalTitle { font-size:18px; font-weight:900; color:#1A1A2E; margin-bottom:4px; }
+.buyModalSub { font-size:13px; color:#718096; margin-bottom:20px; }
+.buyModalInfo { background:#F8F9FD; border:1px solid #E2E8F0; border-radius:12px; padding:16px; margin-bottom:16px; display:flex; flex-direction:column; gap:8px; }
+.buyModalRow { display:flex; justify-content:space-between; font-size:14px; }
+.buyModalRowLabel { color:#718096; }
+.buyModalRowVal { font-weight:700; color:#1A1A2E; }
+.buyModalRowValGold { font-weight:800; color:#F5A623; }
+.buyModalConfirmBtn { width:100%; padding:16px; background:linear-gradient(135deg,#1A1A2E,#0F3460); color:#fff; border:none; border-radius:14px; font-size:16px; font-weight:800; cursor:pointer; font-family:inherit; margin-bottom:10px; }
+.buyModalConfirmBtn:disabled { opacity:0.6; cursor:not-allowed; }
+.buyModalCancelBtn { width:100%; padding:12px; background:none; border:none; font-size:14px; color:#718096; cursor:pointer; font-family:inherit; }
