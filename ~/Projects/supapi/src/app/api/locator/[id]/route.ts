@@ -25,10 +25,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { data: existing } = await supabase
     .from("businesses").select("owner_id").eq("id", id).single();
   if (!existing) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
-  if (existing.owner_id !== user.userId) return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  if (String(existing.owner_id) !== String(user.userId)) return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { name, category, description, address, city, state, country, lat, lng, phone, website, pi_wallet, image_url } = body;
+  const { name, category, description, address, city, state, country, lat, lng, phone, website, pi_wallet, image_url, images } = body;
 
   const { error } = await supabase
     .from("businesses")
@@ -36,6 +36,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       name, category, description, address, city, state, country,
       lat: lat ?? null, lng: lng ?? null,
       phone, website, pi_wallet, image_url,
+      images: images ?? [],
       status: "pending",      // back to pending after edit
       verified: false,         // unverify until re-approved
       updated_at: new Date().toISOString(),
@@ -56,7 +57,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   const { data: existing } = await supabase
     .from("businesses").select("owner_id").eq("id", id).single();
   if (!existing) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
-  if (existing.owner_id !== user.userId) return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  if (String(existing.owner_id) !== String(user.userId)) return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
 
   const { error } = await supabase.from("businesses").delete().eq("id", id);
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });

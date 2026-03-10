@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 
   let query = supabase
     .from("businesses")
-    .select("id,name,category,description,address,city,country,lat,lng,phone,website,image_url,verified,avg_rating,review_count,created_at")
+    .select("id,name,category,description,address,city,country,lat,lng,phone,website,image_url,images,verified,avg_rating,review_count,created_at")
     .eq("status", "approved")
     .order("verified", { ascending: false })
     .order("avg_rating", { ascending: false })
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       name, category, description, address, city, state,
       country: country || "Malaysia",
       lat: lat || null, lng: lng || null,
-      phone, website, pi_wallet, image_url,
+      phone, website, pi_wallet, image_url, images: body.images ?? [],
       status: "pending",
     })
     .select()

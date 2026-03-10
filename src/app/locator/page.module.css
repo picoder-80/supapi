@@ -3,8 +3,8 @@
 
 /* Header */
 .header { background:linear-gradient(135deg,#1A1A2E,#0F3460); padding:20px 16px 0; position:sticky; top:60px; z-index:20; }
-.headerTop { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; }
-.headerTitle { font-size:22px; font-weight:900; color:#fff; }
+.headerTop { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.headerTitle { font-size:18px; font-weight:900; color:#fff; margin:0; }
 .headerSub { font-size:12px; color:rgba(255,255,255,0.5); margin-top:2px; }
 .registerBtn { background:var(--color-gold); color:#1A1A2E; border:none; border-radius:20px; padding:8px 16px; font-size:13px; font-weight:800; cursor:pointer; font-family:inherit; white-space:nowrap; flex-shrink:0; }
 
@@ -33,7 +33,7 @@
 .nearMe { font-size:11px; font-weight:700; color:var(--color-gold-dark); background:rgba(245,166,35,0.1); padding:3px 10px; border-radius:999px; }
 
 /* Map */
-.map { height:calc(100vh - 280px); width:100%; }
+.map { height:calc(100vh - var(--bottomnav-h, 60px) - 220px); width:100%; min-height:300px; }
 
 /* Body */
 .body { padding:12px 16px; }
@@ -96,3 +96,9 @@
 /* My Listings button */
 .headerBtns { display:flex; gap:8px; align-items:center; }
 .myListingsBtn { padding:8px 12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:10px; font-size:12px; font-weight:700; color:#fff; cursor:pointer; font-family:inherit; white-space:nowrap; }
+
+/* Image gallery in bottom sheet */
+.sheetGallery { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+.sheetGallery::-webkit-scrollbar { display:none; }
+.sheetGalleryImg { width:100%; max-width:100%; height:200px; object-fit:cover; border-radius:12px; flex-shrink:0; }
+.sheetGallery:has(img:nth-child(2)) .sheetGalleryImg { width:80vw; }

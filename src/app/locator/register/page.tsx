@@ -70,7 +70,7 @@ export default function RegisterBusinessPage() {
     const urls: string[] = [];
     for (const img of images) {
       const fd = new FormData();
-      fd.append("file", img.file);
+      fd.append("file", img.file!);
       try {
         const r = await fetch("/api/locator/upload", {
           method: "POST",

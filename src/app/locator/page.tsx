@@ -29,6 +29,7 @@ interface Business {
   phone: string;
   website: string;
   image_url: string;
+  images: string[];
   verified: boolean;
   avg_rating: number;
   review_count: number;
@@ -261,10 +262,7 @@ export default function LocatorPage() {
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerTop}>
-          <div>
-            <h1 className={styles.headerTitle}>📍 Pi Locator</h1>
-            <div className={styles.headerSub}>Find businesses that accept Pi</div>
-          </div>
+          <h1 className={styles.headerTitle}>📍 Pi Locator</h1>
           <div className={styles.headerBtns}>
             <button className={styles.myListingsBtn} onClick={() => router.push("/locator/my")}>My Listings</button>
             <button className={styles.registerBtn} onClick={() => router.push("/locator/register")}>+ Register</button>
@@ -365,8 +363,12 @@ export default function LocatorPage() {
               <button className={styles.sheetClose} onClick={() => setSelected(null)}>✕</button>
             </div>
 
-            {selected.image_url && (
-              <img src={selected.image_url} alt={selected.name} className={styles.sheetImage} />
+            {(selected.images?.length > 0 || selected.image_url) && (
+              <div className={styles.sheetGallery}>
+                {(selected.images?.length > 0 ? selected.images : [selected.image_url]).map((url, i) => (
+                  <img key={i} src={url} alt={selected.name} className={styles.sheetGalleryImg} />
+                ))}
+              </div>
             )}
 
             <div className={styles.sheetBody}>

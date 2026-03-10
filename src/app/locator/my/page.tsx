@@ -21,6 +21,7 @@ interface Business {
   address: string; city: string; state: string; country: string;
   lat: number | null; lng: number | null;
   phone: string; website: string; pi_wallet: string; image_url: string;
+  images: string[];
   status: string; verified: boolean;
   avg_rating: number; review_count: number;
   created_at: string; updated_at: string;
@@ -75,8 +76,11 @@ export default function MyListingsPage() {
   const openEdit = (b: Business) => {
     setEditing(b);
     setForm({ ...b });
-    // Prefill existing image
-    setImages(b.image_url ? [{ preview: b.image_url, existing: b.image_url }] : []);
+    // Prefill all existing images
+    const existingImgs = b.images?.length > 0
+      ? b.images.map(url => ({ preview: url, existing: url }))
+      : b.image_url ? [{ preview: b.image_url, existing: b.image_url }] : [];
+    setImages(existingImgs);
     setMsg("");
   };
 
@@ -101,25 +105,29 @@ export default function MyListingsPage() {
     });
   };
 
-  const uploadNewImages = async (): Promise<string | null> => {
-    const newImgs = images.filter(i => i.file);
-    if (newImgs.length === 0) {
-      // Keep existing image or null
-      return images[0]?.existing ?? null;
-    }
+  const uploadNewImages = async (): Promise<{ imageUrl: string | null; allUrls: string[] }> => {
     setUploading(true);
-    const fd = new FormData();
-    fd.append("file", newImgs[0].file!);
-    try {
-      const r = await fetch("/api/locator/upload", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token()}` },
-        body: fd,
-      });
-      const d = await r.json();
-      setUploading(false);
-      return d.success ? d.url : images[0]?.existing ?? null;
-    } catch { setUploading(false); return null; }
+    const allUrls: string[] = [];
+    for (const img of images) {
+      if (img.existing) {
+        allUrls.push(img.existing);
+        continue;
+      }
+      if (!img.file) continue;
+      const fd = new FormData();
+      fd.append("file", img.file);
+      try {
+        const r = await fetch("/api/locator/upload", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token()}` },
+          body: fd,
+        });
+        const d = await r.json();
+        if (d.success && d.url) allUrls.push(d.url);
+      } catch {}
+    }
+    setUploading(false);
+    return { imageUrl: allUrls[0] ?? null, allUrls };
   };
 
   // ── GPS ────────────────────────────────────────────────────────────
@@ -145,7 +153,7 @@ export default function MyListingsPage() {
     setSaving(true);
     setMsg("");
     try {
-      const imageUrl = await uploadNewImages();
+      const { imageUrl, allUrls } = await uploadNewImages();
       const r = await fetch(`/api/locator/${editing.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
@@ -154,6 +162,7 @@ export default function MyListingsPage() {
           lat: form.lat ? parseFloat(String(form.lat)) : null,
           lng: form.lng ? parseFloat(String(form.lng)) : null,
           image_url: imageUrl,
+          images: allUrls,
         }),
       });
       const d = await r.json();
