@@ -265,10 +265,10 @@ export default function LocatorPage() {
             <h1 className={styles.headerTitle}>📍 Pi Locator</h1>
             <div className={styles.headerSub}>Find businesses that accept Pi</div>
           </div>
-          <button
-            className={styles.registerBtn}
-            onClick={() => router.push("/locator/register")}
-          >+ Register</button>
+          <div className={styles.headerBtns}>
+            <button className={styles.myListingsBtn} onClick={() => router.push("/locator/my")}>My Listings</button>
+            <button className={styles.registerBtn} onClick={() => router.push("/locator/register")}>+ Register</button>
+          </div>
         </div>
 
         {/* Search */}

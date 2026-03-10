@@ -92,3 +92,7 @@
 .directionBtn { display:block; text-align:center; background:linear-gradient(135deg,#1A1A2E,#0F3460); color:#fff; border-radius:12px; padding:14px; font-size:14px; font-weight:800; text-decoration:none; margin-bottom:8px; }
 
 @keyframes shimmer { 0%,100%{opacity:1}50%{opacity:0.5} }
+
+/* My Listings button */
+.headerBtns { display:flex; gap:8px; align-items:center; }
+.myListingsBtn { padding:8px 12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:10px; font-size:12px; font-weight:700; color:#fff; cursor:pointer; font-family:inherit; white-space:nowrap; }
