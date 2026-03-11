@@ -13,7 +13,7 @@ const MapView = nextDynamic(() => import("./MapView"), { ssr: false, loading: ()
 
 interface PioneerPin {
   id: string; user_id: string; lat: number; lng: number;
-  precision: string; status: string; note: string; visible_to: string;
+  precision: string; status: string; note: string; visible_to?: string;
 }
 interface PioneerUser {
   id: string; username: string; display_name: string | null;
