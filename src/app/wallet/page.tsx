@@ -297,7 +297,7 @@ export default function WalletPage() {
               <div className={styles.piCardBalance}>
                 <span className={styles.piCardBalanceLabel}>Balance</span>
                 <span className={styles.piCardBalanceValue}>
-                  {piBalance !== null ? `π ${formatPi(piBalance)}` : "Open in Pi Browser to view"}
+                  {piBalance !== null ? `π ${formatPi(piBalance)}` : "Open in Your Pi Browser to view"}
                 </span>
               </div>
               <div className={styles.piCardNote}>
@@ -309,11 +309,11 @@ export default function WalletPage() {
             <div className={styles.sectionTitle}>Quick Actions</div>
             <div className={styles.quickActions}>
               {[
-                { href: "/market",          icon: "🛒", label: "Marketplace"   },
-                { href: "/endoro",          icon: "🚗", label: "Rent a Car"    },
+                { href: "/market",          icon: "🛍️", label: "Marketplace"   },
+                { href: "/endoro",          icon: "🛞", label: "Rent a Car"    },
                 { href: "/domus",           icon: "🏠", label: "Property"      },
                 { href: "/bulkhub",         icon: "📦", label: "BulkHub"       },
-                { href: "/machina-market",  icon: "🔧", label: "MachinaMkt"    },
+                { href: "/machina-market",  icon: "🚗", label: "MachinaMkt"    },
                 { href: "/rewards",         icon: "💎", label: "SC Rewards"    },
               ].map(a => (
                 <Link key={a.href} href={a.href} className={styles.quickAction}>
@@ -413,7 +413,7 @@ export default function WalletPage() {
                 { icon: "🏠", label: "List on Domus",         sc: "+150 SC" },
                 { icon: "🚗", label: "List on MachinaMarket", sc: "+150 SC" },
                 { icon: "📦", label: "BulkHub Supplier",      sc: "+100 SC" },
-                { icon: "🚙", label: "List on Endoro",        sc: "+150 SC" },
+                { icon: "🛞", label: "List on Endoro",        sc: "+150 SC" },
                 { icon: "📝", label: "Post on SupaLivvi",     sc: "+20 SC"  },
                 { icon: "🧵", label: "Post on SupaSaylo",     sc: "+15 SC"  },
               ].map((w, i) => (
@@ -518,11 +518,11 @@ export default function WalletPage() {
             <div className={styles.sourcesList}>
               {[
                 { type: "referral",         icon: "👥", label: "Referral Bonuses",        desc: "Earn Pi when your referrals join & use Supapi" },
-                { type: "endoro_host",      icon: "🚗", label: "Endoro Host Payouts",      desc: "95% of rental fees from your vehicles" },
+                { type: "endoro_host",      icon: "🛞", label: "Endoro Host Payouts",      desc: "95% of rental fees from your vehicles" },
                 { type: "gig_payout",       icon: "💼", label: "Gig Job Completions",      desc: "Pi released from escrow when job is done" },
                 { type: "domus_rental",     icon: "🏠", label: "Domus Property Rentals",   desc: "Pi rental payments from tenants" },
                 { type: "bulkhub_supplier", icon: "📦", label: "BulkHub Order Payouts",    desc: "Pi from wholesale orders completed" },
-                { type: "machina_deal",     icon: "🔧", label: "MachinaMarket Deals",      desc: "Pi from vehicle sale completions" },
+                { type: "machina_deal",     icon: "🚗", label: "MachinaMarket Deals",      desc: "Pi from vehicle sale completions" },
                 { type: "gift_split",       icon: "🎁", label: "Gift Splits (70%)",        desc: "Your share of SC gifts received as Pi" },
                 { type: "tip",              icon: "💌", label: "Creator Tips",             desc: "Tips from SupaLivvi & SupaSaylo content" },
               ].map(src => (
