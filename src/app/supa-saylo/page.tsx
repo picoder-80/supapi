@@ -205,8 +205,8 @@ export default function SupaSayloPage() {
               <div className={styles.composerTop}>
                 {user && (
                   <div className={styles.composerAvatar}>
-                    {user.avatarUrl
-                      ? <img src={user.avatarUrl} alt="" className={styles.composerAvatarImg} />
+                    {user.avatar_url
+                      ? <img src={user.avatar_url} alt="" className={styles.composerAvatarImg} />
                       : <span className={styles.composerAvatarInitial}>{getInitial(user.username)}</span>
                     }
                   </div>
