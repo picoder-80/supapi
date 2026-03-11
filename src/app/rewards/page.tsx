@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { usePiPayment } from "@/hooks/usePiPayment";
 import styles from "./page.module.css";
 
 const SC_PACKAGES = [
@@ -76,6 +77,7 @@ function timeAgo(iso: string) {
 export default function RewardsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { pay: piPay } = usePiPayment();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [canCheckin, setCanCheckin] = useState(false);
@@ -151,45 +153,37 @@ export default function RewardsPage() {
     setChecking(false);
   };
 
-  const handleBuy = async () => {
+  const handleBuy = () => {
     if (!buyPkg || buying) return;
-    setBuying(true);
     const piAmount = parseFloat((buyPkg.usd / piRate).toFixed(6));
-    try {
-      const Pi = (window as any).Pi;
-      if (!Pi) { showToast("Please open in Pi Browser", "error"); setBuying(false); return; }
-
-      const payment = await Pi.createPayment({
-        amount: piAmount,
-        memo: `Buy ${buyPkg.sc} Supapi Credits`,
-        metadata: { pkg: buyPkg.id, sc: buyPkg.sc, userId: user?.id },
-      }, {
-        onReadyForServerApproval: async (paymentId: string) => {
-          await fetch("/api/credits/buy", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
-            body: JSON.stringify({ paymentId, action: "approve" }),
-          });
-        },
-        onReadyForServerCompletion: async (paymentId: string, txid: string) => {
-          const r = await fetch("/api/credits/buy", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
-            body: JSON.stringify({ paymentId, txid, action: "complete", pkg: buyPkg.id, sc: buyPkg.sc }),
-          });
-          const d = await r.json();
-          if (d.success) {
-            showToast(`🎉 +${buyPkg.sc} SC added to your wallet!`);
-            fetchData();
-          }
-          setBuyPkg(null);
-        },
-        onCancel: () => { showToast("Payment cancelled", "error"); setBuyPkg(null); },
-        onError: (err: any) => { showToast("Payment failed", "error"); console.error(err); setBuyPkg(null); },
-      });
-    } catch (e) {
-      showToast("Payment error", "error");
-    }
+    const currentPkg = buyPkg; // capture before modal closes
+    setBuying(true);
+    piPay({
+      amountPi:    piAmount,
+      memo:        `Buy ${currentPkg.sc} Supapi Credits`,
+      type:        "game",
+      referenceId: `sc_buy_${currentPkg.id}_${Date.now()}`,
+      metadata:    { pkg: currentPkg.id, sc: currentPkg.sc },
+      onSuccess: async (_paymentId: string, txid: string) => {
+        // /api/payments/complete dah handle — kita credit SC sekarang
+        const r = await fetch("/api/credits/buy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+          body: JSON.stringify({ txid, pkg: currentPkg.id, sc: currentPkg.sc, action: "credit" }),
+        });
+        const d = await r.json();
+        if (d.success) {
+          showToast(`🎉 +${currentPkg.sc} SC added to your wallet!`);
+          fetchData();
+        } else {
+          showToast(d.error ?? "SC credit failed", "error");
+        }
+        setBuyPkg(null);
+        setBuying(false);
+      },
+      onCancel: () => { showToast("Payment cancelled", "error"); setBuyPkg(null); setBuying(false); },
+      onError:  (err) => { showToast("Payment error: " + err.message, "error"); setBuyPkg(null); setBuying(false); },
+    });
     setBuying(false);
   };
 
