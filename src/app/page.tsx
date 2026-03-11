@@ -29,6 +29,7 @@ const modules = [
   { href: "/bulkhub",          emoji: "📦",  label: "BulkHub",         desc: "Pi B2B Wholesale Marketplace"  },
   { href: "/machina-market", emoji: "🚗",  label: "MachinaMarket",   desc: "Pi Automotive Marketplace"     },
   { href: "/domus",          emoji: "🏠",  label: "Domus",           desc: "Pi Property Marketplace"        },
+  { href: "/endoro",         emoji: "🚗",  label: "Endoro",          desc: "Pi Peer-to-Peer Vehicle Rental"  },
 ];
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }

@@ -28,6 +28,7 @@ const SCROLL_ITEMS = [
   { href: "/bulkhub",         emoji: "📦",  label: "BulkHub"       },
   { href: "/machina-market", emoji: "🚗",  label: "MachinaMarket" },
   { href: "/domus",          emoji: "🏠",  label: "Domus"         },
+  { href: "/endoro",         emoji: "🚗",  label: "Endoro"        },
 ];
 
 export default function BottomNav() {
