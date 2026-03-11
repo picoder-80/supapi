@@ -23,6 +23,7 @@ const modules = [
   { href: "/reels",     emoji: "🎬",  label: "Reels",       desc: "Short videos from pioneers"              },
   { href: "/pi-value",    emoji: "📈",  label: "Market Value",  desc: "Pi Live Market Data & Pi USD Converter"   },
   { href: "/classifieds", emoji: "📋",  label: "Classifieds",   desc: "Promote services & businesses"    },
+  { href: "/pioneers",    emoji: "🌍",  label: "I Am a Pioneer", desc: "Pin yourself & find nearby Pioneers" },
 ];
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
