@@ -21,6 +21,7 @@
     "date-fns": "^4.1.0",
     "jsonwebtoken": "^9.0.2",
     "next": "^16.1.6",
+    "pi-sdk-nextjs": "github:pi-apps/pi-sdk-nextjs",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "resend": "^4.0.0",

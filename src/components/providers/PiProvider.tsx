@@ -21,7 +21,7 @@ export function PiProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let attempts = 0;
-    const maxAttempts = 20; // try for up to 2 seconds
+    const maxAttempts = 100; // try for up to 10 seconds
 
     const tryInit = () => {
       attempts++;

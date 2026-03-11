@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { usePi } from "@/components/providers/PiProvider";
 import styles from "./page.module.css";
 
 const SC_PACKAGES = [
@@ -75,6 +76,7 @@ function timeAgo(iso: string) {
 
 export default function RewardsPage() {
   const { user } = useAuth();
+  const { isReady: piReady } = usePi();
   const router = useRouter();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -153,6 +155,7 @@ export default function RewardsPage() {
 
   const handleBuy = async () => {
     if (!buyPkg || buying) return;
+    if (!piReady) { showToast("Pi SDK not ready. Please wait...", "error"); return; }
     const Pi = (window as any).Pi;
     if (!Pi) { showToast("Please open in Pi Browser", "error"); return; }
     setBuying(true);
