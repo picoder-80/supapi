@@ -26,7 +26,6 @@ export async function authenticateWithPi() {
     throw new Error("Please open in Pi Browser to sign in.");
   }
 
-  // Pass full onIncompletePaymentFound handler per SDK docs
   return window.Pi.authenticate(
     ["username", "payments", "wallet_address"],
     onIncompletePaymentFound
@@ -56,6 +55,29 @@ async function onIncompletePaymentFound(payment: {
   } catch (err) {
     console.error("[Supapi] Failed to handle incomplete payment:", err);
   }
+}
+
+// ✅ FIX: Re-authenticate with payments scope BEFORE createPayment
+// Pi SDK v2 REQUIRES authenticate() with "payments" scope before createPayment()
+// Skipping this step causes: "Cannot create a payment without paymentData"
+export async function ensurePaymentReady(): Promise<void> {
+  if (!isPiBrowser()) throw new Error("Pi Browser is required to make payments.");
+
+  await window.Pi.authenticate(
+    ["username", "payments", "wallet_address"],
+    async (incompletePayment) => {
+      console.warn("[Supapi] Incomplete payment found during payment auth:", incompletePayment.identifier);
+      try {
+        await fetch("/api/payments/incomplete", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ payment: incompletePayment }),
+        });
+      } catch (err) {
+        console.error("[Supapi] Failed to handle incomplete payment:", err);
+      }
+    }
+  );
 }
 
 export function createPiPayment(

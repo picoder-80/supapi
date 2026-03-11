@@ -165,10 +165,20 @@ export default function RewardsPage() {
     const piAmount = parseFloat((currentPkg.usd / piRate).toFixed(6));
 
     try {
-      // ✅ FIX: Dynamic import avoids SSR issue — only runs client-side
+      // ✅ FIX: Re-authenticate with payments scope before createPayment
+      // Pi SDK v2 REQUIRES this — skipping causes "Cannot create a payment without paymentData"
       showToast("Connecting to Pi...", "success");
-      const { ensurePaymentReady } = await import("@/lib/pi/sdk");
-      await ensurePaymentReady();
+      await Pi.authenticate(
+        ["username", "payments", "wallet_address"],
+        async (incompletePayment: any) => {
+          console.warn("[Rewards] Incomplete payment:", incompletePayment.identifier);
+          await fetch("/api/payments/incomplete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ payment: incompletePayment }),
+          }).catch(console.error);
+        }
+      );
 
       Pi.createPayment(
         {
