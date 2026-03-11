@@ -1,0 +1,494 @@
+/* src/app/wallet/page.module.css */
+/* Aesthetic: Premium fintech dark — obsidian black, electric indigo, mint green accents, glassmorphism cards */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+.page {
+  min-height: 100vh;
+  background: #08080F;
+  font-family: 'Outfit', sans-serif;
+  padding-bottom: 100px;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+  z-index: 9999; padding: 10px 24px; border-radius: 8px;
+  font-size: 13px; font-weight: 600; white-space: nowrap;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  animation: toastIn 0.2s ease;
+}
+.toastSuccess { background: #00C896; color: #08080F; }
+.toastError   { background: #FF4560; color: white; }
+@keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(-8px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+
+/* ── Header ── */
+.header {
+  background: #0D0D1A;
+  position: relative;
+  overflow: hidden;
+  padding: 24px 20px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.headerBg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(99,102,241,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(0,200,150,0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.headerContent { position: relative; z-index: 1; }
+
+.headerTitle {
+  font-family: 'Outfit', sans-serif;
+  font-size: 26px; font-weight: 800;
+  color: white; margin-bottom: 4px;
+  letter-spacing: -0.5px;
+}
+.headerSub {
+  font-size: 13px; color: rgba(255,255,255,0.35);
+  margin-bottom: 24px; font-weight: 400;
+}
+
+/* Wallet summary cards row */
+.walletCards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding-bottom: 0;
+  margin-bottom: -1px;
+}
+
+.walletCard {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 2px solid transparent;
+  border-radius: 12px 12px 0 0;
+  padding: 14px 12px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 200ms;
+  font-family: 'Outfit', sans-serif;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.walletCard:hover { background: rgba(255,255,255,0.05); }
+
+.walletCardActive {
+  background: rgba(99,102,241,0.08);
+  border-color: rgba(99,102,241,0.3);
+  border-bottom-color: #6366F1;
+}
+.walletCardSc.walletCardActive {
+  background: rgba(245,166,35,0.08);
+  border-color: rgba(245,166,35,0.3);
+  border-bottom-color: #F5A623;
+}
+.walletCardEarnings.walletCardActive {
+  background: rgba(0,200,150,0.08);
+  border-color: rgba(0,200,150,0.3);
+  border-bottom-color: #00C896;
+}
+
+.walletCardIcon  { font-size: 20px; line-height: 1; }
+.walletCardLabel { font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.walletCardValue { font-family: 'Space Mono', monospace; font-size: 13px; color: white; font-weight: 700; white-space: nowrap; }
+.walletCardSub   { font-size: 9px; color: rgba(255,255,255,0.25); }
+
+/* ── Body ── */
+.body {
+  background: #0F0F1A;
+  min-height: calc(100vh - 200px);
+  padding: 20px 16px;
+}
+
+.tabContent { display: flex; flex-direction: column; gap: 20px; }
+
+/* ── Section title ── */
+.sectionTitle {
+  font-size: 13px; font-weight: 700;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase; letter-spacing: 1.5px;
+  margin-bottom: -8px;
+}
+
+/* ────────────────────────────────
+   PI WALLET TAB
+──────────────────────────────── */
+.piCard {
+  background: linear-gradient(135deg, #1A1A2E 0%, #0F0F1A 100%);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 16px; padding: 20px;
+  position: relative; overflow: hidden;
+}
+.piCardGlow {
+  position: absolute; top: -40px; right: -40px;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.piCardTop { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.piCardIconWrap {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.piCardTitle { font-size: 16px; font-weight: 700; color: white; }
+.piCardSub   { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+.piCardBalance {
+  background: rgba(99,102,241,0.06);
+  border: 1px solid rgba(99,102,241,0.15);
+  border-radius: 10px; padding: 14px 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.piCardBalanceLabel { font-size: 12px; color: rgba(255,255,255,0.4); }
+.piCardBalanceValue {
+  font-family: 'Space Mono', monospace;
+  font-size: 16px; font-weight: 700; color: #6366F1;
+}
+.piCardNote {
+  font-size: 11px; color: rgba(255,255,255,0.25);
+  line-height: 1.6; padding-top: 4px;
+}
+
+/* Quick actions */
+.quickActions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.quickAction {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px; padding: 14px 8px;
+  text-align: center; text-decoration: none;
+  transition: all 150ms;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.quickAction:hover { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.2); }
+.quickActionIcon  { font-size: 22px; }
+.quickActionLabel { font-size: 10px; color: rgba(255,255,255,0.45); font-weight: 600; }
+
+/* ────────────────────────────────
+   SC WALLET TAB
+──────────────────────────────── */
+.scCard {
+  background: linear-gradient(135deg, #1A1500 0%, #120F00 100%);
+  border: 1px solid rgba(245,166,35,0.2);
+  border-radius: 16px; padding: 20px;
+  position: relative; overflow: hidden;
+}
+.scCardGlow {
+  position: absolute; top: -40px; right: -40px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(245,166,35,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.scCardTop { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.scCardIconWrap {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: rgba(245,166,35,0.1);
+  border: 1px solid rgba(245,166,35,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.scCardTitle { font-size: 16px; font-weight: 700; color: white; }
+.scCardSub   { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+
+.scCardBalance {
+  font-family: 'Space Mono', monospace;
+  font-size: 42px; font-weight: 700;
+  color: #F5A623; line-height: 1;
+  letter-spacing: -1px;
+  margin-bottom: 4px;
+}
+.scCardBalanceLabel { font-size: 12px; color: rgba(255,255,255,0.3); margin-bottom: 16px; }
+
+.scCardStats { display: flex; align-items: center; gap: 0; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.06); }
+.scCardStat  { flex: 1; text-align: center; }
+.scCardStatDiv { width: 1px; height: 30px; background: rgba(255,255,255,0.06); }
+.scCardStatVal   { display: block; font-family: 'Space Mono', monospace; font-size: 15px; font-weight: 700; color: white; }
+.scCardStatLabel { display: block; font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* SC Actions */
+.scActions {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.scActionBtn {
+  background: rgba(245,166,35,0.06);
+  border: 1px solid rgba(245,166,35,0.15);
+  border-radius: 10px; padding: 12px 6px;
+  text-align: center; text-decoration: none; color: #F5A623;
+  font-size: 12px; font-weight: 600;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  transition: all 150ms; font-family: 'Outfit', sans-serif;
+}
+.scActionBtn:hover { background: rgba(245,166,35,0.12); }
+.scActionBtn span  { font-size: 18px; }
+
+/* Earn ways */
+.earnWays { display: flex; flex-direction: column; gap: 0; }
+.earnWayRow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.earnWayRow:last-child { border-bottom: none; }
+.earnWayIcon  { font-size: 18px; flex-shrink: 0; width: 32px; text-align: center; }
+.earnWayLabel { font-size: 13px; color: rgba(255,255,255,0.65); flex: 1; }
+.earnWaySc    { font-size: 12px; font-weight: 700; color: #F5A623; font-family: 'Space Mono', monospace; }
+
+/* ────────────────────────────────
+   EARNINGS TAB
+──────────────────────────────── */
+.earningsCard {
+  background: linear-gradient(135deg, #001A12 0%, #000E09 100%);
+  border: 1px solid rgba(0,200,150,0.2);
+  border-radius: 16px; padding: 20px;
+  position: relative; overflow: hidden;
+}
+.earningsCardGlow {
+  position: absolute; top: -40px; right: -40px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(0,200,150,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.earningsCardTop {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; margin-bottom: 16px; gap: 12px;
+}
+.earningsCardTitle { font-size: 16px; font-weight: 700; color: white; }
+.earningsCardSub   { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+
+.withdrawBtn {
+  background: #00C896; color: #08080F;
+  font-size: 12px; font-weight: 800;
+  padding: 8px 16px; border-radius: 8px;
+  border: none; cursor: pointer; flex-shrink: 0;
+  font-family: 'Outfit', sans-serif;
+  transition: opacity 150ms; letter-spacing: 0.3px;
+}
+.withdrawBtn:hover { opacity: 0.85; }
+
+.earningsBalanceRow {
+  display: flex; gap: 16px; margin-bottom: 16px;
+}
+.earningsBalance, .earningsPending { flex: 1; }
+.earningsBalanceLabel { font-size: 11px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.earningsBalanceValue {
+  font-family: 'Space Mono', monospace;
+  font-size: 28px; font-weight: 700; color: #00C896;
+  line-height: 1; letter-spacing: -0.5px;
+}
+.earningsPendingValue {
+  font-family: 'Space Mono', monospace;
+  font-size: 22px; font-weight: 700; color: rgba(255,200,50,0.8);
+  line-height: 1;
+}
+
+.earningsStats { display: flex; align-items: center; gap: 0; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.06); }
+.earningsStat  { flex: 1; text-align: center; }
+.earningsStatDiv { width: 1px; height: 30px; background: rgba(255,255,255,0.06); }
+.earningsStatVal   { display: block; font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: white; }
+.earningsStatLabel { display: block; font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.earningsMinNote {
+  margin-top: 12px; padding: 10px 14px;
+  background: rgba(255,200,50,0.05);
+  border: 1px solid rgba(255,200,50,0.1);
+  border-radius: 8px;
+  font-size: 11px; color: rgba(255,200,50,0.6);
+}
+
+/* Sources list */
+.sourcesList { display: flex; flex-direction: column; gap: 0; }
+.sourceRow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.sourceRow:last-child { border-bottom: none; }
+.sourceIcon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.sourceInfo { flex: 1; }
+.sourceLabel { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.8); margin-bottom: 2px; }
+.sourceDesc  { font-size: 11px; color: rgba(255,255,255,0.3); line-height: 1.4; }
+
+/* Referrals */
+.referralList { display: flex; flex-direction: column; gap: 0; }
+.referralRow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.referralRow:last-child { border-bottom: none; }
+.referralAvatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #6366F1, #4F46E5);
+  color: white; font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0;
+}
+.referralAvatarImg { width: 100%; height: 100%; object-fit: cover; }
+.referralInfo  { flex: 1; }
+.referralName  { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.8); }
+.referralTime  { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 1px; }
+.referralRight { text-align: right; }
+.referralStatus { font-size: 11px; font-weight: 600; }
+.referralBonus  { font-family: 'Space Mono', monospace; font-size: 12px; color: #00C896; font-weight: 700; margin-top: 2px; }
+
+/* Txn list */
+.txnList { display: flex; flex-direction: column; gap: 0; }
+.txnRow  {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.txnRow:last-child { border-bottom: none; }
+.txnIcon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.txnInfo    { flex: 1; min-width: 0; }
+.txnSource  { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.75); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.txnMeta    { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.txnTime    { font-size: 11px; color: rgba(255,255,255,0.25); }
+.txnStatus  {
+  font-size: 9px; font-weight: 700;
+  padding: 1px 6px; border-radius: 3px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.txnStatus_pending   { background: rgba(255,200,50,0.1);  color: #FFC832; }
+.txnStatus_available { background: rgba(0,200,150,0.1);  color: #00C896; }
+.txnStatus_withdrawn { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.3); }
+
+.txnRight   { text-align: right; }
+.txnAmount  { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; }
+.txnBalance { font-size: 10px; color: rgba(255,255,255,0.2); margin-top: 2px; font-family: 'Space Mono', monospace; }
+.txnAmountPos { color: #00C896; }
+.txnAmountNeg { color: #FF4560; }
+
+/* Empty states */
+.emptyTxn { text-align: center; padding: 24px; font-size: 13px; color: rgba(255,255,255,0.2); }
+.emptyEarnings { text-align: center; padding: 32px 16px; }
+.emptyEarningsIcon  { font-size: 48px; margin-bottom: 12px; }
+.emptyEarningsTitle { font-size: 18px; font-weight: 700; color: rgba(255,255,255,0.7); margin-bottom: 6px; }
+.emptyEarningsDesc  { font-size: 13px; color: rgba(255,255,255,0.3); line-height: 1.6; margin-bottom: 20px; }
+.emptyEarningsCtas  { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.emptyEarningsBtn {
+  background: rgba(0,200,150,0.08);
+  border: 1px solid rgba(0,200,150,0.2);
+  color: #00C896;
+  font-size: 12px; font-weight: 600;
+  padding: 9px 16px; border-radius: 8px;
+  text-decoration: none; transition: all 150ms;
+  font-family: 'Outfit', sans-serif;
+}
+.emptyEarningsBtn:hover { background: rgba(0,200,150,0.14); }
+
+/* ── Skeleton ── */
+.skeletonList { display: flex; flex-direction: column; gap: 8px; }
+.skeletonRow {
+  height: 52px; border-radius: 8px;
+  background: linear-gradient(90deg, #14141F 25%, #1A1A2A 50%, #14141F 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ── Withdraw Modal ── */
+.modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-end; }
+.modalBackdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.75); }
+.modalSheet {
+  position: relative; width: 100%;
+  background: #0D0D1A;
+  border: 1px solid rgba(0,200,150,0.15);
+  border-radius: 20px 20px 0 0;
+  padding: 12px 20px 40px;
+  z-index: 1;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modalHandle { width: 36px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.1); margin: 0 auto 20px; }
+.modalTitle  { font-size: 20px; font-weight: 700; color: white; margin-bottom: 6px; }
+.modalSub    { font-size: 12px; color: rgba(255,255,255,0.35); margin-bottom: 20px; }
+
+.withdrawInputWrap {
+  display: flex; align-items: center; gap: 0;
+  background: rgba(0,200,150,0.05);
+  border: 1.5px solid rgba(0,200,150,0.2);
+  border-radius: 10px; overflow: hidden;
+  margin-bottom: 10px;
+}
+.withdrawCurrency {
+  padding: 0 14px;
+  font-family: 'Space Mono', monospace;
+  font-size: 18px; color: rgba(255,255,255,0.4);
+  border-right: 1px solid rgba(255,255,255,0.08);
+}
+.withdrawInput {
+  flex: 1; padding: 14px;
+  background: transparent; border: none;
+  font-family: 'Space Mono', monospace;
+  font-size: 22px; font-weight: 700; color: #00C896;
+  outline: none;
+}
+.withdrawMaxBtn {
+  padding: 0 14px;
+  background: transparent; border: none;
+  font-size: 11px; font-weight: 800; color: #00C896;
+  cursor: pointer; font-family: 'Outfit', sans-serif;
+  letter-spacing: 1px;
+}
+.withdrawError {
+  font-size: 12px; color: #FF4560;
+  margin-bottom: 10px; padding: 8px 12px;
+  background: rgba(255,69,96,0.08);
+  border-radius: 6px;
+}
+
+.withdrawSummary {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px; padding: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 16px;
+}
+.withdrawSummaryRow {
+  display: flex; justify-content: space-between;
+  font-size: 13px; color: rgba(255,255,255,0.5);
+}
+.withdrawSummaryTotal {
+  font-weight: 700; color: white;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.withdrawFree { color: #00C896; font-weight: 600; }
+
+.withdrawConfirmBtn {
+  width: 100%; padding: 14px;
+  background: #00C896; color: #08080F;
+  font-size: 15px; font-weight: 800;
+  border: none; border-radius: 10px; cursor: pointer;
+  font-family: 'Outfit', sans-serif; transition: opacity 150ms;
+  letter-spacing: 0.3px;
+}
+.withdrawConfirmBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+.withdrawConfirmBtn:hover:not(:disabled) { opacity: 0.88; }
+.modalCancelBtn {
+  width: 100%; margin-top: 10px; padding: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.4);
+  font-size: 14px; font-weight: 500;
+  border-radius: 10px; cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+}
