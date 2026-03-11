@@ -5,7 +5,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { usePi } from "@/components/providers/PiProvider";
-import { ensurePaymentReady } from "@/lib/pi/sdk"; // ✅ FIX: import ensurePaymentReady
 import styles from "./page.module.css";
 
 const SC_PACKAGES = [
@@ -166,8 +165,9 @@ export default function RewardsPage() {
     const piAmount = parseFloat((currentPkg.usd / piRate).toFixed(6));
 
     try {
-      // ✅ FIX: Must re-authenticate with payments scope before createPayment
+      // ✅ FIX: Dynamic import avoids SSR issue — only runs client-side
       showToast("Connecting to Pi...", "success");
+      const { ensurePaymentReady } = await import("@/lib/pi/sdk");
       await ensurePaymentReady();
 
       Pi.createPayment(
