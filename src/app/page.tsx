@@ -24,6 +24,7 @@ const modules = [
   { href: "/pi-value",    emoji: "📈",  label: "Market Value",  desc: "Pi Live Market Data & Pi USD Converter"   },
   { href: "/classifieds", emoji: "📋",  label: "Classifieds",   desc: "Promote services & businesses"    },
   { href: "/pioneers",    emoji: "🌍",  label: "I Am a Pioneer", desc: "Pin yourself & find nearby Pioneers" },
+  { href: "/supa-livvi",  emoji: "✨",  label: "SupaLivvi",      desc: "Pi Lifestyle & Discovery" },
 ];
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }

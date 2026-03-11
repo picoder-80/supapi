@@ -27,6 +27,7 @@ const navLinks = [
   { href: "/classifieds", label: "📋 Classifieds"   },
   { href: "/myspace",     label: "🪐 MySpace"       },
   { href: "/pioneers",    label: "🌍 Pioneers"      },
+  { href: "/supa-livvi",  label: "✨ SupaLivvi"     },
 ];
 
 export default function TopBar() {

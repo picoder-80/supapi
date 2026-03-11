@@ -23,6 +23,7 @@ const SCROLL_ITEMS = [
   { href: "/classifieds", emoji: "📋",  label: "Classifieds"},
   { href: "/myspace",     emoji: "🪐",  label: "MySpace"    },
   { href: "/pioneers",    emoji: "🌍",  label: "Pioneers"   },
+  { href: "/supa-livvi",  emoji: "✨",  label: "SupaLivvi"  },
 ];
 
 export default function BottomNav() {
