@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     // SC reward for boosting (small, encouraging)
     await supabase.from("market_sc_events").insert({
       user_id: userId, event: "boost_purchased", ref_id: listing_id, sc_amount: 0,
-    }).catch(() => {});
+    });
 
     return NextResponse.json({
       success: true,

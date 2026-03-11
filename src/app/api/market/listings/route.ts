@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
   const offset      = (page - 1) * limit;
 
   try {
-    await supabase.rpc("expire_listing_boosts").catch(() => {});
+    try { await supabase.rpc("expire_listing_boosts"); } catch {}
 
     let query = supabase.from("listings")
       .select(`id, title, description, price_pi, category, subcategory, condition, buying_method, images, stock, status, location, views, likes, created_at, is_boosted, boost_tier, seller:seller_id ( id, username, display_name, avatar_url, kyc_status )`, { count: "exact" })
