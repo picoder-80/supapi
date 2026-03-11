@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { usePi } from "@/components/providers/PiProvider";
+import { ensurePaymentReady } from "@/lib/pi/sdk"; // ✅ FIX: import ensurePaymentReady
 import styles from "./page.module.css";
 
 const SC_PACKAGES = [
@@ -85,10 +86,9 @@ export default function RewardsPage() {
   const [checking, setChecking] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
   const [claimedActivities, setClaimedActivities] = useState<Set<string>>(new Set());
-  const [piRate, setPiRate] = useState<number>(1.50); // Pi/USD rate
+  const [piRate, setPiRate] = useState<number>(1.50);
   const [buyPkg, setBuyPkg] = useState<typeof SC_PACKAGES[0] | null>(null);
   const [buying, setBuying] = useState(false);
-  // Phase 3 — Gift & Transfer
   const [giftItem, setGiftItem] = useState<typeof GIFT_ITEMS[0] | null>(null);
   const [giftUsername, setGiftUsername] = useState("");
   const [gifting, setGifting] = useState(false);
@@ -153,15 +153,23 @@ export default function RewardsPage() {
     setChecking(false);
   };
 
+  // ✅ FIX: handleBuy now calls ensurePaymentReady() before createPayment()
+  // This is REQUIRED by Pi SDK v2 — createPayment fails without payments scope auth
   const handleBuy = async () => {
     if (!buyPkg || buying) return;
     if (!piReady) { showToast("Pi SDK not ready. Please wait...", "error"); return; }
     const Pi = (window as any).Pi;
     if (!Pi) { showToast("Please open in Pi Browser", "error"); return; }
+
     setBuying(true);
     const currentPkg = buyPkg;
     const piAmount = parseFloat((currentPkg.usd / piRate).toFixed(6));
+
     try {
+      // ✅ FIX: Must re-authenticate with payments scope before createPayment
+      showToast("Connecting to Pi...", "success");
+      await ensurePaymentReady();
+
       Pi.createPayment(
         {
           amount:   piAmount,
@@ -602,6 +610,7 @@ export default function RewardsPage() {
         </div>
 
       </div>
+
       {/* Gift Modal */}
       {giftItem && (
         <div className={styles.giftModal}>

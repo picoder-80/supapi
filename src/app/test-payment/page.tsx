@@ -13,7 +13,8 @@ export default function TestPaymentPage() {
   const [message, setMessage] = useState("");
   const [txid,    setTxid]    = useState("");
 
-  const handlePay = () => {
+  // ✅ FIX: async — must await authenticate() with payments scope FIRST
+  const handlePay = async () => {
     if (!window.Pi) {
       setStatus("error");
       setMessage("Pi SDK not found. Please open in Pi Browser.");
@@ -21,6 +22,29 @@ export default function TestPaymentPage() {
     }
 
     setStatus("waiting");
+    setMessage("Authenticating with Pi...");
+
+    // ✅ FIX: Re-authenticate with payments scope before createPayment
+    // Pi SDK v2 REQUIRES this step — skipping causes "Cannot create a payment without paymentData"
+    try {
+      await window.Pi.authenticate(
+        ["username", "payments", "wallet_address"],
+        async (incompletePayment) => {
+          console.warn("[TestPayment] Incomplete payment found:", incompletePayment.identifier);
+          await fetch("/api/payments/incomplete", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ payment: incompletePayment }),
+          }).catch(console.error);
+        }
+      );
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Auth failed";
+      setStatus("error");
+      setMessage(`Authentication failed: ${msg}`);
+      return;
+    }
+
     setMessage("Waiting for Pi Browser confirmation...");
 
     window.Pi.createPayment(
@@ -94,7 +118,7 @@ export default function TestPaymentPage() {
         <p className={styles.sub}>Step 10 — Pi Developer Portal Verification</p>
 
         <div className={styles.amount}>
-          <span className={styles.amountLabel}>Amount</span>
+          <span className={styles.amountLabel}>AMOUNT</span>
           <span className={styles.amountValue}>π 0.001</span>
           <span className={styles.amountNote}>Sandbox — no real Pi deducted</span>
         </div>
