@@ -12,7 +12,7 @@ interface Listing {
   id: string; title: string; price_pi: number; images: string[];
   category: string; condition: string; buying_method: string;
   location: string; views: number; likes: number; created_at: string;
-  country_code: string; ship_worldwide: boolean;
+  country_code: string; ship_worldwide: boolean; is_boosted?: boolean; boost_tier?: string;
   seller: { id: string; username: string; display_name: string | null; avatar_url: string | null; kyc_status: string };
 }
 
@@ -145,15 +145,43 @@ export default function MarketPage() {
   return (
     <div className={styles.page}>
 
-      <div className={styles.header}>
-        <div className={styles.headerTop}>
-          <h1 className={styles.title}>🛍️ Marketplace</h1>
+      {/* ── Hero (scrollable, not sticky) ── */}
+      <div className={styles.hero}>
+
+        {/* Title + Sell button */}
+        <div className={styles.heroTop}>
+          <div className={styles.heroInner}>
+            <div className={styles.heroBadge}>Pi Network · C2C</div>
+            <h1 className={styles.heroTitle}>🛍️ Marketplace</h1>
+            <p className={styles.heroSub}>Buy & sell anything with Pi. Secure escrow, AI dispute resolution.</p>
+          </div>
           <Link href="/market/create" className={styles.sellBtn}>+ Sell</Link>
         </div>
 
+        {/* Stats */}
+        <div className={styles.heroStats}>
+          <div className={styles.heroStat}>
+            <span className={styles.heroStatNum}>{total > 0 ? total.toLocaleString() : "—"}</span>
+            <span className={styles.heroStatLabel}>Listings</span>
+          </div>
+          <div className={styles.heroStatDiv} />
+          <div className={styles.heroStat}>
+            <span className={styles.heroStatNum}>π</span>
+            <span className={styles.heroStatLabel}>Pi Escrow</span>
+          </div>
+          <div className={styles.heroStatDiv} />
+          <div className={styles.heroStat}>
+            <span className={styles.heroStatNum}>AI</span>
+            <span className={styles.heroStatLabel}>Dispute AI</span>
+          </div>
+        </div>
+
+        {/* Country selector */}
         <div className={styles.countryRow}>
           <CountrySelect value={country} onChange={(code) => { setCountry(code); setPage(1); }} />
         </div>
+
+        {/* Search */}
         <form onSubmit={handleSearch} className={styles.searchRow}>
           <div className={styles.searchBox}>
             <span className={styles.searchIcon}>🔍</span>
@@ -167,44 +195,53 @@ export default function MarketPage() {
               <button type="button" className={styles.searchClear} onClick={() => { setSearchInput(""); setQ(""); }}>✕</button>
             )}
           </div>
-          <button type="button" className={`${styles.filterBtn} ${showFilters ? styles.filterBtnActive : ""}`} onClick={() => setShowFilters(p => !p)}>
+          <button type="button" className={`${styles.filterBtn} ${showFilters ? styles.filterBtnActive : ""}`}
+            onClick={() => setShowFilters(p => !p)}>
             ⚙️ {hasFilters ? "•" : ""}
           </button>
         </form>
 
+        {/* Worldwide banner */}
         {country === "WORLDWIDE" && (
           <div className={styles.worldwideBanner}>
             🌍 Showing listings with international shipping
           </div>
         )}
 
+        {/* Category tabs */}
         <div className={styles.catScroll}>
-          <button className={`${styles.catPill} ${!category ? styles.catPillActive : ""}`} onClick={() => { setCategory(""); setSubcategory(""); setPage(1); }}>
+          <button className={`${styles.catPill} ${!category ? styles.catPillActive : ""}`}
+            onClick={() => { setCategory(""); setSubcategory(""); setPage(1); }}>
             All
           </button>
           {CATEGORIES.map(c => (
-            <button key={c.id} className={`${styles.catPill} ${category === c.id ? styles.catPillActive : ""}`}
+            <button key={c.id}
+              className={`${styles.catPill} ${category === c.id ? styles.catPillActive : ""}`}
               onClick={() => { setCategory(c.id); setSubcategory(""); setPage(1); }}>
               {c.emoji} {c.label}
             </button>
           ))}
         </div>
-
-        {selectedCat && (
-          <div className={styles.catScroll}>
-            <button className={`${styles.subPill} ${!subcategory ? styles.subPillActive : ""}`} onClick={() => { setSubcategory(""); setPage(1); }}>
-              All {selectedCat.label}
-            </button>
-            {selectedCat.subcategories.map(s => (
-              <button key={s.id} className={`${styles.subPill} ${subcategory === s.id ? styles.subPillActive : ""}`}
-                onClick={() => { setSubcategory(s.id); setPage(1); }}>
-                {s.label}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
+      {/* ── Subcategory (white bar, below hero) ── */}
+      {selectedCat && (
+        <div className={styles.subCatWrap}>
+          <button className={`${styles.subPill} ${!subcategory ? styles.subPillActive : ""}`}
+            onClick={() => { setSubcategory(""); setPage(1); }}>
+            All {selectedCat.label}
+          </button>
+          {selectedCat.subcategories.map(s => (
+            <button key={s.id}
+              className={`${styles.subPill} ${subcategory === s.id ? styles.subPillActive : ""}`}
+              onClick={() => { setSubcategory(s.id); setPage(1); }}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Filter panel ── */}
       {showFilters && (
         <div className={styles.filterPanel}>
           <div className={styles.filterRow}>
@@ -214,9 +251,7 @@ export default function MarketPage() {
                 <button className={`${styles.filterOpt} ${!condition ? styles.filterOptActive : ""}`} onClick={() => setCondition("")}>Any</button>
                 {CONDITIONS.map(c => (
                   <button key={c.id} className={`${styles.filterOpt} ${condition === c.id ? styles.filterOptActive : ""}`}
-                    onClick={() => { setCondition(c.id); setPage(1); }}>
-                    {c.label}
-                  </button>
+                    onClick={() => { setCondition(c.id); setPage(1); }}>{c.label}</button>
                 ))}
               </div>
             </div>
@@ -226,9 +261,7 @@ export default function MarketPage() {
                 <button className={`${styles.filterOpt} ${!method ? styles.filterOptActive : ""}`} onClick={() => setMethod("")}>Any</button>
                 {BUYING_METHODS.map(m => (
                   <button key={m.id} className={`${styles.filterOpt} ${method === m.id ? styles.filterOptActive : ""}`}
-                    onClick={() => { setMethod(m.id); setPage(1); }}>
-                    {m.emoji} {m.label}
-                  </button>
+                    onClick={() => { setMethod(m.id); setPage(1); }}>{m.emoji} {m.label}</button>
                 ))}
               </div>
             </div>
@@ -238,18 +271,15 @@ export default function MarketPage() {
             <div className={styles.filterOptions}>
               {SORT_OPTIONS.map(s => (
                 <button key={s.id} className={`${styles.filterOpt} ${sort === s.id ? styles.filterOptActive : ""}`}
-                  onClick={() => { setSort(s.id); setPage(1); }}>
-                  {s.label}
-                </button>
+                  onClick={() => { setSort(s.id); setPage(1); }}>{s.label}</button>
               ))}
             </div>
           </div>
-          {hasFilters && (
-            <button className={styles.resetBtn} onClick={resetFilters}>Reset all filters</button>
-          )}
+          {hasFilters && <button className={styles.resetBtn} onClick={resetFilters}>Reset all filters</button>}
         </div>
       )}
 
+      {/* ── Body ── */}
       <div className={styles.body}>
         <div className={styles.resultsHeader}>
           <span className={styles.resultsCount}>{loading ? "..." : `${total} listings`}</span>
@@ -284,6 +314,11 @@ export default function MarketPage() {
                       ? <img src={l.images[0]} alt={l.title} className={styles.cardImgEl} />
                       : <div className={styles.cardImgPlaceholder}>🛍️</div>
                     }
+                    {l.is_boosted && (
+                      <div className={styles.boostBadge}>
+                        {l.boost_tier === "gold" ? "👑" : l.boost_tier === "silver" ? "🥈" : "🥉"} Boosted
+                      </div>
+                    )}
                     <div className={styles.cardMethod}>
                       {l.buying_method === "meetup" ? "📍" : l.buying_method === "ship" ? "📦" : "🤝"}
                     </div>
@@ -296,7 +331,7 @@ export default function MarketPage() {
                     <div className={styles.cardTitle}>{l.title}</div>
                     <div className={styles.cardPrice}>{Number(l.price_pi).toFixed(2)} π</div>
                     <div className={styles.cardMeta}>
-                      <span className={styles.cardCondition}>{l.condition?.replace("_"," ")}</span>
+                      <span className={styles.cardCondition}>{l.condition?.replace("_", " ")}</span>
                       {l.location && <span className={styles.cardLocation}>📍 {l.location}</span>}
                     </div>
                     <div className={styles.cardSeller}>

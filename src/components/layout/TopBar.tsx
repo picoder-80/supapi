@@ -32,7 +32,7 @@ const navLinks = [
   { href: "/bulkhub",          label: "📦 BulkHub"          },
   { href: "/machina-market",  label: "🚗 MachinaMarket"   },
   { href: "/domus",            label: "🏠 Domus"           },
-  { href: "/endoro",           label: "🚗 Endoro"          },
+  { href: "/endoro",           label: "🛞 Endoro"          },
 ];
 
 export default function TopBar() {

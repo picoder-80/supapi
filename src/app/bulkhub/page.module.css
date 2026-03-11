@@ -1,12 +1,11 @@
 /* src/app/bulkhub/page.module.css */
 /* Aesthetic: Industrial bold — deep navy, steel grey, gold accents, grid-forward layout */
 
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 .page {
   min-height: 100vh;
   background: #F1F4F9;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   padding-bottom: 90px;
 }
 
@@ -64,7 +63,7 @@
 }
 
 .heroTitle {
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--font-sans);
   font-size: 36px;
   font-weight: 700;
   color: white;
@@ -95,7 +94,7 @@
   border-radius: 6px 0 0 6px;
   color: white;
   font-size: 14px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   outline: none;
   transition: border-color 150ms;
 }
@@ -121,7 +120,7 @@
   padding-bottom: 20px;
 }
 .heroStat { display: flex; flex-direction: column; }
-.heroStatNum   { font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; color: #F5A623; line-height: 1; }
+.heroStatNum   { font-family: var(--font-sans); font-size: 22px; font-weight: 700; color: #F5A623; line-height: 1; }
 .heroStatLabel { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
 .heroStatDiv   { width: 1px; height: 32px; background: rgba(255,255,255,0.1); }
 
@@ -147,7 +146,7 @@
   border: none;
   cursor: pointer;
   white-space: nowrap;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   transition: background 150ms;
 }
 .supplierCtaBtn:hover { background: #e8941a; }
@@ -175,7 +174,7 @@
   cursor: pointer;
   white-space: nowrap;
   transition: all 150ms;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
 }
 .catPill:hover { color: #1A1A2E; }
 .catPillActive { color: #F5A623; border-bottom-color: #F5A623; }
@@ -201,7 +200,7 @@
   color: #718096;
   cursor: pointer;
   transition: all 150ms;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   white-space: nowrap;
 }
 .tab:hover { color: #1A1A2E; }
@@ -216,7 +215,7 @@
   border-radius: 4px;
   border: none;
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   transition: background 150ms;
 }
 .postRfqBtn:hover { background: #0F3460; }
@@ -322,7 +321,7 @@
   background: #1A1A2E; color: white;
   font-size: 12px; font-weight: 600;
   padding: 6px 14px; border-radius: 4px; border: none;
-  cursor: pointer; font-family: 'Inter', sans-serif;
+  cursor: pointer; font-family: var(--font-sans);
   transition: background 150ms;
 }
 .rfqQuoteBtn:hover { background: #0F3460; }
@@ -354,7 +353,7 @@
   background: linear-gradient(135deg, #1A1A2E, #0F3460);
   color: #F5A623; font-size: 20px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Rajdhani', sans-serif;
+  font-family: var(--font-sans);
 }
 .supplierCardInfo { flex: 1; min-width: 0; }
 .supplierCardName { font-size: 14px; font-weight: 700; color: #1A1A2E; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -400,7 +399,7 @@
   background: #F5A623; color: #1A1A2E;
   font-size: 14px; font-weight: 700;
   padding: 11px 24px; border-radius: 6px; border: none; cursor: pointer;
-  font-family: 'Inter', sans-serif; text-decoration: none;
+  font-family: var(--font-sans); text-decoration: none;
 }
 
 /* ── Modal ── */
@@ -414,7 +413,7 @@
 }
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .modalHandle { width: 36px; height: 4px; border-radius: 2px; background: #E2E8F0; margin: 0 auto 20px; }
-.modalTitle { font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; color: #1A1A2E; margin-bottom: 6px; }
+.modalTitle { font-family: var(--font-sans); font-size: 22px; font-weight: 700; color: #1A1A2E; margin-bottom: 6px; }
 .modalSub   { font-size: 13px; color: #718096; margin-bottom: 20px; line-height: 1.5; }
 
 .formLabel { font-size: 13px; font-weight: 600; color: #1A1A2E; margin-bottom: 6px; margin-top: 14px; }
@@ -422,7 +421,7 @@
   width: 100%; padding: 11px 14px;
   border: 1.5px solid #E2E8F0; border-radius: 6px;
   font-size: 14px; color: #1A1A2E;
-  font-family: 'Inter', sans-serif; box-sizing: border-box;
+  font-family: var(--font-sans); box-sizing: border-box;
   transition: border-color 150ms;
 }
 .formInput:focus { outline: none; border-color: #F5A623; }
@@ -430,7 +429,7 @@
   width: 100%; padding: 11px 14px;
   border: 1.5px solid #E2E8F0; border-radius: 6px;
   font-size: 14px; color: #1A1A2E;
-  font-family: 'Inter', sans-serif; box-sizing: border-box;
+  font-family: var(--font-sans); box-sizing: border-box;
   resize: none; transition: border-color 150ms;
 }
 .formTextarea:focus { outline: none; border-color: #F5A623; }
@@ -440,7 +439,7 @@
   background: #F5A623; color: #1A1A2E;
   font-size: 15px; font-weight: 700;
   border: none; border-radius: 8px; cursor: pointer;
-  font-family: 'Inter', sans-serif; transition: background 150ms;
+  font-family: var(--font-sans); transition: background 150ms;
 }
 .modalSubmitBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 .modalSubmitBtn:hover:not(:disabled) { background: #e8941a; }
@@ -450,5 +449,5 @@
   background: #F7FAFC; border: 1px solid #E2E8F0;
   color: #718096; font-size: 14px; font-weight: 600;
   border-radius: 8px; cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
 }
