@@ -25,6 +25,7 @@ const SCROLL_ITEMS = [
   { href: "/pioneers",    emoji: "🌍",  label: "Pioneers"   },
   { href: "/supa-livvi",  emoji: "✨",  label: "SupaLivvi"  },
   { href: "/supa-saylo",  emoji: "🧵",  label: "SupaSaylo"  },
+  { href: "/bulkhub",     emoji: "📦",  label: "BulkHub"    },
 ];
 
 export default function BottomNav() {

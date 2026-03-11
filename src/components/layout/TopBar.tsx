@@ -29,6 +29,7 @@ const navLinks = [
   { href: "/pioneers",    label: "🌍 Pioneers"      },
   { href: "/supa-livvi",  label: "✨ SupaLivvi"     },
   { href: "/supa-saylo",  label: "🧵 SupaSaylo"     },
+  { href: "/bulkhub",     label: "📦 BulkHub"       },
 ];
 
 export default function TopBar() {
