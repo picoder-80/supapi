@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
     const enriched = posts.map((p: any) => ({
       ...p,
       liked: likedSet.has(p.id),
-      resaylo'd: resayloSet.has(p.id),
+      "resaylo_d": resayloSet.has(p.id),
       voted: votedMap[p.id] ?? null,
       poll_votes: pollVotesMap[p.id] ?? [],
       quoted_post: p.quote_id ? { ...quotesMap[p.quote_id], author: usersMap[quotesMap[p.quote_id]?.user_id] } : null,

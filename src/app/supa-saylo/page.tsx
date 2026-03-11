@@ -13,7 +13,7 @@ interface Post {
   parent_id: string | null; quote_id: string | null; quoted_post: any;
   like_count: number; resaylo_count: number; reply_count: number;
   quote_count: number; view_count: number;
-  liked: boolean; "resaylo'd": boolean;
+  liked: boolean; "resaylo_d": boolean;
   created_at: string;
 }
 interface User {
@@ -124,7 +124,7 @@ export default function SupaSayloPage() {
     e.preventDefault(); e.stopPropagation();
     if (!user) { router.push("/dashboard"); return; }
     setPosts(prev => prev.map(p => p.id === post.id
-      ? { ...p, "resaylo'd": !p["resaylo'd"], resaylo_count: p["resaylo'd"] ? p.resaylo_count - 1 : p.resaylo_count + 1 }
+      ? { ...p, "resaylo'd": !p["resaylo_d"], resaylo_count: p["resaylo_d"] ? p.resaylo_count - 1 : p.resaylo_count + 1 }
       : p
     ));
     const r = await fetch(`/api/supa-saylo/${post.id}`, {
@@ -370,7 +370,7 @@ export default function SupaSayloPage() {
                             {post.liked ? "❤️" : "🤍"} <span>{post.like_count || ""}</span>
                           </button>
                           <button
-                            className={`${styles.actionBtn} ${post["resaylo'd"] ? styles.actionResaylo : ""}`}
+                            className={`${styles.actionBtn} ${post["resaylo_d"] ? styles.actionResaylo : ""}`}
                             onClick={e => handleResaylo(post, e)}
                           >
                             🔁 <span>{post.resaylo_count || ""}</span>

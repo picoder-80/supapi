@@ -64,7 +64,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ post
   return NextResponse.json({
     success: true,
     data: {
-      post: { ...post, liked, "resaylo'd": resayloD, voted, poll_votes: pollVotes },
+      post: { ...post, liked, "resaylo_d": resayloD, voted, poll_votes: pollVotes },
       author,
       replies: (replies ?? []).map((r: any) => ({ ...r, author: replyUsersMap[r.user_id] })),
     }
