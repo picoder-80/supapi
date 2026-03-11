@@ -28,6 +28,7 @@ const navLinks = [
   { href: "/myspace",     label: "🪐 MySpace"       },
   { href: "/pioneers",    label: "🌍 Pioneers"      },
   { href: "/supa-livvi",  label: "✨ SupaLivvi"     },
+  { href: "/supa-saylo",  label: "🧵 SupaSaylo"     },
 ];
 
 export default function TopBar() {
