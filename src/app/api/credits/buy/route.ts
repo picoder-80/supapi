@@ -1,6 +1,4 @@
 // src/app/api/credits/buy/route.ts
-// POST /api/credits/buy
-// action: "credit" — called after usePiPayment onSuccess, credit SC to wallet
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -10,6 +8,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+const PI_API_KEY  = process.env.PI_API_KEY!;
+const PI_API_BASE = "https://api.minepi.com";
 
 function getUserId(req: NextRequest): string | null {
   try {
@@ -21,71 +21,90 @@ function getUserId(req: NextRequest): string | null {
 }
 
 const PACKAGES: Record<string, number> = {
-  starter: 100,
-  popular: 500,
-  pro:     1000,
-  whale:   5000,
+  starter: 100, popular: 500, pro: 1000, whale: 5000,
 };
 
 export async function POST(req: NextRequest) {
   const userId = getUserId(req);
   if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
-  const { txid, pkg, sc, action } = await req.json();
+  const { paymentId, txid, action, pkg, sc } = await req.json();
 
-  // Legacy approve/complete flow (keep for backward compat)
-  if (action === "approve") return NextResponse.json({ success: true });
-  if (action === "complete") {
-    // redirect to credit
+  // ── APPROVE ──────────────────────────────────────────────────────────────
+  if (action === "approve") {
+    try {
+      const res = await fetch(`${PI_API_BASE}/v2/payments/${paymentId}/approve`, {
+        method: "POST",
+        headers: { Authorization: `Key ${PI_API_KEY}` },
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        console.error("[credits/buy approve]", err);
+      }
+      return NextResponse.json({ success: true });
+    } catch (e: any) {
+      console.error("[credits/buy approve]", e);
+      return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+    }
   }
 
-  // Main flow: credit SC after payment completed
-  if (action === "credit" || action === "complete") {
-    if (!txid) return NextResponse.json({ success: false, error: "Missing txid" }, { status: 400 });
-
-    // Double-credit protection via txid
+  // ── COMPLETE ─────────────────────────────────────────────────────────────
+  if (action === "complete") {
+    // Double-credit protection
     const { data: existing } = await supabase
       .from("credit_transactions")
       .select("id")
-      .eq("ref_id", txid)
+      .eq("ref_id", paymentId)
       .eq("activity", "buy_sc")
       .maybeSingle();
 
-    if (existing) return NextResponse.json({ success: false, error: "Already processed" }, { status: 400 });
+    if (existing) return NextResponse.json({ success: true, data: { already: true } });
 
+    // Complete on Pi Platform
+    try {
+      const res = await fetch(`${PI_API_BASE}/v2/payments/${paymentId}/complete`, {
+        method: "POST",
+        headers: {
+          Authorization: `Key ${PI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ txid }),
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        console.error("[credits/buy complete]", err);
+        return NextResponse.json({ success: false, error: "Pi complete failed" }, { status: 500 });
+      }
+    } catch (e: any) {
+      console.error("[credits/buy complete]", e);
+      return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+    }
+
+    // Credit SC to wallet
     const scAmount = sc ?? PACKAGES[pkg] ?? 0;
     if (!scAmount) return NextResponse.json({ success: false, error: "Invalid package" }, { status: 400 });
 
-    // Ensure wallet exists
     await supabase.from("supapi_credits")
       .upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
 
     const { data: wallet } = await supabase
-      .from("supapi_credits")
-      .select("balance, total_earned")
-      .eq("user_id", userId)
-      .single();
+      .from("supapi_credits").select("balance, total_earned").eq("user_id", userId).single();
 
     if (!wallet) return NextResponse.json({ success: false, error: "Wallet not found" }, { status: 500 });
 
     const newBalance = wallet.balance + scAmount;
 
-    await supabase.from("supapi_credits")
-      .update({
-        balance:      newBalance,
-        total_earned: wallet.total_earned + scAmount,
-        updated_at:   new Date().toISOString(),
-      })
-      .eq("user_id", userId);
+    await supabase.from("supapi_credits").update({
+      balance: newBalance,
+      total_earned: wallet.total_earned + scAmount,
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", userId);
 
     await supabase.from("credit_transactions").insert({
-      user_id:      userId,
-      type:         "earn",
-      activity:     "buy_sc",
-      amount:       scAmount,
-      balance_after: newBalance,
-      ref_id:       txid,
-      note:         `💎 Bought ${scAmount} SC with Pi`,
+      user_id: userId, type: "earn", activity: "buy_sc",
+      amount: scAmount, balance_after: newBalance,
+      ref_id: paymentId,
+      note: `💎 Bought ${scAmount} SC with Pi`,
     });
 
     return NextResponse.json({ success: true, data: { sc: scAmount, newBalance } });

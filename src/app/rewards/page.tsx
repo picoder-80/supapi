@@ -4,7 +4,6 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { usePiPayment } from "@/hooks/usePiPayment";
 import styles from "./page.module.css";
 
 const SC_PACKAGES = [
@@ -77,7 +76,6 @@ function timeAgo(iso: string) {
 export default function RewardsPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const { pay: piPay } = usePiPayment();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [canCheckin, setCanCheckin] = useState(false);
@@ -153,38 +151,57 @@ export default function RewardsPage() {
     setChecking(false);
   };
 
-  const handleBuy = () => {
+  const handleBuy = async () => {
     if (!buyPkg || buying) return;
-    const piAmount = parseFloat((buyPkg.usd / piRate).toFixed(6));
-    const currentPkg = buyPkg; // capture before modal closes
+    const Pi = (window as any).Pi;
+    if (!Pi) { showToast("Please open in Pi Browser", "error"); return; }
     setBuying(true);
-    piPay({
-      amountPi:    piAmount,
-      memo:        `Buy ${currentPkg.sc} Supapi Credits`,
-      type:        "game",
-      referenceId: `sc_buy_${currentPkg.id}_${Date.now()}`,
-      metadata:    { pkg: currentPkg.id, sc: currentPkg.sc },
-      onSuccess: async (_paymentId: string, txid: string) => {
-        // /api/payments/complete dah handle — kita credit SC sekarang
-        const r = await fetch("/api/credits/buy", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
-          body: JSON.stringify({ txid, pkg: currentPkg.id, sc: currentPkg.sc, action: "credit" }),
-        });
-        const d = await r.json();
-        if (d.success) {
-          showToast(`🎉 +${currentPkg.sc} SC added to your wallet!`);
-          fetchData();
-        } else {
-          showToast(d.error ?? "SC credit failed", "error");
+    const currentPkg = buyPkg;
+    const piAmount = parseFloat((currentPkg.usd / piRate).toFixed(6));
+    try {
+      Pi.createPayment(
+        {
+          amount:   piAmount,
+          memo:     `Buy ${currentPkg.sc} Supapi Credits`,
+          metadata: { pkg: currentPkg.id, sc: currentPkg.sc },
+        },
+        {
+          // FIRE AND FORGET — do NOT await
+          onReadyForServerApproval: (paymentId: string) => {
+            fetch("/api/credits/buy", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+              body: JSON.stringify({ paymentId, action: "approve" }),
+            }).catch(console.error);
+          },
+          onReadyForServerCompletion: async (paymentId: string, txid: string) => {
+            try {
+              const r = await fetch("/api/credits/buy", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+                body: JSON.stringify({ paymentId, txid, action: "complete", pkg: currentPkg.id, sc: currentPkg.sc }),
+              });
+              const d = await r.json();
+              if (d.success) {
+                showToast(`🎉 +${currentPkg.sc} SC added to your wallet!`);
+                fetchData();
+              } else {
+                showToast(d.error ?? "SC credit failed", "error");
+              }
+            } catch {
+              showToast("Failed to credit SC", "error");
+            }
+            setBuyPkg(null);
+            setBuying(false);
+          },
+          onCancel: () => { showToast("Payment cancelled", "error"); setBuyPkg(null); setBuying(false); },
+          onError:  (err: any) => { showToast("Payment error: " + (err?.message ?? ""), "error"); setBuyPkg(null); setBuying(false); },
         }
-        setBuyPkg(null);
-        setBuying(false);
-      },
-      onCancel: () => { showToast("Payment cancelled", "error"); setBuyPkg(null); setBuying(false); },
-      onError:  (err) => { showToast("Payment error: " + err.message, "error"); setBuyPkg(null); setBuying(false); },
-    });
-    setBuying(false);
+      );
+    } catch (e: any) {
+      showToast("Payment error: " + (e?.message ?? "Unknown"), "error");
+      setBuying(false);
+    }
   };
 
   const handleGift = async () => {
