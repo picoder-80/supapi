@@ -28,10 +28,10 @@ export async function GET(req: NextRequest) {
   const tab = searchParams.get("tab") ?? "sc";
 
   try {
-    // Always fetch SC wallet
+    // Always fetch SC wallet — ✅ FIX: streak_days → checkin_streak
     const { data: scWallet } = await supabase
       .from("supapi_credits")
-      .select("balance, total_earned, total_spent, streak_days, last_checkin")
+      .select("balance, total_earned, total_spent, checkin_streak, last_checkin")
       .eq("user_id", userId).maybeSingle();
 
     // Earnings wallet
@@ -53,7 +53,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         success: true,
         data: {
-          scWallet: scWallet ?? { balance: 0, total_earned: 0, total_spent: 0, streak_days: 0, last_checkin: null },
+          // ✅ FIX: streak_days → checkin_streak in fallback default
+          scWallet: scWallet ?? { balance: 0, total_earned: 0, total_spent: 0, checkin_streak: 0, last_checkin: null },
           earningsWallet: earningsWallet ?? { pending_pi: 0, available_pi: 0, total_earned: 0, total_withdrawn: 0 },
           scTransactions: scTxns ?? [],
         }
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         success: true,
         data: {
-          scWallet: scWallet ?? { balance: 0, total_earned: 0, total_spent: 0 },
+          scWallet: scWallet ?? { balance: 0, total_earned: 0, total_spent: 0, checkin_streak: 0 },
           earningsWallet: earningsWallet ?? { pending_pi: 0, available_pi: 0, total_earned: 0, total_withdrawn: 0 },
           earningsTransactions: earnTxns ?? [],
           referrals: (referrals ?? []).map((r: any) => ({ ...r, referee: refereesMap[r.referee_id] })),
@@ -106,7 +107,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        scWallet: scWallet ?? { balance: 0, total_earned: 0, total_spent: 0 },
+        scWallet: scWallet ?? { balance: 0, total_earned: 0, total_spent: 0, checkin_streak: 0 },
         earningsWallet: earningsWallet ?? { pending_pi: 0, available_pi: 0, total_earned: 0, total_withdrawn: 0 },
         recentPiActivity: recentPiActivity ?? [],
       }

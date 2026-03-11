@@ -9,7 +9,7 @@ import styles from "./page.module.css";
 // ── Types ──────────────────────────────────────────────────────────────────
 interface ScWallet {
   balance: number; total_earned: number; total_spent: number;
-  streak_days: number; last_checkin: string | null;
+  checkin_streak: number; last_checkin: string | null;
 }
 interface EarningsWallet {
   pending_pi: number; available_pi: number;
@@ -211,7 +211,7 @@ export default function WalletPage() {
     setWithdrawLoading(false);
   };
 
-  const scWallet:       ScWallet       = data?.scWallet       ?? { balance: 0, total_earned: 0, total_spent: 0, streak_days: 0, last_checkin: null };
+  const scWallet:       ScWallet       = data?.scWallet       ?? { balance: 0, total_earned: 0, total_spent: 0, checkin_streak: 0, last_checkin: null };
   const earningsWallet: EarningsWallet = data?.earningsWallet ?? { pending_pi: 0, available_pi: 0, total_earned: 0, total_withdrawn: 0 };
   const scTxns:         ScTxn[]        = data?.scTransactions ?? [];
   const earnTxns:       EarnTxn[]      = data?.earningsTransactions ?? [];
@@ -382,7 +382,7 @@ export default function WalletPage() {
                 </div>
                 <div className={styles.scCardStatDiv} />
                 <div className={styles.scCardStat}>
-                  <span className={styles.scCardStatVal}>🔥 {scWallet.streak_days}</span>
+                  <span className={styles.scCardStatVal}>🔥 {scWallet.checkin_streak}</span>
                   <span className={styles.scCardStatLabel}>Day Streak</span>
                 </div>
               </div>
