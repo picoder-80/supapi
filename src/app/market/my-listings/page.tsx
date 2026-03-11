@@ -1,142 +1,178 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 
-interface Listing {
-  id: string; title: string; price_pi: number; images: string[];
-  category: string; status: string; stock: number; views: number; created_at: string;
+function timeAgo(iso: string) {
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  return d === 0 ? "Today" : d === 1 ? "Yesterday" : `${d}d ago`;
 }
 
-const STATUS_LABELS: Record<string,{label:string;color:string;bg:string}> = {
-  active:  { label:"Active",  color:"#27ae60", bg:"rgba(39,174,96,0.1)" },
-  paused:  { label:"Paused",  color:"#f39c12", bg:"rgba(243,156,18,0.1)" },
-  sold:    { label:"Sold",    color:"#7f8c8d", bg:"rgba(127,140,141,0.1)" },
-  deleted: { label:"Deleted", color:"#e74c3c", bg:"rgba(231,76,60,0.1)" },
+const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
+  active:  { label: "Active",  color: "#276749", bg: "#F0FFF4" },
+  paused:  { label: "Paused",  color: "#744210", bg: "#FFFAF0" },
+  sold:    { label: "Sold",    color: "#2D3748", bg: "#EDF2F7" },
+  deleted: { label: "Deleted", color: "#9B2335", bg: "#FFF5F5" },
 };
 
 export default function MyListingsPage() {
-  const { user } = useAuth();
-  const router   = useRouter();
-  const [listings, setListings]   = useState<Listing[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [filter, setFilter]       = useState("active");
-  const [updating, setUpdating]   = useState<string | null>(null);
+  const { user }  = useAuth();
+  const router    = useRouter();
 
-  useEffect(() => {
+  const [listings, setListings] = useState<any[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [filter, setFilter]     = useState<"all"|"active"|"paused"|"sold">("all");
+  const [toast, setToast]       = useState<{ msg: string; type: "success"|"error" }|null>(null);
+  const [actionId, setActionId] = useState<string|null>(null);
+
+  const token = () => typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "";
+
+  const showToast = (msg: string, type: "success"|"error" = "success") => {
+    setToast({ msg, type }); setTimeout(() => setToast(null), 3500);
+  };
+
+  const fetchListings = useCallback(async () => {
     if (!user) return;
-    const fetch_ = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem("supapi_token");
-        const params = new URLSearchParams({ seller_id: user.id, status: filter === "all" ? "" : filter });
-        // Re-use listings API but filter by seller via server
-        const r = await fetch(`/api/market/my-listings?status=${filter}`, { headers: { Authorization: `Bearer ${token}` } });
-        const d = await r.json();
-        if (d.success) setListings(d.data);
-      } catch {}
-      setLoading(false);
-    };
-    fetch_();
-  }, [user, filter]);
-
-  const toggleStatus = async (listing: Listing) => {
-    const token = localStorage.getItem("supapi_token");
-    if (!token) return;
-    const newStatus = listing.status === "active" ? "paused" : "active";
-    setUpdating(listing.id);
+    setLoading(true);
     try {
-      const r = await fetch(`/api/market/listings/${listing.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ status: newStatus }),
+      const r = await fetch("/api/market/listings/mine", {
+        headers: { Authorization: `Bearer ${token()}` }
       });
       const d = await r.json();
-      if (d.success) setListings(prev => prev.map(l => l.id === listing.id ? { ...l, status: newStatus } : l));
+      if (d.success) setListings(d.data ?? []);
     } catch {}
-    setUpdating(null);
-  };
+    setLoading(false);
+  }, [user]);
 
-  const deleteListing = async (id: string) => {
-    if (!confirm("Delete this listing?")) return;
-    const token = localStorage.getItem("supapi_token");
-    if (!token) return;
-    setUpdating(id);
+  useEffect(() => {
+    if (!user) { router.push("/dashboard"); return; }
+    fetchListings();
+  }, [user, fetchListings, router]);
+
+  const handleStatusChange = async (id: string, status: string) => {
+    setActionId(id);
     try {
-      await fetch(`/api/market/listings/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-      setListings(prev => prev.filter(l => l.id !== id));
-    } catch {}
-    setUpdating(null);
+      const r = await fetch(`/api/market/listings/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+        body: JSON.stringify({ status }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        showToast(`Listing ${status === "deleted" ? "deleted" : status === "paused" ? "paused" : "activated"}!`);
+        fetchListings();
+      } else {
+        showToast(d.error ?? "Update failed", "error");
+      }
+    } catch { showToast("Something went wrong", "error"); }
+    setActionId(null);
   };
 
-  if (!user) return (
-    <div className={styles.authWall}>
-      <div className={styles.authIcon}>🔒</div>
-      <div className={styles.authTitle}>Sign in required</div>
-      <button className={styles.authBtn} onClick={() => router.push("/dashboard")}>Sign In</button>
-    </div>
-  );
+  const filtered = filter === "all" ? listings : listings.filter(l => l.status === filter);
+
+  if (!user) return null;
 
   return (
     <div className={styles.page}>
+      {toast && (
+        <div className={`${styles.toast} ${toast.type === "error" ? styles.toastError : styles.toastSuccess}`}>
+          {toast.msg}
+        </div>
+      )}
+
+      {/* Header */}
       <div className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push("/market")}>← Market</button>
+        <button className={styles.backBtn} onClick={() => router.back()}>← Back</button>
         <h1 className={styles.title}>My Listings</h1>
         <Link href="/market/create" className={styles.createBtn}>+ New</Link>
       </div>
 
-      <div className={styles.filters}>
-        {["active","paused","all"].map(f => (
-          <button key={f} className={`${styles.filterBtn} ${filter === f ? styles.filterBtnActive : ""}`} onClick={() => setFilter(f)}>
-            {f.charAt(0).toUpperCase() + f.slice(1)}
-          </button>
-        ))}
+      {/* Stats */}
+      <div className={styles.stats}>
+        {(["all","active","paused","sold"] as const).map(s => {
+          const count = s === "all" ? listings.length : listings.filter(l => l.status === s).length;
+          return (
+            <button key={s} className={`${styles.statBtn} ${filter === s ? styles.statBtnActive : ""}`}
+              onClick={() => setFilter(s)}>
+              <span className={styles.statNum}>{count}</span>
+              <span className={styles.statLabel}>{s.charAt(0).toUpperCase() + s.slice(1)}</span>
+            </button>
+          );
+        })}
       </div>
 
+      {/* List */}
       <div className={styles.body}>
         {loading ? (
-          <div className={styles.loadingList}>{[...Array(3)].map((_,i) => <div key={i} className={styles.skeleton} />)}</div>
-        ) : listings.length === 0 ? (
+          [...Array(4)].map((_, i) => <div key={i} className={styles.skeletonRow} />)
+        ) : filtered.length === 0 ? (
           <div className={styles.empty}>
-            <div className={styles.emptyIcon}>🏪</div>
-            <div className={styles.emptyTitle}>No {filter} listings</div>
-            <Link href="/market/create" className={styles.emptyBtn}>+ Create Listing</Link>
+            <div className={styles.emptyIcon}>🛍️</div>
+            <div className={styles.emptyTitle}>No listings yet</div>
+            <div className={styles.emptyDesc}>Start selling to earn Pi and SC rewards!</div>
+            <Link href="/market/create" className={styles.emptyBtn}>+ Create First Listing</Link>
           </div>
         ) : (
-          <div className={styles.list}>
-            {listings.map(l => {
-              const st = STATUS_LABELS[l.status] ?? { label: l.status, color:"#999", bg:"#eee" };
-              return (
-                <div key={l.id} className={styles.card}>
-                  <div className={styles.cardImg}>
-                    {l.images?.[0] ? <img src={l.images[0]} alt="" className={styles.cardImgEl} /> : <div className={styles.cardImgPlaceholder}>🛍️</div>}
+          filtered.map(listing => {
+            const meta    = STATUS_META[listing.status] ?? STATUS_META.active;
+            const isBoost = listing.is_boosted && listing.boost_expires_at && new Date(listing.boost_expires_at) > new Date();
+            return (
+              <div key={listing.id} className={styles.listingRow}>
+                <Link href={`/market/${listing.id}`} className={styles.listingImg}>
+                  {listing.images?.[0]
+                    ? <img src={listing.images[0]} alt="" className={styles.listingImgEl} />
+                    : <span>🛍️</span>
+                  }
+                  {isBoost && <span className={styles.boostIndicator}>🚀</span>}
+                </Link>
+
+                <div className={styles.listingInfo}>
+                  <div className={styles.listingTitle}>{listing.title}</div>
+                  <div className={styles.listingMeta}>
+                    <span className={styles.listingPrice}>{parseFloat(listing.price_pi).toFixed(2)} π</span>
+                    <span className={styles.statusBadge} style={{ color: meta.color, background: meta.bg }}>
+                      {meta.label}
+                    </span>
                   </div>
-                  <div className={styles.cardInfo}>
-                    <div className={styles.cardTitle}>{l.title}</div>
-                    <div className={styles.cardPrice}>{Number(l.price_pi).toFixed(2)} π</div>
-                    <div className={styles.cardMeta}>
-                      <span className={styles.statusBadge} style={{ color: st.color, background: st.bg }}>{st.label}</span>
-                      <span className={styles.views}>👁 {l.views}</span>
-                      <span className={styles.stock}>{l.stock} left</span>
-                    </div>
-                  </div>
-                  <div className={styles.cardActions}>
-                    <Link href={`/market/${l.id}`} className={styles.viewBtn}>View</Link>
-                    {l.status !== "sold" && l.status !== "deleted" && (
-                      <button className={styles.toggleBtn} disabled={!!updating} onClick={() => toggleStatus(l)}>
-                        {updating === l.id ? "..." : l.status === "active" ? "Pause" : "Activate"}
-                      </button>
+                  <div className={styles.listingStats}>
+                    <span>👁 {listing.views ?? 0}</span>
+                    <span>❤️ {listing.likes ?? 0}</span>
+                    <span>📦 {listing.stock ?? 0} left</span>
+                    {isBoost && (
+                      <span className={styles.boostExpiry}>
+                        🚀 until {new Date(listing.boost_expires_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
                     )}
-                    <button className={styles.deleteBtn} disabled={!!updating} onClick={() => deleteListing(l.id)}>🗑</button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+
+                <div className={styles.listingActions}>
+                  {listing.status === "active" && (
+                    <>
+                      <Link href={`/market/${listing.id}`} className={styles.actionBtn} title="Boost">🚀</Link>
+                      <button className={styles.actionBtn} title="Pause"
+                        disabled={actionId === listing.id}
+                        onClick={() => handleStatusChange(listing.id, "paused")}>⏸</button>
+                    </>
+                  )}
+                  {listing.status === "paused" && (
+                    <button className={styles.actionBtn} title="Activate"
+                      disabled={actionId === listing.id}
+                      onClick={() => handleStatusChange(listing.id, "active")}>▶️</button>
+                  )}
+                  {listing.status !== "deleted" && listing.status !== "sold" && (
+                    <button className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
+                      title="Delete" disabled={actionId === listing.id}
+                      onClick={() => { if (confirm("Delete this listing?")) handleStatusChange(listing.id, "deleted"); }}>🗑</button>
+                  )}
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
     </div>
