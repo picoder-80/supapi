@@ -31,6 +31,7 @@ const navLinks = [
   { href: "/supa-saylo",  label: "🧵 SupaSaylo"     },
   { href: "/bulkhub",          label: "📦 BulkHub"          },
   { href: "/machina-market",  label: "🚗 MachinaMarket"   },
+  { href: "/domus",            label: "🏠 Domus"           },
 ];
 
 export default function TopBar() {
