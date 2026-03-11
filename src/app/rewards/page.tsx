@@ -240,57 +240,73 @@ export default function RewardsPage() {
   if (!user) {
     return (
       <div className={styles.page}>
-        {/* Introducing Screen */}
         <div className={styles.introPage}>
-          {/* Hero */}
+
+          {/* ── Hero ── */}
           <div className={styles.introHero}>
             <div className={styles.introHeroBg} />
             <div className={styles.introHeroContent}>
               <div className={styles.introBadge}>✨ Introducing</div>
               <div className={styles.introCoin}>💎</div>
               <h1 className={styles.introTitle}>Supapi Credits</h1>
-              <p className={styles.introSub}>The reward currency of the Pi ecosystem</p>
+              <p className={styles.introSub}>The exclusive reward currency for Pi Network Pioneers</p>
               <div className={styles.introValueRow}>
-                <div className={styles.introValueTag}>1 SC = $0.01 USD</div>
+                <div className={styles.introValueTag}>💎 1 SC = $0.01 USD</div>
+              </div>
+              <p className={styles.introHeroNote}>Earn · Spend · Gift — across the Pi ecosystem</p>
+            </div>
+          </div>
+
+          {/* ── What is SC ── */}
+          <div className={styles.introWhatBox}>
+            <div className={styles.introWhatTitle}>💡 What are Supapi Credits (SC)?</div>
+            <p className={styles.introWhatDesc}>
+              SC is Supapi's in-platform currency that you can earn for free through daily activities,
+              buy with Pi, gift to fellow Pioneers, and use across all Supapi platforms.
+              SC value is pegged to USD — stable and trustworthy.
+            </p>
+          </div>
+
+          {/* ── How to Use SC ── */}
+          <div className={styles.introSection}>
+            <div className={styles.introSectionTitle}>🎯 What can you do with SC?</div>
+            <div className={styles.introUseCases}>
+              <div className={styles.introUseCard}>
+                <div className={styles.introUseEmoji}>🎁</div>
+                <div className={styles.introUseTitle}>Hadiahkan Creator</div>
+                <div className={styles.introUseDesc}>Support your favourite Reels & LIVE creators. 70% goes directly to the creator.</div>
+              </div>
+              <div className={styles.introUseCard}>
+                <div className={styles.introUseEmoji}>💸</div>
+                <div className={styles.introUseTitle}>Send to Any Pioneer</div>
+                <div className={styles.introUseDesc}>Transfer SC to any Pioneer for free. 0% fee, instant.</div>
+              </div>
+              <div className={styles.introUseCard}>
+                <div className={styles.introUseEmoji}>⭐</div>
+                <div className={styles.introUseTitle}>Boost Listing</div>
+                <div className={styles.introUseDesc}>Use SC to boost your Marketplace & Gigs listings to the top. <span className={styles.introComingSoon}>Coming Soon</span></div>
+              </div>
+              <div className={styles.introUseCard}>
+                <div className={styles.introUseEmoji}>🏆</div>
+                <div className={styles.introUseTitle}>Leaderboard & Status</div>
+                <div className={styles.introUseDesc}>Pioneers with the most SC earn exclusive badges & platform priority. <span className={styles.introComingSoon}>Coming Soon</span></div>
+              </div>
+              <div className={styles.introUseCard}>
+                <div className={styles.introUseEmoji}>🎮</div>
+                <div className={styles.introUseTitle}>Main Arcade</div>
+                <div className={styles.introUseDesc}>Use SC as entry tickets for games in Supapi Arcade. <span className={styles.introComingSoon}>Coming Soon</span></div>
+              </div>
+              <div className={styles.introUseCard}>
+                <div className={styles.introUseEmoji}>📚</div>
+                <div className={styles.introUseTitle}>Unlock Premium Courses</div>
+                <div className={styles.introUseDesc}>Unlock exclusive courses on Supapi Academy using SC. <span className={styles.introComingSoon}>Coming Soon</span></div>
               </div>
             </div>
           </div>
 
-          {/* Features */}
-          <div className={styles.introFeatures}>
-            <div className={styles.introFeatureCard}>
-              <span className={styles.introFeatureEmoji}>📅</span>
-              <div>
-                <div className={styles.introFeatureTitle}>Daily Check-in</div>
-                <div className={styles.introFeatureDesc}>Earn 10 SC every day. Hit 7-day streak for bonus 50 SC</div>
-              </div>
-            </div>
-            <div className={styles.introFeatureCard}>
-              <span className={styles.introFeatureEmoji}>🎯</span>
-              <div>
-                <div className={styles.introFeatureTitle}>Complete Tasks</div>
-                <div className={styles.introFeatureDesc}>Review businesses, watch Reels, complete your profile</div>
-              </div>
-            </div>
-            <div className={styles.introFeatureCard}>
-              <span className={styles.introFeatureEmoji}>🎁</span>
-              <div>
-                <div className={styles.introFeatureTitle}>Send Gifts</div>
-                <div className={styles.introFeatureDesc}>Gift SC to creators & Pioneers you appreciate</div>
-              </div>
-            </div>
-            <div className={styles.introFeatureCard}>
-              <span className={styles.introFeatureEmoji}>💸</span>
-              <div>
-                <div className={styles.introFeatureTitle}>P2P Transfer</div>
-                <div className={styles.introFeatureDesc}>Send SC to any Pioneer — 0% fee, instant</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Earn preview */}
+          {/* ── Earn SC ── */}
           <div className={styles.introEarnBox}>
-            <div className={styles.introEarnTitle}>🚀 Start earning today</div>
+            <div className={styles.introEarnTitle}>🚀 How to earn SC — completely free!</div>
             <div className={styles.introEarnRow}>
               <span>📅 Daily check-in</span><span className={styles.introEarnSc}>+10 SC</span>
             </div>
@@ -298,20 +314,41 @@ export default function RewardsPage() {
               <span>🔥 7-day streak bonus</span><span className={styles.introEarnSc}>+50 SC</span>
             </div>
             <div className={styles.introEarnRow}>
-              <span>👤 Complete profile</span><span className={styles.introEarnSc}>+100 SC</span>
+              <span>👤 Complete your profile</span><span className={styles.introEarnSc}>+100 SC</span>
+            </div>
+            <div className={styles.introEarnRow}>
+              <span>🏪 First listing</span><span className={styles.introEarnSc}>+50 SC</span>
             </div>
             <div className={styles.introEarnRow}>
               <span>⭐ Leave a review</span><span className={styles.introEarnSc}>+20 SC</span>
             </div>
+            <div className={styles.introEarnRow}>
+              <span>🎬 Watch 5 Reels</span><span className={styles.introEarnSc}>+10 SC</span>
+            </div>
+            <div className={styles.introEarnNote}>+ Or buy SC with Pi anytime</div>
           </div>
 
-          {/* CTA */}
+          {/* ── Why SC ── */}
+          <div className={styles.introWhyBox}>
+            <div className={styles.introWhyTitle}>🌟 Why SC is better than ordinary loyalty points</div>
+            <div className={styles.introWhyList}>
+              <div className={styles.introWhyItem}><span className={styles.introWhyCheck}>✅</span><span>Value pegged to USD — not empty numbers</span></div>
+              <div className={styles.introWhyItem}><span className={styles.introWhyCheck}>✅</span><span>Send to any Pioneer anytime</span></div>
+              <div className={styles.introWhyItem}><span className={styles.introWhyCheck}>✅</span><span>Creators receive 70% of every Gift sent to them</span></div>
+              <div className={styles.introWhyItem}><span className={styles.introWhyCheck}>✅</span><span>Buy directly using Pi</span></div>
+              <div className={styles.introWhyItem}><span className={styles.introWhyCheck}>✅</span><span>Usable across all 16 Supapi platforms</span></div>
+              <div className={styles.introWhyItem}><span className={styles.introWhyCheck}>✅</span><span>100% free to earn every single day</span></div>
+            </div>
+          </div>
+
+          {/* ── CTA ── */}
           <div className={styles.introCta}>
             <button className={styles.introCtaBtn} onClick={() => router.push("/dashboard")}>
-              π Sign in with Pi to Start Earning
+              π Sign in with Pi — Start Earning SC
             </button>
-            <p className={styles.introCtaNote}>Free to join · Powered by Pi Network</p>
+            <p className={styles.introCtaNote}>Free forever · Exclusive to Pi Network Pioneers</p>
           </div>
+
         </div>
       </div>
     );

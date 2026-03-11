@@ -217,3 +217,28 @@
 .introCtaBtn { width:100%; padding:18px; background:linear-gradient(135deg,#F5A623,#e6951a); color:#1A1A2E; border:none; border-radius:16px; font-size:16px; font-weight:900; cursor:pointer; font-family:inherit; box-shadow:0 8px 24px rgba(245,166,35,0.35); transition:all 0.2s; }
 .introCtaBtn:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(245,166,35,0.45); }
 .introCtaNote { text-align:center; font-size:12px; color:#718096; margin-top:10px; }
+
+/* ── Intro Screen Extended ── */
+.introHeroNote { font-size:13px; color:rgba(255,255,255,0.5); margin-top:10px; }
+
+.introWhatBox { margin:16px 16px 0; background:#fff; border:1.5px solid #E2E8F0; border-radius:16px; padding:20px; }
+.introWhatTitle { font-size:15px; font-weight:800; color:#1A1A2E; margin-bottom:10px; }
+.introWhatDesc { font-size:13px; color:#718096; line-height:1.8; }
+
+.introSection { padding:16px 16px 0; }
+.introSectionTitle { font-size:15px; font-weight:800; color:#1A1A2E; margin-bottom:12px; }
+
+.introUseCases { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.introUseCard { background:#fff; border:1.5px solid #E2E8F0; border-radius:14px; padding:14px 12px; }
+.introUseEmoji { font-size:24px; margin-bottom:6px; }
+.introUseTitle { font-size:13px; font-weight:800; color:#1A1A2E; margin-bottom:4px; }
+.introUseDesc { font-size:11px; color:#718096; line-height:1.5; }
+.introComingSoon { display:inline-block; background:rgba(245,166,35,0.12); color:#e6951a; font-size:9px; font-weight:800; padding:2px 6px; border-radius:999px; white-space:nowrap; margin-top:2px; }
+
+.introEarnNote { font-size:12px; color:#F5A623; font-weight:700; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1); margin-top:4px; }
+
+.introWhyBox { margin:16px 16px 0; background:linear-gradient(135deg,#1A1A2E,#0F3460); border-radius:16px; padding:20px; }
+.introWhyTitle { font-size:14px; font-weight:800; color:#fff; margin-bottom:14px; }
+.introWhyList { display:flex; flex-direction:column; gap:10px; }
+.introWhyItem { display:flex; align-items:flex-start; gap:10px; font-size:13px; color:rgba(255,255,255,0.8); line-height:1.5; }
+.introWhyCheck { font-size:14px; flex-shrink:0; margin-top:1px; }
