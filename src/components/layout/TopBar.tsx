@@ -26,6 +26,7 @@ const navLinks = [
   { href: "/pi-value",    label: "📈 Pi Value"      },
   { href: "/classifieds", label: "📋 Classifieds"   },
   { href: "/myspace",     label: "🪐 MySpace"       },
+  { href: "/pioneers",    label: "🌍 Pioneers"      },
 ];
 
 export default function TopBar() {
@@ -33,13 +34,10 @@ export default function TopBar() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLAnchorElement>(null);
 
-  // ✅ Auto-scroll to active nav item on route change
   useEffect(() => {
     if (!scrollRef.current || !activeRef.current) return;
-
     const container = scrollRef.current;
     const active    = activeRef.current;
-
     const scrollTo = active.offsetLeft - container.offsetWidth / 2 + active.offsetWidth / 2;
     container.scrollTo({ left: scrollTo, behavior: "smooth" });
   }, [pathname]);

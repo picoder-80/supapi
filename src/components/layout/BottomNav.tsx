@@ -22,6 +22,7 @@ const SCROLL_ITEMS = [
   { href: "/pi-value",    emoji: "📈",  label: "Pi Value"   },
   { href: "/classifieds", emoji: "📋",  label: "Classifieds"},
   { href: "/myspace",     emoji: "🪐",  label: "MySpace"    },
+  { href: "/pioneers",    emoji: "🌍",  label: "Pioneers"   },
 ];
 
 export default function BottomNav() {
@@ -32,20 +33,14 @@ export default function BottomNav() {
     if (pathname.startsWith("/admin")) return;
     const container = scrollRef.current;
     if (!container) return;
-
     const active = container.querySelector("[data-active='true']") as HTMLElement | null;
     if (!active) return;
-
-    // getBoundingClientRect gives position relative to viewport — reliable
     const containerRect = container.getBoundingClientRect();
     const activeRect    = active.getBoundingClientRect();
-
-    // Current scroll + offset of active item center - half container width
     const scrollTo = container.scrollLeft
       + (activeRect.left - containerRect.left)
       - (containerRect.width / 2)
       + (activeRect.width / 2);
-
     container.scrollTo({ left: scrollTo, behavior: "instant" });
   }, [pathname]);
 
