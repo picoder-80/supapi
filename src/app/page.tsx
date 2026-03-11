@@ -26,7 +26,8 @@ const modules = [
   { href: "/pioneers",    emoji: "🌍",  label: "I Am a Pioneer", desc: "Pin yourself & find nearby Pioneers" },
   { href: "/supa-livvi",  emoji: "✨",  label: "SupaLivvi",      desc: "Pi Lifestyle & Discovery" },
   { href: "/supa-saylo",  emoji: "🧵",  label: "SupaSaylo",      desc: "Pi Conversations & Threads" },
-  { href: "/bulkhub",     emoji: "📦",  label: "BulkHub",        desc: "Pi B2B Wholesale Marketplace" },
+  { href: "/bulkhub",          emoji: "📦",  label: "BulkHub",         desc: "Pi B2B Wholesale Marketplace"  },
+  { href: "/machina-market", emoji: "🚗",  label: "MachinaMarket",   desc: "Pi Automotive Marketplace"     },
 ];
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
