@@ -4,9 +4,9 @@
 
 .page {
   min-height: 100vh;
-  background: #0E0E12;
-  font-family: 'Barlow', sans-serif;
-  padding-bottom: 100px;
+  background: #F1F4F9;
+  font-family: var(--font-sans);
+  padding-bottom: 90px;
 }
 
 /* ── Toast ── */
@@ -23,11 +23,11 @@
 
 /* ── Hero ── */
 .hero {
-  background: #0E0E12;
+  background: linear-gradient(135deg, #0D1B2A 0%, #1A1A2E 50%, #0F3460 100%);
   position: relative;
   overflow: hidden;
-  padding: 28px 16px 0;
-  border-bottom: 1px solid rgba(255,149,0,0.2);
+  padding: 24px 16px 0;
+  border-bottom: 1px solid rgba(245,166,35,0.2);
 }
 
 /* Speed lines background */
@@ -322,24 +322,24 @@
 
 /* ── Listing Card ── */
 .listingCard {
-  background: #1A1A22;
+  background: #FFFFFF;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid #E2E8F0;
   overflow: hidden;
   transition: all 200ms;
 }
 .listingCard:hover {
-  border-color: rgba(255,149,0,0.4);
+  border-color: #F5A623;
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,149,0,0.1);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
 
 .listingImgWrap {
   display: block;
   position: relative;
-  aspect-ratio: 4/3;
+  aspect-ratio: 1;
   overflow: hidden;
-  background: #111117;
+  background: #F8FAFC;
   text-decoration: none;
 }
 .listingImg {

@@ -25,24 +25,38 @@ CREATE TABLE users (
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ── LISTINGS (Classified) ───────────────────────────────────
+-- Marketplace listings (more detailed, aligned with src/app/api/market/**)
 CREATE TABLE listings (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  seller_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  title       TEXT NOT NULL,
-  description TEXT NOT NULL,
-  price_pi    DECIMAL(18,7) NOT NULL,
-  category    TEXT NOT NULL
-              CHECK (category IN ('electronics','fashion','home','vehicles','services','digital','food','other')),
-  images      TEXT[] NOT NULL DEFAULT '{}',
-  location    TEXT,
-  status      TEXT NOT NULL DEFAULT 'active'
-              CHECK (status IN ('active','sold','pending','removed')),
-  is_featured BOOLEAN NOT NULL DEFAULT FALSE,
-  views_count INT NOT NULL DEFAULT 0,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  seller_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title           TEXT NOT NULL,
+  description     TEXT NOT NULL,
+  price_pi        DECIMAL(18,7) NOT NULL,
+  category        TEXT NOT NULL,
+  subcategory     TEXT,
+  condition       TEXT NOT NULL DEFAULT 'new',
+  buying_method   TEXT NOT NULL DEFAULT 'both'
+                  CHECK (buying_method IN ('meetup','ship','both')),
+  images          TEXT[] NOT NULL DEFAULT '{}',
+  stock           INT NOT NULL DEFAULT 1,
+  status          TEXT NOT NULL DEFAULT 'active'
+                  CHECK (status IN ('active','paused','sold','deleted')),
+  location        TEXT,
+  country_code    TEXT,
+  ship_worldwide  BOOLEAN NOT NULL DEFAULT FALSE,
+  views           INT NOT NULL DEFAULT 0,
+  likes           INT NOT NULL DEFAULT 0,
+  is_boosted      BOOLEAN NOT NULL DEFAULT FALSE,
+  boost_tier      TEXT,
+  boost_expires_at TIMESTAMPTZ,
+  type            TEXT NOT NULL DEFAULT 'physical',
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_listings_seller     ON listings(seller_id);
+CREATE INDEX idx_listings_category   ON listings(category);
+CREATE INDEX idx_listings_status     ON listings(status);
 
 -- ── GIGS (Freelance) ────────────────────────────────────────
 CREATE TABLE gigs (
@@ -63,24 +77,65 @@ CREATE TABLE gigs (
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ── ORDERS (Gig orders) ─────────────────────────────────────
+-- ── ORDERS (Marketplace + Gigs, unified) ─────────────────────
+-- Used by marketplace APIs in src/app/api/market/orders/** and payments/complete
+-- Supports both product listings and gig-style orders via optional fields.
 CREATE TABLE orders (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  gig_id          UUID NOT NULL REFERENCES gigs(id),
-  buyer_id        UUID NOT NULL REFERENCES users(id),
-  seller_id       UUID NOT NULL REFERENCES users(id),
-  package_index   INT NOT NULL DEFAULT 0,
-  price_pi        DECIMAL(18,7) NOT NULL,
-  status          TEXT NOT NULL DEFAULT 'pending'
-                  CHECK (status IN ('pending','accepted','in_progress','delivered','completed','disputed','cancelled')),
-  requirements    TEXT,
-  delivery_url    TEXT,
-  pi_payment_id   TEXT,
-  escrow_released BOOLEAN NOT NULL DEFAULT FALSE,
-  due_at          TIMESTAMPTZ,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  -- Core relations
+  listing_id       UUID REFERENCES listings(id),
+  gig_id           UUID REFERENCES gigs(id),
+  buyer_id         UUID NOT NULL REFERENCES users(id),
+  seller_id        UUID NOT NULL REFERENCES users(id),
+
+  -- Amount / commission
+  amount_pi        DECIMAL(18,7) NOT NULL,
+  commission_pct   DECIMAL(5,2),
+  commission_pi    DECIMAL(18,7),
+  seller_net_pi    DECIMAL(18,7),
+
+  -- Status lifecycle (marketplace + gigs)
+  status           TEXT NOT NULL DEFAULT 'pending'
+                   CHECK (status IN (
+                     'pending',      -- created, waiting for payment
+                     'paid',         -- payment successful, in escrow
+                     'shipped',      -- seller shipped
+                     'meetup_set',   -- meetup arranged
+                     'delivered',    -- buyer says received
+                     'completed',    -- escrow released
+                     'disputed',     -- under dispute
+                     'refunded',     -- refunded after dispute
+                     'cancelled',    -- cancelled
+                     'accepted',     -- (gig) seller accepted
+                     'in_progress'   -- (gig) work in progress
+                   )),
+
+  -- Marketplace delivery / meetup details
+  buying_method    TEXT,
+  shipping_name    TEXT,
+  shipping_address TEXT,
+  shipping_city    TEXT,
+  shipping_postcode TEXT,
+  shipping_country TEXT,
+  tracking_number  TEXT,
+  meetup_location  TEXT,
+  meetup_time      TIMESTAMPTZ,
+  notes            TEXT,
+
+  -- Gig-specific fields (optional)
+  package_index    INT,
+  requirements     TEXT,
+  delivery_url     TEXT,
+
+  -- Pi payment
+  pi_payment_id    TEXT,
+
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_orders_buyer  ON orders(buyer_id);
+CREATE INDEX idx_orders_seller ON orders(seller_id);
 
 -- ── COURSES (Academy) ───────────────────────────────────────
 CREATE TABLE courses (
@@ -140,24 +195,32 @@ CREATE TABLE stays (
   updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ── TRANSACTIONS ────────────────────────────────────────────
+-- ── TRANSACTIONS (Pi payments) ───────────────────────────────
+-- Used by /api/payments/complete and Pi SDK flows
 CREATE TABLE transactions (
   id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id        UUID NOT NULL REFERENCES users(id),
   counterpart_id UUID REFERENCES users(id),
   type           TEXT NOT NULL
-                 CHECK (type IN ('purchase','sale','referral_reward','game_reward','course_enrollment','stay_booking','escrow_release','platform_fee')),
+                 CHECK (type IN (
+                   'purchase','sale','referral_reward','game_reward',
+                   'course_enrollment','stay_booking','escrow_release',
+                   'platform_fee'
+                 )),
   amount_pi      DECIMAL(18,7) NOT NULL,
-  pi_payment_id  TEXT NOT NULL,
+  pi_payment_id  TEXT NOT NULL UNIQUE,
   reference_id   UUID,
   reference_type TEXT,
   status         TEXT NOT NULL DEFAULT 'pending'
                  CHECK (status IN ('pending','completed','failed','refunded')),
+  metadata       JSONB DEFAULT '{}'::jsonb,
   memo           TEXT NOT NULL DEFAULT '',
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ── REFERRALS ───────────────────────────────────────────────
+CREATE INDEX idx_transactions_user   ON transactions(user_id);
+CREATE INDEX idx_transactions_pi_id  ON transactions(pi_payment_id);
+
 CREATE TABLE referrals (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   referrer_id UUID NOT NULL REFERENCES users(id),
@@ -167,6 +230,8 @@ CREATE TABLE referrals (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(referred_id)
 );
+
+CREATE INDEX idx_referrals_referrer  ON referrals(referrer_id);
 
 -- ── REVIEWS ─────────────────────────────────────────────────
 CREATE TABLE reviews (
@@ -180,18 +245,6 @@ CREATE TABLE reviews (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(reviewer_id, target_id, target_type)
 );
-
--- ── INDEXES ─────────────────────────────────────────────────
-CREATE INDEX idx_listings_seller     ON listings(seller_id);
-CREATE INDEX idx_listings_category   ON listings(category);
-CREATE INDEX idx_listings_status     ON listings(status);
-CREATE INDEX idx_gigs_seller         ON gigs(seller_id);
-CREATE INDEX idx_gigs_category       ON gigs(category);
-CREATE INDEX idx_orders_buyer        ON orders(buyer_id);
-CREATE INDEX idx_orders_seller       ON orders(seller_id);
-CREATE INDEX idx_transactions_user   ON transactions(user_id);
-CREATE INDEX idx_transactions_pi_id  ON transactions(pi_payment_id);
-CREATE INDEX idx_referrals_referrer  ON referrals(referrer_id);
 
 -- ── ROW LEVEL SECURITY ──────────────────────────────────────
 ALTER TABLE users        ENABLE ROW LEVEL SECURITY;
