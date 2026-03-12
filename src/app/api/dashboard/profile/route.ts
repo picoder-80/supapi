@@ -86,13 +86,15 @@ export async function PATCH(req: NextRequest) {
           .eq("id", payload.userId);
 
         // Record transaction
-        await supabase.from("sc_transactions").insert({
-          user_id:     payload.userId,
-          type:        "earn",
-          amount:      SC_REWARD,
-          source:      "profile_complete",
-          description: "Profile completion reward",
-        }).catch(() => {}); // ignore if table doesn't exist yet
+        try {
+          await supabase.from("sc_transactions").insert({
+            user_id:     payload.userId,
+            type:        "earn",
+            amount:      SC_REWARD,
+            source:      "profile_complete",
+            description: "Profile completion reward",
+          });
+        } catch {} // ignore if table doesn't exist yet
 
         scRewarded = true;
         console.log(`[Profile] SC reward ${SC_REWARD} awarded to ${payload.userId}`);
