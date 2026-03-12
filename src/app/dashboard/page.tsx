@@ -11,7 +11,7 @@ const QUICK_ACTIONS = [
   { href: "/market",   emoji: "🛍️", label: "Market"   },
   { href: "/rewards",  emoji: "🎁", label: "Rewards"  },
   { href: "/referral", emoji: "🤝", label: "Referral" },
-  { href: "/wallet",   emoji: "💰", label: "Wallet"   },
+  { href: "/myspace",  emoji: "🪐", label: "MySpace"  },
 ];
 
 const PLATFORMS = [

@@ -679,3 +679,462 @@
   margin-bottom: 10px;
   background: var(--color-bg);
 }
+/* ── Cancel Button ── */
+.cancelBtn {
+  width: 100%;
+  padding: 12px;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 4px;
+}
+
+/* ── Optional Tag ── */
+.optionalTag {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-weight: 500;
+}
+
+/* ── Verify Intro ── */
+.verifyIntro {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+/* ── Verify Card ── */
+.verifyCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff;
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+  transition: var(--transition);
+}
+.verifyCardDone {
+  border-color: #27ae60;
+  background: #f0faf4;
+}
+.verifyCardLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+}
+.verifyBadgeIcon {
+  font-size: 22px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.verifyCardInfo { flex: 1; }
+.verifyCardTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 3px;
+}
+.verifyCardDesc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+.verifyCardStatus {
+  font-size: 12px;
+  color: #27ae60;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.verifyWalletAddr {
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+.verifyCardBtn {
+  background: var(--color-gold);
+  color: var(--color-primary);
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+.verifyCardCheck {
+  font-size: 20px;
+  color: #27ae60;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── Verify All Done ── */
+.verifyAllDone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #667eea22, #764ba222);
+  border: 1.5px solid #764ba2;
+  border-radius: 14px;
+  padding: 14px;
+  margin-top: 4px;
+  font-size: 22px;
+}
+.verifyAllDoneTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #764ba2;
+}
+.verifyAllDoneSub {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ── Badge Colors ── */
+.badgeKyc { background: #fff8e6 !important; color: #b7770a !important; border-color: #f5a623 !important; }
+.badgeKycProof { background: #e8f4fd !important; color: #1a73e8 !important; border-color: #1a73e8 !important; }
+.badgeWallet { background: #eafaf1 !important; color: #1e8449 !important; border-color: #27ae60 !important; }
+.badgeVerified { background: #f5eeff !important; color: #764ba2 !important; border-color: #764ba2 !important; }
+
+/* ── KYC Declare Box ── */
+.kycDeclareBox {
+  background: var(--color-bg);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.kycDeclareIcon { font-size: 32px; margin-bottom: 10px; }
+.kycDeclareText {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+.kycDeclareNote {
+  font-size: 11px;
+  color: #e67e22;
+  font-weight: 500;
+}
+
+/* ── Wallet Verify Steps ── */
+.walletVerifySteps {
+  background: var(--color-bg);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.walletVerifyStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+.walletVerifyStep:last-child { margin-bottom: 0; }
+.walletVerifyStepNum {
+  background: #27ae60;
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.walletVerifyNote {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background: #fff8e6;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+  border: 1px solid #f5a62344;
+}
+
+/* ── Verify States ── */
+.verifyChecking {
+  text-align: center;
+  padding: 30px 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+.verifyCheckingSpinner { font-size: 32px; margin-bottom: 10px; }
+
+.verifyDone {
+  text-align: center;
+  padding: 30px 0;
+}
+.verifyDoneIcon { font-size: 48px; margin-bottom: 10px; }
+.verifyDoneTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #27ae60;
+  margin-bottom: 6px;
+}
+.verifyDoneSub {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.verifyError {
+  background: #fdf0f0;
+  border: 1px solid #e74c3c44;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  color: #e74c3c;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+/* ── Cancel Button ── */
+.cancelBtn {
+  width: 100%;
+  padding: 12px;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 4px;
+}
+
+/* ── Optional Tag ── */
+.optionalTag {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-weight: 500;
+}
+
+/* ── Verify Intro ── */
+.verifyIntro {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+/* ── Verify Card ── */
+.verifyCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff;
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+  transition: var(--transition);
+}
+.verifyCardDone {
+  border-color: #27ae60;
+  background: #f0faf4;
+}
+.verifyCardLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+}
+.verifyBadgeIcon {
+  font-size: 22px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.verifyCardInfo { flex: 1; }
+.verifyCardTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 3px;
+}
+.verifyCardDesc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+.verifyCardStatus {
+  font-size: 12px;
+  color: #27ae60;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.verifyWalletAddr {
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+.verifyCardBtn {
+  background: var(--color-gold);
+  color: var(--color-primary);
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+.verifyCardCheck {
+  font-size: 20px;
+  color: #27ae60;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── Verify All Done ── */
+.verifyAllDone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #667eea22, #764ba222);
+  border: 1.5px solid #764ba2;
+  border-radius: 14px;
+  padding: 14px;
+  margin-top: 4px;
+  font-size: 22px;
+}
+.verifyAllDoneTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #764ba2;
+}
+.verifyAllDoneSub {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ── Badge Colors ── */
+.badgeKyc { background: #fff8e6 !important; color: #b7770a !important; border-color: #f5a623 !important; }
+.badgeKycProof { background: #e8f4fd !important; color: #1a73e8 !important; border-color: #1a73e8 !important; }
+.badgeWallet { background: #eafaf1 !important; color: #1e8449 !important; border-color: #27ae60 !important; }
+.badgeVerified { background: #f5eeff !important; color: #764ba2 !important; border-color: #764ba2 !important; }
+
+/* ── KYC Declare Box ── */
+.kycDeclareBox {
+  background: var(--color-bg);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.kycDeclareIcon { font-size: 32px; margin-bottom: 10px; }
+.kycDeclareText {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+.kycDeclareNote {
+  font-size: 11px;
+  color: #e67e22;
+  font-weight: 500;
+}
+
+/* ── Wallet Verify Steps ── */
+.walletVerifySteps {
+  background: var(--color-bg);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.walletVerifyStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+.walletVerifyStep:last-child { margin-bottom: 0; }
+.walletVerifyStepNum {
+  background: #27ae60;
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.walletVerifyNote {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background: #fff8e6;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+  border: 1px solid #f5a62344;
+}
+
+/* ── Verify States ── */
+.verifyChecking {
+  text-align: center;
+  padding: 30px 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+.verifyCheckingSpinner { font-size: 32px; margin-bottom: 10px; }
+
+.verifyDone {
+  text-align: center;
+  padding: 30px 0;
+}
+.verifyDoneIcon { font-size: 48px; margin-bottom: 10px; }
+.verifyDoneTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #27ae60;
+  margin-bottom: 6px;
+}
+.verifyDoneSub {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.verifyError {
+  background: #fdf0f0;
+  border: 1px solid #e74c3c44;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  color: #e74c3c;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
