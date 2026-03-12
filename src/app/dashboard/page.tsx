@@ -139,7 +139,7 @@ export default function DashboardPage() {
     const sec = PROFILE_SECTIONS.find(s => s.key === key);
     if (!sec) return;
     const init: Partial<Profile> = {};
-    sec.fields.forEach(f => { init[f.key as keyof Profile] = profile[f.key as keyof Profile] ?? ""; });
+    sec.fields.forEach(f => { (init as any)[f.key] = profile[f.key as keyof Profile] ?? ""; });
     setEditData(init);
     setActiveSection(key);
     setSaveMsg("");
