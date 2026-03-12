@@ -518,7 +518,7 @@ export default function WalletPage() {
             <div className={styles.sourcesList}>
               {[
                 { type: "referral",         icon: "👥", label: "Referral Bonuses",        desc: "Earn Pi when your referrals join & use Supapi" },
-                { type: "endoro_host",      icon: "🛞", label: "Endoro Host Payouts",      desc: "95% of rental fees from your vehicles" },
+                { type: "endoro_host",      icon: "🛞", label: "Endoro Host Payouts",      desc: "Earn rental fees from your vehicles" },
                 { type: "gig_payout",       icon: "💼", label: "Gig Job Completions",      desc: "Pi released from escrow when job is done" },
                 { type: "domus_rental",     icon: "🏠", label: "Domus Property Rentals",   desc: "Pi rental payments from tenants" },
                 { type: "bulkhub_supplier", icon: "📦", label: "BulkHub Order Payouts",    desc: "Pi from wholesale orders completed" },
