@@ -139,7 +139,7 @@ export default function DashboardPage() {
     const sec = PROFILE_SECTIONS.find(s => s.key === key);
     if (!sec) return;
     const init: Partial<Profile> = {};
-    sec.fields.forEach(f => { (init as any)[f.key] = profile[f.key as keyof Profile] ?? ""; });
+    sec.fields.forEach(f => { (init as Record<string, string>)[f.key] = String(profile[f.key as keyof Profile] ?? ""); });
     setEditData(init);
     setActiveSection(key);
     setSaveMsg("");
@@ -210,7 +210,7 @@ export default function DashboardPage() {
 
   const profileComplete = () => {
     const fields = ["display_name","phone","email","address_line1","city","postcode","country"];
-    const filled = fields.filter(f => profile[f as keyof Profile]?.trim()).length;
+    const filled = fields.filter(f => String(profile[f as keyof Profile] ?? "").trim()).length;
     return Math.round((filled / fields.length) * 100);
   };
 
