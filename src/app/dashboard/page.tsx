@@ -99,7 +99,7 @@ export default function DashboardPage() {
   const [profile, setProfile]           = useState<Profile>(EMPTY_PROFILE);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [activeSection, setActiveSection]   = useState<string | null>(null);
-  const [editData, setEditData]         = useState<Partial<Profile>>({});
+  const [editData, setEditData]         = useState<Record<string, string>>({});
   const [saving, setSaving]             = useState(false);
   const [saveMsg, setSaveMsg]           = useState("");
   const [verifyStep, setVerifyStep]     = useState<VerifyStep>("idle");
@@ -138,8 +138,8 @@ export default function DashboardPage() {
   const openSection = (key: string) => {
     const sec = PROFILE_SECTIONS.find(s => s.key === key);
     if (!sec) return;
-    const init: Partial<Profile> = {};
-    sec.fields.forEach(f => { (init as Record<string, string>)[f.key] = String(profile[f.key as keyof Profile] ?? ""); });
+    const init: Record<string, string> = {};
+    sec.fields.forEach(f => { init[f.key] = String(profile[f.key as keyof Profile] ?? ""); });
     setEditData(init);
     setActiveSection(key);
     setSaveMsg("");
@@ -512,11 +512,11 @@ export default function DashboardPage() {
                   <label className={styles.formLabel}>{field.label}</label>
                   {field.type === "textarea" ? (
                     <textarea className={styles.formInput} placeholder={field.placeholder} rows={3}
-                      value={editData[field.key as keyof Profile] ?? ""}
+                      value={editData[field.key] ?? ""}
                       onChange={e => setEditData(prev => ({ ...prev, [field.key]: e.target.value }))} />
                   ) : (
                     <input className={styles.formInput} type={field.type} placeholder={field.placeholder}
-                      value={editData[field.key as keyof Profile] ?? ""}
+                      value={editData[field.key] ?? ""}
                       onChange={e => setEditData(prev => ({ ...prev, [field.key]: e.target.value }))} />
                   )}
                 </div>
