@@ -324,7 +324,7 @@ export default function DashboardPage() {
           </div>
 
           {PROFILE_SECTIONS.map((sec) => {
-            const filled = sec.fields.filter(f => profile[f.key as keyof Profile]?.trim()).length;
+            const filled = sec.fields.filter(f => String(profile[f.key as keyof Profile] ?? "").trim()).length;
             const done   = filled === sec.fields.length;
             return (
               <div key={sec.key} className={styles.profileSection} onClick={() => openSection(sec.key)}>
