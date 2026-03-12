@@ -67,21 +67,18 @@ export async function PATCH(req: NextRequest) {
       if (allFilled) {
         // Award 10 SC
         const SC_REWARD = 10;
-        await supabase.rpc("increment_sc_balance", {
-          p_user_id: payload.userId,
-          p_amount:  SC_REWARD,
-        }).catch(() => {
-          // Fallback if RPC not available
-          return supabase.from("users")
-            .select("balance")
-            .eq("id", payload.userId)
-            .single()
-            .then(({ data: u }) => {
-              return supabase.from("users")
-                .update({ balance: (u?.balance ?? 0) + SC_REWARD })
-                .eq("id", payload.userId);
-            });
-        });
+        // Award SC
+        try {
+          const { error: rpcErr } = await supabase.rpc("increment_sc_balance", {
+            p_user_id: payload.userId,
+            p_amount:  SC_REWARD,
+          });
+          if (rpcErr) throw rpcErr;
+        } catch {
+          // Fallback — direct update
+          const { data: u } = await supabase.from("users").select("balance").eq("id", payload.userId).single();
+          await supabase.from("users").update({ balance: (u?.balance ?? 0) + SC_REWARD }).eq("id", payload.userId);
+        }
 
         // Mark as rewarded so it only happens once
         await supabase.from("users")
