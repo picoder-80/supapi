@@ -241,6 +241,26 @@ Set this env in local + production:
 INTERNAL_API_SECRET=YOUR_LONG_RANDOM_SECRET
 ```
 
+### Admin-only simulate auto-credit test
+
+Use this endpoint to verify "order completed -> auto-credit wallet" logic without waiting for full user flow:
+
+```bash
+# Dry run (no DB credit)
+curl -X POST "https://YOUR_DOMAIN/api/admin/market/orders/ORDER_ID/simulate-complete" \
+  -H "Authorization: Bearer YOUR_ADMIN_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{"execute": false}'
+```
+
+```bash
+# Execute real credit (one-time; returns 409 if already credited)
+curl -X POST "https://YOUR_DOMAIN/api/admin/market/orders/ORDER_ID/simulate-complete" \
+  -H "Authorization: Bearer YOUR_ADMIN_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{"execute": true}'
+```
+
 ### 5) AI health check (provider + fallback status)
 
 Use this to confirm which provider is active at runtime:
