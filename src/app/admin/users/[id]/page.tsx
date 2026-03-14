@@ -9,8 +9,7 @@ import styles from "./page.module.css";
 interface UserDetail {
   user: {
     id: string; username: string; display_name: string | null; avatar_url: string | null;
-    kyc_status: string; role: string; is_banned: boolean; ban_reason: string | null;
-    seller_verified: boolean; created_at: string; last_seen: string | null;
+    kyc_status: string; role: string; created_at: string;
     bio: string | null; email: string | null; phone: string | null;
     city: string | null; country: string | null; wallet_address: string | null;
   };
@@ -44,7 +43,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
   const [showBan, setShowBan]     = useState(false);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { setToken(localStorage.getItem("supapi_token") ?? ""); }, []);
+  useEffect(() => { setToken(localStorage.getItem("supapi_admin_token") ?? ""); }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -70,12 +69,23 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
   if (!data)   return <div className={styles.loading}><div>User not found</div><button onClick={() => router.back()}>← Back</button></div>;
 
   const { user, listings, listing_count, orders, order_count } = data;
+  const isBanned = user.role === "banned";
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <Link href="/admin/market" className={styles.backBtn}>← Admin Market</Link>
-        <h1 className={styles.title}>User Detail</h1>
+        <div className={styles.headerMain}>
+          <span className={styles.icon}>👤</span>
+          <div>
+            <h1 className={styles.title}>User Detail</h1>
+            <p className={styles.sub}>Review account profile, activity, and moderation status</p>
+          </div>
+        </div>
+        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.topBackBtn}`}>Back to Dashboard</Link>
+      </div>
+
+      <div className={styles.quickLinks}>
+        <Link href="/admin/users" className={styles.secondaryBtn}>Back to Users</Link>
       </div>
 
       {msg && <div className={styles.msgBanner}>{msg}</div>}
@@ -87,13 +97,12 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
             ? <img src={user.avatar_url} alt="" className={styles.avatarImg} />
             : <span>{getInitial(user.username)}</span>
           }
-          {user.is_banned && <div className={styles.bannedOverlay}>BANNED</div>}
+          {isBanned && <div className={styles.bannedOverlay}>BANNED</div>}
         </div>
         <div className={styles.profileInfo}>
           <div className={styles.profileName}>
             {user.display_name ?? user.username}
             {user.kyc_status === "verified" && " ✅"}
-            {user.seller_verified && " 🏪"}
           </div>
           <div className={styles.profileSub}>@{user.username} · {user.role}</div>
           {user.bio && <div className={styles.profileBio}>{user.bio}</div>}
@@ -103,23 +112,15 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
       {/* Admin Actions */}
       <div className={styles.actionsCard}>
         <div className={styles.cardTitle}>Admin Actions</div>
+        <div className={styles.userSub} style={{ marginBottom: 10 }}>
+          KYC status is auto-synced from Pi verification on user sign-in.
+        </div>
         <div className={styles.actionGrid}>
-          {!user.seller_verified
-            ? <button className={styles.okBtn} disabled={saving} onClick={() => patch({ seller_verified: true }, "✅ Seller verified!")}>🏪 Verify Seller</button>
-            : <button className={styles.warnBtn} disabled={saving} onClick={() => patch({ seller_verified: false }, "Seller unverified")}>Remove Verify</button>
-          }
-          {user.kyc_status !== "verified"
-            ? <button className={styles.okBtn} disabled={saving} onClick={() => patch({ kyc_status: "verified" }, "✅ KYC set to verified!")}>✅ Set KYC Verified</button>
-            : <button className={styles.warnBtn} disabled={saving} onClick={() => patch({ kyc_status: "pending" }, "KYC reset to pending")}>Reset KYC</button>
-          }
-          {!user.is_banned
+          {!isBanned
             ? <button className={styles.dangerBtn} onClick={() => setShowBan(true)}>🚫 Ban User</button>
-            : <button className={styles.okBtn} disabled={saving} onClick={() => patch({ is_banned: false, ban_reason: null }, "✅ User unbanned!")}>✅ Unban User</button>
+            : <button className={styles.okBtn} disabled={saving} onClick={() => patch({ is_banned: false }, "✅ User unbanned!")}>✅ Unban User</button>
           }
         </div>
-        {user.is_banned && user.ban_reason && (
-          <div className={styles.banReason}>Ban reason: {user.ban_reason}</div>
-        )}
       </div>
 
       {/* User info */}
@@ -132,7 +133,6 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
           { label: "Location",      val: [user.city, user.country].filter(Boolean).join(", ") || "—" },
           { label: "KYC Status",    val: user.kyc_status },
           { label: "Joined",        val: fmt(user.created_at) },
-          { label: "Last Seen",     val: user.last_seen ? fmt(user.last_seen) : "Unknown" },
           { label: "Wallet",        val: user.wallet_address ? `${user.wallet_address.slice(0,12)}...` : "—" },
         ].map(row => (
           <div key={row.label} className={styles.infoRow}>
@@ -203,6 +203,10 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
           </div>
         </div>
       )}
+
+      <div className={styles.quickLinks}>
+        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>Back to Dashboard</Link>
+      </div>
     </div>
   );
 }

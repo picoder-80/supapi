@@ -55,7 +55,10 @@ export default function MarketplaceAdminPage() {
             <p className={styles.sub}>Pi-powered buy & sell platform</p>
           </div>
         </div>
-        <Link href="/admin/market" className={styles.fullAdminBtn}>Full Admin Panel →</Link>
+        <div className={styles.headerActions}>
+          <Link href="/admin/market" className={styles.fullAdminBtn}>Full Admin Panel →</Link>
+          <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.topBackBtn}`}>Back to Dashboard</Link>
+        </div>
       </div>
 
       {/* Stats */}
@@ -127,6 +130,10 @@ export default function MarketplaceAdminPage() {
       <div className={styles.statusNote}>
         ✅ Marketplace is <strong>LIVE</strong> — Full admin panel available at{" "}
         <Link href="/admin/market" className={styles.statusLink}>/admin/market</Link>
+      </div>
+
+      <div className={styles.quickLinks}>
+        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>Back to Dashboard</Link>
       </div>
     </div>
   );

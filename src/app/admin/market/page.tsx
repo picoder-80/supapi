@@ -61,9 +61,17 @@ const TABS = [
   { id:"users",      label:"👥 Users"      },
   { id:"commission", label:"💰 Commission" },
 ];
+type TabId = "overview"|"listings"|"orders"|"disputes"|"support"|"users"|"commission";
+const TAB_IDS = new Set(TABS.map((t) => t.id));
+function getTabFromHash(): TabId | null {
+  if (typeof window === "undefined") return null;
+  const hash = window.location.hash.replace("#", "").trim();
+  if (TAB_IDS.has(hash)) return hash as TabId;
+  return null;
+}
 
 export default function AdminMarketPage() {
-  const [tab, setTab] = useState<"overview"|"listings"|"orders"|"disputes"|"support"|"users"|"commission">("overview");
+  const [tab, setTab] = useState<TabId>("overview");
   const [loading, setLoading] = useState(false);
   const [token, setToken] = useState("");
   const [stats, setStats] = useState<Stats|null>(null);
@@ -88,10 +96,29 @@ export default function AdminMarketPage() {
   const [overrideId, setOverrideId] = useState<string|null>(null);
   const [overrideDecision, setOverrideDecision] = useState<"refund"|"release">("release");
   const [overrideReason, setOverrideReason] = useState(""); const [overriding, setOverriding] = useState(false);
+  const [exporting, setExporting] = useState<string | null>(null);
   const [banUserId, setBanUserId] = useState<string|null>(null); const [banReason, setBanReason] = useState("");
   const [userActionMsg, setUserActionMsg] = useState<Record<string,string>>({});
+  const [orderActionMsg, setOrderActionMsg] = useState<Record<string, string>>({});
+  const [orderActionLoading, setOrderActionLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => { setToken(localStorage.getItem("supapi_admin_token") ?? ""); }, []);
+  useEffect(() => {
+    const applyHashTab = () => {
+      const tabFromHash = getTabFromHash();
+      if (tabFromHash) setTab(tabFromHash);
+    };
+    applyHashTab();
+    window.addEventListener("hashchange", applyHashTab);
+    return () => window.removeEventListener("hashchange", applyHashTab);
+  }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const currentHash = window.location.hash.replace("#", "").trim();
+    if (currentHash !== tab) {
+      window.history.replaceState(null, "", `${window.location.pathname}#${tab}`);
+    }
+  }, [tab]);
 
   const adminFetch = useCallback(async (url: string, opts?: RequestInit) =>
     fetch(url, { ...opts, headers: { "Content-Type":"application/json", Authorization:`Bearer ${token}`, ...(opts?.headers??{}) } }), [token]);
@@ -148,6 +175,20 @@ export default function AdminMarketPage() {
   };
   const updateUser = async (userId: string, patch: object, msg: string) => { const r=await adminFetch(`/api/admin/users/${userId}`,{method:"PATCH",body:JSON.stringify(patch)}); const d=await r.json(); if(d.success){setUsers(prev=>prev.map(u=>u.id===userId?{...u,...d.data}:u));setUserActionMsg(prev=>({...prev,[userId]:msg}));setTimeout(()=>setUserActionMsg(prev=>{const n={...prev};delete n[userId];return n;}),2500);} setBanUserId(null);setBanReason(""); };
   const saveCommission = async () => { const pct=parseFloat(commPct); if(isNaN(pct)||pct<0||pct>50){setCommMsg("Enter 0–50");return;} setSavingComm(true); const r=await adminFetch("/api/admin/market/commission",{method:"PATCH",body:JSON.stringify({commission_pct:pct})}); const d=await r.json(); setCommMsg(d.success?"✅ Saved!":"❌ Failed"); if(d.success&&commConfig)setCommConfig({...commConfig,commission_pct:pct}); setTimeout(()=>setCommMsg(""),2500); setSavingComm(false); };
+  const exportCSV = async (type: "orders" | "listings" | "commissions") => {
+    setExporting(type);
+    try {
+      const r = await adminFetch(`/api/admin/market/export?type=${type}`);
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `supapi_${type}_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {}
+    setExporting(null);
+  };
   const updateSupportTicket = async (id: string, status: "in_progress" | "resolved" | "closed") => {
     const r = await adminFetch(`/api/admin/market/support/tickets/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
     const d = await r.json();
@@ -155,15 +196,51 @@ export default function AdminMarketPage() {
       setSupportTickets((prev) => prev.map((t) => (t.id === id ? { ...t, status: d.data.status, updated_at: d.data.updated_at } : t)));
     }
   };
+  const simulateOrderAutoCredit = async (orderId: string, execute: boolean) => {
+    const loadingKey = `${orderId}:${execute ? "execute" : "dry"}`;
+    setOrderActionLoading((prev) => ({ ...prev, [loadingKey]: true }));
+    try {
+      const r = await adminFetch(`/api/admin/market/orders/${orderId}/simulate-complete`, {
+        method: "POST",
+        body: JSON.stringify({ execute }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        const msg = execute
+          ? `✅ Recovery payout sent: ${Number(d?.data?.amount_pi ?? 0).toFixed(4)} π`
+          : `🧪 Simulation OK · payout ${Number(d?.data?.would_credit?.amount_pi ?? 0).toFixed(4)} π`;
+        setOrderActionMsg((prev) => ({ ...prev, [orderId]: msg }));
+      } else {
+        setOrderActionMsg((prev) => ({ ...prev, [orderId]: `❌ ${d.error ?? "Request failed"}` }));
+      }
+    } catch {
+      setOrderActionMsg((prev) => ({ ...prev, [orderId]: "❌ Network/server error" }));
+    } finally {
+      setOrderActionLoading((prev) => ({ ...prev, [loadingKey]: false }));
+      setTimeout(() => {
+        setOrderActionMsg((prev) => {
+          const next = { ...prev };
+          delete next[orderId];
+          return next;
+        });
+      }, 5000);
+    }
+  };
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <Link href="/admin/dashboard" className={styles.backBtn}>← Admin</Link>
-        <h1 className={styles.title}>🛍️ Marketplace Admin</h1>
+        <div className={styles.headerMain}>
+          <span className={styles.icon}>🛍️</span>
+          <div>
+            <h1 className={styles.title}>Marketplace Admin</h1>
+            <p className={styles.sub}>Manage listings, orders, disputes, support, and commission settings</p>
+          </div>
+        </div>
+        <Link href="/admin/dashboard" className={styles.backBtn}>Back to Dashboard</Link>
       </div>
 
-      <AdminTabs tabs={TABS} active={tab} onChange={(id) => setTab(id as any)} />
+      <AdminTabs tabs={TABS} active={tab} onChange={(id) => setTab(id as TabId)} />
 
       <div className={styles.body}>
         {loading && <div className={styles.loadingBar}/>}
@@ -238,9 +315,39 @@ export default function AdminMarketPage() {
                   <td><div className={styles.actionBtns}>
                     {o.status==="disputed"&&<button className={styles.warnBtn} onClick={()=>{setTab("disputes");setDisputeStatus("open");}}>Open Disputes</button>}
                     {!["completed","refunded","cancelled"].includes(o.status)&&<button className={styles.dangerBtn} onClick={async()=>{await adminFetch(`/api/admin/market/orders/${o.id}`,{method:"PATCH",body:JSON.stringify({status:"cancelled"})});setOrders(prev=>prev.map(x=>x.id===o.id?{...x,status:"cancelled"}:x));}}>Cancel</button>}
+                    {o.status === "completed" && (
+                      <>
+                        <button
+                          className={styles.warnBtn}
+                          disabled={Boolean(orderActionLoading[`${o.id}:dry`])}
+                          onClick={() => simulateOrderAutoCredit(o.id, false)}
+                          title="Simulate payout recovery without changing wallet"
+                        >
+                          {orderActionLoading[`${o.id}:dry`] ? "Checking..." : "Simulate Seller Payout"}
+                        </button>
+                        <button
+                          className={styles.okBtn}
+                          disabled={Boolean(orderActionLoading[`${o.id}:execute`])}
+                          onClick={() => simulateOrderAutoCredit(o.id, true)}
+                          title="Force payout recovery to seller wallet (manual recovery tool)"
+                        >
+                          {orderActionLoading[`${o.id}:execute`] ? "Processing..." : "Force Seller Payout (Recovery)"}
+                        </button>
+                      </>
+                    )}
                   </div></td>
                 </tr>
+                
               ))}</tbody></table></div>
+            {orders.some((o) => orderActionMsg[o.id]) && (
+              <div className={styles.orderActionStack}>
+                {orders.filter((o) => orderActionMsg[o.id]).map((o) => (
+                  <div key={`${o.id}-msg`} className={styles.orderActionMsg}>
+                    <span className={styles.mono}>{o.id.slice(0, 8)}…</span> {orderActionMsg[o.id]}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -360,6 +467,21 @@ export default function AdminMarketPage() {
                 {commMsg&&<div className={`${styles.commMsg} ${commMsg.includes("✅")?styles.commMsgOk:styles.commMsgErr}`}>{commMsg}</div>}
                 <div className={styles.commNote}>Commission deducted from seller payout on completion. Range: 0%–50%.</div>
               </div>
+              <div className={styles.commEdit}>
+                <div className={styles.commEditTitle}>Export Marketplace Data</div>
+                <div className={styles.exportRow}>
+                  {(["orders","listings","commissions"] as const).map((type) => (
+                    <button
+                      key={type}
+                      className={styles.exportBtn}
+                      disabled={exporting === type}
+                      onClick={() => exportCSV(type)}
+                    >
+                      {exporting === type ? "⏳ Exporting..." : `📥 ${type.charAt(0).toUpperCase() + type.slice(1)} CSV`}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {commConfig.ledger?.length>0&&(<>
                 <div className={styles.sectionTitle} style={{marginTop:20}}>Recent Commission Ledger</div>
                 <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>Date</th><th>Commission (π)</th><th>Status</th></tr></thead>
@@ -370,6 +492,10 @@ export default function AdminMarketPage() {
             </div>
           </div>
         )}
+      </div>
+
+      <div className={styles.quickLinks}>
+        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>Back to Dashboard</Link>
       </div>
 
       {overrideId&&(

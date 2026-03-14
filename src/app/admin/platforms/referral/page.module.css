@@ -3,8 +3,23 @@
 .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
 .title { font-size:22px; font-weight:900; color:var(--color-text); margin-bottom:4px; }
 .sub { font-size:13px; color:var(--color-text-muted); }
+.headerActions { display:flex; align-items:center; gap:8px; }
 .liveTag { font-size:11px; font-weight:700; color:#27ae60; background:rgba(39,174,96,0.08); border:1px solid rgba(39,174,96,0.25); padding:4px 10px; border-radius:20px; animation:pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.5} }
+.quickLinks { display:flex; justify-content:flex-start; padding-top:2px; }
+.backBtn {
+  display:inline-flex;
+  align-items:center;
+  padding:10px 14px;
+  border-radius:10px;
+  background:var(--color-surface);
+  border:1px solid var(--color-border);
+  font-size:12px;
+  font-weight:700;
+  color:var(--color-text-muted);
+}
+.topBackBtn { margin-top:2px; }
+.bottomBackBtn { margin-top:2px; }
 
 /* Stats */
 .statsGrid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
@@ -73,4 +88,9 @@
 .emptyIcon { font-size:36px; margin-bottom:8px; }
 .emptyText { font-size:13px; color:var(--color-text-muted); }
 
+@media (max-width:900px) {
+  .header { flex-wrap:wrap; align-items:flex-start; gap:8px; }
+  .headerActions { width:100%; justify-content:space-between; }
+  .topBackBtn { margin-top:0; }
+}
 @media (max-width:480px) { .statsGrid { grid-template-columns:repeat(2,1fr); } }

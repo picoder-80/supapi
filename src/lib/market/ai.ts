@@ -1,5 +1,3 @@
-"use server";
-
 export type DisputeDecision = "refund" | "release" | "manual_review";
 
 export interface DisputeAnalysisInput {

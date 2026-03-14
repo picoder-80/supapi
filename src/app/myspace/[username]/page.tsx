@@ -180,12 +180,25 @@ export default function PublicProfilePage() {
 
         <div className={styles.displayName}>{name}</div>
         <div className={styles.username}><span className={styles.usernamePi}>π</span> @{username}</div>
+        {profile?.kyc_status === "verified" && (
+          <div style={{ marginTop: 8 }}>
+            <span className={styles.metaItem} style={{ background: "rgba(39,174,96,0.12)", color: "#27ae60", border: "1px solid rgba(39,174,96,0.35)" }}>
+              ✅ KYC Verified
+            </span>
+          </div>
+        )}
 
         {profile?.bio && <div className={styles.bio}>{profile.bio}</div>}
 
         <div className={styles.metaRow}>
           {profile?.created_at && (
             <span className={styles.metaItem}><span className={styles.metaIcon}>📅</span> Joined {formatDate(profile.created_at)}</span>
+          )}
+          {profile?.wallet_address && (
+            <span className={styles.metaItem} title="Public wallet address">
+              <span className={styles.metaIcon}>⧉</span>
+              {profile.wallet_address.slice(0, 8)}...{profile.wallet_address.slice(-6)}
+            </span>
           )}
           <span className={styles.metaItem}><span className={styles.metaIcon}>📍</span> Pi Network</span>
         </div>

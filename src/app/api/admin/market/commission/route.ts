@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyAdmin } from "@/lib/admin-auth";
+import { hasAdminPermission } from "@/lib/admin/permissions";
 
 // GET commission config + summary
 export async function GET(req: NextRequest) {
   const auth = await verifyAdmin(req.headers.get("authorization"));
   if (!auth.ok) return NextResponse.json({ success: false }, { status: 401 });
+  if (!hasAdminPermission(auth.role, "admin.market.read")) {
+    return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  }
 
   const supabase = await createAdminClient();
   const [{ data: config }, { data: ledger }] = await Promise.all([
@@ -28,6 +32,9 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const auth = await verifyAdmin(req.headers.get("authorization"));
   if (!auth.ok) return NextResponse.json({ success: false }, { status: 401 });
+  if (!hasAdminPermission(auth.role, "admin.market.write")) {
+    return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  }
 
   const { commission_pct } = await req.json();
   if (commission_pct === undefined || commission_pct < 0 || commission_pct > 50)

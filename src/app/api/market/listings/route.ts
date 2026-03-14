@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
       .eq("seller_id", userId).neq("status", "removed");
 
     if ((count ?? 0) === 1) {
-      await awardSC(userId, "first_listing", data.id, 50, "🛍️ First marketplace listing!");
+      await awardSC(userId, "marketplace_first_listing", data.id, 50, "🛍️ First marketplace listing!");
     } else {
       await awardSC(userId, "new_listing", data.id, 20, "🛍️ New listing created!");
     }

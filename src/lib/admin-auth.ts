@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyToken } from "@/lib/auth/jwt";
+import { isAdminRole } from "@/lib/admin/roles";
 
-export async function verifyAdmin(authHeader: string | null): Promise<{ ok: boolean; userId?: string }> {
+export async function verifyAdmin(authHeader: string | null): Promise<{ ok: boolean; userId?: string; role?: string }> {
   if (!authHeader?.startsWith("Bearer ")) return { ok: false };
   const token = authHeader.slice(7);
   try {
@@ -15,8 +16,8 @@ export async function verifyAdmin(authHeader: string | null): Promise<{ ok: bool
       .eq("id", payload.userId)
       .single();
 
-    if (!user || user.role !== "admin") return { ok: false };
-    return { ok: true, userId: user.id };
+    if (!user || !isAdminRole(user.role)) return { ok: false };
+    return { ok: true, userId: user.id, role: user.role };
   } catch {
     return { ok: false };
   }

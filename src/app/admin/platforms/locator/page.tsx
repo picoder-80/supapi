@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import styles from "./page.module.css";
 
 interface Business {
@@ -141,8 +142,11 @@ export default function AdminLocatorPage() {
           <h1 className={styles.title}>📍 Locator Admin</h1>
           <p className={styles.sub}>Manage Pi-accepting business listings</p>
         </div>
-        <div className={styles.countBadges}>
+        <div className={styles.headerActions}>
+          <div className={styles.countBadges}>
           <span className={styles.pendingCount}>{counts.pending} pending</span>
+          </div>
+          <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.topBackBtn}`}>Back to Dashboard</Link>
         </div>
       </div>
 
@@ -324,6 +328,10 @@ export default function AdminLocatorPage() {
           ))}
         </div>
       )}
+
+      <div className={styles.quickLinks}>
+        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>Back to Dashboard</Link>
+      </div>
     </div>
   );
 }

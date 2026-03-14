@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/security/audit";
+import { hasAdminPermission } from "@/lib/admin/permissions";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   const auth = await verifyAdmin(req.headers.get("authorization"));
   if (!auth.ok) return NextResponse.json({ success: false }, { status: 401 });
+  if (!hasAdminPermission(auth.role, "admin.market.write")) {
+    return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  }
 
   try {
     const { id } = await params;

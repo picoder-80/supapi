@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyAdmin } from "@/lib/admin-auth";
+import { hasAdminPermission } from "@/lib/admin/permissions";
 
 // GET — list all withdrawals with user info
 export async function GET(req: NextRequest) {
   const auth = await verifyAdmin(req.headers.get("authorization"));
   if (!auth.ok) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  if (!hasAdminPermission(auth.role, "admin.referral.read")) {
+    return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  }
   const supabase = await createAdminClient();
 
   const { searchParams } = new URL(req.url);
@@ -25,6 +29,9 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const auth = await verifyAdmin(req.headers.get("authorization"));
   if (!auth.ok) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  if (!hasAdminPermission(auth.role, "admin.referral.write")) {
+    return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  }
   const supabase = await createAdminClient();
 
   const { id, action, note } = await req.json();

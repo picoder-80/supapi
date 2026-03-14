@@ -1,0 +1,29 @@
+---
+description: Enforce consistent admin layout and spacing
+globs: src/app/admin/**/*.tsx,src/app/admin/**/*.module.css,src/components/admin/**/*.tsx,src/components/admin/**/*.module.css
+alwaysApply: false
+---
+
+# Admin Layout Consistency
+
+When editing or creating admin pages/components, match the existing admin baseline layout used by `Main Dashboard`.
+
+- Use the shared container baseline from `AdminShell` (`.content`) for width and horizontal rhythm.
+- Keep page-level headers consistent: icon + title + optional subtitle on the left, back/navigation action on the right.
+- Ensure `Back to Dashboard` is always present in admin pages using the page-level pattern:
+  - top-right button in header
+  - bottom-left button near page end
+- Keep back-button size and spacing consistent across admin pages.
+- Avoid reintroducing boxed or sticky header bars unless explicitly requested for a specific page.
+- Use consistent card geometry (border radius, border weight, spacing) with current admin pages.
+- Keep section spacing and vertical rhythm aligned with existing dashboard/admin tool pages.
+- Preserve mobile responsiveness with the same breakpoints and behavior already used in admin styles.
+- For admin tools pages, keep back-navigation placement consistent with current convention when requested.
+
+## Quick checks before finishing
+
+- Header alignment and spacing visually matches other admin pages.
+- Top-right and bottom-left `Back to Dashboard` buttons are present and visually consistent.
+- Left/right gutters are consistent with the shared admin container.
+- Card/list/table blocks do not look denser or wider than sibling admin pages.
+- No page-specific CSS overrides that break the shared layout baseline.

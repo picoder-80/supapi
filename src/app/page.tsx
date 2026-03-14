@@ -30,6 +30,7 @@ const modules = [
   { href: "/machina-market", emoji: "🚗",  label: "MachinaMarket",   desc: "Pi Automotive Marketplace"     },
   { href: "/domus",          emoji: "🏠",  label: "Domus",           desc: "Pi Property Marketplace"        },
   { href: "/endoro",         emoji: "🛞",  label: "Endoro",          desc: "Pi Peer-to-Peer Vehicle Rental"  },
+  { href: "/supapets",       emoji: "🐾",  label: "SupaPets",        desc: "Virtual pets, daily care, SC rewards" },
 ];
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }

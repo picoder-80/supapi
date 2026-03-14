@@ -40,6 +40,8 @@ export default function TopBar() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLAnchorElement>(null);
 
+  if (pathname.startsWith("/admin")) return null;
+
   useEffect(() => {
     if (!scrollRef.current || !activeRef.current) return;
     const container = scrollRef.current;

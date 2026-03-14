@@ -1,6 +1,16 @@
 // types/index.ts
 
-export type UserRole = "pioneer" | "seller" | "instructor" | "host" | "admin";
+export type UserRole =
+  | "pioneer"
+  | "seller"
+  | "instructor"
+  | "host"
+  | "admin"
+  | "super_admin"
+  | "account_admin"
+  | "staff_admin"
+  | "marketing_admin"
+  | "banned";
 
 export type KycStatus = "unverified" | "pending" | "verified";
 

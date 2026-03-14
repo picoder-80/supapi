@@ -58,11 +58,17 @@ export async function POST(req: NextRequest) {
     // Pi API returns: credentials.kyc (bool or string), wallet_address (string)
     // Pi /me API does NOT return KYC — must get from authResult directly
     // authResult.user has KYC data when "payments" scope is requested
-    const authUser = parsed.data.authResult?.user ?? {};
+    const authUser: any = parsed.data.authResult?.user ?? {};
+    const authResultAny: any = authResult;
     const kycRaw =
       authUser.kyc_verified ??
       authUser.kyc ??
       authUser.kyc_status ??
+      authUser.credentials?.kyc ??
+      authResultAny.kyc_verified ??
+      authResultAny.kyc ??
+      authResultAny.kyc_status ??
+      authResultAny.credentials?.kyc ??
       meData.credentials?.kyc ??
       meData.kyc_verified ??
       meData.kyc_status ??
@@ -81,6 +87,10 @@ export async function POST(req: NextRequest) {
     const walletAddress =
       authUser.wallet_address ??
       authUser.walletAddress ??
+      authUser.credentials?.wallet_address ??
+      authResultAny.wallet_address ??
+      authResultAny.walletAddress ??
+      authResultAny.credentials?.wallet_address ??
       meData.wallet_address ??
       meData.credentials?.wallet_address ??
       null;

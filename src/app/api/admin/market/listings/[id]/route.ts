@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyAdmin } from "@/lib/admin-auth";
+import { hasAdminPermission } from "@/lib/admin/permissions";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -8,6 +9,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const auth = await verifyAdmin(req.headers.get("authorization"));
   if (!auth.ok) return NextResponse.json({ success: false }, { status: 401 });
+  if (!hasAdminPermission(auth.role, "admin.market.write")) {
+    return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  }
 
   const body = await req.json();
   const allowed = ["status","price_pi","stock","title","description"];
@@ -24,6 +28,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const auth = await verifyAdmin(req.headers.get("authorization"));
   if (!auth.ok) return NextResponse.json({ success: false }, { status: 401 });
+  if (!hasAdminPermission(auth.role, "admin.market.write")) {
+    return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  }
 
   const supabase = await createAdminClient();
   await supabase.from("listings").update({ status: "removed", updated_at: new Date().toISOString() }).eq("id", id);

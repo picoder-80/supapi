@@ -1,15 +1,38 @@
 // src/app/api/admin/treasury/route.ts
 // GET  — full treasury overview (revenue, commission, pending payouts)
-// POST — process seller withdrawal (mark paid + record txid)
+// POST — process seller withdrawal or owner withdrawal record
 
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyAdmin } from "@/lib/admin-auth";
+import { hasAdminPermission } from "@/lib/admin/permissions";
+import { logAdminAction } from "@/lib/security/audit";
+import { executeOwnerTransfer, isOwnerTransferConfigured } from "@/lib/pi/payout";
+
+async function getOwnerWithdrawnTotal(supabase: any): Promise<number> {
+  const { data } = await supabase
+    .from("platform_config")
+    .select("value")
+    .eq("key", "treasury_owner_withdrawn_total_pi")
+    .maybeSingle();
+  return Number.parseFloat(String(data?.value ?? "0")) || 0;
+}
+
+async function setOwnerWithdrawnTotal(supabase: any, total: number) {
+  await supabase.from("platform_config").upsert({
+    key: "treasury_owner_withdrawn_total_pi",
+    value: String(Math.max(0, total)),
+    description: "Total owner treasury withdrawals (Pi)",
+  }, { onConflict: "key" });
+}
 
 // GET /api/admin/treasury
 export async function GET(req: NextRequest) {
   const auth = await verifyAdmin(req.headers.get("authorization"));
   if (!auth.ok) return NextResponse.json({ success: false }, { status: 401 });
+  if (!hasAdminPermission(auth.role, "admin.treasury.read")) {
+    return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  }
 
   const supabase = await createAdminClient();
   const { searchParams } = new URL(req.url);
@@ -77,7 +100,9 @@ export async function GET(req: NextRequest) {
   const totalGross      = Object.values(platformBreakdown).reduce((s, p) => s + p.gross, 0);
   const totalCommission = Object.values(platformBreakdown).reduce((s, p) => s + p.commission, 0);
   const totalPendingPayout = (pendingWithdrawals ?? []).reduce((s, w) => s + parseFloat(String(w.amount_pi)), 0);
-  const availableBalance = totalCommission - totalPendingPayout; // rough estimate
+  const ownerWithdrawnPi = await getOwnerWithdrawnTotal(supabase);
+  const availableBalance = totalCommission - totalPendingPayout; // before owner withdrawals
+  const availableAfterOwner = availableBalance - ownerWithdrawnPi;
 
   // Monthly trend (last 6 months)
   const monthlyTrend: Record<string, number> = {};
@@ -95,6 +120,8 @@ export async function GET(req: NextRequest) {
         total_commission_pi: Math.round(totalCommission * 10000) / 10000,
         pending_payouts_pi:  Math.round(totalPendingPayout * 10000) / 10000,
         available_balance_pi: Math.round(availableBalance * 10000) / 10000,
+        owner_withdrawn_pi: Math.round(ownerWithdrawnPi * 10000) / 10000,
+        available_after_owner_pi: Math.round(availableAfterOwner * 10000) / 10000,
       },
       by_platform:        platformBreakdown,
       monthly_trend:      monthlyTrend,
@@ -109,12 +136,114 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await verifyAdmin(req.headers.get("authorization"));
   if (!auth.ok) return NextResponse.json({ success: false }, { status: 401 });
+  if (!hasAdminPermission(auth.role, "admin.treasury.write")) {
+    return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  }
 
   const supabase = await createAdminClient();
-  const { withdrawal_id, action, pi_txid, admin_note } = await req.json();
+  const {
+    withdrawal_id,
+    action,
+    pi_txid,
+    admin_note,
+    amount_pi,
+    execute_transfer,
+    destination_wallet,
+  } = await req.json();
 
-  if (!withdrawal_id || !action)
-    return NextResponse.json({ success: false, error: "Missing withdrawal_id or action" }, { status: 400 });
+  if (!action)
+    return NextResponse.json({ success: false, error: "Missing action" }, { status: 400 });
+
+  if (action === "owner_withdraw") {
+    const amount = Number.parseFloat(String(amount_pi ?? 0));
+    const executeTransfer = Boolean(execute_transfer);
+    const destinationWallet = String(destination_wallet ?? "").trim();
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return NextResponse.json({ success: false, error: "Invalid amount_pi" }, { status: 400 });
+    }
+    if (executeTransfer && !destinationWallet) {
+      return NextResponse.json({ success: false, error: "destination_wallet required when execute_transfer=true" }, { status: 400 });
+    }
+
+    const [{ data: revenue }, { data: pendingWithdrawals }] = await Promise.all([
+      supabase.from("admin_revenue").select("commission_pi"),
+      supabase.from("seller_withdrawals").select("amount_pi").eq("status", "pending"),
+    ]);
+    const totalCommission = (revenue ?? []).reduce((s: number, r: any) => s + parseFloat(String(r.commission_pi ?? 0)), 0);
+    const totalPendingPayout = (pendingWithdrawals ?? []).reduce((s: number, w: any) => s + parseFloat(String(w.amount_pi ?? 0)), 0);
+    const ownerWithdrawnPi = await getOwnerWithdrawnTotal(supabase);
+    const availableAfterOwner = totalCommission - totalPendingPayout - ownerWithdrawnPi;
+
+    if (amount > availableAfterOwner + 0.000001) {
+      return NextResponse.json({
+        success: false,
+        error: `Amount exceeds available treasury balance (${availableAfterOwner.toFixed(4)} π)`,
+      }, { status: 400 });
+    }
+
+    let finalTxid = String(pi_txid ?? "").trim();
+    let transferMeta: Record<string, unknown> = {
+      mode: "record_only",
+      configured: isOwnerTransferConfigured(),
+    };
+
+    if (executeTransfer) {
+      const transfer = await executeOwnerTransfer({
+        amountPi: amount,
+        destinationWallet,
+        note: admin_note ?? null,
+      });
+      transferMeta = {
+        mode: "execute_transfer",
+        provider: transfer.provider,
+        configured: isOwnerTransferConfigured(),
+      };
+      if (!transfer.ok) {
+        return NextResponse.json({
+          success: false,
+          error: transfer.message ?? "Transfer execution failed",
+          data: { transfer: transferMeta, provider_response: transfer.raw ?? null },
+        }, { status: transfer.provider === "unconfigured" ? 501 : 502 });
+      }
+      finalTxid = String(transfer.txid ?? "").trim();
+    } else if (!finalTxid) {
+      return NextResponse.json({ success: false, error: "pi_txid required for record-only mode" }, { status: 400 });
+    }
+
+    await setOwnerWithdrawnTotal(supabase, ownerWithdrawnPi + amount);
+
+    if (auth.userId) {
+      await logAdminAction({
+        adminUserId: auth.userId,
+        action: "treasury_owner_withdraw",
+        targetType: "treasury",
+        targetId: "owner",
+        detail: {
+          amount_pi: amount,
+          pi_txid: finalTxid,
+          note: admin_note ?? null,
+          execute_transfer: executeTransfer,
+          destination_wallet: destinationWallet || null,
+          transfer: transferMeta,
+        },
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        status: "recorded",
+        amount_pi: amount,
+        pi_txid: finalTxid,
+        owner_withdrawn_total_pi: Number((ownerWithdrawnPi + amount).toFixed(4)),
+        transfer: transferMeta,
+      },
+      message: executeTransfer ? "Owner withdrawal executed and recorded" : "Owner withdrawal recorded",
+    });
+  }
+
+  if (!withdrawal_id)
+    return NextResponse.json({ success: false, error: "Missing withdrawal_id" }, { status: 400 });
 
   const { data: withdrawal } = await supabase
     .from("seller_withdrawals")
@@ -145,6 +274,16 @@ export async function POST(req: NextRequest) {
       .update({ status: "paid", pi_txid: pi_txid })
       .eq("withdrawal_id", withdrawal_id);
 
+    if (auth.userId) {
+      await logAdminAction({
+        adminUserId: auth.userId,
+        action: "treasury_seller_withdrawal_pay",
+        targetType: "withdrawal",
+        targetId: String(withdrawal_id),
+        detail: { amount_pi: withdrawal.amount_pi, pi_txid: String(pi_txid) },
+      });
+    }
+
     console.log(`[Treasury] Withdrawal PAID: ${withdrawal_id} amount=${withdrawal.amount_pi}π txid=${pi_txid}`);
 
     return NextResponse.json({
@@ -166,6 +305,16 @@ export async function POST(req: NextRequest) {
       .update({ status: "pending", withdrawal_id: null })
       .eq("withdrawal_id", withdrawal_id);
 
+    if (auth.userId) {
+      await logAdminAction({
+        adminUserId: auth.userId,
+        action: "treasury_seller_withdrawal_reject",
+        targetType: "withdrawal",
+        targetId: String(withdrawal_id),
+        detail: { amount_pi: withdrawal.amount_pi, note: admin_note ?? null },
+      });
+    }
+
     console.log(`[Treasury] Withdrawal REJECTED: ${withdrawal_id}`);
 
     return NextResponse.json({
@@ -174,5 +323,5 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  return NextResponse.json({ success: false, error: "Invalid action. Use: pay | reject" }, { status: 400 });
+  return NextResponse.json({ success: false, error: "Invalid action. Use: pay | reject | owner_withdraw" }, { status: 400 });
 }

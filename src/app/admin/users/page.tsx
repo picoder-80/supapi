@@ -7,52 +7,75 @@ import styles from "./page.module.css";
 interface User {
   id: string; username: string; email: string | null;
   role: string; kyc_status: string; created_at: string;
-  pi_balance_pending: number;
 }
 
 export default function UsersPage() {
+  const LIMIT = 20;
   const [users,   setUsers]   = useState<User[]>([]);
+  const [roles,   setRoles]   = useState<string[]>([]);
   const [total,   setTotal]   = useState(0);
   const [page,    setPage]    = useState(1);
   const [search,  setSearch]  = useState("");
   const [role,    setRole]    = useState("");
-  const [kyc,     setKyc]     = useState("");
   const [loading, setLoading] = useState(true);
+  const [err,     setErr]     = useState("");
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
+    setErr("");
     const token = localStorage.getItem("supapi_admin_token") ?? "";
     const params = new URLSearchParams({
-      page: String(page), limit: "20",
-      ...(search && { search }),
+      page: String(page), limit: String(LIMIT),
+      ...(search && { q: search }),
       ...(role   && { role }),
-      ...(kyc    && { kyc }),
     });
-    const res  = await fetch(`/api/admin/users?${params}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = await res.json();
-    if (data.success) { setUsers(data.data.data); setTotal(data.data.total); }
-    setLoading(false);
-  }, [page, search, role, kyc]);
+    try {
+      const res  = await fetch(`/api/admin/users?${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        const list = data?.data?.users ?? data?.data?.data ?? [];
+        setUsers(Array.isArray(list) ? list : []);
+        const roleList = data?.data?.available_roles ?? [];
+        setRoles(Array.isArray(roleList) ? roleList : []);
+        setTotal(Number(data?.data?.total ?? 0));
+      } else {
+        setUsers([]);
+        setRoles([]);
+        setTotal(0);
+        setErr(data?.error ?? "Failed to load users");
+      }
+    } catch {
+      setUsers([]);
+      setRoles([]);
+      setTotal(0);
+      setErr("Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, search, role, LIMIT]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const action = async (userId: string, act: string) => {
+  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const action = async (userId: string, act: "ban" | "unban") => {
     const token = localStorage.getItem("supapi_admin_token") ?? "";
-    const res  = await fetch("/api/admin/users", {
+    const res  = await fetch(`/api/admin/users/${userId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ userId, action: act }),
+      body: JSON.stringify({ is_banned: act === "ban" }),
     });
     const data = await res.json();
     if (data.success) fetchUsers();
     else alert(data.error);
   };
 
-  const kycColor: Record<string, string> = {
-    verified: "#27ae60", pending: "#f39c12", unverified: "#999"
-  };
   const roleColor: Record<string, string> = {
     admin: "#F5A623", banned: "#e74c3c", seller: "#3498db", pioneer: "#999"
   };
@@ -61,7 +84,14 @@ export default function UsersPage() {
     <div className={styles.page}>
 
       <div className={styles.header}>
-        <h1 className={styles.title}>👥 Users</h1>
+        <div className={styles.headerMain}>
+          <span className={styles.icon}>👥</span>
+          <div>
+            <h1 className={styles.title}>Users</h1>
+            <p className={styles.sub}>Manage user directory, review roles, and run moderation actions</p>
+          </div>
+        </div>
+        <Link href="/admin/dashboard" className={`${styles.dashboardBackBtn} ${styles.topDashboardBackBtn}`}>Back to Dashboard</Link>
       </div>
 
       <div className={styles.filterBar}>
@@ -72,21 +102,18 @@ export default function UsersPage() {
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
         />
         <select className={styles.select} value={role} onChange={(e) => { setRole(e.target.value); setPage(1); }}>
-          <option value="">All roles</option>
-          <option value="pioneer">Pioneer</option>
-          <option value="seller">Seller</option>
-          <option value="admin">Admin</option>
-          <option value="banned">Banned</option>
-        </select>
-        <select className={styles.select} value={kyc} onChange={(e) => { setKyc(e.target.value); setPage(1); }}>
-          <option value="">All KYC</option>
-          <option value="verified">Verified</option>
-          <option value="pending">Pending</option>
-          <option value="unverified">Unverified</option>
+          <option value="">All Roles</option>
+          <option value="kyc_pioneer">KYC&apos;ed Pioneer</option>
+          {roles.map((r) => (
+            <option key={r} value={r}>
+              {r.charAt(0).toUpperCase() + r.slice(1)}
+            </option>
+          ))}
         </select>
       </div>
 
       <div className={styles.userCount}>{total.toLocaleString()} total users</div>
+      {!!err && <div className={styles.userCount} style={{ color: "#e74c3c" }}>{err}</div>}
 
       {loading ? (
         <div className={styles.loading}>Loading users...</div>
@@ -105,16 +132,13 @@ export default function UsersPage() {
                   <span className={styles.adminTag} style={{ background: `${roleColor[u.role] ?? "#999"}18`, color: roleColor[u.role] ?? "#999" }}>
                     {u.role}
                   </span>
-                  <span className={styles.bannedTag} style={{ background: `${kycColor[u.kyc_status] ?? "#999"}18`, color: kycColor[u.kyc_status] ?? "#999" }}>
-                    {u.kyc_status}
-                  </span>
+                  {u.kyc_status === "verified" && (
+                    <span className={styles.kycTag}>KYC&apos;ed</span>
+                  )}
                 </div>
                 <div className={styles.userSub}>{u.email ?? "—"} · Joined {new Date(u.created_at).toLocaleDateString()}</div>
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                {u.kyc_status !== "verified" && (
-                  <button className={styles.okBtn} onClick={() => action(u.id, "verify_kyc")}>Verify KYC</button>
-                )}
                 {u.role !== "banned" && u.role !== "admin" && (
                   <button className={styles.dangerBtn} onClick={() => action(u.id, "ban")}>Ban</button>
                 )}
@@ -129,11 +153,15 @@ export default function UsersPage() {
       )}
 
       <div className={styles.pagination}>
-        <span>Page {page} · {total} total</span>
+        <span>Page {page} / {totalPages} · {total} total</span>
         <div style={{ display: "flex", gap: 8 }}>
-          <button className={styles.pageBtn} disabled={page === 1} onClick={() => setPage((p) => p - 1)}>← Prev</button>
-          <button className={styles.pageBtn} disabled={users.length < 20} onClick={() => setPage((p) => p + 1)}>Next →</button>
+          <button className={styles.pageBtn} disabled={loading || page <= 1} onClick={() => setPage((p) => p - 1)}>← Prev</button>
+          <button className={styles.pageBtn} disabled={loading || page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next →</button>
         </div>
+      </div>
+
+      <div className={styles.quickLinks}>
+        <Link href="/admin/dashboard" className={`${styles.dashboardBackBtn} ${styles.bottomDashboardBackBtn}`}>Back to Dashboard</Link>
       </div>
 
     </div>

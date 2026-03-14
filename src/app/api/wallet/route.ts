@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
+import { isAdminRole } from "@/lib/admin/roles";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -134,7 +135,7 @@ export async function POST(req: NextRequest) {
   if (action === "credit_earnings") {
     const internalKey = req.headers.get("x-internal-key") ?? "";
     const allowedInternal = process.env.INTERNAL_API_SECRET && internalKey === process.env.INTERNAL_API_SECRET;
-    const allowedAdmin = auth?.role === "admin";
+    const allowedAdmin = isAdminRole(auth?.role);
     if (!allowedInternal && !allowedAdmin) {
       return NextResponse.json({ success: false, error: "Forbidden action" }, { status: 403 });
     }

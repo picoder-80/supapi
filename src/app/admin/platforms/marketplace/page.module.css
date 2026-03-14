@@ -4,8 +4,23 @@
 .platformIcon { font-size:36px; }
 .title { font-size:22px; font-weight:900; color:var(--color-text); margin-bottom:3px; }
 .sub { font-size:13px; color:var(--color-text-muted); }
+.headerActions { display:flex; align-items:center; gap:8px; }
 .fullAdminBtn { padding:10px 18px; border-radius:10px; background:rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.25); color:var(--color-gold); font-size:13px; font-weight:700; white-space:nowrap; }
 .fullAdminBtn:hover { background:rgba(245,166,35,0.2); }
+.quickLinks { display:flex; justify-content:flex-start; padding-top:10px; }
+.backBtn {
+  display:inline-flex;
+  align-items:center;
+  padding:10px 14px;
+  border-radius:10px;
+  background:var(--color-surface);
+  border:1px solid var(--color-border);
+  font-size:12px;
+  font-weight:700;
+  color:var(--color-text-muted);
+}
+.topBackBtn { margin-top:2px; }
+.bottomBackBtn { margin-top:2px; }
 
 .loadingRow { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:20px; }
 .skeleton { height:88px; border-radius:14px; background:rgba(0,0,0,0.02); animation:shimmer 1.5s infinite; }
@@ -42,4 +57,9 @@
 .statusNote { background:rgba(39,174,96,0.06); border:1px solid rgba(39,174,96,0.2); border-radius:12px; padding:14px 16px; font-size:13px; color:var(--color-text-muted); }
 .statusLink { color:var(--color-gold); font-weight:700; }
 
+@media (max-width:900px) {
+  .header { flex-wrap:wrap; align-items:flex-start; }
+  .headerActions { width:100%; justify-content:space-between; }
+  .topBackBtn { margin-top:0; }
+}
 @media(max-width:480px) { .statsGrid { grid-template-columns:repeat(2,1fr); } }

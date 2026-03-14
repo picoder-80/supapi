@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
 import { signToken } from "@/lib/auth/jwt";
 import bcrypt from "bcryptjs";
+import { ADMIN_ROLES } from "@/lib/admin/roles";
 
 const loginSchema = z.object({
   email:    z.string().email(),
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
       .from("users")
       .select("*")
       .eq("email", email)
-      .eq("role", "admin")
+      .in("role", [...ADMIN_ROLES])
       .single();
 
     if (error || !user) {
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
       userId:   user.id,
       piUid:    user.pi_uid ?? "",
       username: user.username,
-      role:     "admin",
+      role:     user.role ?? "admin",
     });
 
     // Return token in body — client stores in localStorage

@@ -6,6 +6,9 @@ import { PiProvider } from "@/components/providers/PiProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import TopBar from "@/components/layout/TopBar";
 import BottomNav from "@/components/layout/BottomNav";
+import BottomNavSpacer from "@/components/layout/BottomNavSpacer";
+import PublicPlatformFrame from "@/components/layout/PublicPlatformFrame";
+import PlatformAIAssistant from "@/components/ai/PlatformAIAssistant";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
@@ -39,10 +42,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <TopBar />
             <main>
-              {children}
+              <PublicPlatformFrame>{children}</PublicPlatformFrame>
             </main>
-            {/* Spacer supaya content tak tertutup BottomNav */}
-            <div className="bottom-nav-spacer" />
+            <PlatformAIAssistant />
+            {/* Spacer hanya untuk non-admin mobile pages */}
+            <BottomNavSpacer />
             <BottomNav />
           </AuthProvider>
         </PiProvider>

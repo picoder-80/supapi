@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import styles from "./page.module.css";
 
 interface Config { key: string; value: string; description: string; }
@@ -90,7 +91,10 @@ export default function AdminReferralPage() {
           <h1 className={styles.title}>🤝 Referral Admin</h1>
           <p className={styles.sub}>Manage commission rates & program settings</p>
         </div>
-        <div className={styles.liveTag}>● LIVE</div>
+        <div className={styles.headerActions}>
+          <div className={styles.liveTag}>● LIVE</div>
+          <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.topBackBtn}`}>Back to Dashboard</Link>
+        </div>
       </div>
 
       {/* Stats row */}
@@ -256,6 +260,10 @@ export default function AdminReferralPage() {
           </div>
         </div>
       )}
+
+      <div className={styles.quickLinks}>
+        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>Back to Dashboard</Link>
+      </div>
 
     </div>
   );

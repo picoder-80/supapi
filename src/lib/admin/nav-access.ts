@@ -1,0 +1,24 @@
+import { hasAdminPermission, type AdminPermission } from "@/lib/admin/permissions";
+
+const NAV_PERMISSION_RULES: Array<{ prefix: string; permission: AdminPermission }> = [
+  { prefix: "/admin/settings", permission: "admin.settings.read" },
+  { prefix: "/admin/platforms/wallet", permission: "admin.treasury.read" },
+  { prefix: "/admin/sc-wallet", permission: "admin.sc_wallet.read" },
+  { prefix: "/admin/email-list", permission: "admin.email_list.read" },
+  { prefix: "/admin/users", permission: "admin.users.read" },
+  { prefix: "/admin/market", permission: "admin.market.read" },
+  { prefix: "/admin/platforms/referral", permission: "admin.referral.read" },
+  { prefix: "/admin/platforms/locator", permission: "admin.locator.read" },
+];
+
+export function canAccessAdminHref(role: string | null | undefined, href: string): boolean {
+  const rule = NAV_PERMISSION_RULES.find((r) => href.startsWith(r.prefix));
+  if (!rule) return true;
+  return hasAdminPermission(role, rule.permission);
+}
+
+export function canAccessAdminPath(role: string | null | undefined, pathname: string): boolean {
+  const rule = NAV_PERMISSION_RULES.find((r) => pathname.startsWith(r.prefix));
+  if (!rule) return true;
+  return hasAdminPermission(role, rule.permission);
+}

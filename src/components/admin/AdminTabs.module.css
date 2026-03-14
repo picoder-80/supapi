@@ -64,3 +64,18 @@
   pointer-events: none;
   font-size: 14px;
 }
+
+@media (max-width: 480px) {
+  .dropdownWrap {
+    padding: 8px 10px;
+  }
+  .dropdown {
+    padding: 8px 34px 8px 10px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+  .dropdownArrow {
+    right: 20px;
+    font-size: 12px;
+  }
+}

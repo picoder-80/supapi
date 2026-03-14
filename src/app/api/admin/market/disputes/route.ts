@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyAdmin } from "@/lib/admin-auth";
+import { hasAdminPermission } from "@/lib/admin/permissions";
 
 export async function GET(req: NextRequest) {
   const auth = await verifyAdmin(req.headers.get("authorization"));
   if (!auth.ok) return NextResponse.json({ success: false }, { status: 401 });
+  if (!hasAdminPermission(auth.role, "admin.market.read")) {
+    return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") ?? "";

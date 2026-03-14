@@ -38,6 +38,9 @@ Edit `.env.local` and fill in all credentials:
 2. Open **SQL Editor**
 3. Copy and paste the contents of `supabase/schema.sql`
 4. Click **Run**
+5. (For SupaPets MVP) run `supabase/supapets.sql`
+6. (For AI cross-device memory) run `supabase/ai-assistant-memory.sql`
+7. (If schema already exists) run `supabase/setup-addons.sql` instead of full setup
 
 ### 4. Create First Admin
 

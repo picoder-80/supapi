@@ -2,37 +2,14 @@
 
 // components/admin/AdminShell.tsx
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import styles from "./AdminShell.module.css";
+import { MOBILE_QUICK_NAV, SIDEBAR_ADMIN_NAV, SIDEBAR_PLATFORM_NAV } from "@/lib/admin/adminNavConfig";
+import { canAccessAdminHref, canAccessAdminPath } from "@/lib/admin/nav-access";
 
 const ADMIN_TOKEN_KEY = "supapi_admin_token";
-
-const ADMIN_NAV = [
-  { href: "/admin/dashboard", icon: "▦",  label: "Dashboard" },
-  { href: "/admin/users",     icon: "👥", label: "Users"     },
-];
-
-const PLATFORMS_NAV = [
-  { href: "/admin/platforms/marketplace", icon: "🛍️", label: "Marketplace"   },
-  { href: "/admin/platforms/gigs",        icon: "💼", label: "Gigs"          },
-  { href: "/admin/platforms/academy",     icon: "📚", label: "Academy"       },
-  { href: "/admin/platforms/stay",        icon: "🏡", label: "Stay"          },
-  { href: "/admin/platforms/arcade",      icon: "🎮", label: "Arcade"        },
-  { href: "/admin/platforms/newsfeed",    icon: "📰", label: "Newsfeed"      },
-  { href: "/admin/platforms/wallet",      icon: "💰", label: "Wallet"        },
-  { href: "/admin/platforms/referral",    icon: "🤝", label: "Referral"      },
-  { href: "/admin/platforms/locator",     icon: "📍", label: "Locator"       },
-  { href: "/admin/platforms/jobs",        icon: "🧑‍💻", label: "Jobs"          },
-  { href: "/admin/platforms/rewards",     icon: "🎁", label: "Rewards"       },
-  { href: "/admin/platforms/reels",       icon: "🎬", label: "Reels"         },
-  { href: "/admin/platforms/pi-value",    icon: "📈", label: "Pi Value"      },
-  { href: "/admin/platforms/classifieds", icon: "📋", label: "Classifieds"   },
-  { href: "/admin/platforms/myspace",     icon: "🪐", label: "MySpace"       },
-];
-
-const ALL_NAV = [...ADMIN_NAV, ...PLATFORMS_NAV];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -40,17 +17,72 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const [signingOut, setSigningOut]   = useState(false);
   const [authorized, setAuthorized]   = useState(false);
   const [checking,   setChecking]     = useState(true);
+  const [adminRole, setAdminRole]     = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeHash, setActiveHash]   = useState("");
+  const bottomNavRef = useRef<HTMLElement>(null);
+  const mobileAdminToolsNavRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (pathname === "/admin/login") { setChecking(false); return; }
     const token = localStorage.getItem(ADMIN_TOKEN_KEY);
-    if (!token) { router.replace("/admin/login"); }
-    else { setAuthorized(true); setChecking(false); }
+    if (!token) {
+      router.replace("/admin/login");
+      return;
+    }
+    setAuthorized(true);
+    const hydrateRole = async () => {
+      try {
+        const res = await fetch("/api/admin/settings", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (payload?.success) setAdminRole(String(payload?.data?.me?.role ?? ""));
+      } finally {
+        setChecking(false);
+      }
+    };
+    hydrateRole();
   }, [pathname, router]);
 
   // Close sidebar on route change (mobile)
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncHash = () => setActiveHash(window.location.hash.replace("#", "").trim());
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+    return () => window.removeEventListener("hashchange", syncHash);
+  }, [pathname]);
+  useEffect(() => {
+    const nav = bottomNavRef.current;
+    if (!nav) return;
+    const active = nav.querySelector("[data-active='true']") as HTMLElement | null;
+    if (!active) return;
+    const navRect = nav.getBoundingClientRect();
+    const activeRect = active.getBoundingClientRect();
+    const left = nav.scrollLeft + (activeRect.left - navRect.left) - (navRect.width / 2) + (activeRect.width / 2);
+    nav.scrollTo({ left, behavior: "smooth" });
+  }, [pathname, activeHash]);
+  useEffect(() => {
+    const nav = mobileAdminToolsNavRef.current;
+    if (!nav) return;
+    const active = nav.querySelector("[data-active='true']") as HTMLElement | null;
+    if (!active) return;
+    const navRect = nav.getBoundingClientRect();
+    const activeRect = active.getBoundingClientRect();
+    const left = nav.scrollLeft + (activeRect.left - navRect.left) - (navRect.width / 2) + (activeRect.width / 2);
+    nav.scrollTo({ left, behavior: "smooth" });
+  }, [pathname, activeHash]);
+
+  useEffect(() => {
+    if (!authorized || checking) return;
+    if (!pathname.startsWith("/admin")) return;
+    if (pathname === "/admin/login" || pathname === "/admin/forbidden") return;
+    if (!canAccessAdminPath(adminRole, pathname)) {
+      router.replace("/admin/forbidden");
+    }
+  }, [authorized, checking, pathname, adminRole, router]);
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -69,9 +101,23 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   if (!authorized) return null;
 
-  const currentLabel = ALL_NAV.find(n => pathname.startsWith(n.href))?.label ?? "Admin";
+  const visibleSidebarAdminNav = SIDEBAR_ADMIN_NAV.filter((item) => canAccessAdminHref(adminRole, item.href));
+  const visibleSidebarPlatformNav = SIDEBAR_PLATFORM_NAV.filter((item) => canAccessAdminHref(adminRole, item.href));
+  const visibleMobileNav = MOBILE_QUICK_NAV.filter((item) => canAccessAdminHref(adminRole, item.href));
+  const visibleMobileAdminToolsNav = visibleSidebarAdminNav;
+  const allVisibleNav = [...visibleSidebarAdminNav, ...visibleSidebarPlatformNav, ...visibleMobileNav];
 
-  const isActive = (href: string) => pathname.startsWith(href);
+  const currentLabel = allVisibleNav.find((n) => {
+    const [base, hash] = n.href.split("#");
+    if (!pathname.startsWith(base)) return false;
+    return hash ? activeHash === hash : true;
+  })?.label ?? "Admin";
+
+  const isActive = (href: string) => {
+    const [base, hash] = href.split("#");
+    if (!pathname.startsWith(base)) return false;
+    return hash ? activeHash === hash : true;
+  };
 
   return (
     <div className={styles.shell}>
@@ -93,11 +139,14 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           {/* Admin Tools */}
           <div className={styles.navGroup}>
             <div className={styles.navGroupLabel}>ADMIN TOOLS</div>
-            {ADMIN_NAV.map(item => (
+            {visibleSidebarAdminNav.map(item => (
               <Link key={item.href} href={item.href}
                 className={`${styles.navItem} ${isActive(item.href) ? styles.navActive : ""}`}>
                 <span className={styles.navIcon}>{item.icon}</span>
                 <span className={styles.navLabel}>{item.label}</span>
+                <span className={`${styles.navBadge} ${item.status === "live" ? styles.navBadgeLive : styles.navBadgeSoon}`}>
+                  {item.status}
+                </span>
                 {isActive(item.href) && <span className={styles.navPip} />}
               </Link>
             ))}
@@ -106,23 +155,19 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           {/* Platform Administration */}
           <div className={styles.navGroup}>
             <div className={styles.navGroupLabel}>PLATFORM ADMINISTRATION</div>
-            {PLATFORMS_NAV.map(item => (
+            {visibleSidebarPlatformNav.map(item => (
               <Link key={item.href} href={item.href}
                 className={`${styles.navItem} ${isActive(item.href) ? styles.navActive : ""}`}>
                 <span className={styles.navIcon}>{item.icon}</span>
                 <span className={styles.navLabel}>{item.label}</span>
+                <span className={`${styles.navBadge} ${item.status === "live" ? styles.navBadgeLive : styles.navBadgeSoon}`}>
+                  {item.status}
+                </span>
                 {isActive(item.href) && <span className={styles.navPip} />}
               </Link>
             ))}
           </div>
 
-          {/* My Dashboard */}
-          <div className={styles.navGroup}>
-            <Link href="/dashboard" className={styles.navItem}>
-              <span className={styles.navIcon}>🪐</span>
-              <span className={styles.navLabel}>My Dashboard</span>
-            </Link>
-          </div>
         </div>
 
         <button onClick={handleSignOut} disabled={signingOut} className={styles.signOutBtn}>
@@ -142,20 +187,29 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           <button onClick={handleSignOut} className={styles.topbarSignOut}>🚪</button>
         </div>
 
-        <div className={styles.content}>{children}</div>
-
-        {/* Bottom nav — Admin Tools only */}
-        <nav className={styles.bottomNav}>
-          {ADMIN_NAV.map(item => (
-            <Link key={item.href} href={item.href}
-              className={`${styles.bottomItem} ${isActive(item.href) ? styles.bottomActive : ""}`}>
-              <span className={styles.bottomIcon}>{item.icon}</span>
-              <span className={styles.bottomLabel}>{item.label}</span>
+        {/* Mobile-only Admin Tools top menu */}
+        <nav className={styles.mobileAdminToolsNav} ref={mobileAdminToolsNavRef}>
+          {visibleMobileAdminToolsNav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              data-active={isActive(item.href)}
+              className={`${styles.mobileAdminToolItem} ${isActive(item.href) ? styles.mobileAdminToolActive : ""}`}
+            >
+              <span className={styles.mobileAdminToolIcon}>{item.icon}</span>
+              <span className={styles.mobileAdminToolLabel}>{item.label}</span>
             </Link>
           ))}
-          {/* Show active platform in bottom nav if inside platform */}
-          {PLATFORMS_NAV.filter(p => isActive(p.href)).map(item => (
-            <Link key={item.href} href={item.href} className={`${styles.bottomItem} ${styles.bottomActive}`}>
+        </nav>
+
+        <div className={styles.content}>{children}</div>
+
+        {/* Bottom nav — mobile quick access */}
+        <nav className={styles.bottomNav} ref={bottomNavRef}>
+          {visibleMobileNav.map(item => (
+            <Link key={item.href} href={item.href}
+              data-active={isActive(item.href)}
+              className={`${styles.bottomItem} ${isActive(item.href) ? styles.bottomActive : ""}`}>
               <span className={styles.bottomIcon}>{item.icon}</span>
               <span className={styles.bottomLabel}>{item.label}</span>
             </Link>

@@ -2,6 +2,8 @@
 
 /* Header */
 .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.headerMain { display:flex; align-items:center; gap:12px; min-width:0; }
+.icon { font-size:34px; line-height:1; }
 .title { font-size:22px; font-weight:900; color:var(--color-text); margin-bottom:4px; }
 .sub { font-size:13px; color:var(--color-text-muted); }
 .liveTag { font-size:11px; font-weight:700; color:var(--color-success); background:rgba(39,174,96,0.08); border:1px solid rgba(39,174,96,0.25); padding:4px 10px; border-radius:20px; letter-spacing:0.5px; animation:pulse 2s infinite; white-space:nowrap; }
@@ -50,6 +52,50 @@
 .toolSub { font-size:10px; color:var(--color-text-muted); }
 .toolArrow { font-size:14px; color:var(--color-text-light); flex-shrink:0; }
 
+/* Treasury */
+.treasuryGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px; }
+.scGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:0; }
+.referralGrid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.treasuryCard { background:var(--color-surface); border:1px solid var(--color-border); border-radius:12px; padding:12px; box-shadow:var(--shadow-sm); }
+.treasuryLabel { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--color-text-muted); margin-bottom:4px; }
+.treasuryValue { font-size:18px; font-weight:900; color:var(--color-text); margin-bottom:2px; }
+.treasuryValueWarn { font-size:18px; font-weight:900; color:#f39c12; margin-bottom:2px; }
+.treasurySub { font-size:11px; color:var(--color-text-light); }
+.treasuryActions { display:flex; gap:10px; flex-wrap:wrap; }
+.apiWarn { font-size:12px; color:#f39c12; background:rgba(243,156,18,0.08); border:1px solid rgba(243,156,18,0.2); border-radius:10px; padding:10px 12px; }
+.loading { font-size:12px; color:var(--color-text-light); padding:6px 2px 10px; }
+.periodWrap { display:flex; gap:8px; }
+.periodBtn {
+  padding:6px 10px;
+  border-radius:8px;
+  border:1px solid var(--color-border);
+  background:rgba(0,0,0,0.03);
+  color:var(--color-text-muted);
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+}
+.periodBtnActive {
+  color:var(--color-gold);
+  border-color:rgba(245,166,35,0.4);
+  background:rgba(245,166,35,0.1);
+}
+.splitGrid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+.panel { background:var(--color-surface); border:1px solid var(--color-border); border-radius:12px; padding:12px; }
+.panelTitle { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--color-text-muted); margin-bottom:8px; }
+.row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.04); }
+.row:last-child { border-bottom:none; }
+.rowInfo { min-width:0; }
+.rowTitle { font-size:12px; font-weight:700; color:var(--color-text); }
+.rowSub { font-size:11px; color:var(--color-text-light); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:320px; }
+.rowActions { display:flex; gap:6px; }
+.okBtn { padding:5px 10px; border-radius:7px; font-size:11px; font-weight:700; border:none; cursor:pointer; background:rgba(39,174,96,0.15); color:#27ae60; }
+.dangerBtn { padding:5px 10px; border-radius:7px; font-size:11px; font-weight:700; border:none; cursor:pointer; background:rgba(231,76,60,0.15); color:#e74c3c; }
+.okBtn:disabled, .dangerBtn:disabled { opacity:0.5; cursor:not-allowed; }
+.empty { font-size:12px; color:var(--color-text-light); padding:8px 0; }
+.badgeOk { background:rgba(39,174,96,0.15); color:#27ae60; border:1px solid rgba(39,174,96,0.25); }
+.badgeWarn { background:rgba(243,156,18,0.15); color:#f39c12; border:1px solid rgba(243,156,18,0.25); }
+
 /* Recent Orders */
 .orderList { background:var(--color-surface); border:1px solid var(--color-border); border-radius:14px; overflow:hidden; box-shadow:var(--shadow-sm); }
 .orderRow { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--color-border); gap:12px; }
@@ -94,10 +140,57 @@
 .platformCard:hover { border-color:var(--color-gold); transform:translateY(-2px); box-shadow:var(--shadow-md); }
 .platformEmoji { font-size:22px; }
 .platformLabel { font-size:9px; font-weight:600; color:var(--color-text); text-align:center; line-height:1.3; }
+.platformBadge {
+  font-size:8px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.4px;
+  border-radius:999px;
+  padding:1px 6px;
+}
+.platformBadgeLive {
+  color:#27ae60;
+  background:rgba(39,174,96,0.12);
+  border:1px solid rgba(39,174,96,0.24);
+}
+.platformBadgeSoon {
+  color:#f39c12;
+  background:rgba(243,156,18,0.12);
+  border:1px solid rgba(243,156,18,0.24);
+}
 
 @media (max-width:480px) {
   .statsGrid { grid-template-columns:repeat(2,1fr); }
   .loadingRow { grid-template-columns:repeat(2,1fr); }
+  .platformGrid { grid-template-columns:repeat(2,1fr); }
+  .toolGrid { grid-template-columns:1fr; }
+  .treasuryGrid { grid-template-columns:1fr; }
+  .scGrid { grid-template-columns:1fr; }
+  .referralGrid { grid-template-columns:1fr 1fr; }
+  .header { align-items:flex-start; gap:8px; }
+  .icon { font-size:28px; }
+  .title { font-size:19px; }
+  .sub { font-size:12px; }
+  .liveTag { font-size:10px; padding:3px 8px; }
+  .userBanner { padding:12px 14px; }
+  .userBannerIcon { font-size:20px; }
+  .userBannerTitle { font-size:13px; }
+  .exportBtn { width:100%; justify-content:center; text-align:center; }
+  .periodWrap { width:100%; }
+  .periodBtn { flex:1; text-align:center; }
+  .splitGrid { grid-template-columns:1fr; }
+  .referralGrid { grid-template-columns:1fr; }
+  .row { align-items:flex-start; }
+  .rowSub { max-width:220px; }
+}
+
+@media (max-width:900px) {
+  .statsGrid { grid-template-columns:repeat(2,1fr); }
+  .loadingRow { grid-template-columns:repeat(2,1fr); }
   .platformGrid { grid-template-columns:repeat(4,1fr); }
   .toolGrid { grid-template-columns:1fr; }
+  .treasuryGrid { grid-template-columns:1fr; }
+  .scGrid { grid-template-columns:1fr; }
+  .referralGrid { grid-template-columns:1fr 1fr; }
+  .splitGrid { grid-template-columns:1fr; }
 }

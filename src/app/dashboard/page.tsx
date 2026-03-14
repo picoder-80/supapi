@@ -5,6 +5,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import PiPriceWidget from "@/components/PiPriceWidget";
+import { isAdminRole } from "@/lib/admin/roles";
 import styles from "./page.module.css";
 
 const QUICK_ACTIONS = [
@@ -231,7 +232,7 @@ export default function DashboardPage() {
     </div>
   );
 
-  const isAdmin         = user.role === "admin";
+  const isAdmin         = isAdminRole(user.role);
   const pct             = profileComplete();
   const activeSec       = PROFILE_SECTIONS.find(s => s.key === activeSection);
   const hasKyc          = profile.kyc_self_declared || profile.kyc_proof_verified;

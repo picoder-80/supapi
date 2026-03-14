@@ -218,6 +218,13 @@ export default function MySpacePage() {
 
         <div className={styles.displayName}>{displayName}</div>
         <div className={styles.username}><span className={styles.usernamePi}>π</span> @{user.username}</div>
+        {user.kyc_status === "verified" && (
+          <div style={{ marginTop: 8 }}>
+            <span className={styles.metaItem} style={{ background: "rgba(39,174,96,0.12)", color: "#27ae60", border: "1px solid rgba(39,174,96,0.35)" }}>
+              ✅ KYC Verified
+            </span>
+          </div>
+        )}
 
         {bio ? (
           <div className={styles.bio}>{bio}</div>
