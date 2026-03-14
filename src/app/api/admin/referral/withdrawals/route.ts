@@ -1,24 +1,12 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import jwt from "jsonwebtoken";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-function getAdmin(req: Request) {
-  try {
-    const token = req.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token) return null;
-    const p = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    return p.role === "admin" ? p : null;
-  } catch { return null; }
-}
+import { NextRequest, NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 // GET — list all withdrawals with user info
-export async function GET(req: Request) {
-  if (!getAdmin(req)) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+export async function GET(req: NextRequest) {
+  const auth = await verifyAdmin(req.headers.get("authorization"));
+  if (!auth.ok) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  const supabase = await createAdminClient();
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") ?? "pending";
@@ -34,8 +22,10 @@ export async function GET(req: Request) {
 }
 
 // PATCH — admin override: force complete, cancel, or add note
-export async function PATCH(req: Request) {
-  if (!getAdmin(req)) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+export async function PATCH(req: NextRequest) {
+  const auth = await verifyAdmin(req.headers.get("authorization"));
+  if (!auth.ok) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  const supabase = await createAdminClient();
 
   const { id, action, note } = await req.json();
   if (!id || !action) return NextResponse.json({ success: false, error: "Missing fields" }, { status: 400 });

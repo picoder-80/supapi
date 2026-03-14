@@ -154,6 +154,7 @@ Add all environment variables in Vercel Dashboard → Settings → Environment V
 Add these in `.env.local` and Vercel project env:
 
 - `CRON_SECRET` (long random secret)
+- `INTERNAL_API_SECRET` (long random secret for internal-only earnings credit calls)
 - `MARKET_AI_AUTO_RESOLVE_THRESHOLD` (example: `0.75`)
 - `MARKET_AI_AGGRESSIVE_AUTO` (`true` / `false`)
 - `MARKET_AI_MAX_AUTO_RESOLVE_PI` (example: `300`, high-value guardrail)
@@ -211,6 +212,33 @@ Expected response shape:
     "failed": 0
   }
 }
+```
+
+### Wallet automation security (`credit_earnings`)
+
+`/api/wallet` action `credit_earnings` is protected for internal/admin use.
+
+For internal automation service, include this header:
+
+```bash
+curl -X POST "https://YOUR_DOMAIN/api/wallet" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer USER_OR_SYSTEM_JWT" \
+  -H "x-internal-key: YOUR_INTERNAL_API_SECRET" \
+  -d '{
+    "action": "credit_earnings",
+    "target_user_id": "USER_UUID_TO_CREDIT",
+    "type": "referral_bonus",
+    "source": "Referral Bonus",
+    "amount_pi": 1.5,
+    "status": "pending"
+  }'
+```
+
+Set this env in local + production:
+
+```env
+INTERNAL_API_SECRET=YOUR_LONG_RANDOM_SECRET
 ```
 
 ### 5) AI health check (provider + fallback status)

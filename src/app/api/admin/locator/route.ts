@@ -1,24 +1,12 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import jwt from "jsonwebtoken";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-function getAdmin(req: Request) {
-  try {
-    const token = req.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token) return null;
-    const payload = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    return payload.role === "admin" ? payload : null;
-  } catch { return null; }
-}
+import { NextRequest, NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 // GET /api/admin/locator?status=pending&category=food&counts=1
-export async function GET(req: Request) {
-  if (!getAdmin(req)) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+export async function GET(req: NextRequest) {
+  const auth = await verifyAdmin(req.headers.get("authorization"));
+  if (!auth.ok) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  const supabase = await createAdminClient();
 
   const { searchParams } = new URL(req.url);
 
@@ -55,8 +43,10 @@ export async function GET(req: Request) {
 }
 
 // PATCH /api/admin/locator — approve/reject/verify/unverify
-export async function PATCH(req: Request) {
-  if (!getAdmin(req)) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+export async function PATCH(req: NextRequest) {
+  const auth = await verifyAdmin(req.headers.get("authorization"));
+  if (!auth.ok) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  const supabase = await createAdminClient();
 
   const { id, action } = await req.json();
   if (!id || !action) return NextResponse.json({ success: false, error: "Missing id or action" }, { status: 400 });
@@ -73,8 +63,10 @@ export async function PATCH(req: Request) {
 }
 
 // DELETE /api/admin/locator?id=xxx
-export async function DELETE(req: Request) {
-  if (!getAdmin(req)) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+export async function DELETE(req: NextRequest) {
+  const auth = await verifyAdmin(req.headers.get("authorization"));
+  if (!auth.ok) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  const supabase = await createAdminClient();
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");

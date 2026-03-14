@@ -1,25 +1,13 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import jwt from "jsonwebtoken";
+import { NextRequest, NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { verifyAdmin } from "@/lib/admin-auth";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-function getAdmin(req: Request) {
-  try {
-    const token = req.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token) return null;
-    const p = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    return p.role === "admin" ? p : null;
-  } catch { return null; }
-}
-
-export async function GET(req: Request) {
-  if (!getAdmin(req)) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+export async function GET(req: NextRequest) {
+  const auth = await verifyAdmin(req.headers.get("authorization"));
+  if (!auth.ok) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");
+  const supabase = await createAdminClient();
 
   if (type === "config") {
     const { data } = await supabase.from("platform_config").select("key,value,description")
@@ -55,8 +43,10 @@ export async function GET(req: Request) {
 }
 
 // PATCH — update a single config key
-export async function PATCH(req: Request) {
-  if (!getAdmin(req)) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+export async function PATCH(req: NextRequest) {
+  const auth = await verifyAdmin(req.headers.get("authorization"));
+  if (!auth.ok) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  const supabase = await createAdminClient();
   const { key, value } = await req.json();
   if (!key || value === undefined) return NextResponse.json({ success: false, error: "Missing key/value" }, { status: 400 });
   if (!key.startsWith("referral_")) return NextResponse.json({ success: false, error: "Invalid key" }, { status: 400 });

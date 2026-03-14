@@ -36,6 +36,42 @@ const TRANSITION_ACTOR: Record<string, "buyer" | "seller" | "both"> = {
   cancelled:  "both",
 };
 
+async function creditSellerEarnings(params: {
+  origin: string;
+  sellerId: string;
+  orderId: string;
+  amountPi: number;
+}) {
+  const internalSecret = process.env.INTERNAL_API_SECRET;
+  if (!internalSecret) {
+    console.warn("[Earnings Credit] INTERNAL_API_SECRET missing");
+    return;
+  }
+
+  const response = await fetch(`${params.origin}/api/wallet`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-key": internalSecret,
+    },
+    body: JSON.stringify({
+      action: "credit_earnings",
+      target_user_id: params.sellerId,
+      type: "market_order",
+      source: "Marketplace Order Completion",
+      amount_pi: params.amountPi,
+      status: "available",
+      ref_id: params.orderId,
+      note: `Auto payout for completed order ${params.orderId}`,
+    }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.text().catch(() => "");
+    console.warn(`[Earnings Credit] Failed for order ${params.orderId}: ${response.status} ${payload}`);
+  }
+}
+
 export async function GET(req: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
@@ -111,7 +147,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       // 1. Release escrow → seller can now withdraw
       const { data: earning } = await supabase
         .from("seller_earnings")
-        .select("id, commission_pi, gross_pi, commission_pct, platform")
+        .select("id, commission_pi, gross_pi, net_pi, commission_pct, platform")
         .eq("order_id", id)
         .eq("status", "escrow")
         .single();
@@ -129,6 +165,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           commission_pi:  earning.commission_pi,
           commission_pct: earning.commission_pct,
         });
+
+        const sellerAmount = Number(earning.net_pi ?? 0);
+        if (sellerAmount > 0 && order.seller_id) {
+          // Best-effort: do not block order completion if wallet credit has transient failure.
+          await creditSellerEarnings({
+            origin: req.nextUrl.origin,
+            sellerId: String(order.seller_id),
+            orderId: id,
+            amountPi: sellerAmount,
+          });
+        }
 
         console.log(`[Escrow Released] orderId=${id} commission=${earning.commission_pi}π seller earnings unlocked`);
       }

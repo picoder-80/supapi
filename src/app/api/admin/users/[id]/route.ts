@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   const supabase = await createAdminClient();
   const [{ data: user }, { data: listings, count: lCount }, { data: orders, count: oCount }] = await Promise.all([
     supabase.from("users").select("*").eq("id", id).single(),
-    supabase.from("listings").select("id,title,price_pi,status,created_at", { count: "exact" }).eq("seller_id", id).neq("status","deleted").limit(10),
+    supabase.from("listings").select("id,title,price_pi,status,created_at", { count: "exact" }).eq("seller_id", id).neq("status","removed").limit(10),
     supabase.from("orders").select("id,status,amount_pi,created_at", { count: "exact" }).or(`buyer_id.eq.${id},seller_id.eq.${id}`).limit(10),
   ]);
 

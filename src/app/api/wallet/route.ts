@@ -11,18 +11,24 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-function getUserId(req: NextRequest): string | null {
+function getUserAuth(req: NextRequest): { userId: string; role: string } | null {
   try {
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
     if (!token) return null;
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    return String(decoded.userId ?? decoded.id ?? decoded.sub ?? "");
-  } catch { return null; }
+    const userId = String(decoded.userId ?? decoded.id ?? decoded.sub ?? "");
+    const role = String(decoded.role ?? "user");
+    if (!userId) return null;
+    return { userId, role };
+  } catch {
+    return null;
+  }
 }
 
 export async function GET(req: NextRequest) {
-  const userId = getUserId(req);
-  if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  const auth = getUserAuth(req);
+  if (!auth) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  const userId = auth.userId;
 
   const { searchParams } = new URL(req.url);
   const tab = searchParams.get("tab") ?? "sc";
@@ -120,21 +126,30 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const userId = getUserId(req);
-  if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-
   const body = await req.json();
   const { action } = body;
+  const auth = getUserAuth(req);
 
   // ── Credit earnings (called from platform completions) ──
   if (action === "credit_earnings") {
-    const { type, source, amount_pi, ref_id, note, status } = body;
+    const internalKey = req.headers.get("x-internal-key") ?? "";
+    const allowedInternal = process.env.INTERNAL_API_SECRET && internalKey === process.env.INTERNAL_API_SECRET;
+    const allowedAdmin = auth?.role === "admin";
+    if (!allowedInternal && !allowedAdmin) {
+      return NextResponse.json({ success: false, error: "Forbidden action" }, { status: 403 });
+    }
+
+    const { type, source, amount_pi, ref_id, note, status, target_user_id } = body;
+    const recipientUserId = String(target_user_id ?? auth?.userId ?? "").trim();
+    if (!recipientUserId) {
+      return NextResponse.json({ success: false, error: "Missing target user" }, { status: 400 });
+    }
     if (!amount_pi || parseFloat(amount_pi) <= 0) return NextResponse.json({ success: false, error: "Invalid amount" }, { status: 400 });
 
-    await supabase.from("earnings_wallet").upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
+    await supabase.from("earnings_wallet").upsert({ user_id: recipientUserId }, { onConflict: "user_id", ignoreDuplicates: true });
 
     const { data: wallet } = await supabase.from("earnings_wallet")
-      .select("pending_pi, available_pi, total_earned").eq("user_id", userId).single();
+      .select("pending_pi, available_pi, total_earned").eq("user_id", recipientUserId).single();
 
     if (!wallet) return NextResponse.json({ success: false, error: "Wallet not found" }, { status: 404 });
 
@@ -146,16 +161,19 @@ export async function POST(req: NextRequest) {
       available_pi: isPending ? wallet.available_pi : wallet.available_pi + amt,
       total_earned: wallet.total_earned + amt,
       updated_at: new Date().toISOString(),
-    }).eq("user_id", userId);
+    }).eq("user_id", recipientUserId);
 
     await supabase.from("earnings_transactions").insert({
-      user_id: userId, type, source, amount_pi: amt,
+      user_id: recipientUserId, type, source, amount_pi: amt,
       status: status ?? "pending",
       ref_id: ref_id ?? "", note: note ?? "",
     });
 
     return NextResponse.json({ success: true });
   }
+
+  if (!auth) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  const userId = auth.userId;
 
   // ── Release pending to available ──
   if (action === "release_earnings") {
