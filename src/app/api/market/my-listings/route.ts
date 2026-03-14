@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       .from("listings")
       .select("id, title, price_pi, images, category, status, stock, views, created_at")
       .eq("seller_id", payload.userId)
-      .neq("status", "deleted")
+      .neq("status", "removed")
       .order("created_at", { ascending: false });
 
     if (status && status !== "all") query = query.eq("status", status);

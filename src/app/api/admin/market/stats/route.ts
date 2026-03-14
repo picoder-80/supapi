@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     { data: recentOrders },
     { data: configData },
   ] = await Promise.all([
-    supabase.from("listings").select("*", { count: "exact", head: true }).neq("status","deleted"),
+    supabase.from("listings").select("*", { count: "exact", head: true }).neq("status","removed"),
     supabase.from("listings").select("*", { count: "exact", head: true }).eq("status","active"),
     supabase.from("orders").select("*", { count: "exact", head: true }),
     supabase.from("orders").select("*", { count: "exact", head: true }).eq("status","pending"),

@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/market/ai/dispute/cron-check?limit=25",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}

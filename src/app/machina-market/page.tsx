@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useRouter } from "next/navigation";
+import { CountrySelect } from "@/components/CountrySelect";
 import styles from "./page.module.css";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -114,6 +115,7 @@ export default function MachinaMarketPage() {
   const [vehicleType, setVehicleType] = useState("all");
   const [sort, setSort]             = useState("newest");
   const [searchQ, setSearchQ]       = useState("");
+  const [country, setCountry]      = useState("MY");
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters]       = useState({ transmission: "", fuel_type: "", min_price: "", max_price: "" });
   const [savedIds, setSavedIds]     = useState<Set<string>>(new Set());
@@ -126,16 +128,23 @@ export default function MachinaMarketPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  useEffect(() => {
+    fetch("/api/geo").then((r) => r.json()).then((d) => {
+      if (d.success) setCountry(d.data.code);
+    }).catch(() => {});
+  }, []);
+
   // Fetch homepage data
   const fetchHome = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch("/api/machina-market?mode=home");
+      const params = new URLSearchParams({ mode: "home", country });
+      const r = await fetch(`/api/machina-market?${params}`);
       const d = await r.json();
       if (d.success) setHomeData(d.data);
     } catch {}
     setLoading(false);
-  }, []);
+  }, [country]);
 
   // Fetch browse listings
   const fetchListings = useCallback(async () => {
@@ -147,6 +156,7 @@ export default function MachinaMarketPage() {
         listing_type: activeTab,
         vehicle_type: vehicleType,
         sort,
+        country,
         ...(searchQ && { q: searchQ }),
         ...(filters.transmission && { transmission: filters.transmission }),
         ...(filters.fuel_type && { fuel_type: filters.fuel_type }),
@@ -158,7 +168,7 @@ export default function MachinaMarketPage() {
       if (d.success) setListings(d.data.listings ?? []);
     } catch {}
     setBrowsing(false);
-  }, [activeTab, vehicleType, sort, searchQ, filters]);
+  }, [activeTab, vehicleType, sort, searchQ, country, filters]);
 
   useEffect(() => { fetchHome(); }, [fetchHome]);
   useEffect(() => { fetchListings(); }, [fetchListings]);
@@ -193,8 +203,6 @@ export default function MachinaMarketPage() {
 
       {/* ── Hero ── */}
       <div className={styles.hero}>
-        <div className={styles.heroGlow} />
-        <div className={styles.heroGlow2} />
 
         <div className={styles.heroContent}>
           <div className={styles.heroBadgeRow}>
@@ -206,6 +214,11 @@ export default function MachinaMarketPage() {
             <span className={styles.heroTitleAccent}>Market</span>
           </h1>
           <p className={styles.heroSub}>Buy. Sell. Trade vehicles with Pi.</p>
+
+          {/* Country selector */}
+          <div className={styles.countryRow}>
+            <CountrySelect value={country} onChange={setCountry} />
+          </div>
 
           {/* Search bar */}
           <div className={styles.searchWrap}>

@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyToken } from "@/lib/auth/jwt";
+import { analyzeDispute, shouldAutoResolveDispute } from "@/lib/market/ai";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
-// POST — open dispute & trigger AI resolution
+// POST — open dispute and run AI auto-check
 export async function POST(req: NextRequest) {
   try {
+    const rl = checkRateLimit(req, "market_dispute_create", 8, 60_000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please retry shortly." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+      );
+    }
+
     const auth = req.headers.get("authorization")?.replace("Bearer ", "");
     if (!auth) return NextResponse.json({ success: false }, { status: 401 });
     const payload = verifyToken(auth);
@@ -37,7 +47,7 @@ export async function POST(req: NextRequest) {
       .insert({
         order_id, opened_by: payload.userId,
         reason, evidence: evidence ?? [],
-        status: "ai_reviewing",
+        status: "open",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -48,85 +58,47 @@ export async function POST(req: NextRequest) {
       .update({ status: "disputed", updated_at: new Date().toISOString() })
       .eq("id", order_id);
 
-    // === AI DECISION via Claude API ===
-    const prompt = `You are Supapi AI Dispute Resolution System for a Pi Network marketplace.
+    const analysis = await analyzeDispute({
+      reason,
+      evidence: evidence ?? [],
+      buying_method: order.buying_method,
+      order_status: order.status,
+      amount_pi: Number(order.amount_pi ?? 0),
+    });
 
-ORDER DETAILS:
-- Order ID: ${order_id}
-- Amount: ${order.amount_pi} Pi
-- Buying method: ${order.buying_method}
-- Product: ${order.listing?.title ?? "Unknown"}
-- Order status before dispute: ${order.status}
-- Buyer: @${order.buyer?.username}
-- Seller: @${order.seller?.username}
+    const autoPolicy = shouldAutoResolveDispute(analysis.confidence, Number(order.amount_pi ?? 0));
+    const autoResolve = autoPolicy.ok;
+    const newOrderStatus = analysis.decision === "refund" ? "refunded" : "completed";
 
-DISPUTE FILED BY: @${payload.userId === order.buyer_id ? order.buyer?.username : order.seller?.username} (${payload.userId === order.buyer_id ? "BUYER" : "SELLER"})
-
-REASON FOR DISPUTE:
-${reason}
-
-EVIDENCE PROVIDED: ${evidence?.length ? evidence.join(", ") : "No evidence attached"}
-
-Based on marketplace best practices and the information provided, make a fair decision.
-
-Respond ONLY with valid JSON (no markdown, no preamble):
-{
-  "decision": "refund" | "release",
-  "confidence": 0.00-1.00,
-  "reasoning": "Clear explanation of decision in 2-3 sentences",
-  "conditions": "Any conditions or actions required"
-}`;
-
-    let aiDecision = "release";
-    let aiReasoning = "AI could not process dispute. Defaulting to escrow hold pending manual review.";
-    let aiConfidence = 0.5;
-
-    try {
-      const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 500,
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
-
-      const aiData = await aiRes.json();
-      const text = aiData.content?.[0]?.text ?? "";
-      const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
-      aiDecision   = parsed.decision ?? "release";
-      aiReasoning  = parsed.reasoning ?? aiReasoning;
-      aiConfidence = parsed.confidence ?? 0.5;
-    } catch {}
-
-    // Apply AI decision
-    const newOrderStatus = aiDecision === "refund" ? "refunded" : "completed";
-
-    await Promise.all([
-      supabase.from("disputes").update({
-        status: "resolved",
-        ai_decision: aiDecision,
-        ai_reasoning: aiReasoning,
-        ai_confidence: aiConfidence,
-        resolved_at: new Date().toISOString(),
+    await supabase
+      .from("disputes")
+      .update({
+        status: autoResolve ? "resolved" : "open",
+        ai_decision: analysis.decision,
+        ai_reasoning: analysis.reasoning,
+        ai_confidence: analysis.confidence,
+        resolved_at: autoResolve ? new Date().toISOString() : null,
         updated_at: new Date().toISOString(),
-      }).eq("id", dispute?.id),
+      })
+      .eq("id", dispute?.id);
 
-      supabase.from("orders").update({
+    if (autoResolve) {
+      await supabase.from("orders").update({
         status: newOrderStatus,
         updated_at: new Date().toISOString(),
-      }).eq("id", order_id),
-    ]);
+      }).eq("id", order_id);
+    }
 
     return NextResponse.json({
       success: true,
       data: {
         dispute_id: dispute?.id,
-        decision: aiDecision,
-        reasoning: aiReasoning,
-        confidence: aiConfidence,
-        order_status: newOrderStatus,
+        decision: analysis.decision,
+        reasoning: analysis.reasoning,
+        confidence: analysis.confidence,
+        auto_resolved: autoResolve,
+        auto_resolve_reason: autoPolicy.reason,
+        order_status: autoResolve ? newOrderStatus : "disputed",
       }
     });
   } catch {

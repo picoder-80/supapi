@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
+import { getCountry } from "@/lib/market/countries";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,6 +37,7 @@ export async function GET(req: NextRequest) {
   const listingType = searchParams.get("listing_type") ?? "vehicle";
   const make        = searchParams.get("make") ?? "";
   const q           = searchParams.get("q") ?? "";
+  const country     = searchParams.get("country") ?? "";
   const sort        = searchParams.get("sort") ?? "newest";
   const minPrice    = searchParams.get("min_price");
   const maxPrice    = searchParams.get("max_price");
@@ -47,7 +49,22 @@ export async function GET(req: NextRequest) {
   const offset      = (page - 1) * limit;
 
   try {
+    const countryFilter = country && country.toUpperCase() !== "WORLDWIDE";
+    const countryPat = countryFilter ? `%${getCountry(country).name}%` : null;
+
     if (mode === "home") {
+      let featuredQ = supabase.from("machina_listings")
+        .select("id, seller_id, listing_type, vehicle_type, make, model, year, mileage, color, transmission, fuel_type, condition, price_pi, negotiable, images, location, view_count, save_count, status, created_at")
+        .eq("status", "active").eq("listing_type", "vehicle")
+        .order("view_count", { ascending: false }).limit(12);
+      let recentPartsQ = supabase.from("machina_listings")
+        .select("id, seller_id, listing_type, make, model, price_pi, images, condition, part_condition, location, created_at")
+        .eq("status", "active").eq("listing_type", "parts")
+        .order("created_at", { ascending: false }).limit(8);
+      if (countryPat) {
+        featuredQ = featuredQ.ilike("location", countryPat);
+        recentPartsQ = recentPartsQ.ilike("location", countryPat);
+      }
       const [
         { data: featured },
         { data: recentParts },
@@ -55,14 +72,8 @@ export async function GET(req: NextRequest) {
         { count: totalListings },
         { count: totalVehicles },
       ] = await Promise.all([
-        supabase.from("machina_listings")
-          .select("id, seller_id, listing_type, vehicle_type, make, model, year, mileage, color, transmission, fuel_type, condition, price_pi, negotiable, images, location, view_count, save_count, status, created_at")
-          .eq("status", "active").eq("listing_type", "vehicle")
-          .order("view_count", { ascending: false }).limit(12),
-        supabase.from("machina_listings")
-          .select("id, seller_id, listing_type, make, model, price_pi, images, condition, part_condition, location, created_at")
-          .eq("status", "active").eq("listing_type", "parts")
-          .order("created_at", { ascending: false }).limit(8),
+        featuredQ,
+        recentPartsQ,
         supabase.from("machina_workshops")
           .select("id, name, location, specializations, rating, review_count, verified, logo_url")
           .eq("is_active", true).order("rating", { ascending: false }).limit(6),
@@ -94,6 +105,7 @@ export async function GET(req: NextRequest) {
     if (vehicleType !== "all") query = query.eq("vehicle_type", vehicleType);
     if (make)         query = query.ilike("make", `%${make}%`);
     if (q)            query = query.or(`make.ilike.%${q}%,model.ilike.%${q}%,description.ilike.%${q}%`);
+    if (countryPat)   query = query.ilike("location", countryPat);
     if (transmission) query = query.eq("transmission", transmission);
     if (fuelType)     query = query.eq("fuel_type", fuelType);
     if (minPrice)     query = query.gte("price_pi", parseFloat(minPrice));

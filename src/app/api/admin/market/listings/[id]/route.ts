@@ -26,6 +26,6 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (!auth.ok) return NextResponse.json({ success: false }, { status: 401 });
 
   const supabase = await createAdminClient();
-  await supabase.from("listings").update({ status: "deleted", updated_at: new Date().toISOString() }).eq("id", id);
+  await supabase.from("listings").update({ status: "removed", updated_at: new Date().toISOString() }).eq("id", id);
   return NextResponse.json({ success: true });
 }

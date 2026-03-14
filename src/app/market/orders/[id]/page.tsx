@@ -20,6 +20,13 @@ interface Order {
   disputes: { id: string; reason: string; status: string; ai_decision: string; ai_reasoning: string; ai_confidence: number; created_at: string }[];
 }
 
+interface SupportTriageResult {
+  category: "payment" | "delivery" | "refund" | "account" | "dispute" | "general";
+  priority: "low" | "medium" | "high" | "urgent";
+  suggested_reply: string;
+  recommended_actions: string[];
+}
+
 const STATUS_STEPS = ["pending","paid","shipped","delivered","completed"];
 const STATUS_LABELS: Record<string,string> = {
   pending:"Pending Payment", paid:"Payment Confirmed", shipped:"Shipped",
@@ -46,6 +53,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [disputeReason, setDisputeReason] = useState("");
   const [disputing, setDisputing] = useState(false);
   const [disputeResult, setDisputeResult] = useState<any>(null);
+  const [supportText, setSupportText] = useState("");
+  const [supportLoading, setSupportLoading] = useState(false);
+  const [supportResult, setSupportResult] = useState<SupportTriageResult | null>(null);
   const [msg, setMsg]             = useState("");
 
   const fetchOrder = async () => {
@@ -95,10 +105,37 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         body: JSON.stringify({ order_id: id, reason: disputeReason }),
       });
       const d = await r.json();
-      if (d.success) { setDisputeResult(d.data); await fetchOrder(); }
+      if (d.success) {
+        setDisputeResult(d.data);
+        if (!d.data?.auto_resolved) {
+          setMsg("Dispute submitted. Waiting for admin/manual review.");
+        }
+        await fetchOrder();
+      }
       else setMsg(d.error ?? "Dispute failed");
     } catch { setMsg("Something went wrong"); }
     setDisputing(false);
+  };
+
+  const handleSupportTriage = async () => {
+    if (!supportText.trim()) return;
+    const token = localStorage.getItem("supapi_token");
+    if (!token) return;
+    setSupportLoading(true);
+    setSupportResult(null);
+    try {
+      const r = await fetch("/api/market/ai/support/triage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ message: supportText, order_status: order?.status, order_id: id }),
+      });
+      const d = await r.json();
+      if (d.success) setSupportResult(d.data);
+      else setMsg(d.error ?? "Support triage failed");
+    } catch {
+      setMsg("Something went wrong");
+    }
+    setSupportLoading(false);
   };
 
   if (!user) return (
@@ -284,9 +321,19 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         {(dispute || disputeResult) && (
           <div className={styles.section}>
             <div className={styles.sectionTitle}>⚖️ Dispute Result</div>
-            <div className={`${styles.disputeResult} ${(disputeResult?.decision ?? dispute?.ai_decision) === "refund" ? styles.disputeRefund : styles.disputeRelease}`}>
+            <div className={`${styles.disputeResult} ${
+              (disputeResult?.decision ?? dispute?.ai_decision) === "refund"
+                ? styles.disputeRefund
+                : (disputeResult?.decision ?? dispute?.ai_decision) === "manual_review"
+                  ? styles.disputeManual
+                  : styles.disputeRelease
+            }`}>
               <div className={styles.disputeDecision}>
-                {(disputeResult?.decision ?? dispute?.ai_decision) === "refund" ? "↩️ Refund Approved" : "✅ Payment Released to Seller"}
+                {(disputeResult?.decision ?? dispute?.ai_decision) === "refund"
+                  ? "↩️ Refund Approved"
+                  : (disputeResult?.decision ?? dispute?.ai_decision) === "manual_review"
+                    ? "🕵️ Manual Review Required"
+                    : "✅ Payment Released to Seller"}
               </div>
               <div className={styles.disputeReasoning}>{disputeResult?.reasoning ?? dispute?.ai_reasoning}</div>
               {(disputeResult?.confidence ?? dispute?.ai_confidence) && (
@@ -295,6 +342,32 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
         )}
+
+        {/* AI support triage */}
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>🤖 AI Support Assistant</div>
+          <div className={styles.disputeNote}>Need help quickly? Describe your issue and get instant support routing.</div>
+          <textarea
+            className={styles.input}
+            rows={3}
+            placeholder="Example: I already paid but seller has not shipped for 3 days..."
+            value={supportText}
+            onChange={(e) => setSupportText(e.target.value)}
+          />
+          <button className={styles.actionBtn} disabled={supportLoading || !supportText.trim()} onClick={handleSupportTriage}>
+            {supportLoading ? "Analyzing..." : "Get AI Support Triage"}
+          </button>
+          {supportResult && (
+            <div className={styles.supportResult}>
+              <div><strong>Category:</strong> {supportResult.category}</div>
+              <div><strong>Priority:</strong> {supportResult.priority}</div>
+              <div><strong>Suggested Reply:</strong> {supportResult.suggested_reply}</div>
+              {supportResult.recommended_actions?.length > 0 && (
+                <div><strong>Actions:</strong> {supportResult.recommended_actions.join(", ")}</div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Order metadata */}
         <div className={styles.section}>

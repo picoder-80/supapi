@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useRouter } from "next/navigation";
+import { CountrySelect } from "@/components/CountrySelect";
 import styles from "./page.module.css";
 
 const CATEGORIES = [
@@ -75,6 +76,7 @@ export default function BulkHubPage() {
   const [loading, setLoading]   = useState(true);
   const [activeTab, setActiveTab] = useState<"products" | "rfq" | "suppliers">("products");
   const [searchQ, setSearchQ]   = useState("");
+  const [country, setCountry]  = useState("MY");
   const [catFilter, setCatFilter] = useState("all");
   const [showRegModal, setShowRegModal] = useState(false);
   const [regForm, setRegForm]   = useState({ company_name: "", country: "", description: "", categories: [] as string[], established_year: new Date().getFullYear() });
@@ -89,15 +91,22 @@ export default function BulkHubPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  useEffect(() => {
+    fetch("/api/geo").then((r) => r.json()).then((d) => {
+      if (d.success) setCountry(d.data.code);
+    }).catch(() => {});
+  }, []);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch("/api/bulkhub");
+      const params = new URLSearchParams({ country });
+      const r = await fetch(`/api/bulkhub?${params}`);
       const d = await r.json();
       if (d.success) setData(d.data);
     } catch {}
     setLoading(false);
-  }, []);
+  }, [country]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -156,6 +165,11 @@ export default function BulkHubPage() {
           <div className={styles.heroBadge}>🌐 Pi B2B Wholesale</div>
           <h1 className={styles.heroTitle}>📦 BulkHub</h1>
           <p className={styles.heroSub}>Connect with global Pi Network suppliers. Source in bulk, pay with Pi.</p>
+
+          {/* Country selector */}
+          <div className={styles.countryRow}>
+            <CountrySelect value={country} onChange={setCountry} />
+          </div>
 
           {/* Search */}
           <div className={styles.searchRow}>

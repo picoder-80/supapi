@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useRouter } from "next/navigation";
+import { CountrySelect } from "@/components/CountrySelect";
 import styles from "./page.module.css";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -166,6 +167,7 @@ export default function DomusPage() {
   const [propType, setPropType]       = useState("all");
   const [sort, setSort]               = useState("newest");
   const [searchQ, setSearchQ]         = useState("");
+  const [country, setCountry]         = useState("MY");
   const [showFilter, setShowFilter]   = useState(false);
   const [showCalc, setShowCalc]       = useState(false);
   const [showAgentModal, setShowAgentModal] = useState(false);
@@ -182,22 +184,29 @@ export default function DomusPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  useEffect(() => {
+    fetch("/api/geo").then((r) => r.json()).then((d) => {
+      if (d.success) setCountry(d.data.code);
+    }).catch(() => {});
+  }, []);
+
   const fetchHome = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch("/api/domus?mode=home");
+      const params = new URLSearchParams({ mode: "home", country });
+      const r = await fetch(`/api/domus?${params}`);
       const d = await r.json();
       if (d.success) setHomeData(d.data);
     } catch {}
     setLoading(false);
-  }, []);
+  }, [country]);
 
   const fetchListings = useCallback(async () => {
     if (activeMode === "project") return;
     setBrowsing(true);
     try {
       const params = new URLSearchParams({
-        mode: "browse", listing_mode: activeMode, property_type: propType, sort,
+        mode: "browse", listing_mode: activeMode, property_type: propType, sort, country,
         ...(searchQ && { q: searchQ }),
         ...(filters.bedrooms   && { bedrooms:   filters.bedrooms   }),
         ...(filters.furnishing && { furnishing: filters.furnishing }),
@@ -210,7 +219,7 @@ export default function DomusPage() {
       if (d.success) setListings(d.data.listings ?? []);
     } catch {}
     setBrowsing(false);
-  }, [activeMode, propType, sort, searchQ, filters]);
+  }, [activeMode, propType, sort, searchQ, country, filters]);
 
   useEffect(() => { fetchHome(); }, [fetchHome]);
   useEffect(() => { fetchListings(); }, [fetchListings]);
@@ -270,6 +279,11 @@ export default function DomusPage() {
           <div className={styles.heroBadge}>🏠 Pi Property Marketplace</div>
           <h1 className={styles.heroTitle}>Find Your<br /><em className={styles.heroTitleEm}>Dream Home</em></h1>
           <p className={styles.heroSub}>Buy, sell and rent properties with Pi.</p>
+
+          {/* Country selector */}
+          <div className={styles.countryRow}>
+            <CountrySelect value={country} onChange={setCountry} />
+          </div>
 
           {/* Search */}
           <div className={styles.searchCard}>

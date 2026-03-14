@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   const { data: catData } = await supabase
     .from("listings")
     .select("category")
-    .neq("status", "deleted");
+    .neq("status", "removed");
   const catMap: Record<string, number> = {};
   for (const l of catData ?? []) { catMap[l.category] = (catMap[l.category] ?? 0) + 1; }
   const categories = Object.entries(catMap)

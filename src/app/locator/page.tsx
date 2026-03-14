@@ -40,7 +40,7 @@ function Stars({ rating }: { rating: number }) {
   return (
     <span className={styles.stars}>
       {[1,2,3,4,5].map(i => (
-        <span key={i} style={{ color: i <= Math.round(rating) ? "#F5A623" : "#ddd" }}>★</span>
+        <span key={i} style={{ color: i <= Math.round(rating) ? "var(--color-gold)" : "var(--color-border)" }}>★</span>
       ))}
     </span>
   );

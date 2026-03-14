@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyAdmin } from "@/lib/admin-auth";
+import { logAdminAction } from "@/lib/security/audit";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -34,6 +35,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       updated_at: new Date().toISOString(),
     }).eq("id", dispute.order_id),
   ]);
+
+  if (auth.userId) {
+    await logAdminAction({
+      adminUserId: auth.userId,
+      action: "market_dispute_override",
+      targetType: "dispute",
+      targetId: id,
+      detail: { decision, order_id: dispute.order_id },
+    });
+  }
 
   return NextResponse.json({ success: true, data: { decision, order_status: newOrderStatus } });
 }

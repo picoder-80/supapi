@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useRouter } from "next/navigation";
+import { CountrySelect } from "@/components/CountrySelect";
 import styles from "./page.module.css";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -73,6 +74,7 @@ export default function EndoroPage() {
   const [vehicleType, setVehicleType] = useState("all");
   const [sort, setSort]             = useState("popular");
   const [searchQ, setSearchQ]       = useState("");
+  const [country, setCountry]       = useState("MY");
   const [startDate, setStartDate]   = useState("");
   const [endDate, setEndDate]       = useState("");
   const [showFilter, setShowFilter] = useState(false);
@@ -89,21 +91,28 @@ export default function EndoroPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  useEffect(() => {
+    fetch("/api/geo").then((r) => r.json()).then((d) => {
+      if (d.success) setCountry(d.data.code);
+    }).catch(() => {});
+  }, []);
+
   const fetchHome = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch("/api/endoro?mode=home");
+      const params = new URLSearchParams({ mode: "home", country });
+      const r = await fetch(`/api/endoro?${params}`);
       const d = await r.json();
       if (d.success) setHomeData(d.data);
     } catch {}
     setLoading(false);
-  }, []);
+  }, [country]);
 
   const fetchVehicles = useCallback(async () => {
     setBrowsing(true);
     try {
       const params = new URLSearchParams({
-        mode: "browse", vehicle_type: vehicleType, sort,
+        mode: "browse", vehicle_type: vehicleType, sort, country,
         ...(searchQ     && { q:            searchQ     }),
         ...(startDate   && { start_date:   startDate   }),
         ...(endDate     && { end_date:     endDate     }),
@@ -117,7 +126,7 @@ export default function EndoroPage() {
       if (d.success) setVehicles(d.data.vehicles ?? []);
     } catch {}
     setBrowsing(false);
-  }, [vehicleType, sort, searchQ, startDate, endDate, instantOnly, filters]);
+  }, [vehicleType, sort, searchQ, country, startDate, endDate, instantOnly, filters]);
 
   useEffect(() => { fetchHome(); }, [fetchHome]);
   useEffect(() => { fetchVehicles(); }, [fetchVehicles]);
@@ -157,6 +166,11 @@ export default function EndoroPage() {
           <p className={styles.heroDesc}>
             Borrow from real Pioneer hosts. Cars, bikes, vans, boats — all in Pi.
           </p>
+
+          {/* Country selector */}
+          <div className={styles.countryRow}>
+            <CountrySelect value={country} onChange={setCountry} />
+          </div>
 
           {/* Search widget */}
           <div className={styles.searchWidget}>

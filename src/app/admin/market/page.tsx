@@ -16,12 +16,25 @@ interface Listing { id:string; title:string; price_pi:number; category:string; s
 interface Order   { id:string; status:string; amount_pi:number; buying_method:string; created_at:string; pi_payment_id:string; listing:{id:string;title:string;images:string[]}|null; buyer:{id:string;username:string;display_name:string|null}; seller:{id:string;username:string;display_name:string|null}; }
 interface Dispute { id:string; reason:string; status:string; ai_decision:string; ai_reasoning:string; ai_confidence:number; created_at:string; resolved_at:string; opened_by_user:{id:string;username:string;display_name:string|null}; order:{id:string;amount_pi:number;status:string;buyer:{username:string};seller:{username:string};listing:{title:string}}|null; }
 interface User    { id:string; username:string; display_name:string|null; avatar_url:string|null; kyc_status:string; role:string; is_banned:boolean; ban_reason:string|null; seller_verified:boolean; created_at:string; last_seen:string|null; }
+interface SupportTicket {
+  id: string;
+  user_id: string;
+  order_id: string | null;
+  message: string;
+  category: string;
+  priority: string;
+  ai_reply: string | null;
+  ai_actions: string[] | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
 
 const STATUS_COLOR: Record<string,string> = {
-  active:"#27ae60", paused:"#f39c12", sold:"#7f8c8d", deleted:"#e74c3c",
+  active:"#27ae60", paused:"#f39c12", sold:"#7f8c8d", removed:"#e74c3c",
   pending:"#f39c12", paid:"#27ae60", shipped:"#2980b9", meetup_set:"#8e44ad",
   delivered:"#27ae60", completed:"#27ae60", disputed:"#e74c3c", refunded:"#7f8c8d", cancelled:"#95a5a6",
-  open:"#f39c12", ai_reviewing:"#2980b9", resolved:"#27ae60", collected:"#27ae60",
+  open:"#f39c12", ai_reviewing:"#2980b9", resolved:"#27ae60", collected:"#27ae60", manual_review:"#f39c12",
 };
 function Badge({ status }: { status: string }) {
   const color = STATUS_COLOR[status] ?? "#999";
@@ -44,12 +57,13 @@ const TABS = [
   { id:"listings",   label:"🛍️ Listings"   },
   { id:"orders",     label:"📦 Orders"     },
   { id:"disputes",   label:"⚖️ Disputes"   },
+  { id:"support",    label:"🎧 Support"    },
   { id:"users",      label:"👥 Users"      },
   { id:"commission", label:"💰 Commission" },
 ];
 
 export default function AdminMarketPage() {
-  const [tab, setTab] = useState<"overview"|"listings"|"orders"|"disputes"|"users"|"commission">("overview");
+  const [tab, setTab] = useState<"overview"|"listings"|"orders"|"disputes"|"support"|"users"|"commission">("overview");
   const [loading, setLoading] = useState(false);
   const [token, setToken] = useState("");
   const [stats, setStats] = useState<Stats|null>(null);
@@ -58,12 +72,17 @@ export default function AdminMarketPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderTotal, setOrderTotal] = useState(0);
   const [disputes, setDisputes] = useState<Dispute[]>([]);
+  const [disputeQueue, setDisputeQueue] = useState<{ open: number; needs_review: number }>({ open: 0, needs_review: 0 });
+  const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
+  const [supportTotal, setSupportTotal] = useState(0);
   const [users, setUsers] = useState<User[]>([]);
   const [userTotal, setUserTotal] = useState(0);
   const [commConfig, setCommConfig] = useState<any>(null);
   const [listQ, setListQ] = useState(""); const [listStatus, setListStatus] = useState("");
   const [orderStatus, setOrderStatus] = useState("");
   const [disputeStatus, setDisputeStatus] = useState("");
+  const [needsReviewOnly, setNeedsReviewOnly] = useState(false);
+  const [supportStatus, setSupportStatus] = useState("");
   const [userQ, setUserQ] = useState(""); const [userFilter, setUserFilter] = useState("");
   const [commPct, setCommPct] = useState(""); const [savingComm, setSavingComm] = useState(false); const [commMsg, setCommMsg] = useState("");
   const [overrideId, setOverrideId] = useState<string|null>(null);
@@ -80,14 +99,62 @@ export default function AdminMarketPage() {
   useEffect(() => { if (!token || tab !== "overview") return; setLoading(true); adminFetch("/api/admin/market/stats").then(r=>r.json()).then(d=>{if(d.success)setStats(d.data);}).finally(()=>setLoading(false)); }, [token,tab,adminFetch]);
   useEffect(() => { if (!token || tab !== "listings") return; setLoading(true); adminFetch(`/api/admin/market/listings?q=${listQ}&status=${listStatus}`).then(r=>r.json()).then(d=>{if(d.success){setListings(d.data.listings);setListTotal(d.data.total);}}).finally(()=>setLoading(false)); }, [token,tab,listQ,listStatus,adminFetch]);
   useEffect(() => { if (!token || tab !== "orders") return; setLoading(true); adminFetch(`/api/admin/market/orders?status=${orderStatus}`).then(r=>r.json()).then(d=>{if(d.success){setOrders(d.data.orders);setOrderTotal(d.data.total);}}).finally(()=>setLoading(false)); }, [token,tab,orderStatus,adminFetch]);
-  useEffect(() => { if (!token || tab !== "disputes") return; setLoading(true); adminFetch(`/api/admin/market/disputes?status=${disputeStatus}`).then(r=>r.json()).then(d=>{if(d.success)setDisputes(d.data.disputes);}).finally(()=>setLoading(false)); }, [token,tab,disputeStatus,adminFetch]);
+  useEffect(() => {
+    if (!token || tab !== "disputes") return;
+    setLoading(true);
+    const params = new URLSearchParams({
+      status: disputeStatus,
+      needs_review: needsReviewOnly ? "true" : "false",
+    });
+    adminFetch(`/api/admin/market/disputes?${params}`)
+      .then(r=>r.json())
+      .then(d=>{
+        if(d.success){
+          setDisputes(d.data.disputes);
+          setDisputeQueue(d.data.queue ?? { open: 0, needs_review: 0 });
+        }
+      })
+      .finally(()=>setLoading(false));
+  }, [token,tab,disputeStatus,needsReviewOnly,adminFetch]);
+  useEffect(() => {
+    if (!token || tab !== "support") return;
+    setLoading(true);
+    const params = new URLSearchParams({ status: supportStatus });
+    adminFetch(`/api/admin/market/support/tickets?${params}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) {
+          setSupportTickets(d.data.tickets ?? []);
+          setSupportTotal(d.data.total ?? 0);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [token, tab, supportStatus, adminFetch]);
   useEffect(() => { if (!token || tab !== "users") return; setLoading(true); adminFetch(`/api/admin/users?q=${userQ}&filter=${userFilter}`).then(r=>r.json()).then(d=>{if(d.success){setUsers(d.data.users??[]);setUserTotal(d.data.total??0);}}).finally(()=>setLoading(false)); }, [token,tab,userQ,userFilter,adminFetch]);
   useEffect(() => { if (!token || tab !== "commission") return; setLoading(true); adminFetch("/api/admin/market/commission").then(r=>r.json()).then(d=>{if(d.success){setCommConfig(d.data);setCommPct(String(d.data.commission_pct));}}).finally(()=>setLoading(false)); }, [token,tab,adminFetch]);
 
   const suspendListing = async (id: string, status: string) => { await adminFetch(`/api/admin/market/listings/${id}`,{method:"PATCH",body:JSON.stringify({status})}); setListings(prev=>prev.map(l=>l.id===id?{...l,status}:l)); };
-  const overrideDispute = async () => { if(!overrideId)return; setOverriding(true); const r=await adminFetch(`/api/admin/market/disputes/${overrideId}`,{method:"PATCH",body:JSON.stringify({decision:overrideDecision,reasoning:overrideReason})}); const d=await r.json(); if(d.success){setDisputes(prev=>prev.map(dp=>dp.id===overrideId?{...dp,ai_decision:overrideDecision,status:"resolved"}:dp));setOverrideId(null);setOverrideReason("");} setOverriding(false); };
+  const overrideDispute = async () => {
+    if(!overrideId)return;
+    setOverriding(true);
+    const r=await adminFetch(`/api/admin/market/disputes/${overrideId}`,{method:"PATCH",body:JSON.stringify({decision:overrideDecision,reasoning:overrideReason})});
+    const d=await r.json();
+    if(d.success){
+      setDisputes(prev=>prev.map(dp=>dp.id===overrideId?{...dp,ai_decision:overrideDecision,status:"resolved",ai_reasoning:`[Admin Override] ${overrideReason}`}:dp));
+      setOverrideId(null);
+      setOverrideReason("");
+    }
+    setOverriding(false);
+  };
   const updateUser = async (userId: string, patch: object, msg: string) => { const r=await adminFetch(`/api/admin/users/${userId}`,{method:"PATCH",body:JSON.stringify(patch)}); const d=await r.json(); if(d.success){setUsers(prev=>prev.map(u=>u.id===userId?{...u,...d.data}:u));setUserActionMsg(prev=>({...prev,[userId]:msg}));setTimeout(()=>setUserActionMsg(prev=>{const n={...prev};delete n[userId];return n;}),2500);} setBanUserId(null);setBanReason(""); };
   const saveCommission = async () => { const pct=parseFloat(commPct); if(isNaN(pct)||pct<0||pct>50){setCommMsg("Enter 0–50");return;} setSavingComm(true); const r=await adminFetch("/api/admin/market/commission",{method:"PATCH",body:JSON.stringify({commission_pct:pct})}); const d=await r.json(); setCommMsg(d.success?"✅ Saved!":"❌ Failed"); if(d.success&&commConfig)setCommConfig({...commConfig,commission_pct:pct}); setTimeout(()=>setCommMsg(""),2500); setSavingComm(false); };
+  const updateSupportTicket = async (id: string, status: "in_progress" | "resolved" | "closed") => {
+    const r = await adminFetch(`/api/admin/market/support/tickets/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
+    const d = await r.json();
+    if (d.success) {
+      setSupportTickets((prev) => prev.map((t) => (t.id === id ? { ...t, status: d.data.status, updated_at: d.data.updated_at } : t)));
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -127,7 +194,7 @@ export default function AdminMarketPage() {
               <input className={styles.searchInput} placeholder="Search listings..." value={listQ} onChange={e=>setListQ(e.target.value)}/>
               <select className={styles.select} value={listStatus} onChange={e=>setListStatus(e.target.value)}>
                 <option value="">All Status</option>
-                {["active","paused","sold","deleted"].map(s=><option key={s} value={s}>{s}</option>)}
+                {["active","paused","sold","removed"].map(s=><option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <div className={styles.countRow}>{listTotal} listings</div>
@@ -143,7 +210,7 @@ export default function AdminMarketPage() {
                   <td><div className={styles.actionBtns}>
                     {l.status==="active"&&<button className={styles.warnBtn} onClick={()=>suspendListing(l.id,"paused")}>Pause</button>}
                     {l.status==="paused"&&<button className={styles.okBtn} onClick={()=>suspendListing(l.id,"active")}>Restore</button>}
-                    {l.status!=="deleted"&&<button className={styles.dangerBtn} onClick={()=>suspendListing(l.id,"deleted")}>Delete</button>}
+                    {l.status!=="removed"&&<button className={styles.dangerBtn} onClick={()=>suspendListing(l.id,"removed")}>Delete</button>}
                   </div></td>
                 </tr>
               ))}</tbody></table></div>
@@ -169,7 +236,7 @@ export default function AdminMarketPage() {
                   <td>{o.buying_method==="ship"?"📦 Ship":"📍 Meetup"}</td>
                   <td><Badge status={o.status}/></td><td>{fmt(o.created_at)}</td>
                   <td><div className={styles.actionBtns}>
-                    {o.status==="disputed"&&<button className={styles.warnBtn} onClick={()=>setOverrideId(o.id)}>Override</button>}
+                    {o.status==="disputed"&&<button className={styles.warnBtn} onClick={()=>{setTab("disputes");setDisputeStatus("open");}}>Open Disputes</button>}
                     {!["completed","refunded","cancelled"].includes(o.status)&&<button className={styles.dangerBtn} onClick={async()=>{await adminFetch(`/api/admin/market/orders/${o.id}`,{method:"PATCH",body:JSON.stringify({status:"cancelled"})});setOrders(prev=>prev.map(x=>x.id===o.id?{...x,status:"cancelled"}:x));}}>Cancel</button>}
                   </div></td>
                 </tr>
@@ -182,8 +249,12 @@ export default function AdminMarketPage() {
             <div className={styles.filterRow}>
               <select className={styles.select} value={disputeStatus} onChange={e=>setDisputeStatus(e.target.value)}>
                 <option value="">All</option>
-                {["open","ai_reviewing","resolved"].map(s=><option key={s} value={s}>{s}</option>)}
+                {["open","resolved"].map(s=><option key={s} value={s}>{s}</option>)}
               </select>
+              <button className={`${styles.warnBtn} ${needsReviewOnly ? styles.warnBtnActive : ""}`} onClick={()=>setNeedsReviewOnly(v=>!v)}>
+                {needsReviewOnly ? `Showing Needs Review (${disputeQueue.needs_review})` : `Needs Review Queue (${disputeQueue.needs_review})`}
+              </button>
+              <span className={styles.queueInfo}>Open: {disputeQueue.open}</span>
             </div>
             {disputes.length===0&&<div className={styles.empty}>No disputes found 🎉</div>}
             {disputes.map(d=>(
@@ -196,11 +267,45 @@ export default function AdminMarketPage() {
                   <div className={styles.disputeRight}><Badge status={d.status}/><div className={styles.piAmt}>{Number(d.order?.amount_pi??0).toFixed(2)} π</div></div>
                 </div>
                 <div className={styles.disputeReason}><strong>Reason:</strong> {d.reason}</div>
-                {d.ai_decision&&<div className={`${styles.aiDecision} ${d.ai_decision==="refund"?styles.aiRefund:styles.aiRelease}`}>
-                  <strong>AI:</strong> {d.ai_decision==="refund"?"↩️ Refund":"✅ Release"} · {Math.round((d.ai_confidence??0)*100)}% confidence
+                {d.ai_decision&&<div className={`${styles.aiDecision} ${d.ai_decision==="refund"?styles.aiRefund:d.ai_decision==="manual_review"?styles.aiManual:styles.aiRelease}`}>
+                  <strong>AI:</strong> {d.ai_decision==="refund"?"↩️ Refund":d.ai_decision==="manual_review"?"🕵️ Manual Review":"✅ Release"} · {Math.round((d.ai_confidence??0)*100)}% confidence
                   <div className={styles.aiReasoning}>{d.ai_reasoning}</div>
                 </div>}
                 {d.status!=="resolved"&&<button className={styles.overrideBtn} onClick={()=>setOverrideId(d.id)}>⚖️ Admin Override</button>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab === "support" && (
+          <div className={styles.section}>
+            <div className={styles.filterRow}>
+              <select className={styles.select} value={supportStatus} onChange={(e)=>setSupportStatus(e.target.value)}>
+                <option value="">All Status</option>
+                {["open","in_progress","resolved","closed"].map((s)=><option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className={styles.countRow}>{supportTotal} tickets</div>
+            {supportTickets.length===0 && <div className={styles.empty}>No support tickets yet.</div>}
+            {supportTickets.map((t) => (
+              <div key={t.id} className={styles.ticketCard}>
+                <div className={styles.ticketTop}>
+                  <div className={styles.ticketMeta}>
+                    <span className={styles.mono}>{t.id.slice(0,8)}…</span>
+                    <Badge status={t.status} />
+                    <Badge status={t.priority} />
+                    <Badge status={t.category} />
+                  </div>
+                  <div className={styles.ticketDate}>{fmt(t.created_at)}</div>
+                </div>
+                <div className={styles.ticketMsg}>{t.message}</div>
+                {t.ai_reply && <div className={styles.ticketAi}><strong>AI Reply:</strong> {t.ai_reply}</div>}
+                {t.ai_actions?.length ? <div className={styles.ticketAi}><strong>Actions:</strong> {t.ai_actions.join(", ")}</div> : null}
+                <div className={styles.actionBtns}>
+                  {t.status === "open" && <button className={styles.warnBtn} onClick={()=>updateSupportTicket(t.id, "in_progress")}>Take</button>}
+                  {t.status !== "resolved" && <button className={styles.okBtn} onClick={()=>updateSupportTicket(t.id, "resolved")}>Resolve</button>}
+                  {t.status !== "closed" && <button className={styles.dangerBtn} onClick={()=>updateSupportTicket(t.id, "closed")}>Close</button>}
+                </div>
               </div>
             ))}
           </div>

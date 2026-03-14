@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -45,7 +46,8 @@ export async function GET(req: NextRequest) {
   const method      = searchParams.get("method")      ?? "";
   const condition   = searchParams.get("condition")   ?? "";
   const sort        = searchParams.get("sort")        ?? "newest";
-  const country     = searchParams.get("country")     ?? "";
+  const countryRaw  = searchParams.get("country")     ?? "";
+  const country     = countryRaw.toUpperCase();
   const page        = parseInt(searchParams.get("page") ?? "1");
   const limit       = 20;
   const offset      = (page - 1) * limit;
@@ -60,7 +62,11 @@ export async function GET(req: NextRequest) {
     if (category)    query = query.eq("category", category);
     if (subcategory) query = query.eq("subcategory", subcategory);
     if (condition)   query = query.eq("condition", condition);
-    if (country && country !== "worldwide") query = query.ilike("location", `%${country}%`);
+    if (country === "WORLDWIDE") {
+      query = query.eq("ship_worldwide", true);
+    } else if (country) {
+      query = query.or(`country_code.eq.${country},ship_worldwide.eq.true`);
+    }
     if (method)      query = query.or(`buying_method.eq.${method},buying_method.eq.both`);
     if (q)           query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
 
@@ -81,6 +87,14 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(req, "market_listing_create", 20, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { success: false, error: "Too many requests. Please retry shortly." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
+
   const userId = getUserId(req);
   if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
@@ -103,7 +117,7 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
 
     const { count } = await supabase.from("listings").select("id", { count: "exact", head: true })
-      .eq("seller_id", userId).neq("status", "deleted");
+      .eq("seller_id", userId).neq("status", "removed");
 
     if ((count ?? 0) === 1) {
       await awardSC(userId, "first_listing", data.id, 50, "🛍️ First marketplace listing!");

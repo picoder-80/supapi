@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
     const { data } = await supabase
       .from("listings")
       .select("id, title, price_pi, category, subcategory, condition, buying_method, stock, status, views, location, created_at, seller:seller_id(username)")
-      .neq("status", "deleted")
+      .neq("status", "removed")
       .order("created_at", { ascending: false });
     const flat = (data ?? []).map((l: any) => ({ ...l, seller: l.seller?.username ?? "" }));
     csv = toCSV(flat, ["id","title","price_pi","category","subcategory","condition","buying_method","stock","status","views","location","seller","created_at"]);

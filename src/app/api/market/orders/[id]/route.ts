@@ -134,9 +134,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
 
       // 3. Decrement listing stock
-      await supabase.from("listings")
-        .update({ stock: Math.max(0, (order.stock ?? 1) - 1), updated_at: new Date().toISOString() })
-        .eq("id", order.listing_id);
+      if (order.listing_id) {
+        const { data: listing } = await supabase
+          .from("listings")
+          .select("id, stock")
+          .eq("id", order.listing_id)
+          .single();
+
+        if (listing) {
+          await supabase
+            .from("listings")
+            .update({ stock: Math.max(0, (listing.stock ?? 1) - 1), updated_at: new Date().toISOString() })
+            .eq("id", listing.id);
+        }
+      }
     }
 
     // ── CANCELLATION — refund escrow (admin manual refund) ────

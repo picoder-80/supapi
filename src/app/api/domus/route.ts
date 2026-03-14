@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
+import { getCountry } from "@/lib/market/countries";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -56,13 +57,29 @@ export async function GET(req: NextRequest) {
   const minPrice     = searchParams.get("min_price") ?? "";
   const maxPrice     = searchParams.get("max_price") ?? "";
   const q            = searchParams.get("q") ?? "";
+  const country      = searchParams.get("country") ?? "";
   const sort         = searchParams.get("sort") ?? "newest";
   const page         = parseInt(searchParams.get("page") ?? "1");
   const limit        = 20;
   const offset       = (page - 1) * limit;
 
   try {
+    const countryFilter = country && country.toUpperCase() !== "WORLDWIDE";
+    const countryPat = countryFilter ? `%${getCountry(country).name}%` : null;
+
     if (mode === "home") {
+      let forSaleQ = supabase.from("domus_listings")
+        .select("id, seller_id, agent_id, listing_mode, property_type, title, images, price_pi, bedrooms, bathrooms, built_up_sqft, furnishing, tenure, location, view_count, save_count, created_at")
+        .eq("status", "active").eq("listing_mode", "sale")
+        .order("view_count", { ascending: false }).limit(12);
+      let forRentQ = supabase.from("domus_listings")
+        .select("id, seller_id, agent_id, listing_mode, property_type, title, images, rental_pi_month, bedrooms, bathrooms, built_up_sqft, furnishing, location, view_count, save_count, created_at")
+        .eq("status", "active").eq("listing_mode", "rent")
+        .order("created_at", { ascending: false }).limit(8);
+      if (countryPat) {
+        forSaleQ = forSaleQ.ilike("location", countryPat);
+        forRentQ = forRentQ.ilike("location", countryPat);
+      }
       const [
         { data: forSale },
         { data: forRent },
@@ -71,14 +88,8 @@ export async function GET(req: NextRequest) {
         { count: saleCount },
         { count: rentCount },
       ] = await Promise.all([
-        supabase.from("domus_listings")
-          .select("id, seller_id, agent_id, listing_mode, property_type, title, images, price_pi, bedrooms, bathrooms, built_up_sqft, furnishing, tenure, location, view_count, save_count, created_at")
-          .eq("status", "active").eq("listing_mode", "sale")
-          .order("view_count", { ascending: false }).limit(12),
-        supabase.from("domus_listings")
-          .select("id, seller_id, agent_id, listing_mode, property_type, title, images, rental_pi_month, bedrooms, bathrooms, built_up_sqft, furnishing, location, view_count, save_count, created_at")
-          .eq("status", "active").eq("listing_mode", "rent")
-          .order("created_at", { ascending: false }).limit(8),
+        forSaleQ,
+        forRentQ,
         supabase.from("domus_projects")
           .select("id, project_name, developer_name, images, location, property_type, min_price_pi, max_price_pi, total_units, available_units, expected_completion, tenure")
           .eq("status", "active").order("created_at", { ascending: false }).limit(6),
@@ -124,6 +135,7 @@ export async function GET(req: NextRequest) {
     if (furnishing) query = query.eq("furnishing", furnishing);
     if (tenure)     query = query.eq("tenure", tenure);
     if (q)          query = query.or(`title.ilike.%${q}%,location.ilike.%${q}%,description.ilike.%${q}%`);
+    if (countryPat) query = query.ilike("location", countryPat);
     if (minPrice) {
       const col = listingMode === "rent" ? "rental_pi_month" : "price_pi";
       query = query.gte(col, parseFloat(minPrice));

@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
+import { getCountry } from "@/lib/market/countries";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest) {
   const startDate    = searchParams.get("start_date") ?? "";
   const endDate      = searchParams.get("end_date") ?? "";
   const q            = searchParams.get("q") ?? "";
+  const country      = searchParams.get("country") ?? "";
   const sort         = searchParams.get("sort") ?? "popular";
   const instantBook  = searchParams.get("instant_book") ?? "";
   const transmission = searchParams.get("transmission") ?? "";
@@ -47,24 +49,33 @@ export async function GET(req: NextRequest) {
   const offset       = (page - 1) * limit;
 
   try {
+    const countryFilter = country && country.toUpperCase() !== "WORLDWIDE";
+    const countryPat = countryFilter ? `%${getCountry(country).name}%` : null;
+
     if (mode === "home") {
+      let featuredQ = supabase.from("endoro_vehicles")
+        .select("id, host_id, vehicle_type, make, model, year, color, seats, transmission, fuel_type, images, location, instant_book, daily_rate_pi, deposit_pi, rating, review_count, booking_count, host_tier, status")
+        .eq("status", "active")
+        .order("booking_count", { ascending: false })
+        .limit(12);
+      let topRatedQ = supabase.from("endoro_vehicles")
+        .select("id, host_id, vehicle_type, make, model, year, images, location, daily_rate_pi, rating, review_count, instant_book, host_tier")
+        .eq("status", "active")
+        .gte("review_count", 1)
+        .order("rating", { ascending: false })
+        .limit(8);
+      if (countryPat) {
+        featuredQ = featuredQ.ilike("location", countryPat);
+        topRatedQ = topRatedQ.ilike("location", countryPat);
+      }
       const [
         { data: featured },
         { data: topRated },
         { count: totalVehicles },
         { count: totalHosts },
       ] = await Promise.all([
-        supabase.from("endoro_vehicles")
-          .select("id, host_id, vehicle_type, make, model, year, color, seats, transmission, fuel_type, images, location, instant_book, daily_rate_pi, deposit_pi, rating, review_count, booking_count, host_tier, status")
-          .eq("status", "active")
-          .order("booking_count", { ascending: false })
-          .limit(12),
-        supabase.from("endoro_vehicles")
-          .select("id, host_id, vehicle_type, make, model, year, images, location, daily_rate_pi, rating, review_count, instant_book, host_tier")
-          .eq("status", "active")
-          .gte("review_count", 1)
-          .order("rating", { ascending: false })
-          .limit(8),
+        featuredQ,
+        topRatedQ,
         supabase.from("endoro_vehicles").select("id", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("endoro_vehicles").select("host_id", { count: "exact", head: true }).eq("status", "active"),
       ]);
@@ -92,6 +103,7 @@ export async function GET(req: NextRequest) {
     if (instantBook === "true") query = query.eq("instant_book", true);
     if (transmission) query = query.eq("transmission", transmission);
     if (q) query = query.or(`make.ilike.%${q}%,model.ilike.%${q}%,location.ilike.%${q}%`);
+    if (countryPat) query = query.ilike("location", countryPat);
     if (minPrice) query = query.gte("daily_rate_pi", parseFloat(minPrice));
     if (maxPrice) query = query.lte("daily_rate_pi", parseFloat(maxPrice));
 

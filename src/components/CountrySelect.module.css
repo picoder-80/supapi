@@ -1,0 +1,57 @@
+.root { position: relative; }
+.btn {
+  width: 100%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  padding: 9px 14px;
+  color: rgba(255,255,255,0.8);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: border-color 150ms;
+}
+.btn:hover { border-color: rgba(245,166,35,0.4); }
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  z-index: 200;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.search {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 13px;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  box-sizing: border-box;
+}
+.search:focus { outline: none; }
+.list { max-height: 220px; overflow-y: auto; }
+.option {
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: var(--color-text);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  display: block;
+}
+.option:hover { background: var(--color-bg); }
+.optionActive { background: rgba(245,166,35,0.1); color: var(--color-gold); font-weight: 600; }

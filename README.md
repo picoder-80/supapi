@@ -147,6 +147,167 @@ Add all environment variables in Vercel Dashboard → Settings → Environment V
 
 ---
 
+## ⏱️ Scheduler Setup (Vercel + External Cron)
+
+### 1) Required env vars
+
+Add these in `.env.local` and Vercel project env:
+
+- `CRON_SECRET` (long random secret)
+- `MARKET_AI_AUTO_RESOLVE_THRESHOLD` (example: `0.75`)
+- `MARKET_AI_AGGRESSIVE_AUTO` (`true` / `false`)
+- `MARKET_AI_MAX_AUTO_RESOLVE_PI` (example: `300`, high-value guardrail)
+- `AI_ALERT_WEBHOOK_URL` (optional alert webhook for cron partial/failure)
+
+### 2) Vercel Cron (already configured)
+
+This repo includes `vercel.json`:
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/market/ai/dispute/cron-check?limit=25",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}
+```
+
+After deploy, Vercel will call the cron endpoint every 10 minutes.
+
+### 3) External cron (optional fallback)
+
+You can also call manually with secret header:
+
+```bash
+curl -X POST "https://YOUR_DOMAIN/api/market/ai/dispute/cron-check?limit=25" \
+  -H "x-cron-key: YOUR_CRON_SECRET"
+```
+
+Or bearer token:
+
+```bash
+curl -X POST "https://YOUR_DOMAIN/api/market/ai/dispute/cron-check?limit=25" \
+  -H "Authorization: Bearer YOUR_CRON_SECRET"
+```
+
+### 4) Quick verify
+
+```bash
+curl "https://YOUR_DOMAIN/api/market/ai/dispute/cron-check?limit=5" \
+  -H "x-cron-key: YOUR_CRON_SECRET"
+```
+
+Expected response shape:
+
+```json
+{
+  "success": true,
+  "data": {
+    "processed": 0,
+    "auto_resolved": 0,
+    "still_open": 0,
+    "failed": 0
+  }
+}
+```
+
+### 5) AI health check (provider + fallback status)
+
+Use this to confirm which provider is active at runtime:
+
+```bash
+curl "https://YOUR_DOMAIN/api/market/ai/health" \
+  -H "x-cron-key: YOUR_CRON_SECRET"
+```
+
+Or from this repo:
+
+```bash
+AI_HEALTH_URL="https://YOUR_DOMAIN/api/market/ai/health" CRON_SECRET="YOUR_CRON_SECRET" npm run ai:health
+```
+
+Manual run cron-check from this repo:
+
+```bash
+AI_CRON_URL="https://YOUR_DOMAIN/api/market/ai/dispute/cron-check" AI_CRON_LIMIT=25 CRON_SECRET="YOUR_CRON_SECRET" npm run ai:cron:run
+```
+
+Run both checks in one command:
+
+```bash
+AI_HEALTH_URL="https://YOUR_DOMAIN/api/market/ai/health" \
+AI_CRON_URL="https://YOUR_DOMAIN/api/market/ai/dispute/cron-check" \
+AI_CRON_LIMIT=25 \
+CRON_SECRET="YOUR_CRON_SECRET" \
+npm run ai:ops:check
+```
+
+Expected response includes:
+
+- `provider_order`
+- `available` (which keys are set)
+- `active_provider`
+- `dispute_policy` (auto mode + threshold)
+
+### 6) Ops readiness check
+
+Use this endpoint to quickly validate critical runtime/security env health:
+
+```bash
+curl "https://YOUR_DOMAIN/api/ops/readiness" \
+  -H "x-cron-key: YOUR_CRON_SECRET"
+```
+
+Response includes:
+
+- `status`: `ready` | `warning` | `critical`
+- `checks`: booleans for key env/security gates
+- `failed`: list of failed checks
+
+### 7) Optional DB table for AI job logs
+
+Create this table to store each cron run (`success`, `partial_success`, `failed`):
+
+```sql
+create table if not exists public.ai_job_runs (
+  id uuid primary key default gen_random_uuid(),
+  job_name text not null,
+  status text not null,
+  started_at timestamptz not null,
+  finished_at timestamptz not null,
+  processed_count integer not null default 0,
+  auto_resolved_count integer not null default 0,
+  still_open_count integer not null default 0,
+  failed_count integer not null default 0,
+  meta jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_ai_job_runs_job_name on public.ai_job_runs(job_name);
+create index if not exists idx_ai_job_runs_created_at on public.ai_job_runs(created_at desc);
+```
+
+### 8) Optional DB table for admin audit logs
+
+```sql
+create table if not exists public.admin_audit_logs (
+  id uuid primary key default gen_random_uuid(),
+  admin_user_id uuid not null references public.users(id) on delete cascade,
+  action text not null,
+  target_type text not null,
+  target_id text not null,
+  detail jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_admin_audit_logs_admin on public.admin_audit_logs(admin_user_id);
+create index if not exists idx_admin_audit_logs_created_at on public.admin_audit_logs(created_at desc);
+```
+
+---
+
 ## 📋 Pre-Launch Checklist
 
 - [ ] Test all flows inside Pi Browser sandbox

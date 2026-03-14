@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyToken } from "@/lib/auth/jwt";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
 // GET — list orders (buyer or seller)
 export async function GET(req: NextRequest) {
@@ -37,6 +38,14 @@ export async function GET(req: NextRequest) {
 // POST — create order (initiate checkout)
 export async function POST(req: NextRequest) {
   try {
+    const rl = checkRateLimit(req, "market_order_create", 15, 60_000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please retry shortly." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+      );
+    }
+
     const auth = req.headers.get("authorization")?.replace("Bearer ", "");
     if (!auth) return NextResponse.json({ success: false }, { status: 401 });
     const payload = verifyToken(auth);

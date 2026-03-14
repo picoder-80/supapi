@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
+import { getCountry } from "@/lib/market/countries";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,6 +23,28 @@ function getUserId(req: NextRequest): string | null {
 
 export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const countryCode = (searchParams.get("country") ?? "").toUpperCase();
+    const countryFilter = countryCode && countryCode !== "WORLDWIDE";
+    const countryName = countryFilter ? getCountry(countryCode).name : "";
+
+    let featuredSuppliersQuery = supabase.from("bulkhub_suppliers")
+      .select("id, company_name, country, logo_url, verified_tier, total_orders, total_products, categories, response_rate, user_id")
+      .eq("is_active", true)
+      .order("total_orders", { ascending: false })
+      .limit(8);
+    let trendingProductsQuery = supabase.from("bulkhub_products")
+      .select("id, supplier_id, title, images, category, moq, price_tiers, lead_time, ship_from, view_count, order_count")
+      .eq("status", "active")
+      .order("view_count", { ascending: false })
+      .limit(16);
+
+    if (countryFilter && countryName) {
+      const pat = `%${countryName}%`;
+      featuredSuppliersQuery = featuredSuppliersQuery.ilike("country", pat);
+      trendingProductsQuery = trendingProductsQuery.ilike("ship_from", pat);
+    }
+
     const [
       { data: featuredSuppliers },
       { data: trendingProducts },
@@ -29,23 +52,19 @@ export async function GET(req: NextRequest) {
       { count: supplierCount },
       { count: productCount },
     ] = await Promise.all([
-      supabase.from("bulkhub_suppliers")
-        .select("id, company_name, country, logo_url, verified_tier, total_orders, total_products, categories, response_rate, user_id")
-        .eq("is_active", true)
-        .order("total_orders", { ascending: false })
-        .limit(8),
-      supabase.from("bulkhub_products")
-        .select("id, supplier_id, title, images, category, moq, price_tiers, lead_time, ship_from, view_count, order_count")
-        .eq("status", "active")
-        .order("view_count", { ascending: false })
-        .limit(16),
+      featuredSuppliersQuery,
+      trendingProductsQuery,
       supabase.from("bulkhub_rfqs")
         .select("id, title, category, quantity, unit, target_price_pi, deadline, quote_count, created_at, buyer_id")
         .eq("status", "open")
         .order("created_at", { ascending: false })
         .limit(6),
-      supabase.from("bulkhub_suppliers").select("id", { count: "exact", head: true }).eq("is_active", true),
-      supabase.from("bulkhub_products").select("id", { count: "exact", head: true }).eq("status", "active"),
+      countryFilter && countryName
+        ? supabase.from("bulkhub_suppliers").select("id", { count: "exact", head: true }).eq("is_active", true).ilike("country", `%${countryName}%`)
+        : supabase.from("bulkhub_suppliers").select("id", { count: "exact", head: true }).eq("is_active", true),
+      countryFilter && countryName
+        ? supabase.from("bulkhub_products").select("id", { count: "exact", head: true }).eq("status", "active").ilike("ship_from", `%${countryName}%`)
+        : supabase.from("bulkhub_products").select("id", { count: "exact", head: true }).eq("status", "active"),
     ]);
 
     // Enrich suppliers with user info
