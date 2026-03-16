@@ -1,0 +1,258 @@
+/* SupaMarket Orders — Universal Supapi Theme */
+
+.page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #f8f9fd;
+  color: #1a1a2e;
+  font-family: var(--font-sans);
+  padding-bottom: calc(var(--bottomnav-h, 64px) + env(safe-area-inset-bottom, 0px) + 36px);
+}
+
+.page :where(button, a):focus-visible {
+  outline: none;
+  box-shadow: var(--supa-focus-ring);
+}
+
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: var(--supa-topbar-gradient);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.iconBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: var(--supa-topbar-glass);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform var(--supa-motion-fast) var(--supa-ease), border-color var(--supa-motion-fast) ease;
+}
+.iconBtn:hover { transform: translateY(-1px); border-color: #f5a623; }
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+
+.tabsCard {
+  width: min(960px, calc(100% - 24px));
+  margin: 12px auto 0;
+  display: flex;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: var(--supa-card-shadow);
+  padding: 8px;
+}
+
+.tab {
+  flex: 1;
+  min-height: 42px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #718096;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--supa-motion-fast) var(--supa-ease), border-color var(--supa-motion-fast) ease, color 0.2s ease;
+}
+.tab:hover { border-color: #f5a623; transform: translateY(-1px); color: #1a1a2e; }
+.tabActive {
+  background: #fff9ee;
+  border-color: #f5a623;
+  color: #1a1a2e;
+}
+
+.body {
+  width: min(960px, 100%);
+  margin: 0 auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeletonRow {
+  height: 84px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(90deg, #edf2f7 20%, #f8fafc 50%, #edf2f7 80%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.empty {
+  text-align: center;
+  padding: 52px 24px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: var(--supa-card-shadow);
+}
+.emptyIcon { font-size: 48px; margin-bottom: 12px; }
+.emptyTitle {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 8px;
+}
+.emptyDesc {
+  font-size: 13px;
+  color: #718096;
+  line-height: 1.55;
+  margin-bottom: 18px;
+}
+.emptyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: #f5a623;
+  color: #1a1a2e;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform var(--supa-motion-fast) var(--supa-ease);
+}
+.emptyBtn:hover { transform: translateY(-1px); }
+
+.orderRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: var(--supa-card-shadow);
+  padding: 12px;
+  text-decoration: none;
+  transition: border-color var(--supa-motion-fast) ease, transform var(--supa-motion-fast) var(--supa-ease), box-shadow var(--supa-motion-fast) ease;
+  min-height: 86px;
+}
+.orderRow:hover {
+  border-color: #f5a623;
+  transform: translateY(-2px);
+  box-shadow: var(--supa-card-shadow-hover);
+}
+
+.orderImg {
+  width: 62px;
+  height: 62px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #edf2f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.orderImgEl { width: 100%; height: 100%; object-fit: cover; }
+
+.orderInfo { flex: 1; min-width: 0; }
+.orderTitle {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.orderMeta { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.orderPrice { font-size: 14px; font-weight: 800; color: #1a1a2e; }
+.orderStatus {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.statusPending { color: #744210; background: #fffaf0; }
+.statusPaid { color: #276749; background: #f0fff4; }
+.statusShipped { color: #2b6cb0; background: #ebf8ff; }
+.statusMeetup { color: #553c9a; background: #faf5ff; }
+.statusDelivered { color: #276749; background: #f0fff4; }
+.statusCompleted { color: #2d3748; background: #edf2f7; }
+.statusDisputed { color: #9b2335; background: #fff5f5; }
+.statusRefunded { color: #2b6cb0; background: #ebf8ff; }
+.statusCancelled { color: #a0aec0; background: #f7fafc; }
+
+.orderSub { font-size: 11px; color: #718096; }
+.orderArrow { font-size: 18px; color: #a0aec0; flex-shrink: 0; }
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.pagerBtn {
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--supa-motion-fast) var(--supa-ease), border-color var(--supa-motion-fast) ease;
+}
+.pagerBtn:hover:not(:disabled) { transform: translateY(-1px); border-color: #f5a623; }
+.pagerBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pagerInfo { font-size: 12px; color: #718096; font-weight: 700; }
+
+@media (min-width: 768px) {
+  .tabsCard {
+    margin-top: 14px;
+    padding: 10px;
+  }
+  .body {
+    padding: 14px 12px;
+    gap: 14px;
+  }
+  .orderRow {
+    padding: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page *,
+  .page *::before,
+  .page *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .iconBtn:hover,
+  .tab:hover,
+  .emptyBtn:hover,
+  .orderRow:hover,
+  .pagerBtn:hover { transform: none !important; }
+}
