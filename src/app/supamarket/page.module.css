@@ -5,12 +5,13 @@
 /* Same layout as src/app/page: hero full width, then section + .container */
 .page {
   min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   background: var(--color-bg);
   font-family: var(--font-sans);
-  padding-bottom: 90px;
+  padding-bottom: calc(var(--bottomnav-h, 64px) + env(safe-area-inset-bottom, 0px) + 88px);
   box-sizing: border-box;
 }
 
@@ -25,7 +26,7 @@
   max-width: 100%;
   background: var(--supa-topbar-gradient);
   color: var(--color-white);
-  padding: var(--space-6) var(--space-4) 0;
+  padding: var(--space-5) var(--space-4) 0;
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
@@ -33,7 +34,7 @@
 
 /* Content below hero: same as homepage sections (section + .container) */
 .contentSection {
-  padding: var(--space-6) 0;
+  padding: var(--space-5) 0;
 }
 
 /* ── Hero top row ── */
@@ -687,6 +688,18 @@
   color: white;
   margin: 0;
   letter-spacing: -0.5px;
+}
+
+@media (max-width: 520px) {
+  .heroTop {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .sellBtn {
+    margin-left: 0;
+    margin-top: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

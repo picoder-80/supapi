@@ -55,7 +55,7 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (code: st
 
   return (
     <div ref={ref} className={styles.countrySelect}>
-      <button className={styles.countryBtn} onClick={() => setOpen(p => !p)}>
+      <button type="button" className={styles.countryBtn} onClick={() => setOpen(p => !p)}>
         {selected.flag} {selected.name} ▾
       </button>
       {open && (
@@ -70,6 +70,7 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (code: st
           <div className={styles.countryList}>
             {filtered.map(c => (
               <button
+                type="button"
                 key={c.code}
                 className={`${styles.countryOption} ${value === c.code ? styles.countryOptionActive : ""}`}
                 onClick={() => { onChange(c.code); setOpen(false); setSearch(""); }}
@@ -160,7 +161,6 @@ function MarketPageContent() {
 
   return (
     <div className={styles.page}>
-
       {/* ── Hero (scrollable, not sticky) ── */}
       <div className={styles.hero}>
 
@@ -239,12 +239,12 @@ function MarketPageContent() {
 
         {/* Category tabs */}
         <div className={styles.catScroll}>
-          <button className={`${styles.catPill} ${styles.catPillAll} ${!category ? styles.catPillActive : ""}`}
+          <button type="button" className={`${styles.catPill} ${styles.catPillAll} ${!category ? styles.catPillActive : ""}`}
             onClick={() => { setCategory(""); setSubcategory(""); setPage(1); }}>
             All
           </button>
           {CATEGORIES.map(c => (
-            <button key={c.id}
+            <button type="button" key={c.id}
               className={`${styles.catPill} ${category === c.id ? styles.catPillActive : ""}`}
               data-category={c.id}
               onClick={() => { setCategory(c.id); setSubcategory(""); setPage(1); }}>
@@ -260,12 +260,12 @@ function MarketPageContent() {
       {/* ── Subcategory (white bar, below hero) ── */}
       {selectedCat && (
         <div className={styles.subCatWrap}>
-          <button className={`${styles.subPill} ${!subcategory ? styles.subPillActive : ""}`}
+          <button type="button" className={`${styles.subPill} ${!subcategory ? styles.subPillActive : ""}`}
             onClick={() => { setSubcategory(""); setPage(1); }}>
             All {selectedCat.label}
           </button>
           {selectedCat.subcategories.map(s => (
-            <button key={s.id}
+            <button type="button" key={s.id}
               className={`${styles.subPill} ${subcategory === s.id ? styles.subPillActive : ""}`}
               onClick={() => { setSubcategory(s.id); setPage(1); }}>
               {s.label}
@@ -281,9 +281,9 @@ function MarketPageContent() {
             <div className={styles.filterGroup}>
               <div className={styles.filterLabel}>Condition</div>
               <div className={styles.filterOptions}>
-                <button className={`${styles.filterOpt} ${!condition ? styles.filterOptActive : ""}`} onClick={() => setCondition("")}>Any</button>
+                <button type="button" className={`${styles.filterOpt} ${!condition ? styles.filterOptActive : ""}`} onClick={() => setCondition("")}>Any</button>
                 {CONDITIONS.map(c => (
-                  <button key={c.id} className={`${styles.filterOpt} ${condition === c.id ? styles.filterOptActive : ""}`}
+                  <button type="button" key={c.id} className={`${styles.filterOpt} ${condition === c.id ? styles.filterOptActive : ""}`}
                     onClick={() => { setCondition(c.id); setPage(1); }}>{c.label}</button>
                 ))}
               </div>
@@ -291,9 +291,9 @@ function MarketPageContent() {
             <div className={styles.filterGroup}>
               <div className={styles.filterLabel}>Method</div>
               <div className={styles.filterOptions}>
-                <button className={`${styles.filterOpt} ${!method ? styles.filterOptActive : ""}`} onClick={() => setMethod("")}>Any</button>
+                <button type="button" className={`${styles.filterOpt} ${!method ? styles.filterOptActive : ""}`} onClick={() => setMethod("")}>Any</button>
                 {BUYING_METHODS.map(m => (
-                  <button key={m.id} className={`${styles.filterOpt} ${method === m.id ? styles.filterOptActive : ""}`}
+                  <button type="button" key={m.id} className={`${styles.filterOpt} ${method === m.id ? styles.filterOptActive : ""}`}
                     onClick={() => { setMethod(m.id); setPage(1); }}>{m.emoji} {m.label}</button>
                 ))}
               </div>
@@ -303,12 +303,12 @@ function MarketPageContent() {
             <div className={styles.filterLabel}>Sort by</div>
             <div className={styles.filterOptions}>
               {SORT_OPTIONS.map(s => (
-                <button key={s.id} className={`${styles.filterOpt} ${sort === s.id ? styles.filterOptActive : ""}`}
+                <button type="button" key={s.id} className={`${styles.filterOpt} ${sort === s.id ? styles.filterOptActive : ""}`}
                   onClick={() => { setSort(s.id); setPage(1); }}>{s.label}</button>
               ))}
             </div>
           </div>
-          {hasFilters && <button className={styles.resetBtn} onClick={resetFilters}>Reset all filters</button>}
+          {hasFilters && <button type="button" className={styles.resetBtn} onClick={resetFilters}>Reset all filters</button>}
         </div>
       )}
 
@@ -316,7 +316,7 @@ function MarketPageContent() {
       <div className={styles.body}>
         <div className={styles.resultsHeader}>
           <span className={styles.resultsCount}>{loading ? "..." : `${total} listings`}</span>
-          {hasFilters && <button className={styles.clearFilters} onClick={resetFilters}>Clear filters ✕</button>}
+          {hasFilters && <button type="button" className={styles.clearFilters} onClick={resetFilters}>Clear filters ✕</button>}
         </div>
 
         {loading ? (
@@ -331,7 +331,7 @@ function MarketPageContent() {
               {country !== "WORLDWIDE" ? "Try switching to 🌍 Worldwide!" : "Be the first to sell!"}
             </div>
             {country !== "WORLDWIDE" && (
-              <button className={styles.worldwideBtn} onClick={() => { setCountry("WORLDWIDE"); setPage(1); }}>
+              <button type="button" className={styles.worldwideBtn} onClick={() => { setCountry("WORLDWIDE"); setPage(1); }}>
                 🌍 Try Worldwide
               </button>
             )}
@@ -404,6 +404,7 @@ function MarketPageContent() {
       </div>
         </div>
       </section>
+
     </div>
   );
 }
