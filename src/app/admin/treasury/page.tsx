@@ -9,8 +9,8 @@ const PLATFORM_EMOJI: Record<string, string> = {
 };
 
 const PLATFORM_LABEL: Record<string, string> = {
-  market: "Marketplace", gigs: "Gigs", endoro: "Endoro",
-  domus: "Domus", bulkhub: "BulkHub",
+  market: "SupaMarket", gigs: "SupaSkil", endoro: "SupaEndoro",
+  domus: "SupaDomus", bulkhub: "SupaBulk",
 };
 
 interface TreasurySummary {

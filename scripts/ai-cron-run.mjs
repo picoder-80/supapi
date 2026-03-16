@@ -5,12 +5,12 @@
  *   npm run ai:cron:run
  *
  * Optional env:
- *   AI_CRON_URL      (default: http://localhost:3000/api/market/ai/dispute/cron-check)
+ *   AI_CRON_URL      (default: http://localhost:3000/api/supamarket/ai/dispute/cron-check)
  *   AI_CRON_LIMIT    (default: 25)
  *   CRON_SECRET      (used as x-cron-key header)
  */
 
-const baseUrl = process.env.AI_CRON_URL ?? "http://localhost:3000/api/market/ai/dispute/cron-check";
+const baseUrl = process.env.AI_CRON_URL ?? "http://localhost:3000/api/supamarket/ai/dispute/cron-check";
 const limit = Number(process.env.AI_CRON_LIMIT ?? "25");
 const secret = process.env.CRON_SECRET ?? "";
 

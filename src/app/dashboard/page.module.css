@@ -59,17 +59,23 @@
 
 .statRow {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
 }
 
 .statCard {
   background: rgba(255,255,255,0.07);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 12px;
-  padding: 14px 12px;
+  padding: 12px 8px;
   text-align: center;
   backdrop-filter: blur(8px);
+  text-decoration: none;
+  transition: var(--transition);
+}
+.statCard:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(245,166,35,0.3);
 }
 
 .statValue {
@@ -81,10 +87,65 @@
 }
 
 .statLabel {
-  font-size: 10px;
+  font-size: 9px;
   color: rgba(255,255,255,0.5);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.refreshBtn {
+  margin-top: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  color: rgba(255,255,255,0.8);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: var(--transition);
+}
+.refreshBtn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.12);
+}
+.refreshBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── What's Next ── */
+.whatsNextCard {
+  background: linear-gradient(135deg, rgba(245,166,35,0.12), rgba(245,166,35,0.05));
+  border: 1px solid rgba(245,166,35,0.25);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.whatsNextIcon { font-size: 28px; }
+.whatsNextText {
+  font-size: 13px;
+  color: var(--color-text);
+  line-height: 1.5;
+}
+.whatsNextBtn {
+  align-self: flex-start;
+  background: var(--color-gold);
+  color: #1A1A2E;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: var(--transition);
+}
+.whatsNextBtn:hover { background: var(--color-gold-dark); }
+
+.activityArrow {
+  font-size: 18px;
+  color: var(--color-text-muted);
 }
 
 /* ── Body ── */
@@ -124,7 +185,7 @@
 /* ── Quick Actions ── */
 .quickGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 
@@ -170,6 +231,13 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition);
+}
+a.activityItem:hover {
+  border-color: var(--color-gold);
+  transform: translateY(-1px);
 }
 
 .activityIcon {
@@ -205,6 +273,40 @@
 
 .activityAmountNeg {
   color: var(--color-error);
+}
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 8px 0;
+}
+.pagerBtn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border);
+  background: #fff;
+  color: var(--color-text);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s, border-color 0.2s;
+}
+.pagerBtn:hover:not(:disabled) {
+  background: #F8F9FD;
+  border-color: var(--color-gold);
+  color: var(--color-gold-dark);
+}
+.pagerBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pagerInfo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
 }
 
 /* ── Platforms Grid ── */
@@ -416,11 +518,15 @@
 }
 .guestBtn:hover { background: var(--color-gold-dark); transform: translateY(-2px); }
 
+@media (max-width: 480px) {
+  .statRow { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 380px) {
-  .quickGrid { grid-template-columns: repeat(4, 1fr); }
+  .quickGrid { grid-template-columns: repeat(2, 1fr); }
   .platformsGrid { grid-template-columns: repeat(3, 1fr); }
   .statRow { gap: 8px; }
-  .statValue { font-size: 18px; }
+  .statValue { font-size: 16px; }
 }
 
 /* ── Profile Progress ── */

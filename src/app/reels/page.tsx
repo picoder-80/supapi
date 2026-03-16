@@ -8,128 +8,120 @@ import styles from "./page.module.css";
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
 
-interface Pioneer {
+interface ReelItem {
   id: string;
-  username: string;
-  display_name: string | null;
-  avatar_url: string | null;
-  kyc_status: string;
-  bio: string | null;
-}
-
-interface FeedData {
-  following: Pioneer[];
-  popular: Pioneer[];
+  user_id: string;
+  video_url: string;
+  caption: string | null;
+  like_count: number;
+  view_count: number;
+  comment_count: number;
+  created_at: string;
+  user?: { username: string; display_name: string | null; avatar_url: string | null };
 }
 
 export default function ReelsPage() {
   const { user } = useAuth();
-  const [tab, setTab] = useState<"following" | "popular">("popular");
-  const [feed, setFeed] = useState<FeedData>({ following: [], popular: [] });
+  const [feed, setFeed] = useState<ReelItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetch_ = async () => {
-      setLoading(true);
-      try {
-        const uid = user?.id ?? "";
-        const r = await fetch(`/api/newsfeed${uid ? `?userId=${uid}` : ""}`);
-        const d = await r.json();
-        if (d.success) setFeed(d.data);
-      } catch {}
-      setLoading(false);
-    };
-    fetch_();
-  }, [user?.id]);
+  const token = () => (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "");
 
-  const list = tab === "following" ? feed.following : feed.popular;
+  const fetchFeed = async () => {
+    setLoading(true);
+    try {
+      const r = await fetch("/api/reels", {
+        headers: user ? { Authorization: `Bearer ${token()}` } : {},
+      });
+      const d = await r.json();
+      if (d.success && d.data?.reels) setFeed(d.data.reels);
+      else setFeed([]);
+    } catch { setFeed([]); }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchFeed();
+  }, [user?.id]);
 
   return (
     <div className={styles.page}>
-      {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerTop}>
           <h1 className={styles.title}>🎬 Reels</h1>
-          <div className={styles.headerSub}>Short videos from Pi pioneers</div>
-        </div>
-        <div className={styles.tabs}>
-          <button className={`${styles.tab} ${tab === "following" ? styles.tabActive : ""}`} onClick={() => setTab("following")}>
-            👥 Following
-          </button>
-          <button className={`${styles.tab} ${tab === "popular" ? styles.tabActive : ""}`} onClick={() => setTab("popular")}>
-            🔥 Popular
-          </button>
+          <div className={styles.headerSub}>Short videos from pioneers you follow</div>
         </div>
       </div>
 
       <div className={styles.body}>
-        {/* Coming soon banner */}
-        <div className={styles.comingSoonBanner}>
-          <div className={styles.comingSoonIcon}>🎬</div>
-          <div>
-            <div className={styles.comingSoonTitle}>Video reels coming soon</div>
-            <div className={styles.comingSoonDesc}>Short videos from pioneers you follow — sorted by likes & shares. For now, explore pioneer profiles below.</div>
-          </div>
-        </div>
-
-        {/* Placeholder reel cards */}
-        <div className={styles.reelPlaceholders}>
-          {[1,2,3,4,5,6].map((i) => (
-            <div key={i} className={styles.reelPlaceholder}>
-              <div className={styles.reelThumb}>
-                <div className={styles.reelPlayIcon}>▶</div>
+        {user ? (
+          <div className={styles.createBox}>
+            <div className={styles.createRow}>
+              <div className={styles.createAvatar}>
+                {user.avatar_url ? <img src={user.avatar_url} alt="" /> : getInitial(user.username)}
               </div>
-              <div className={styles.reelInfo}>
-                <div className={styles.reelTitle} style={{ width: `${50 + i * 8}%` }} />
-                <div className={styles.reelMeta} style={{ width: "40%" }} />
-              </div>
+              <Link href="/reels/create" className={styles.createInput}>
+                Share a short video...
+              </Link>
             </div>
-          ))}
-        </div>
-
-        {/* Pioneer discovery */}
-        <div className={styles.discoverSection}>
-          <div className={styles.discoverTitle}>
-            {tab === "following" ? "👥 Pioneers You Follow" : "🔥 Popular Pioneers"}
-          </div>
-          <div className={styles.tabs2}>
-            <button className={`${styles.tab2} ${tab === "following" ? styles.tab2Active : ""}`} onClick={() => setTab("following")}>Following</button>
-            <button className={`${styles.tab2} ${tab === "popular" ? styles.tab2Active : ""}`} onClick={() => setTab("popular")}>Popular</button>
-          </div>
-
-          {tab === "following" && !user ? (
-            <div className={styles.loginPrompt}>
-              <div className={styles.loginIcon}>🪐</div>
-              <div className={styles.loginTitle}>Sign in to see pioneers you follow</div>
-              <Link href="/dashboard" className={styles.loginBtn}>Sign In with Pi →</Link>
+            <div className={styles.createActions}>
+              <Link href="/reels/create" className={styles.postBtn}>Upload Reel</Link>
             </div>
-          ) : loading ? (
+          </div>
+        ) : (
+          <div className={styles.loginPrompt}>
+            <div className={styles.loginIcon}>🪐</div>
+            <div className={styles.loginTitle}>Sign in to upload reels</div>
+            <div className={styles.loginSub}>Upload short videos and see reels from pioneers you follow</div>
+            <Link href="/dashboard" className={styles.loginBtn}>Sign In with Pi →</Link>
+          </div>
+        )}
+
+        <div className={styles.feedSection}>
+          <div className={styles.feedTitle}>Reels Feed</div>
+          {loading ? (
             <div className={styles.empty}><div className={styles.emptyIcon}>⏳</div><div>Loading...</div></div>
-          ) : list.length === 0 ? (
+          ) : feed.length === 0 ? (
             <div className={styles.empty}>
-              <div className={styles.emptyIcon}>👥</div>
-              <div className={styles.emptyTitle}>No pioneers yet</div>
-              <button className={styles.emptyBtn} onClick={() => setTab("popular")}>See Popular →</button>
+              <div className={styles.emptyIcon}>🎬</div>
+              <div className={styles.emptyTitle}>No reels yet</div>
+              <div className={styles.emptyDesc}>
+                {user ? "Be the first to upload a reel! Or discover more pioneers in SupaFeeds." : "Sign in to see reels from pioneers you follow."}
+              </div>
+              {user && <Link href="/reels/create" className={styles.emptyBtn}>Upload Reel →</Link>}
             </div>
           ) : (
-            <div className={styles.pioneerList}>
-              {list.map((p) => (
-                <Link key={p.id} href={`/myspace/${p.username}`} className={styles.pioneerRow}>
-                  <div className={styles.avatar}>
-                    {p.avatar_url
-                      ? <img src={p.avatar_url} alt={p.username} className={styles.avatarImg} />
-                      : <span className={styles.avatarInitial}>{getInitial(p.username)}</span>
-                    }
-                  </div>
-                  <div className={styles.pioneerInfo}>
-                    <div className={styles.displayName}>
-                      {p.display_name ?? p.username}
-                      {p.kyc_status === "verified" && <span className={styles.kycBadge}>✅</span>}
+            <div className={styles.feedList}>
+              {feed.map((r) => (
+                <div key={r.id} className={styles.statusCard}>
+                  <div className={styles.statusHeader}>
+                    <Link href={`/supaspace/${r.user?.username ?? ""}`} className={styles.statusAvatar}>
+                      {r.user?.avatar_url ? <img src={r.user.avatar_url} alt="" /> : getInitial(r.user?.username ?? "?")}
+                    </Link>
+                    <div className={styles.statusMeta}>
+                      <Link href={`/supaspace/${r.user?.username ?? ""}`} className={styles.statusName}>
+                        {r.user?.display_name ?? r.user?.username ?? "?"}
+                      </Link>
+                      <span className={styles.statusTime}>
+                        {new Date(r.created_at).toLocaleDateString(undefined, { dateStyle: "short", timeStyle: "short" })}
+                      </span>
                     </div>
-                    <div className={styles.username}>@{p.username}</div>
                   </div>
-                  <div className={styles.viewProfile}>View →</div>
-                </Link>
+                  <div className={styles.reelVideoWrap}>
+                    <video
+                      src={r.video_url}
+                      controls
+                      playsInline
+                      className={styles.reelVideo}
+                    />
+                  </div>
+                  {r.caption && <div className={styles.statusBody}>{r.caption}</div>}
+                  <div className={styles.reelStats}>
+                    <span>❤️ {r.like_count}</span>
+                    <span>👁 {r.view_count}</span>
+                    <span>💬 {r.comment_count}</span>
+                  </div>
+                </div>
               ))}
             </div>
           )}

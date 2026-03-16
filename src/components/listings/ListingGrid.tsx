@@ -25,7 +25,7 @@ export default function ListingGrid() {
   return (
     <div className={styles.grid}>
       {listings.map((l) => (
-        <a key={l.id} href={`/market/${l.id}`} className={styles.card}>
+        <a key={l.id} href={`/supamarket/${l.id}`} className={styles.card}>
           {l.is_featured && <span className={styles.featured}>⭐ Featured</span>}
           <div className={styles.img}>
             {l.images[0]

@@ -1,6 +1,17 @@
 // lib/pi/sdk.ts
 // Pi Network SDK wrapper — based on official SDK reference
 
+/** When app runs in Pi Sandbox (origin minepi.com), relative fetch hits Pi — use backend URL. */
+export function getApiBase(): string {
+  if (typeof window === "undefined") return "";
+  const origin = window.location.origin;
+  if (origin.includes("minepi.com")) {
+    const base = process.env.NEXT_PUBLIC_APP_URL;
+    return base ? base.replace(/\/$/, "") : "";
+  }
+  return "";
+}
+
 export function isPiBrowser(): boolean {
   if (typeof window === "undefined") return false;
   return typeof window.Pi !== "undefined";
@@ -68,7 +79,8 @@ export async function ensurePaymentReady(): Promise<void> {
     async (incompletePayment) => {
       console.warn("[Supapi] Incomplete payment found during payment auth:", incompletePayment.identifier);
       try {
-        await fetch("/api/payments/incomplete", {
+        const base = getApiBase();
+        await fetch(`${base || ""}/api/payments/incomplete`, {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify({ payment: incompletePayment }),

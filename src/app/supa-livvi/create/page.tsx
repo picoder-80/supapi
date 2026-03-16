@@ -196,7 +196,7 @@ export default function CreateLivviPost() {
           <div className={styles.sectionLabel}>📍 Location <span className={styles.hint}>(optional)</span></div>
           <input
             className={styles.locationInput}
-            placeholder="e.g. Kuala Lumpur, Malaysia"
+            placeholder="e.g. Los Angeles, United States"
             value={location}
             onChange={e => setLocation(e.target.value)}
             maxLength={80}

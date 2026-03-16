@@ -5,11 +5,11 @@
  *   npm run ai:health
  *
  * Optional env:
- *   AI_HEALTH_URL   (default: http://localhost:3000/api/market/ai/health)
+ *   AI_HEALTH_URL   (default: http://localhost:3000/api/supamarket/ai/health)
  *   CRON_SECRET     (used as x-cron-key header)
  */
 
-const url = process.env.AI_HEALTH_URL ?? "http://localhost:3000/api/market/ai/health";
+const url = process.env.AI_HEALTH_URL ?? "http://localhost:3000/api/supamarket/ai/health";
 const secret = process.env.CRON_SECRET ?? "";
 
 async function main() {

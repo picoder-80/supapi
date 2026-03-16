@@ -1,0 +1,31 @@
+.page { padding: var(--space-6); padding-bottom: 90px; }
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-6); }
+.backBtn { background: none; border: none; font-size: 14px; cursor: pointer; color: var(--color-primary); }
+.title { font-size: 20px; font-weight: 700; }
+.form { max-width: 480px; }
+.field { margin-bottom: var(--space-4); }
+.field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: var(--space-1); }
+.field input, .field textarea, .field select {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+.error { color: var(--color-red); font-size: 13px; margin-bottom: var(--space-3); }
+.submitBtn {
+  width: 100%;
+  padding: var(--space-3);
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: var(--space-4);
+}
+.submitBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+.authWall { text-align: center; padding: var(--space-12); }
+.authIcon { font-size: 48px; margin-bottom: var(--space-4); }
+.authTitle { font-size: 18px; margin-bottom: var(--space-4); }
+.authBtn { padding: var(--space-3) var(--space-6); background: var(--color-primary); color: white; border-radius: var(--radius-md); cursor: pointer; }

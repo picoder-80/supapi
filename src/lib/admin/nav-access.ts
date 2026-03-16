@@ -6,9 +6,10 @@ const NAV_PERMISSION_RULES: Array<{ prefix: string; permission: AdminPermission 
   { prefix: "/admin/sc-wallet", permission: "admin.sc_wallet.read" },
   { prefix: "/admin/email-list", permission: "admin.email_list.read" },
   { prefix: "/admin/users", permission: "admin.users.read" },
-  { prefix: "/admin/market", permission: "admin.market.read" },
+  { prefix: "/admin/supamarket", permission: "admin.market.read" },
   { prefix: "/admin/platforms/referral", permission: "admin.referral.read" },
   { prefix: "/admin/platforms/locator", permission: "admin.locator.read" },
+  { prefix: "/admin/platforms/supascrow", permission: "admin.supascrow.read" },
 ];
 
 export function canAccessAdminHref(role: string | null | undefined, href: string): boolean {

@@ -11,7 +11,7 @@ const CATEGORIES = [
   { key: "retail",    label: "Retail",    emoji: "🛍️" },
   { key: "services",  label: "Services",  emoji: "🔧" },
   { key: "online",    label: "Online",    emoji: "💻" },
-  { key: "stay",      label: "Stay",      emoji: "🏡" },
+  { key: "stay",      label: "SupaStay",  emoji: "🏡" },
   { key: "transport", label: "Transport", emoji: "🚗" },
   { key: "other",     label: "Other",     emoji: "📍" },
 ];

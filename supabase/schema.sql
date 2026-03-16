@@ -18,11 +18,18 @@ CREATE TABLE users (
                   CHECK (role IN ('pioneer','seller','instructor','host','admin')),
   kyc_status      TEXT NOT NULL DEFAULT 'unverified'
                   CHECK (kyc_status IN ('unverified','pending','verified')),
+  wallet_address  TEXT,
+  wallet_verified BOOLEAN NOT NULL DEFAULT FALSE,
+  wallet_verified_at TIMESTAMPTZ,
+  kyc_self_declared BOOLEAN NOT NULL DEFAULT FALSE,
+  bio             TEXT,
+  cover_url       TEXT,
   pi_balance_pending DECIMAL(18,7) NOT NULL DEFAULT 0,
   referral_code   TEXT UNIQUE NOT NULL,
   referred_by     UUID REFERENCES users(id),
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_seen       TIMESTAMPTZ
 );
 
 -- Marketplace listings (more detailed, aligned with src/app/api/market/**)
@@ -232,6 +239,33 @@ CREATE TABLE referrals (
 );
 
 CREATE INDEX idx_referrals_referrer  ON referrals(referrer_id);
+
+-- ── STATUS POSTS (Newsfeed status updates) ───────────────────
+CREATE TABLE status_posts (
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  body       TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_status_posts_user_id ON status_posts(user_id);
+CREATE INDEX idx_status_posts_created_at ON status_posts(created_at DESC);
+
+-- ── LIVE SESSIONS ───────────────────────────────────────────
+CREATE TABLE live_sessions (
+  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title        TEXT,
+  stream_url   TEXT,
+  status       TEXT NOT NULL DEFAULT 'live'
+                CHECK (status IN ('live', 'ended')),
+  viewer_count INT NOT NULL DEFAULT 0,
+  started_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ended_at     TIMESTAMPTZ,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_live_sessions_user ON live_sessions(user_id);
+CREATE INDEX idx_live_sessions_status ON live_sessions(status);
+CREATE INDEX idx_live_sessions_started ON live_sessions(started_at DESC);
 
 -- ── REVIEWS ─────────────────────────────────────────────────
 CREATE TABLE reviews (

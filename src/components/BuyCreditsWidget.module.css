@@ -1,0 +1,251 @@
+/* BuyCreditsWidget — reusable "Buy Supapi Credits" for any page */
+
+.root {
+  margin-top: 8px;
+}
+
+.root.compact .packageGrid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.root.compact .packageSc {
+  font-size: 20px;
+}
+
+.root.compact .packageCard {
+  padding: 12px 8px;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.piRateBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+}
+
+.piRateDot {
+  width: 6px;
+  height: 6px;
+  background: #27ae60;
+  border-radius: 50%;
+  animation: buyCreditsPulse 2s infinite;
+}
+
+@keyframes buyCreditsPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.packageGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.packageCard {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 16px;
+  padding: 16px 12px;
+  text-align: center;
+  transition: all 0.2s;
+  position: relative;
+  color: inherit;
+  display: block;
+  width: 100%;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.packageCard:hover {
+  border-color: var(--color-gold);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(245, 166, 35, 0.15);
+}
+
+.packageCardPopular {
+  border-color: rgba(245, 166, 35, 0.5);
+  background: rgba(245, 166, 35, 0.06);
+}
+
+.packagePopularBadge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-gold);
+  color: #1A1A2E;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.packageSc {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--color-text);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.packageScLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-gold);
+  margin-bottom: 8px;
+}
+
+.packageUsd {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.packagePi {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-text);
+  margin-bottom: 10px;
+}
+
+.packageBtn {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  background: linear-gradient(135deg, var(--color-gold), #D4891A);
+  color: #1A1A2E;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: inherit;
+}
+
+.packageNote {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-top: 10px;
+  background: rgba(245, 166, 35, 0.08);
+  border: 1px solid rgba(245, 166, 35, 0.2);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+/* Modal */
+.buyModal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+
+.buyModalBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.buyModalSheet {
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  padding: 24px;
+  position: relative;
+  z-index: 1;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+.buyModalHandle {
+  width: 40px;
+  height: 4px;
+  background: #E2E8F0;
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+.buyModalTitle {
+  font-size: 18px;
+  font-weight: 900;
+  color: #1A1A2E;
+  margin-bottom: 4px;
+}
+
+.buyModalSub {
+  font-size: 13px;
+  color: #718096;
+  margin-bottom: 20px;
+}
+
+.buyModalInfo {
+  background: #F8F9FD;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.buyModalRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.buyModalRowLabel {
+  color: #718096;
+}
+
+.buyModalRowVal {
+  font-weight: 700;
+  color: #1A1A2E;
+}
+
+.buyModalRowValGold {
+  font-weight: 800;
+  color: #F5A623;
+}
+
+.buyModalConfirmBtn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #1A1A2E, #0F3460);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: 10px;
+}
+
+.buyModalConfirmBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.buyModalCancelBtn {
+  width: 100%;
+  padding: 12px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #718096;
+  cursor: pointer;
+  font-family: inherit;
+}

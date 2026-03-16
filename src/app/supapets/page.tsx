@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useRouter } from "next/navigation";
+import BuyCreditsWidget from "@/components/BuyCreditsWidget";
 import styles from "./page.module.css";
 
 type PetCatalogItem = {
@@ -90,6 +91,11 @@ const INTRO_LOOP = [
 ];
 const SKELETON_ITEMS = [1, 2, 3, 4];
 
+const PET_KEY_EMOJI: Record<string, string> = {
+  fluffy: "🐱", barky: "🐶", hoppy: "🐰", scaly: "🐉", chirpy: "🐦",
+  slither: "🐍", fins: "🐟", horn: "🦄", spot: "🐕", pebble: "🐢",
+};
+
 function timeLeft(targetIso: string) {
   const ms = new Date(targetIso).getTime() - Date.now();
   if (ms <= 0) return "Ready to hatch";
@@ -104,6 +110,36 @@ function statClass(value: number) {
   return styles.statBad;
 }
 
+/** Growth stage: label + progress to next stage (level 5 = Teen, level 10 = Adult) */
+function growthStageInfo(level: number, stage: string, xp: number): { label: string; nextLabel: string; progressPct: number; progressText: string } {
+  const l = Math.max(1, level);
+  const xpInLevel = Math.min(100, Math.max(0, xp));
+  if (stage === "baby" || l < 5) {
+    const totalXpToTeen = 400;
+    const currentXp = (l - 1) * 100 + xpInLevel;
+    return {
+      label: "Baby",
+      nextLabel: "Teen (Level 5)",
+      progressPct: l >= 5 ? 100 : (currentXp / totalXpToTeen) * 100,
+      progressText: l >= 5 ? "Ready for Teen!" : `Level ${l}/5 to Teen`,
+    };
+  }
+  if (stage === "teen" || l < 10) {
+    return {
+      label: "Teen",
+      nextLabel: "Adult (Level 10)",
+      progressPct: l >= 10 ? 100 : ((l - 5) * 100 + xpInLevel) / 500 * 100,
+      progressText: l >= 10 ? "Full growth!" : `Level ${l}/10 to Adult`,
+    };
+  }
+  return {
+    label: "Adult",
+    nextLabel: "—",
+    progressPct: 100,
+    progressText: "Full growth",
+  };
+}
+
 export default function SupaPetsPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -113,7 +149,6 @@ export default function SupaPetsPage() {
   const [msg, setMsg] = useState("");
   const [data, setData] = useState<SupaPetsPayload | null>(null);
   const [miniGamePetId, setMiniGamePetId] = useState("");
-
   const token = () => (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "");
 
   const fetchData = useCallback(async () => {
@@ -528,11 +563,22 @@ export default function SupaPetsPage() {
           <div className={styles.empty}>No pets yet. Hatch your first egg above.</div>
         ) : (
           <div className={styles.grid}>
-            {(data?.pets ?? []).map((pet) => (
+            {(data?.pets ?? []).map((pet) => {
+              const growth = pet.is_hatched ? growthStageInfo(pet.level, pet.stage, pet.xp) : null;
+              const progressPct = growth?.progressPct ?? 0;
+              const stageClass = pet.is_hatched ? styles[`petVisualStage_${pet.stage}`] : styles.petVisualStage_egg;
+              const emoji = pet.is_hatched ? (PET_KEY_EMOJI[pet.pet_key] ?? "🐾") : "🥚";
+              return (
               <div key={pet.id} className={styles.card}>
+                {/* Realtime visual growth: emoji scales by stage, ring shows progress to next */}
+                <div className={styles.petVisualWrap} style={{ ["--growthDeg" as string]: `${(progressPct / 100) * 360}deg` }}>
+                  <div className={styles.petVisualInner}>
+                    <span className={`${styles.petVisualEmoji} ${stageClass}`}>{emoji}</span>
+                  </div>
+                </div>
                 <div className={styles.cardHead}>
                   <div className={styles.petName}>{pet.pet_name}</div>
-                  <div className={styles.stageBadge}>{pet.stage.toUpperCase()}</div>
+                  <div className={styles.stageBadge}>{pet.stage.charAt(0).toUpperCase() + pet.stage.slice(1)}</div>
                 </div>
 
                 {!pet.is_hatched ? (
@@ -546,6 +592,25 @@ export default function SupaPetsPage() {
                       <span>Level {pet.level}</span>
                       <span>XP {pet.xp}/100</span>
                     </div>
+
+                    {/* Growth: current stage + progress to next */}
+                    {(() => {
+                      const g = growthStageInfo(pet.level, pet.stage, pet.xp);
+                      return (
+                        <div className={styles.growthBlock}>
+                          <div className={styles.growthHeader}>
+                            <span className={styles.growthLabel}>🌱 Growth</span>
+                            <span className={styles.growthStage}>{g.label}</span>
+                          </div>
+                          <div className={styles.growthProgressWrap}>
+                            <div className={styles.growthProgressBar}>
+                              <i style={{ width: `${g.progressPct}%` }} />
+                            </div>
+                            <div className={styles.growthProgressText}>{g.progressText}</div>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     <div className={styles.statBlock}>
                       <div className={styles.statRow}>
@@ -617,7 +682,8 @@ export default function SupaPetsPage() {
                   </>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </section>
@@ -637,6 +703,13 @@ export default function SupaPetsPage() {
           </div>
         )}
       </section>
+
+      <BuyCreditsWidget
+        onSuccess={fetchData}
+        onMessage={setMsg}
+        showTitle={true}
+        className={styles.buySection}
+      />
     </div>
   );
 }

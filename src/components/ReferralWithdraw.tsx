@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { ensurePaymentReady, createPiPayment, isPiBrowser } from "@/lib/pi/sdk";
 import styles from "./ReferralWithdraw.module.css";
 
 interface WithdrawData {
@@ -75,7 +76,7 @@ export default function ReferralWithdraw() {
 
   const handleWithdraw = async () => {
     if (!data || data.claimable_pi <= 0) return;
-    if (!window.Pi) {
+    if (!isPiBrowser()) {
       setErrorMsg("Pi Browser not detected. Please open this app inside Pi Browser.");
       setStep("error");
       return;
@@ -86,12 +87,16 @@ export default function ReferralWithdraw() {
     const amount = Math.floor(data.claimable_pi * 1000) / 1000; // round down to 3dp
     const memo   = `Supapi referral commission withdrawal`;
 
-    window.Pi.createPayment(
-      {
-        amount,
-        memo,
-        metadata: { type: "referral_withdrawal" },
-      },
+    try {
+      await ensurePaymentReady();
+    } catch (e) {
+      setErrorMsg("Please sign in with Pi (payments scope) to withdraw.");
+      setStep("error");
+      return;
+    }
+
+    createPiPayment(
+      { amount, memo, metadata: { type: "referral_withdrawal" } },
       {
         onReadyForServerApproval: async (paymentId: string) => {
           // Register with our server

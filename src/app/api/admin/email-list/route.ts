@@ -32,17 +32,18 @@ export async function GET(req: NextRequest) {
   const limit = Number.isFinite(limitRaw) ? Math.min(500, Math.max(1, Math.floor(limitRaw))) : 100;
   const format = String(req.nextUrl.searchParams.get("format") ?? "").trim().toLowerCase();
   const includeUnverified = String(req.nextUrl.searchParams.get("include_unverified") ?? "false").trim() === "true";
+  const includeAllRoles = String(req.nextUrl.searchParams.get("include_all_roles") ?? "false").trim() === "true";
 
   try {
     const supabase = await createAdminClient();
     let query = supabase
       .from("users")
       .select("id, username, display_name, email, role, kyc_status, created_at", { count: "exact" })
-      .eq("role", "pioneer")
       .not("email", "is", null)
       .neq("email", "")
       .order("created_at", { ascending: false });
 
+    if (!includeAllRoles) query = query.eq("role", "pioneer");
     if (!includeUnverified) query = query.eq("kyc_status", "verified");
     if (q) query = query.or(`username.ilike.%${q}%,display_name.ilike.%${q}%,email.ilike.%${q}%`);
 
@@ -72,7 +73,7 @@ export async function GET(req: NextRequest) {
       return new NextResponse(csv, {
         headers: {
           "Content-Type": "text/csv; charset=utf-8",
-          "Content-Disposition": `attachment; filename="pioneer-email-list-${Date.now()}.csv"`,
+          "Content-Disposition": `attachment; filename="pioneer-email-broadcast-${Date.now()}.csv"`,
         },
       });
     }

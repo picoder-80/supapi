@@ -1,0 +1,48 @@
+---
+description: Disputes must use the shared AI system (analyze, auto-resolve, admin suggestion)
+alwaysApply: true
+---
+
+# Dispute + AI Integration
+
+**Rule:** For any dispute flow in any platform/app in this codebase, integrate with the existing AI system. Do not add dispute handling without AI.
+
+## What to do
+
+1. **When adding or changing dispute logic**
+   - Use `analyzeDispute()` from `@/lib/market/ai` (same module used by Marketplace and SupaScrow).
+   - Store AI result on the dispute record: `ai_decision` (refund | release | manual_review), `ai_reasoning`, `ai_confidence`.
+   - Apply auto-resolve when confidence and amount thresholds are met (reuse or mirror `MARKET_AI_*` / `SUPASCROW_AI_*` style env and logic).
+
+2. **Admin / solo-dev experience**
+   - In admin dispute views, show suggested resolution (do not label as AI in UI) (decision + confidence + reasoning).
+   - Provide a one-click “Apply suggestion” (or equivalent) so the human can accept the AI decision without re-reading every case.
+
+3. **Reference implementations**
+   - Marketplace: `src/app/api/market/dispute/route.ts` (open dispute → AI analyze → optional auto-resolve).
+   - SupaScrow: `src/app/api/supascrow/route.ts` (action `dispute` → `analyzeDispute` → update dispute + optional auto-resolve); admin panel shows AI suggestion and “Apply suggestion”.
+
+## Wording (all platforms)
+
+Use the same neutral wording everywhere — Market, SupaScrow, and any future platform with disputes. **Never** show "AI", "AI Reply", "AI Confidence", "AI Support", etc. to users.
+
+| Use (neutral) | Avoid |
+|---------------|--------|
+| Suggested resolution | AI decision / AI: |
+| Apply suggestion | Apply AI / Accept AI |
+| Suggested reply | AI Reply: |
+| Confidence: X% | AI Confidence: |
+| Support Assistant | AI Support Assistant |
+| Get support routing / Checking... | Get AI Support Triage / Analyzing... |
+| Our team will review and resolve it shortly. | Our AI will review... |
+| Submitting... | AI Reviewing... |
+| fair / secure dispute resolution | AI dispute resolution |
+| Dispute resolution (hero/label) | Dispute AI / AI |
+
+Reference: Market order page, Market admin disputes tab, SupaScrow public + admin, Market landing hero.
+
+## Quick check
+
+- New or modified dispute flows call `analyzeDispute()` and persist `ai_decision` / `ai_reasoning` / `ai_confidence`.
+- Auto-resolve is gated by confidence and amount (with env-configurable limits).
+- Admin UI shows suggested resolution and one-click apply — **never label as "AI"** in user- or buyer-facing copy; use the wording table above.

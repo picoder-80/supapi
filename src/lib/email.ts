@@ -55,10 +55,10 @@ export async function sendWelcomeEmail(email: string, username: string) {
           <p>Your Supapi account has been successfully created.</p>
           <p>Start exploring our platform:</p>
           <ul>
-            <li>🛍️ <strong>Marketplace</strong> — Buy & sell items</li>
-            <li>💼 <strong>Gigs</strong> — Offer your services</li>
-            <li>📚 <strong>Academy</strong> — Learn & earn</li>
-            <li>🎮 <strong>Arcade</strong> — Play & win Pi</li>
+            <li>🛍️ <strong>SupaMarket</strong> — Buy & sell items</li>
+            <li>💼 <strong>SupaSkil</strong> — Offer your services</li>
+            <li>📚 <strong>SupaDemy</strong> — Learn & earn</li>
+            <li>🎮 <strong>SupaNova</strong> — Play & win Pi</li>
           </ul>
           <a href="${process.env.NEXT_PUBLIC_APP_URL}"
              style="display: inline-block; background: #F5A623; color: #1A1A2E;

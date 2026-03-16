@@ -89,6 +89,31 @@
 .txEarn { color:#27ae60; }
 .txSpend { color:#e74c3c; }
 
+.pager {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:10px 0 4px;
+}
+.pagerBtn {
+  padding:4px 10px;
+  font-size:11px;
+  border-radius:999px;
+  border:1px solid #E2E8F0;
+  background:#fff;
+  color:#1A1A2E;
+  cursor:pointer;
+}
+.pagerBtn:disabled {
+  opacity:0.5;
+  cursor:not-allowed;
+}
+.pagerInfo {
+  font-size:11px;
+  color:#718096;
+}
+
 /* Empty */
 .emptyHistory { text-align:center; padding:40px 20px; background:#fff; border:1.5px solid #E2E8F0; border-radius:16px; }
 .emptyIcon { font-size:36px; margin-bottom:8px; }

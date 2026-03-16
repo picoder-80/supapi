@@ -53,6 +53,10 @@
 .orderRight { display:flex; align-items:center; gap:8px; flex-shrink:0; }
 .orderAmt { font-size:13px; font-weight:700; color:var(--color-gold); }
 .badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
+.pager { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:12px; }
+.pagerBtn { padding:6px 12px; font-size:11px; border-radius:8px; border:1px solid var(--color-border); background:var(--color-surface); color:var(--color-text); cursor:pointer; }
+.pagerBtn:disabled { opacity:0.5; cursor:not-allowed; }
+.pagerInfo { font-size:11px; color:var(--color-text-muted); }
 
 .statusNote { background:rgba(39,174,96,0.06); border:1px solid rgba(39,174,96,0.2); border-radius:12px; padding:14px 16px; font-size:13px; color:var(--color-text-muted); }
 .statusLink { color:var(--color-gold); font-weight:700; }

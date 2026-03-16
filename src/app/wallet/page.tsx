@@ -141,14 +141,16 @@ export default function WalletPage() {
   const { user } = useAuth();
   const router   = useRouter();
 
-  const [activeTab, setActiveTab]     = useState<"pi" | "sc" | "earnings">("pi");
-  const [data, setData]               = useState<any>(null);
-  const [loading, setLoading]         = useState(true);
+  const [activeTab, setActiveTab]       = useState<"pi" | "sc" | "earnings">("pi");
+  const [data, setData]                 = useState<any>(null);
+  const [loading, setLoading]           = useState(true);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawLoading, setWithdrawLoading] = useState(false);
-  const [piBalance, setPiBalance]     = useState<number | null>(null);
-  const [piLoading, setPiLoading]     = useState(false);
-  const [toast, setToast]             = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const [piBalance, setPiBalance]       = useState<number | null>(null);
+  const [piLoading, setPiLoading]       = useState(false);
+  const [toast, setToast]               = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const [scPage, setScPage]             = useState(1);
+  const [earnPage, setEarnPage]         = useState(1);
 
   const token = () => typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "";
 
@@ -216,6 +218,15 @@ export default function WalletPage() {
   const scTxns:         ScTxn[]        = data?.scTransactions ?? [];
   const earnTxns:       EarnTxn[]      = data?.earningsTransactions ?? [];
   const referrals:      Referral[]     = data?.referrals ?? [];
+
+  const SC_PAGE_SIZE = 10;
+  const EARN_PAGE_SIZE = 10;
+  const scTotalPages = Math.max(1, Math.ceil(scTxns.length / SC_PAGE_SIZE));
+  const earnTotalPages = Math.max(1, Math.ceil(earnTxns.length / EARN_PAGE_SIZE));
+  const scPageSafe = Math.min(scPage, scTotalPages);
+  const earnPageSafe = Math.min(earnPage, earnTotalPages);
+  const scPageItems = scTxns.slice((scPageSafe - 1) * SC_PAGE_SIZE, scPageSafe * SC_PAGE_SIZE);
+  const earnPageItems = earnTxns.slice((earnPageSafe - 1) * EARN_PAGE_SIZE, earnPageSafe * EARN_PAGE_SIZE);
 
   if (!user) return null;
 
@@ -309,11 +320,11 @@ export default function WalletPage() {
             <div className={styles.sectionTitle}>Quick Actions</div>
             <div className={styles.quickActions}>
               {[
-                { href: "/market",          icon: "🛍️", label: "Marketplace"   },
-                { href: "/endoro",          icon: "🛞", label: "Rent a Car"    },
-                { href: "/domus",           icon: "🏠", label: "Property"      },
-                { href: "/bulkhub",         icon: "📦", label: "BulkHub"       },
-                { href: "/machina-market",  icon: "🚗", label: "MachinaMkt"    },
+                { href: "/supamarket",          icon: "🛍️", label: "SupaMarket"    },
+                { href: "/supaendoro",          icon: "🛞", label: "Rent a Car"    },
+                { href: "/supadomus",           icon: "🏠", label: "Property"      },
+{ href: "/supabulk",         icon: "📦", label: "SupaBulk"      },
+  { href: "/supaauto",  icon: "🚗", label: "SupaAuto"     },
                 { href: "/rewards",         icon: "💎", label: "SC Rewards"    },
               ].map(a => (
                 <Link key={a.href} href={a.href} className={styles.quickAction}>
@@ -410,10 +421,10 @@ export default function WalletPage() {
               {[
                 { icon: "📅", label: "Daily Check-in",        sc: "+10 SC"  },
                 { icon: "🔥", label: "7-Day Streak Bonus",    sc: "+50 SC"  },
-                { icon: "🏠", label: "List on Domus",         sc: "+150 SC" },
-                { icon: "🚗", label: "List on MachinaMarket", sc: "+150 SC" },
-                { icon: "📦", label: "BulkHub Supplier",      sc: "+100 SC" },
-                { icon: "🛞", label: "List on Endoro",        sc: "+150 SC" },
+{ icon: "🏠", label: "List on SupaDomus",   sc: "+150 SC" },
+    { icon: "🚗", label: "List on SupaAuto",  sc: "+150 SC" },
+    { icon: "📦", label: "SupaBulk Supplier", sc: "+100 SC" },
+    { icon: "🛞", label: "List on SupaEndoro", sc: "+150 SC" },
                 { icon: "📝", label: "Post on SupaLivvi",     sc: "+20 SC"  },
                 { icon: "🧵", label: "Post on SupaSaylo",     sc: "+15 SC"  },
               ].map((w, i) => (
@@ -435,7 +446,7 @@ export default function WalletPage() {
               <div className={styles.emptyTxn}>No transactions yet</div>
             ) : (
               <div className={styles.txnList}>
-                {scTxns.map((txn: ScTxn) => {
+                {scPageItems.map((txn: ScTxn) => {
                   const meta = SC_TYPE_META[txn.type] ?? SC_TYPE_META.default;
                   const isSpend = txn.type === "spend";
                   return (
@@ -456,6 +467,29 @@ export default function WalletPage() {
                     </div>
                   );
                 })}
+                {scTotalPages > 1 && (
+                  <div className={styles.pager}>
+                    <button
+                      type="button"
+                      className={styles.pagerBtn}
+                      disabled={scPageSafe === 1}
+                      onClick={() => setScPage((p) => Math.max(1, p - 1))}
+                    >
+                      ← Prev
+                    </button>
+                    <span className={styles.pagerInfo}>
+                      Page {scPageSafe} of {scTotalPages}
+                    </span>
+                    <button
+                      type="button"
+                      className={styles.pagerBtn}
+                      disabled={scPageSafe === scTotalPages}
+                      onClick={() => setScPage((p) => Math.min(scTotalPages, p + 1))}
+                    >
+                      Next →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -518,11 +552,11 @@ export default function WalletPage() {
             <div className={styles.sourcesList}>
               {[
                 { type: "referral",         icon: "👥", label: "Referral Bonuses",        desc: "Earn Pi when your referrals join & use Supapi" },
-                { type: "endoro_host",      icon: "🛞", label: "Endoro Host Payouts",      desc: "Earn rental fees from your vehicles" },
+                { type: "endoro_host",      icon: "🛞", label: "SupaEndoro Host Payouts", desc: "Earn rental fees from your vehicles" },
                 { type: "gig_payout",       icon: "💼", label: "Gig Job Completions",      desc: "Pi released from escrow when job is done" },
-                { type: "domus_rental",     icon: "🏠", label: "Domus Property Rentals",   desc: "Pi rental payments from tenants" },
-                { type: "bulkhub_supplier", icon: "📦", label: "BulkHub Order Payouts",    desc: "Pi from wholesale orders completed" },
-                { type: "machina_deal",     icon: "🚗", label: "MachinaMarket Deals",      desc: "Pi from vehicle sale completions" },
+{ type: "domus_rental",     icon: "🏠", label: "SupaDomus Property Rentals", desc: "Pi rental payments from tenants" },
+    { type: "bulkhub_supplier", icon: "📦", label: "SupaBulk Order Payouts",   desc: "Pi from wholesale orders completed" },
+    { type: "machina_deal",     icon: "🚗", label: "SupaAuto Deals",          desc: "Pi from vehicle sale completions" },
                 { type: "gift_split",       icon: "🎁", label: "Gift Splits (70%)",        desc: "Your share of SC gifts received as Pi" },
                 { type: "tip",              icon: "💌", label: "Creator Tips",             desc: "Tips from SupaLivvi & SupaSaylo content" },
               ].map(src => (
@@ -587,17 +621,17 @@ export default function WalletPage() {
                 <div className={styles.emptyEarningsIcon}>🏦</div>
                 <div className={styles.emptyEarningsTitle}>No earnings yet</div>
                 <div className={styles.emptyEarningsDesc}>
-                  Start earning Pi by hosting on Endoro, listing on BulkHub, completing gigs, or referring friends!
+                  Start earning Pi by hosting on SupaEndoro, listing on SupaBulk, completing gigs, or referring friends!
                 </div>
                 <div className={styles.emptyEarningsCtas}>
-                  <Link href="/endoro/host"   className={styles.emptyEarningsBtn}>🚗 Host on Endoro</Link>
+                  <Link href="/supaendoro/host"   className={styles.emptyEarningsBtn}>🚗 Host on SupaEndoro</Link>
                   <Link href="/referral"      className={styles.emptyEarningsBtn}>👥 Refer Friends</Link>
-                  <Link href="/gigs"          className={styles.emptyEarningsBtn}>💼 Find Gigs</Link>
+                  <Link href="/gigs"          className={styles.emptyEarningsBtn}>💼 Find SupaSkil</Link>
                 </div>
               </div>
             ) : (
               <div className={styles.txnList}>
-                {earnTxns.map((txn: EarnTxn) => {
+                {earnPageItems.map((txn: EarnTxn) => {
                   const meta = EARN_TYPE_META[txn.type] ?? EARN_TYPE_META.default;
                   const isWithdrawal = txn.type === "withdrawal";
                   return (
@@ -620,6 +654,29 @@ export default function WalletPage() {
                     </div>
                   );
                 })}
+                {earnTotalPages > 1 && (
+                  <div className={styles.pager}>
+                    <button
+                      type="button"
+                      className={styles.pagerBtn}
+                      disabled={earnPageSafe === 1}
+                      onClick={() => setEarnPage((p) => Math.max(1, p - 1))}
+                    >
+                      ← Prev
+                    </button>
+                    <span className={styles.pagerInfo}>
+                      Page {earnPageSafe} of {earnTotalPages}
+                    </span>
+                    <button
+                      type="button"
+                      className={styles.pagerBtn}
+                      disabled={earnPageSafe === earnTotalPages}
+                      onClick={() => setEarnPage((p) => Math.min(earnTotalPages, p + 1))}
+                    >
+                      Next →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     .insert({
       owner_id: user.userId,
       name, category, description, address, city, state,
-      country: country || "Malaysia",
+      country: country || "United States",
       lat: lat || null, lng: lng || null,
       phone, website, pi_wallet, image_url, images: body.images ?? [],
       status: "pending",

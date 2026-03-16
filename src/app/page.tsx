@@ -6,31 +6,72 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 
-const modules = [
-  { href: "/about",       emoji: "ℹ️",  label: "About Us",      desc: "Our story, mission & vision"      },
-  { href: "/myspace",     emoji: "🪐",  label: "MySpace",       desc: "Your personal Pi profile"         },
-  { href: "/market",      emoji: "🛍️",  label: "Marketplace",  desc: "Buy & sell items"                },
-  { href: "/gigs",        emoji: "💼",  label: "Gigs",          desc: "Freelance services"               },
-  { href: "/academy",     emoji: "📚",  label: "Academy",       desc: "Learn & teach"                    },
-  { href: "/stay",        emoji: "🏠",  label: "Stay",          desc: "Rent accommodations"              },
-  { href: "/arcade",      emoji: "🎮",  label: "Arcade",        desc: "Play & earn Pi"                   },
-  { href: "/newsfeed",   emoji: "📰",  label: "Newsfeed",     desc: "Posts from pioneers you follow"               },
-  { href: "/wallet",      emoji: "💰",  label: "Wallet",        desc: "Transactions & history"           },
-  { href: "/referral",    emoji: "🤝",  label: "Referral",      desc: "Invite & earn Pi"                 },
-  { href: "/locator",     emoji: "📍",  label: "Locator",       desc: "Find Pi-friendly businesses"      },
-  { href: "/jobs",        emoji: "🧑‍💻",  label: "Jobs",          desc: "Hire & get hired"                 },
-  { href: "/rewards",     emoji: "🎁",  label: "Daily Rewards", desc: "Check-in & earn Pi daily"         },
-  { href: "/reels",     emoji: "🎬",  label: "Reels",       desc: "Short videos from pioneers"              },
-  { href: "/pi-value",    emoji: "📈",  label: "Market Value",  desc: "Pi Live Market Data & Pi USD Converter"   },
-  { href: "/classifieds", emoji: "📋",  label: "Classifieds",   desc: "Promote services & businesses"    },
-  { href: "/pioneers",    emoji: "🌍",  label: "I Am a Pioneer", desc: "Pin yourself & find nearby Pioneers" },
-  { href: "/supa-livvi",  emoji: "✨",  label: "SupaLivvi",      desc: "Pi Lifestyle & Discovery" },
-  { href: "/supa-saylo",  emoji: "🧵",  label: "SupaSaylo",      desc: "Pi Conversations & Threads" },
-  { href: "/bulkhub",          emoji: "📦",  label: "BulkHub",         desc: "Pi B2B Wholesale Marketplace"  },
-  { href: "/machina-market", emoji: "🚗",  label: "MachinaMarket",   desc: "Pi Automotive Marketplace"     },
-  { href: "/domus",          emoji: "🏠",  label: "Domus",           desc: "Pi Property Marketplace"        },
-  { href: "/endoro",         emoji: "🛞",  label: "Endoro",          desc: "Pi Peer-to-Peer Vehicle Rental"  },
-  { href: "/supapets",       emoji: "🐾",  label: "SupaPets",        desc: "Virtual pets, daily care, SC rewards" },
+type ModuleItem = { href: string; emoji: string; label: string; desc: string };
+
+const platformCategories: { id: string; title: string; modules: ModuleItem[] }[] = [
+  {
+    id: "buy-sell",
+    title: "Buy & Sell",
+    modules: [
+      { href: "/supamarket",        emoji: "🛍️", label: "SupaMarket",   desc: "Buy & sell items" },
+      { href: "/supaskil",          emoji: "💼", label: "SupaSkil",     desc: "Freelance services" },
+      { href: "/supabulk",       emoji: "📦", label: "SupaBulk",      desc: "Pi B2B Wholesale Marketplace" },
+      { href: "/supaauto", emoji: "🚗", label: "SupaAuto",      desc: "Pi Automotive Marketplace" },
+      { href: "/supadomus",         emoji: "🏠", label: "SupaDomus",     desc: "Pi Property Marketplace" },
+      { href: "/supasifieds",   emoji: "📋", label: "Supasifieds",   desc: "Promote services & businesses" },
+      { href: "/supascrow",     emoji: "🛡️", label: "SupaScrow",     desc: "Secure Pi escrow for safe trading" },
+    ],
+  },
+  {
+    id: "social",
+    title: "Social & Feed",
+    modules: [
+      { href: "/social-feeds", emoji: "📱", label: "SupaFeeds",    desc: "Post, Reels & Live in one combined feed" },
+      { href: "/newsfeed",     emoji: "📰", label: "Newsfeed",     desc: "Status updates from pioneers you follow" },
+      { href: "/reels",        emoji: "🎬", label: "Reels",        desc: "Short videos from pioneers" },
+      { href: "/live",         emoji: "🔴", label: "Live",         desc: "Live streams from pioneers you follow" },
+      { href: "/supa-livvi",   emoji: "✨", label: "SupaLivvi",   desc: "Pi Lifestyle & Discovery" },
+      { href: "/supa-saylo",   emoji: "🧵", label: "SupaSaylo",   desc: "Pi Conversations & Threads" },
+      { href: "/supaspace",      emoji: "🪐", label: "SupaSpace",    desc: "Your personal Pi profile" },
+    ],
+  },
+  {
+    id: "learn-play",
+    title: "Learn & Play",
+    modules: [
+      { href: "/supademy",  emoji: "📚", label: "SupaDemy",      desc: "Learn & teach" },
+      { href: "/supanova",   emoji: "🎮", label: "SupaNova",       desc: "Play & earn Pi" },
+      { href: "/rewards",  emoji: "🎁", label: "Daily Rewards", desc: "Check-in & earn Pi daily" },
+      { href: "/referral", emoji: "🤝", label: "Referral",       desc: "Invite & earn Pi" },
+      { href: "/supapets", emoji: "🐾", label: "SupaPets",      desc: "Virtual pets, daily care, SC rewards" },
+    ],
+  },
+  {
+    id: "stay-go",
+    title: "Stay & Go",
+    modules: [
+      { href: "/supastay",     emoji: "🏠", label: "SupaStay",      desc: "Rent accommodations" },
+      { href: "/supaendoro",   emoji: "🛞", label: "SupaEndoro",    desc: "Pi Peer-to-Peer Vehicle Rental" },
+      { href: "/locator",  emoji: "📍", label: "Locator",       desc: "Find Pi-friendly businesses" },
+      { href: "/pioneers", emoji: "🌍", label: "I Am a Pioneer", desc: "Pin yourself & find nearby Pioneers" },
+    ],
+  },
+  {
+    id: "work",
+    title: "Work",
+    modules: [
+      { href: "/supahiro", emoji: "🧑‍💻", label: "SupaHiro", desc: "Hire & get hired" },
+    ],
+  },
+  {
+    id: "wallet-tools",
+    title: "Wallet & Tools",
+    modules: [
+      { href: "/wallet",   emoji: "💰", label: "Wallet",       desc: "Transactions & history" },
+      { href: "/pi-value", emoji: "📈", label: "Market Value", desc: "Pi Live Market Data & Pi USD Converter" },
+      { href: "/about",    emoji: "ℹ️", label: "About Us",     desc: "Our story, mission & vision" },
+    ],
+  },
 ];
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
@@ -91,26 +132,51 @@ export default function HomePage() {
           The Pi Network Super App. One platform for everything you need in the Pi ecosystem.
         </p>
         <div className={styles.heroActions}>
-          <Link href="/market"   className={styles.btnPrimary}>Explore Now</Link>
+          <Link href="/supamarket"   className={styles.btnPrimary}>Explore Now</Link>
           <Link href="/referral" className={styles.btnOutline}>Earn Pi ↗</Link>
         </div>
       </section>
 
-      {/* Platforms */}
-      <section className={styles.modules}>
-        <div className="container">
-          <h2 className={styles.sectionTitle}>Our Platform</h2>
-          <div className={styles.grid}>
-            {modules.map((m) => (
-              <Link key={m.href} href={m.href} className={styles.card}>
-                <span className={styles.cardEmoji}>{m.emoji}</span>
-                <strong className={styles.cardLabel}>{m.label}</strong>
-                <span className={styles.cardDesc}>{m.desc}</span>
-              </Link>
-            ))}
+      {/* About Us teaser */}
+      <section className={styles.aboutTeaser}>
+        <div className={styles.aboutTeaserWrap}>
+          <div className={styles.aboutTeaserAccent} />
+          <div className={styles.aboutTeaserInner}>
+            <span className={styles.aboutTeaserLabel}>WHO WE ARE</span>
+            <h2 className={styles.aboutTeaserTitle}>More Than an App.<br />We Are Infrastructure.</h2>
+            <div className={styles.aboutTeaserBody}>
+              <p>
+                Supapi is a comprehensive, community-driven super app built exclusively for the Pi Network ecosystem. From the moment Pi Browser opens, Supapi puts the full power of Pi utility directly into the hands of every Pioneer — whether you are a seasoned miner, a small business owner, a freelancer, a student, or simply someone who believes in the promise of decentralised finance.
+              </p>
+              <p>
+                We are not just another app. We are the bridge between Pi coins sitting in wallets and real-world value being created, exchanged, and multiplied — every single day. We exist to answer one question that millions of Pioneers have asked since Day 1: <em className={styles.aboutQuote}>&ldquo;When can I actually use my Pi?&rdquo;</em> The answer is now. The answer is Supapi.
+              </p>
+            </div>
+            <Link href="/about" className={styles.aboutTeaserBtn}>
+              <span>Read more</span>
+              <span className={styles.aboutTeaserBtnArrow}>→</span>
+            </Link>
           </div>
         </div>
       </section>
+
+      {/* Platforms by category */}
+      {platformCategories.map((cat) => (
+        <section key={cat.id} className={styles.modules}>
+          <div className="container">
+            <h2 className={styles.sectionTitle}>{cat.title}</h2>
+            <div className={styles.grid}>
+              {cat.modules.map((m) => (
+                <Link key={m.href} href={m.href} className={styles.card}>
+                  <span className={styles.cardEmoji}>{m.emoji}</span>
+                  <strong className={styles.cardLabel}>{m.label}</strong>
+                  <span className={styles.cardDesc}>{m.desc}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      ))}
 
       {/* One Identity Banner */}
       <section className={styles.identity}>
@@ -130,20 +196,20 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
-            <Link href="/market" className={styles.identityBtn}>Get Started →</Link>
+            <Link href="/supamarket" className={styles.identityBtn}>Get Started →</Link>
           </div>
         </div>
       </section>
 
-      {/* ── Newsfeed ── */}
+      {/* ── SupaFeeds / Pioneer Discovery ── */}
       <section className={styles.newsfeed}>
         <div className="container">
           <div className={styles.feedHeader}>
             <div>
-              <h2 className={styles.sectionTitle} style={{ marginBottom: 4 }}>Pioneer Newsfeed</h2>
-              <p className={styles.feedSubtitle}>Posts from pioneers you follow & trending in the community</p>
+              <h2 className={styles.sectionTitle} style={{ marginBottom: 4 }}>SupaFeeds</h2>
+              <p className={styles.feedSubtitle}>Pioneers you follow & popular in the community</p>
             </div>
-            <Link href="/newsfeed" className={styles.feedSeeAll}>See all →</Link>
+            <Link href="/supafeeds" className={styles.feedSeeAll}>See all →</Link>
           </div>
 
           {/* Tabs */}
@@ -187,7 +253,7 @@ export default function HomePage() {
           ) : feedList.length > 0 ? (
             <div className={styles.feedGrid}>
               {feedList.map((p) => (
-                <Link key={p.id} href={`/myspace/${p.username}`} className={styles.feedCard}>
+                <Link key={p.id} href={`/supaspace/${p.username}`} className={styles.feedCard}>
                   <div className={styles.feedCardTop}>
                     <div className={styles.feedAvatar}>
                       {p.avatar_url

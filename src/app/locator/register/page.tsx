@@ -11,7 +11,7 @@ const CATEGORIES = [
   { key: "retail",    label: "Retail",        emoji: "🛍️" },
   { key: "services",  label: "Services",      emoji: "🔧" },
   { key: "online",    label: "Online",        emoji: "💻" },
-  { key: "stay",      label: "Stay / Hotel",  emoji: "🏡" },
+  { key: "stay",      label: "SupaStay / Hotel", emoji: "🏡" },
   { key: "transport", label: "Transport",     emoji: "🚗" },
   { key: "other",     label: "Other",         emoji: "📍" },
 ];
@@ -26,7 +26,7 @@ export default function RegisterBusinessPage() {
 
   const [form, setForm] = useState({
     name: "", category: "food", description: "",
-    address: "", city: "", state: "", country: "Malaysia",
+    address: "", city: "", state: "", country: "United States",
     phone: "", website: "", pi_wallet: "",
     lat: "", lng: "",
   });
@@ -257,19 +257,19 @@ export default function RegisterBusinessPage() {
 
           <div className={styles.field}>
             <label className={styles.fieldLabel}>City *</label>
-            <input className={styles.input} placeholder="Kuala Lumpur"
+            <input className={styles.input} placeholder="Los Angeles"
               value={form.city} onChange={e => set("city", e.target.value)} />
           </div>
 
           <div className={styles.field}>
             <label className={styles.fieldLabel}>State</label>
-            <input className={styles.input} placeholder="Selangor"
+            <input className={styles.input} placeholder="California"
               value={form.state} onChange={e => set("state", e.target.value)} />
           </div>
 
           <div className={styles.field}>
             <label className={styles.fieldLabel}>Country</label>
-            <input className={styles.input} placeholder="Malaysia"
+            <input className={styles.input} placeholder="United States"
               value={form.country} onChange={e => set("country", e.target.value)} />
           </div>
 

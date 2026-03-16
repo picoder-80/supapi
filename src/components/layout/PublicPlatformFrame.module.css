@@ -1,16 +1,25 @@
+/* Same as homepage (src/app/page): wrapper full width, no padding. Content adds its own padding. */
+.fullWidth,
 .framed {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 100vh;
   background: var(--color-bg);
   font-family: var(--font-sans);
-  padding-left: 14px;
-  padding-right: 14px;
+  box-sizing: border-box;
+  padding-left: 0;
+  padding-right: 0;
 }
 
-@media (min-width: 1024px) {
+/* Desktop only: narrow column for platform pages (homepage stays full width via .fullWidth) */
+@media (min-width: 1280px) {
   .framed {
     width: min(820px, calc(100vw - 28px));
+    max-width: 820px;
     margin-left: auto;
     margin-right: auto;
+    padding-left: 14px;
+    padding-right: 14px;
   }
 }

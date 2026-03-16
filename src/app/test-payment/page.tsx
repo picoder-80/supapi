@@ -2,9 +2,15 @@
 
 // app/test-payment/page.tsx
 // TEMPORARY — for Pi Developer Portal Step 10 verification only
+// Pi gives 60 seconds to complete payment after user confirms — don't close the page.
+// When embedded in Pi Sandbox (sandbox.minepi.com), fetch("/api/...") goes to Pi, not our server —
+// so we must use absolute backend URL for approve/complete.
 
 import { useState } from "react";
+import { getApiBase } from "@/lib/pi/sdk";
 import styles from "./page.module.css";
+
+const PAYMENT_DEADLINE_SEC = 60;
 
 type PaymentStatus = "idle" | "waiting" | "approved" | "completed" | "error";
 
@@ -31,7 +37,8 @@ export default function TestPaymentPage() {
         ["username", "payments", "wallet_address"],
         async (incompletePayment) => {
           console.warn("[TestPayment] Incomplete payment found:", incompletePayment.identifier);
-          await fetch("/api/payments/incomplete", {
+          const base = getApiBase();
+          await fetch(`${base || ""}/api/payments/incomplete`, {
             method:  "POST",
             headers: { "Content-Type": "application/json" },
             body:    JSON.stringify({ payment: incompletePayment }),
@@ -57,42 +64,78 @@ export default function TestPaymentPage() {
         // ✅ Fire-and-forget — uses /test-approve (no auth needed)
         onReadyForServerApproval: (paymentId: string) => {
           setMessage("Approving payment...");
-          fetch("/api/payments/test-approve", {
+          const base = getApiBase();
+          const approveUrl = `${base || ""}/api/payments/test-approve`;
+          fetch(approveUrl, {
             method:  "POST",
             headers: { "Content-Type": "application/json" },
             body:    JSON.stringify({ paymentId }),
           })
-            .then((res) => res.json())
-            .then((data) => {
-              if (!data.success) throw new Error(data.error);
+            .then((res) => res.text())
+            .then((raw) => {
+              let data: { success?: boolean; error?: string };
+              try {
+                data = JSON.parse(raw);
+              } catch {
+                throw new Error("Invalid response from server");
+              }
+              if (!data.success) throw new Error(data.error ?? "Approve failed");
               setStatus("approved");
               setMessage("Approved! Confirm in Pi Browser...");
             })
             .catch((err: Error) => {
+              const msg = err.message;
+              const isNetwork = /failed to fetch|network error|cors/i.test(msg);
               setStatus("error");
-              setMessage(`Approve failed: ${err.message}`);
+              setMessage(
+                isNetwork
+                  ? `Rangkaian gagal. Pastikan NEXT_PUBLIC_APP_URL & CORS. URL: ${approveUrl}`
+                  : `Approve failed: ${msg}`
+              );
             });
         },
 
-        // ✅ Uses /test-complete (no auth needed)
+        // ✅ Complete within PAYMENT_DEADLINE_SEC (60s) — retry on transient failure
         onReadyForServerCompletion: async (paymentId: string, txId: string) => {
           setMessage("Completing payment...");
-          try {
-            const res  = await fetch("/api/payments/test-complete", {
-              method:  "POST",
-              headers: { "Content-Type": "application/json" },
-              body:    JSON.stringify({ paymentId, txid: txId }),
-            });
-            const data = await res.json();
-            if (!data.success) throw new Error(data.error);
-            setStatus("completed");
-            setTxid(txId);
-            setMessage("Payment completed successfully! ✅");
-          } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : "Unknown error";
-            setStatus("error");
-            setMessage(`Complete failed: ${msg}`);
+          const maxAttempts = 5;
+          const delayMs = 2000;
+          const base = getApiBase();
+          const completeUrl = `${base || ""}/api/payments/test-complete`;
+          let lastError: Error | null = null;
+          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+              const res = await fetch(completeUrl, {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ paymentId, txid: txId }),
+              });
+              const raw = await res.text();
+              let data: { success?: boolean; error?: string };
+              try {
+                data = JSON.parse(raw);
+              } catch {
+                throw new Error(res.ok ? "Invalid response" : `HTTP ${res.status}: ${raw.slice(0, 80)}`);
+              }
+              if (!data.success) throw new Error(data.error ?? "Complete failed");
+              setStatus("completed");
+              setTxid(txId);
+              setMessage("Payment completed successfully! ✅");
+              return;
+            } catch (err: unknown) {
+              lastError = err instanceof Error ? err : new Error("Unknown error");
+              setMessage(`Completing... (cuba ${attempt}/${maxAttempts})`);
+              if (attempt < maxAttempts) await new Promise((r) => setTimeout(r, delayMs));
+            }
           }
+          const msg = lastError?.message ?? "Unknown";
+          const isNetwork = /failed to fetch|network error|cors/i.test(msg);
+          setStatus("error");
+          setMessage(
+            isNetwork
+              ? `Rangkaian gagal (${msg}). Pastikan NEXT_PUBLIC_APP_URL diset dan backend allow CORS. URL: ${completeUrl}`
+              : `Complete failed: ${msg}. Sila hubungi developer.`
+          );
         },
 
         onCancel: (paymentId: string) => {
@@ -154,7 +197,18 @@ export default function TestPaymentPage() {
 
         <p className={styles.note}>
           ⚠️ Must be opened inside <strong>Pi Browser</strong>
+          {typeof window !== "undefined" && window.location.origin.includes("minepi.com") && !process.env.NEXT_PUBLIC_APP_URL && (
+            <><br /><strong>Set NEXT_PUBLIC_APP_URL</strong> to your backend URL (e.g. Vercel) so approve/complete reach your server.</>
+          )}
+          {typeof window !== "undefined" && getApiBase() && (
+            <><br /><small>API base: {getApiBase()}</small></>
+          )}
         </p>
+        {(status === "waiting" || status === "approved") && (
+          <p className={styles.deadline}>
+            ⏱ Pembayaran mesti diselesaikan dalam <strong>{PAYMENT_DEADLINE_SEC} saat</strong>. Jangan tutup halaman.
+          </p>
+        )}
       </div>
     </div>
   );

@@ -35,7 +35,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     address:     body.address,
     city:        body.city,
     state:       body.state || null,
-    country:     body.country || "Malaysia",
+    country:     body.country || "United States",
     lat:         body.lat ? parseFloat(body.lat) : null,
     lng:         body.lng ? parseFloat(body.lng) : null,
     phone:       body.phone || null,

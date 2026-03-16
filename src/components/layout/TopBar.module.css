@@ -8,6 +8,12 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+/* When embedded (e.g. Pi sandbox iframe), add extra top padding so header clears host UI */
+body[data-embedded] .header {
+  padding-top: max(env(safe-area-inset-top, 0px), 48px);
 }
 
 .inner {

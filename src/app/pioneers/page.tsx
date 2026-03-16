@@ -354,7 +354,7 @@ export default function PioneersPage() {
               <div className={styles.profileModalBio}>{selectedUser.bio}</div>
             )}
             <div className={styles.profileModalBtns}>
-              <a href={`/myspace/${selectedUser.username}`} className={styles.profileModalViewBtn}>
+              <a href={`/supaspace/${selectedUser.username}`} className={styles.profileModalViewBtn}>
                 🪐 View Full Profile
               </a>
               <button className={styles.profileModalCloseBtn} onClick={() => setSelected(null)}>Close</button>

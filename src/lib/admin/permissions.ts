@@ -19,7 +19,9 @@ export type AdminPermission =
   | "admin.locator.read"
   | "admin.locator.write"
   | "admin.payments.trace"
-  | "admin.export.data";
+  | "admin.export.data"
+  | "admin.supascrow.read"
+  | "admin.supascrow.write";
 
 export const PERMISSIONS_BY_ROLE: Record<AdminRole, AdminPermission[]> = {
   super_admin: [
@@ -42,6 +44,8 @@ export const PERMISSIONS_BY_ROLE: Record<AdminRole, AdminPermission[]> = {
     "admin.locator.write",
     "admin.payments.trace",
     "admin.export.data",
+    "admin.supascrow.read",
+    "admin.supascrow.write",
   ],
   admin: [
     "admin.settings.read",
@@ -62,6 +66,8 @@ export const PERMISSIONS_BY_ROLE: Record<AdminRole, AdminPermission[]> = {
     "admin.locator.write",
     "admin.payments.trace",
     "admin.export.data",
+    "admin.supascrow.read",
+    "admin.supascrow.write",
   ],
   account_admin: [
     "admin.settings.read",
@@ -73,6 +79,7 @@ export const PERMISSIONS_BY_ROLE: Record<AdminRole, AdminPermission[]> = {
     "admin.market.read",
     "admin.referral.read",
     "admin.payments.trace",
+    "admin.supascrow.read",
     "admin.export.data",
   ],
   staff_admin: [
@@ -85,6 +92,8 @@ export const PERMISSIONS_BY_ROLE: Record<AdminRole, AdminPermission[]> = {
     "admin.market.write",
     "admin.locator.read",
     "admin.locator.write",
+    "admin.supascrow.read",
+    "admin.supascrow.write",
   ],
   marketing_admin: [
     "admin.settings.read",
@@ -113,7 +122,7 @@ export function getPermissionLabel(permission: AdminPermission): string {
     "admin.treasury.read": "View treasury",
     "admin.treasury.write": "Process treasury actions",
     "admin.sc_wallet.read": "View SC wallet analytics",
-    "admin.email_list.read": "View pioneer email list",
+    "admin.email_list.read": "View email broadcast",
     "admin.email_list.send": "Send email blast campaign",
     "admin.users.read": "View users",
     "admin.users.ban": "Ban or unban users",
@@ -126,6 +135,8 @@ export function getPermissionLabel(permission: AdminPermission): string {
     "admin.locator.write": "Manage locator moderation",
     "admin.payments.trace": "Trace Pi payments",
     "admin.export.data": "Export admin data",
+    "admin.supascrow.read": "View SupaScrow deals and disputes",
+    "admin.supascrow.write": "Resolve SupaScrow disputes (release/refund)",
   };
   return map[permission];
 }

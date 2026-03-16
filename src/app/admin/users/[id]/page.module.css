@@ -65,6 +65,10 @@
 .listMeta { display:flex; align-items:center; gap:8px; flex-shrink:0; }
 .piAmt { font-size:13px; font-weight:700; color:#F5A623; }
 .listDate { font-size:11px; color:var(--color-text-light); }
+.pager { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:12px; }
+.pagerBtn { padding:6px 12px; font-size:11px; border-radius:8px; border:1px solid var(--color-border); background:var(--color-surface); color:var(--color-text); cursor:pointer; }
+.pagerBtn:disabled { opacity:0.5; cursor:not-allowed; }
+.pagerInfo { font-size:11px; color:var(--color-text-muted); }
 
 .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; }
 .modal { background:var(--color-surface); border:1px solid var(--color-border); border-radius:20px; padding:24px; width:100%; max-width:400px; }

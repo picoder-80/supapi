@@ -4,6 +4,7 @@
 -- Includes:
 --   1) SupaPets tables
 --   2) AI assistant memory table
+--   3) SupaScrow escrow tables
 -- ============================================================
 
 create extension if not exists "uuid-ossp";
@@ -123,3 +124,65 @@ create index if not exists idx_ai_assistant_memory_user_created
 
 create index if not exists idx_ai_assistant_memory_scope
   on public.ai_assistant_memory(user_id, platform, mode, created_at desc);
+
+-- ============================================================
+-- SupaScrow escrow schema
+-- ============================================================
+
+create table if not exists public.supascrow_deals (
+  id uuid primary key default uuid_generate_v4(),
+  buyer_id uuid not null references public.users(id) on delete restrict,
+  seller_id uuid not null references public.users(id) on delete restrict,
+  amount_pi decimal(18,7) not null check (amount_pi > 0),
+  currency text not null default 'pi' check (currency in ('pi','sc')),
+  title text not null,
+  description text,
+  terms text,
+  status text not null default 'created'
+    check (status in (
+      'created','accepted','funded','shipped','delivered','released','disputed','refunded','cancelled'
+    )),
+  tracking_number text,
+  tracking_carrier text,
+  pi_payment_id text,
+  released_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint supascrow_deals_buyer_seller_diff check (buyer_id != seller_id)
+);
+
+create index if not exists idx_supascrow_deals_buyer on public.supascrow_deals(buyer_id, created_at desc);
+create index if not exists idx_supascrow_deals_seller on public.supascrow_deals(seller_id, created_at desc);
+create index if not exists idx_supascrow_deals_status on public.supascrow_deals(status);
+
+create table if not exists public.supascrow_messages (
+  id uuid primary key default uuid_generate_v4(),
+  deal_id uuid not null references public.supascrow_deals(id) on delete cascade,
+  sender_id uuid not null references public.users(id) on delete cascade,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_supascrow_messages_deal on public.supascrow_messages(deal_id, created_at asc);
+
+create table if not exists public.supascrow_disputes (
+  id uuid primary key default uuid_generate_v4(),
+  deal_id uuid not null references public.supascrow_deals(id) on delete cascade unique,
+  initiator_id uuid not null references public.users(id) on delete cascade,
+  reason text,
+  resolution text check (resolution in ('release_to_seller','refund_to_buyer','partial','pending',null)),
+  resolved_by uuid references public.users(id) on delete set null,
+  resolved_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_supascrow_disputes_deal on public.supascrow_disputes(deal_id);
+
+alter table public.supascrow_disputes add column if not exists ai_decision text;
+alter table public.supascrow_disputes add column if not exists ai_reasoning text;
+alter table public.supascrow_disputes add column if not exists ai_confidence decimal(3,2);
+
+alter table if exists public.supascrow_deals enable row level security;
+alter table if exists public.supascrow_messages enable row level security;
+alter table if exists public.supascrow_disputes enable row level security;

@@ -3,87 +3,90 @@ export type AssistantMode = "assistant" | "growth" | "support" | "ops";
 
 export type PlatformKey =
   | "about"
-  | "myspace"
-  | "market"
-  | "gigs"
-  | "academy"
-  | "stay"
-  | "arcade"
+  | "supaspace"
+  | "supamarket"
+  | "supaskil"
+  | "supademy"
+  | "supastay"
+  | "supanova"
   | "newsfeed"
   | "wallet"
   | "referral"
   | "locator"
-  | "jobs"
+  | "supahiro"
   | "rewards"
   | "reels"
   | "pi-value"
-  | "classifieds"
+  | "supasifieds"
   | "pioneers"
   | "supa-livvi"
   | "supa-saylo"
-  | "bulkhub"
-  | "machina-market"
-  | "domus"
-  | "endoro"
+  | "supabulk"
+  | "supaauto"
+  | "supadomus"
+  | "supaendoro"
   | "supapets"
+  | "supascrow"
   | "dashboard"
   | "home";
 
 export const SUPAPI_PLATFORM_KEYS: PlatformKey[] = [
   "home",
   "about",
-  "myspace",
-  "market",
-  "gigs",
-  "academy",
-  "stay",
-  "arcade",
+  "supaspace",
+  "supamarket",
+  "supaskil",
+  "supademy",
+  "supastay",
+  "supanova",
   "newsfeed",
   "wallet",
   "referral",
   "locator",
-  "jobs",
+  "supahiro",
   "rewards",
   "reels",
   "pi-value",
-  "classifieds",
+  "supasifieds",
   "pioneers",
   "supa-livvi",
   "supa-saylo",
-  "bulkhub",
-  "machina-market",
-  "domus",
-  "endoro",
+  "supabulk",
+  "supaauto",
+  "supadomus",
+  "supaendoro",
   "supapets",
+  "supascrow",
   "dashboard",
 ];
 
 const PLATFORM_HELP: Record<PlatformKey, string> = {
   home: "Global app navigation, onboarding, and feature discovery.",
   about: "Brand details, mission, and product background.",
-  myspace: "User profile, identity, and social presence.",
-  market: "Listings, orders, disputes, and merchant flows.",
-  gigs: "Freelance service offers, packages, and bookings.",
-  academy: "Courses, learning paths, and content publishing.",
-  stay: "Accommodation listings and host/guest operations.",
-  arcade: "Game experiences and rewards flow.",
+  supaspace: "User profile, identity, and social presence.",
+  supamarket: "Listings, orders, disputes, and merchant flows.",
+  supaskil: "Freelance service offers, packages, and bookings.",
+  supademy: "Courses, learning paths, and content publishing.",
+  supastay: "Accommodation listings and host/guest operations.",
+  supanova: "Game experiences and rewards flow.",
   newsfeed: "Community posts and discovery.",
   wallet: "Pi and Supapi Credit balance, transfers, and transactions.",
   referral: "Invite tracking, referral rewards, and payout status.",
   locator: "Discovery of Pi-friendly businesses and places.",
-  jobs: "Hiring, candidate profiles, and job posting lifecycle.",
+  supahiro: "Hiring, candidate profiles, and job posting lifecycle.",
   rewards: "Daily rewards and SC earning actions.",
   reels: "Short-form media, engagement, and creator tools.",
   "pi-value": "Pi market/value references and conversion insights.",
-  classifieds: "Ads and categorized community listings.",
+  supasifieds: "Ads and categorized community listings.",
   pioneers: "Pioneer map and community identity.",
   "supa-livvi": "Lifestyle content and social commerce moments.",
   "supa-saylo": "Threaded conversation and social posting.",
-  bulkhub: "B2B wholesale marketplace workflows.",
-  "machina-market": "Automotive listing and buying/selling flows.",
-  domus: "Property marketplace and agent operations.",
-  endoro: "Vehicle rental lifecycle and host-renter management.",
+  supabulk: "B2B wholesale marketplace workflows.",
+  supaauto: "Automotive listing and buying/selling flows.",
+  supadomus: "Property marketplace and agent operations.",
+  supaendoro: "Vehicle rental lifecycle and host-renter management.",
   supapets: "Virtual pet care, hatch loop, and SC rewards.",
+  supascrow: "Secure escrow for Pi/SC trades. Deal flow: create, fund, ship, confirm, release. Dispute handling.",
   dashboard: "User account hub and quick access operations.",
 };
 
@@ -126,7 +129,7 @@ const MODE_QUICK_PROMPTS: Record<AssistantMode, string[]> = {
 };
 
 const PLATFORM_PRESETS: Partial<Record<PlatformKey, PlatformAIPreset>> = {
-  market: {
+  supamarket: {
     quick_prompts: [
       "Optimize my listing title and description for faster sales",
       "Give me dispute-safe communication template for buyer",
@@ -135,7 +138,7 @@ const PLATFORM_PRESETS: Partial<Record<PlatformKey, PlatformAIPreset>> = {
     focus_areas: ["listing quality", "order conversion", "support/dispute handling"],
     guardrails: ["Never promise refunds outside policy", "Avoid asking users to pay off-platform"],
   },
-  domus: {
+  supadomus: {
     quick_prompts: [
       "Suggest better property listing copy for my target buyer",
       "What details should I add to increase inquiry rate?",
@@ -144,7 +147,7 @@ const PLATFORM_PRESETS: Partial<Record<PlatformKey, PlatformAIPreset>> = {
     focus_areas: ["property listing optimization", "inquiry handling", "price positioning"],
     guardrails: ["Do not provide legal/financial guarantees", "Keep offers transparent and documented"],
   },
-  endoro: {
+  supaendoro: {
     quick_prompts: [
       "How to improve vehicle booking conversion?",
       "Draft host message for smoother handover",
@@ -197,6 +200,15 @@ const PLATFORM_PRESETS: Partial<Record<PlatformKey, PlatformAIPreset>> = {
     ],
     focus_areas: ["pet progression", "care timing", "SC earn/spend loop"],
     guardrails: ["No abusive grinding patterns", "Keep progression fair and sustainable"],
+  },
+  supascrow: {
+    quick_prompts: [
+      "How does the escrow flow work step by step?",
+      "When should I open a dispute vs release funds?",
+      "Best practices for safe cross-border escrow",
+    ],
+    focus_areas: ["escrow flow", "dispute handling", "trust & safety"],
+    guardrails: ["Never advise paying outside platform", "Always verify tracking before release"],
   },
 };
 
@@ -326,15 +338,15 @@ function heuristicReply(
     };
   }
 
-  if (platform === "market" && /listing|title|description|sell|buyer/.test(lower)) {
+  if (platform === "supamarket" && /listing|title|description|sell|buyer/.test(lower)) {
     return {
       answer:
-        "For Marketplace, improve trust first: clear title, exact condition, 3-5 real photos, and explicit delivery terms. Then optimize price versus similar listings and respond to buyer questions fast.",
+        "For SupaMarket, improve trust first: clear title, exact condition, 3-5 real photos, and explicit delivery terms. Then optimize price versus similar listings and respond to buyer questions fast.",
       suggestions,
     };
   }
 
-  if ((platform === "domus" || platform === "endoro") && /price|pricing|offer|rate/.test(lower)) {
+  if ((platform === "supadomus" || platform === "supaendoro") && /price|pricing|offer|rate/.test(lower)) {
     return {
       answer:
         "Use a value-based price range: baseline market rate, then adjust by location, condition, and urgency. Keep one anchor price and one minimum acceptable price before negotiating.",
@@ -346,6 +358,14 @@ function heuristicReply(
     return {
       answer:
         "Best SupaPets growth loop: keep all 4 stats above 70, rotate care actions on cooldown, and avoid long idle periods. Hatch only when SC buffer is healthy so routine rewards keep compounding.",
+      suggestions,
+    };
+  }
+
+  if (platform === "supascrow" && /escrow|dispute|release|fund|ship|flow/.test(lower)) {
+    return {
+      answer:
+        "SupaScrow flow: 1) Create deal, seller accepts. 2) Buyer funds escrow (Pi or SC). 3) Seller ships with tracking. 4) Buyer confirms delivery. 5) Buyer releases funds. Open dispute only if goods are wrong or not received—never release before verifying.",
       suggestions,
     };
   }

@@ -38,3 +38,22 @@ export function serverError(error = "Internal server error"): NextResponse {
   const body: ApiResponse = { success: false, error };
   return NextResponse.json(body, { status: 500 });
 }
+
+/** CORS headers for cross-origin requests (e.g. from Pi Sandbox iframe). */
+export function corsHeaders(origin?: string | null): Record<string, string> {
+  const allowOrigin =
+    origin && /^https:\/\/(sandbox\.)?minepi\.com$/.test(origin)
+      ? origin
+      : "*";
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, PUT, DELETE, OPTIONS",
+    // Include Authorization for Pi Sandbox cross-origin API calls.
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, x-internal-key",
+  };
+}
+
+export function withCors<T>(res: NextResponse, origin?: string | null): NextResponse {
+  Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
+  return res;
+}

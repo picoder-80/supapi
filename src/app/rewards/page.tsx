@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { usePi } from "@/components/providers/PiProvider";
+import { getApiBase } from "@/lib/pi/sdk";
 import styles from "./page.module.css";
 
 const SC_PACKAGES = [
@@ -94,6 +95,7 @@ export default function RewardsPage() {
   const [transferUsername, setTransferUsername] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
   const [transferring, setTransferring] = useState(false);
+  const [txPage, setTxPage] = useState(1);
 
   const token = () => typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "";
 
@@ -128,6 +130,11 @@ export default function RewardsPage() {
     } catch {}
     setLoading(false);
   }, [user]);
+
+  const TX_PAGE_SIZE = 10;
+  const txTotalPages = Math.max(1, Math.ceil(transactions.length / TX_PAGE_SIZE));
+  const txPageSafe = Math.min(txPage, txTotalPages);
+  const txPageItems = transactions.slice((txPageSafe - 1) * TX_PAGE_SIZE, txPageSafe * TX_PAGE_SIZE);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -172,7 +179,8 @@ export default function RewardsPage() {
         ["username", "payments", "wallet_address"],
         async (incompletePayment: any) => {
           console.warn("[Rewards] Incomplete payment:", incompletePayment.identifier);
-          await fetch("/api/payments/incomplete", {
+          const base = getApiBase();
+          await fetch(`${base || ""}/api/payments/incomplete`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ payment: incompletePayment }),
@@ -189,7 +197,8 @@ export default function RewardsPage() {
         {
           // FIRE AND FORGET — do NOT await
           onReadyForServerApproval: (paymentId: string) => {
-            fetch("/api/credits/buy", {
+            const base = getApiBase();
+            fetch(`${base || ""}/api/credits/buy`, {
               method: "POST",
               headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
               body: JSON.stringify({ paymentId, action: "approve" }),
@@ -197,7 +206,8 @@ export default function RewardsPage() {
           },
           onReadyForServerCompletion: async (paymentId: string, txid: string) => {
             try {
-              const r = await fetch("/api/credits/buy", {
+              const base = getApiBase();
+              const r = await fetch(`${base || ""}/api/credits/buy`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
                 body: JSON.stringify({ paymentId, txid, action: "complete", pkg: currentPkg.id, sc: currentPkg.sc }),
@@ -322,7 +332,7 @@ export default function RewardsPage() {
               <div className={styles.introUseCard}>
                 <div className={styles.introUseEmoji}>⭐</div>
                 <div className={styles.introUseTitle}>Boost Listing</div>
-                <div className={styles.introUseDesc}>Use SC to boost your Marketplace & Gigs listings to the top. <span className={styles.introComingSoon}>Coming Soon</span></div>
+                <div className={styles.introUseDesc}>Use SC to boost your SupaMarket & SupaSkil listings to the top. <span className={styles.introComingSoon}>Coming Soon</span></div>
               </div>
               <div className={styles.introUseCard}>
                 <div className={styles.introUseEmoji}>🏆</div>
@@ -331,13 +341,13 @@ export default function RewardsPage() {
               </div>
               <div className={styles.introUseCard}>
                 <div className={styles.introUseEmoji}>🎮</div>
-                <div className={styles.introUseTitle}>Main Arcade</div>
-                <div className={styles.introUseDesc}>Use SC as entry tickets for games in Supapi Arcade. <span className={styles.introComingSoon}>Coming Soon</span></div>
+                <div className={styles.introUseTitle}>SupaNova</div>
+                <div className={styles.introUseDesc}>Use SC as entry tickets for games in SupaNova. <span className={styles.introComingSoon}>Coming Soon</span></div>
               </div>
               <div className={styles.introUseCard}>
                 <div className={styles.introUseEmoji}>📚</div>
                 <div className={styles.introUseTitle}>Unlock Premium Courses</div>
-                <div className={styles.introUseDesc}>Unlock exclusive courses on Supapi Academy using SC. <span className={styles.introComingSoon}>Coming Soon</span></div>
+                <div className={styles.introUseDesc}>Unlock exclusive courses on SupaDemy using SC. <span className={styles.introComingSoon}>Coming Soon</span></div>
               </div>
             </div>
           </div>
@@ -599,7 +609,7 @@ export default function RewardsPage() {
             </div>
           ) : (
             <div className={styles.txList}>
-              {transactions.map(tx => {
+              {txPageItems.map(tx => {
                 const meta = ACTIVITY_META[tx.activity] ?? { emoji: "💎", label: tx.activity };
                 const isEarn = tx.type === "earn" || tx.type === "transfer_in" || tx.type === "gift_received";
                 return (
@@ -615,6 +625,29 @@ export default function RewardsPage() {
                   </div>
                 );
               })}
+              {txTotalPages > 1 && (
+                <div className={styles.pager}>
+                  <button
+                    type="button"
+                    className={styles.pagerBtn}
+                    disabled={txPageSafe === 1}
+                    onClick={() => setTxPage(p => Math.max(1, p - 1))}
+                  >
+                    ← Prev
+                  </button>
+                  <span className={styles.pagerInfo}>
+                    Page {txPageSafe} of {txTotalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.pagerBtn}
+                    disabled={txPageSafe === txTotalPages}
+                    onClick={() => setTxPage(p => Math.min(txTotalPages, p + 1))}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

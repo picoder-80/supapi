@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import styles from "./page.module.css";
+
+const RichTextEditor = dynamic(() => import("@/components/admin/RichTextEditor"), { ssr: false });
 
 type EmailItem = {
   id: string;
@@ -45,6 +48,7 @@ export default function AdminEmailListPage() {
   const [sending, setSending] = useState(false);
   const [q, setQ] = useState("");
   const [includeUnverified, setIncludeUnverified] = useState(false);
+  const [includeAllRoles, setIncludeAllRoles] = useState(false);
   const [page, setPage] = useState(1);
   const [data, setData] = useState<EmailListResponse | null>(null);
   const [msg, setMsg] = useState("");
@@ -59,7 +63,7 @@ export default function AdminEmailListPage() {
   const [providerPreference, setProviderPreference] = useState<"auto" | "custom_api" | "resend">("auto");
   const [blastConfig, setBlastConfig] = useState<BlastConfigResponse | null>(null);
 
-  const fetchData = async (nextQ: string, nextPage = 1, nextIncludeUnverified = includeUnverified) => {
+  const fetchData = async (nextQ: string, nextPage = 1, nextIncludeUnverified = includeUnverified, nextIncludeAllRoles = includeAllRoles) => {
     const token = localStorage.getItem("supapi_admin_token") ?? "";
     setLoading(true);
     setMsg("");
@@ -69,6 +73,7 @@ export default function AdminEmailListPage() {
         page: String(nextPage),
         limit: "100",
         include_unverified: nextIncludeUnverified ? "true" : "false",
+        include_all_roles: nextIncludeAllRoles ? "true" : "false",
       });
       const r = await fetch(`/api/admin/email-list?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -79,11 +84,11 @@ export default function AdminEmailListPage() {
         setPage(Number(d.data?.page ?? nextPage));
       } else {
         setData(null);
-        setMsg(`❌ ${d?.error ?? "Failed to load email list"}`);
+        setMsg(`❌ ${d?.error ?? "Failed to load email broadcast"}`);
       }
     } catch {
       setData(null);
-      setMsg("❌ Failed to load email list");
+      setMsg("❌ Failed to load email broadcast");
     } finally {
       setLoading(false);
     }
@@ -111,10 +116,10 @@ export default function AdminEmailListPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchData(q, 1, includeUnverified);
+      fetchData(q, 1, includeUnverified, includeAllRoles);
     }, 300);
     return () => clearTimeout(timer);
-  }, [q, includeUnverified]);
+  }, [q, includeUnverified, includeAllRoles]);
 
   const exportCsv = async () => {
     const token = localStorage.getItem("supapi_admin_token") ?? "";
@@ -123,6 +128,7 @@ export default function AdminEmailListPage() {
       format: "csv",
       limit: "500",
       include_unverified: includeUnverified ? "true" : "false",
+      include_all_roles: includeAllRoles ? "true" : "false",
     });
     const r = await fetch(`/api/admin/email-list?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -132,7 +138,7 @@ export default function AdminEmailListPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `pioneer-email-list-${Date.now()}.csv`;
+    a.download = `pioneer-email-broadcast-${Date.now()}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -161,9 +167,11 @@ export default function AdminEmailListPage() {
         body: JSON.stringify({
           q,
           include_unverified: includeUnverified,
+          include_all_roles: includeAllRoles,
           dry_run: dryRun,
           subject: blastSubject.trim(),
           text: blastText.trim(),
+          html: blastText.trim(),
           selected_emails: useSelectedOnly && !selectAllMatching ? selectedEmails : [],
           select_all_matching: selectAllMatching,
           provider: providerPreference,
@@ -221,6 +229,7 @@ export default function AdminEmailListPage() {
         body: JSON.stringify({
           subject: blastSubject.trim(),
           text: blastText.trim(),
+          html: blastText.trim(),
           test_email: testEmail.trim(),
           provider: providerPreference,
           dry_run: false,
@@ -289,8 +298,8 @@ export default function AdminEmailListPage() {
         <div className={styles.headerMain}>
           <span className={styles.icon}>📧</span>
           <div>
-            <h1 className={styles.title}>Email List</h1>
-            <p className={styles.sub}>Pioneer email list for upcoming marketing blast integrations</p>
+            <h1 className={styles.title}>Email Broadcast</h1>
+            <p className={styles.sub}>Pioneer email broadcast for marketing campaigns. Users must add email in Dashboard → Personal Info. Check &quot;Include all roles&quot; to see admins.</p>
           </div>
         </div>
         <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.topBackBtn}`}>Back to Dashboard</Link>
@@ -311,6 +320,14 @@ export default function AdminEmailListPage() {
               onChange={(e) => setIncludeUnverified(e.target.checked)}
             />
             Include unverified KYC
+          </label>
+          <label className={styles.checkboxWrap}>
+            <input
+              type="checkbox"
+              checked={includeAllRoles}
+              onChange={(e) => setIncludeAllRoles(e.target.checked)}
+            />
+            Include all roles (admins, etc.)
           </label>
           <button className={styles.btn} onClick={exportCsv}>Export CSV</button>
         </div>
@@ -373,14 +390,14 @@ export default function AdminEmailListPage() {
             <button
               className={styles.btn}
               disabled={loading || data.page <= 1}
-              onClick={() => fetchData(q, data.page - 1, includeUnverified)}
+              onClick={() => fetchData(q, data.page - 1, includeUnverified, includeAllRoles)}
             >
               ← Prev
             </button>
             <button
               className={styles.btn}
               disabled={loading || data.page >= data.total_pages}
-              onClick={() => fetchData(q, data.page + 1, includeUnverified)}
+              onClick={() => fetchData(q, data.page + 1, includeUnverified, includeAllRoles)}
             >
               Next →
             </button>
@@ -436,12 +453,15 @@ export default function AdminEmailListPage() {
             value={blastSubject}
             onChange={(e) => setBlastSubject(e.target.value)}
           />
-          <textarea
-            className={styles.textarea}
-            placeholder="Campaign message body..."
-            value={blastText}
-            onChange={(e) => setBlastText(e.target.value)}
-          />
+          <div className={styles.editorWrap}>
+            <div className={styles.editorLabel}>Campaign message (HTML / WYSIWYG)</div>
+            <RichTextEditor
+              value={blastText}
+              onChange={setBlastText}
+              placeholder="Write your campaign message..."
+              minHeight={220}
+            />
+          </div>
           <input
             className={styles.input}
             placeholder="Test recipient email (you@domain.com)"

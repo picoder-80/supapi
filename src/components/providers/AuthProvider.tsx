@@ -1,11 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { authenticateWithPi } from "@/lib/pi/sdk";
 import type { User } from "@/types";
 
 const TOKEN_KEY       = "supapi_token";
 const ADMIN_TOKEN_KEY = "supapi_admin_token";
+const LOGOUT_COOLDOWN_MS = 2000; // Ignore focus restore for 2s after logout
 
 interface AuthContextType {
   user:        User | null;
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user,        setUser]        = useState<User | null>(null);
   const [isLoading,   setIsLoading]   = useState(false);
   const [isHydrating, setIsHydrating] = useState(true);
+  const logoutAtRef   = useRef<number>(0);
 
   const fetchUser = useCallback(async () => {
     const token = localStorage.getItem(TOKEN_KEY);
@@ -57,11 +59,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchUser]);
 
   // Refresh user when tab regains focus (picks up avatar changes from MySpace)
+  // Skip restore after logout to avoid race: focus fires → fetchUser starts → user clicks logout → fetchUser completes and wrongly restores user
   useEffect(() => {
     const onFocus = async () => {
       if (!localStorage.getItem(TOKEN_KEY)) return;
+      if (Date.now() - logoutAtRef.current < LOGOUT_COOLDOWN_MS) return;
       const u = await fetchUser();
-      if (u) setUser(u);
+      if (u && localStorage.getItem(TOKEN_KEY)) setUser(u);
     };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
@@ -98,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    logoutAtRef.current = Date.now();
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(ADMIN_TOKEN_KEY);
     await fetch("/api/auth/pi", { method: "DELETE" });

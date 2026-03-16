@@ -19,6 +19,37 @@
   font-size: 13px;
   color: rgba(255,255,255,0.5);
 }
+
+/* Post | Reels | Live */
+.contentTabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.contentTab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.contentTab:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.contentTabActive {
+  background: var(--color-gold);
+  color: #1A1A2E;
+}
+.contentTabActive:hover { color: #1A1A2E; opacity: 0.95; }
+
 .tabs {
   display: flex;
   gap: 0;
@@ -135,3 +166,74 @@
 @media (max-width: 768px) {
   .pioneerGrid { grid-template-columns: 1fr; }
 }
+
+/* Status create + feed */
+.createBox {
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.createRow { display: flex; gap: 12px; align-items: flex-start; }
+.createAvatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--color-gold);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0;
+  font-size: 18px; font-weight: 800; color: #1A1A2E;
+}
+.createAvatar img { width: 100%; height: 100%; object-fit: cover; }
+.createInput {
+  flex: 1;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px; font-family: inherit;
+  resize: none; min-height: 60px;
+}
+.createInput:focus { outline: none; border-color: var(--color-gold); }
+.createActions {
+  display: flex; justify-content: flex-end; align-items: center; gap: 12px;
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid #E2E8F0;
+}
+.charCount { font-size: 12px; color: var(--color-text-muted); }
+.postBtn {
+  background: var(--color-gold); color: #1A1A2E;
+  font-weight: 700; font-size: 13px; padding: 10px 20px;
+  border-radius: 999px; border: none; cursor: pointer; transition: all 0.2s;
+}
+.postBtn:hover:not(:disabled) { opacity: 0.95; }
+.postBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.feedSection { margin-top: 24px; }
+.feedTitle { font-size: 15px; font-weight: 700; color: var(--color-text); margin-bottom: 12px; }
+.feedList { display: flex; flex-direction: column; gap: 12px; }
+.statusCard {
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 16px;
+}
+.statusHeader { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+.statusAvatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--color-gold);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0;
+  font-size: 16px; font-weight: 700; color: #1A1A2E;
+  text-decoration: none; color: inherit;
+}
+.statusAvatar img { width: 100%; height: 100%; object-fit: cover; }
+.statusMeta { flex: 1; min-width: 0; }
+.statusName {
+  font-size: 14px; font-weight: 700; color: var(--color-text);
+  text-decoration: none; display: block;
+}
+.statusName:hover { color: var(--color-gold); }
+.statusTime { font-size: 12px; color: var(--color-text-muted); }
+.statusBody { font-size: 14px; color: var(--color-text); line-height: 1.5; white-space: pre-wrap; }
+
+.emptyBtn { text-decoration: none; display: inline-block; }

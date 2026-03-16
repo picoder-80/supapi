@@ -26,6 +26,7 @@ function isValidEmail(email: string): boolean {
 async function fetchAllMatchedRecipientEmails(params: {
   q: string;
   includeUnverified: boolean;
+  includeAllRoles: boolean;
   maxRows: number;
 }): Promise<string[]> {
   const supabase = await createAdminClient();
@@ -37,12 +38,12 @@ async function fetchAllMatchedRecipientEmails(params: {
     let query = supabase
       .from("users")
       .select("email")
-      .eq("role", "pioneer")
       .not("email", "is", null)
       .neq("email", "")
       .order("created_at", { ascending: false })
       .range(offset, offset + batchSize - 1);
 
+    if (!params.includeAllRoles) query = query.eq("role", "pioneer");
     if (!params.includeUnverified) query = query.eq("kyc_status", "verified");
     if (params.q) query = query.or(`username.ilike.%${params.q}%,email.ilike.%${params.q}%`);
 
@@ -97,6 +98,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const q = String(body?.q ?? "").trim();
     const includeUnverified = Boolean(body?.include_unverified);
+    const includeAllRoles = Boolean(body?.include_all_roles);
     const dryRun = Boolean(body?.dry_run);
     const selectAllMatching = Boolean(body?.select_all_matching);
     const selectedEmailsInput = Array.isArray(body?.selected_emails) ? body.selected_emails : [];
@@ -116,6 +118,7 @@ export async function POST(req: NextRequest) {
     const limit = Number.isFinite(limitRaw) ? Math.min(5000, Math.max(1, Math.floor(limitRaw))) : 2000;
     const subject = String(body?.subject ?? "").trim();
     const text = String(body?.text ?? "").trim();
+    const htmlInput = String(body?.html ?? "").trim();
 
     if (!subject) return NextResponse.json({ success: false, error: "Subject is required" }, { status: 400 });
     if (!text) return NextResponse.json({ success: false, error: "Message body is required" }, { status: 400 });
@@ -124,12 +127,12 @@ export async function POST(req: NextRequest) {
     let query = supabase
       .from("users")
       .select("id, email, username, kyc_status", { count: "exact" })
-      .eq("role", "pioneer")
       .not("email", "is", null)
       .neq("email", "")
       .order("created_at", { ascending: false })
       .limit(limit);
 
+    if (!includeAllRoles) query = query.eq("role", "pioneer");
     if (!includeUnverified) query = query.eq("kyc_status", "verified");
     if (q) query = query.or(`username.ilike.%${q}%,email.ilike.%${q}%`);
 
@@ -149,6 +152,7 @@ export async function POST(req: NextRequest) {
       finalRecipients = await fetchAllMatchedRecipientEmails({
         q,
         includeUnverified,
+        includeAllRoles,
         maxRows: 200000,
       });
     } else if (!testEmail && selectedEmails.length > 0) {
@@ -178,11 +182,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "No recipients matched current filters" }, { status: 400 });
     }
 
+    const html = htmlInput || htmlFromText(text);
+    const textFallback = text || (html ? html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() : "");
     const result = await sendEmailBlast({
       recipients: finalRecipients,
       subject,
-      text,
-      html: htmlFromText(text),
+      text: textFallback,
+      html,
       meta: { source: "admin_email_list", mode, q, include_unverified: includeUnverified, test_email: testEmail },
     }, providerPreference);
 

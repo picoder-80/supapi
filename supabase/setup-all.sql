@@ -27,6 +27,12 @@ CREATE TABLE users (
                   CHECK (role IN ('pioneer','seller','instructor','host','admin')),
   kyc_status      TEXT NOT NULL DEFAULT 'unverified'
                   CHECK (kyc_status IN ('unverified','pending','verified')),
+  wallet_address  TEXT,
+  wallet_verified BOOLEAN NOT NULL DEFAULT FALSE,
+  wallet_verified_at TIMESTAMPTZ,
+  kyc_self_declared BOOLEAN NOT NULL DEFAULT FALSE,
+  bio             TEXT,
+  cover_url       TEXT,
   pi_balance_pending DECIMAL(18,7) NOT NULL DEFAULT 0,
   referral_code   TEXT UNIQUE NOT NULL,
   referred_by     UUID REFERENCES users(id),

@@ -159,37 +159,53 @@ export async function POST(req: NextRequest) {
       }
 
     } else {
-      // ── Existing user — update KYC + wallet every login ──
-      const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-
-      // Only upgrade KYC — never downgrade (Pi API may return null even if verified)
-      // verified > pending > unverified
+      // ── Existing user — always persist KYC + wallet every login ──
       const kycRank: Record<string, number> = { unverified: 0, pending: 1, verified: 2 };
       const currentRank = kycRank[user.kyc_status] ?? 0;
       const newRank     = kycRank[kycStatus] ?? 0;
+      // Only upgrade KYC — never downgrade (Pi API may return null even if verified)
+      const effectiveKyc = newRank > currentRank ? kycStatus : (user.kyc_status ?? "unverified");
       if (newRank > currentRank) {
-        updates.kyc_status = kycStatus;
         console.log(`[Auth] KYC upgraded: ${user.kyc_status} → ${kycStatus}`);
       } else {
         console.log(`[Auth] KYC kept: ${user.kyc_status} (Pi returned: ${kycStatus})`);
       }
 
-      // Update wallet only if Pi returns a value (never overwrite with null)
-      if (walletAddress && walletAddress !== user.wallet_address) {
+      const updates: Record<string, unknown> = {
+        updated_at:  new Date().toISOString(),
+        kyc_status:  effectiveKyc,
+      };
+      // Update wallet when Pi returns a value (never overwrite with null)
+      if (walletAddress != null && walletAddress !== user.wallet_address) {
         updates.wallet_address = walletAddress;
         console.log(`[Auth] Wallet updated: ${walletAddress}`);
       }
 
-      if (Object.keys(updates).length > 1) {
-        const { data: updated } = await supabase
-          .from("users")
-          .update(updates)
-          .eq("id", user.id)
-          .select()
-          .single();
-        if (updated) user = updated;
+      const { data: updated, error: updateError } = await supabase
+        .from("users")
+        .update(updates)
+        .eq("id", user.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("[Auth] Supabase update user error:", updateError.message, updateError.details);
+        return NextResponse.json(
+          { success: false, error: "Failed to update profile" },
+          { status: 500 }
+        );
       }
+      if (updated) user = updated;
     }
+
+    // Always re-fetch user from DB so response has current kyc_status, wallet_address, etc.
+    // (avoids stale object when Pi doesn't return KYC/wallet on re-login)
+    const { data: freshUser } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+    if (freshUser) user = freshUser;
 
     const token = signToken({
       userId:   user.id,

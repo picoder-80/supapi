@@ -40,7 +40,8 @@ Edit `.env.local` and fill in all credentials:
 4. Click **Run**
 5. (For SupaPets MVP) run `supabase/supapets.sql`
 6. (For AI cross-device memory) run `supabase/ai-assistant-memory.sql`
-7. (If schema already exists) run `supabase/setup-addons.sql` instead of full setup
+7. (For SupaScrow escrow) run `supabase/supascrow.sql`
+8. (If schema already exists) run `supabase/setup-addons.sql` instead of full setup — it includes SupaPets, AI memory, and SupaScrow
 
 ### 4. Create First Admin
 
@@ -59,6 +60,15 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000)
 
 > ⚠️ **Important**: Pi payment & auth must be tested inside **Pi Browser** with sandbox mode enabled.
+
+### Test run SupaScrow (SC escrow)
+
+1. Run `supabase/setup-addons.sql` (or `supascrow.sql`) so `supascrow_*` tables and AI columns exist.
+2. Sign in as two users (e.g. two browsers or incognito): **Buyer** and **Seller**.
+3. **Buyer**: Create deal (Seller = other username, title, amount in SC). **Seller**: Open deal → Accept.
+4. **Buyer**: Fund escrow (SC debited). **Seller**: Add tracking → Mark Shipped. **Buyer**: Confirm delivery → Release funds (SC credited to seller).
+5. To test **disputes**: open a deal at funded/shipped/delivered → enter reason → Open Dispute. AI analyzes and may auto-resolve; otherwise use Admin → SupaScrow → Apply AI suggestion or manual Release/Refund.
+6. Admin: **SupaScrow** panel shows open disputes and all deals; export CSV for deals and disputes.
 
 ---
 
@@ -80,7 +90,7 @@ src/
 │   │   ├── listings/
 │   │   ├── orders/
 │   │   └── analytics/
-│   ├── market/               # Marketplace pages
+│   ├── supamarket/           # Marketplace pages
 │   ├── gigs/                 # Gigs pages
 │   ├── academy/              # Academy pages
 │   ├── arcade/               # Arcade pages
@@ -161,6 +171,7 @@ Add these in `.env.local` and Vercel project env:
 - `MARKET_AI_AUTO_RESOLVE_THRESHOLD` (example: `0.75`)
 - `MARKET_AI_AGGRESSIVE_AUTO` (`true` / `false`)
 - `MARKET_AI_MAX_AUTO_RESOLVE_PI` (example: `300`, high-value guardrail)
+- SupaScrow disputes: `SUPASCROW_AI_AUTO_THRESHOLD` (default `0.78`), `SUPASCROW_AI_MAX_AUTO_SC` (default `5000` — max SC amount to auto-resolve)
 - `AI_ALERT_WEBHOOK_URL` (optional alert webhook for cron partial/failure)
 
 ### 2) Vercel Cron (already configured)
@@ -171,7 +182,7 @@ This repo includes `vercel.json`:
 {
   "crons": [
     {
-      "path": "/api/market/ai/dispute/cron-check?limit=25",
+      "path": "/api/supamarket/ai/dispute/cron-check?limit=25",
       "schedule": "*/10 * * * *"
     }
   ]
@@ -185,21 +196,21 @@ After deploy, Vercel will call the cron endpoint every 10 minutes.
 You can also call manually with secret header:
 
 ```bash
-curl -X POST "https://YOUR_DOMAIN/api/market/ai/dispute/cron-check?limit=25" \
+curl -X POST "https://YOUR_DOMAIN/api/supamarket/ai/dispute/cron-check?limit=25" \
   -H "x-cron-key: YOUR_CRON_SECRET"
 ```
 
 Or bearer token:
 
 ```bash
-curl -X POST "https://YOUR_DOMAIN/api/market/ai/dispute/cron-check?limit=25" \
+curl -X POST "https://YOUR_DOMAIN/api/supamarket/ai/dispute/cron-check?limit=25" \
   -H "Authorization: Bearer YOUR_CRON_SECRET"
 ```
 
 ### 4) Quick verify
 
 ```bash
-curl "https://YOUR_DOMAIN/api/market/ai/dispute/cron-check?limit=5" \
+curl "https://YOUR_DOMAIN/api/supamarket/ai/dispute/cron-check?limit=5" \
   -H "x-cron-key: YOUR_CRON_SECRET"
 ```
 
@@ -250,7 +261,7 @@ Use this endpoint to verify "order completed -> auto-credit wallet" logic withou
 
 ```bash
 # Dry run (no DB credit)
-curl -X POST "https://YOUR_DOMAIN/api/admin/market/orders/ORDER_ID/simulate-complete" \
+curl -X POST "https://YOUR_DOMAIN/api/admin/supamarket/orders/ORDER_ID/simulate-complete" \
   -H "Authorization: Bearer YOUR_ADMIN_JWT" \
   -H "Content-Type: application/json" \
   -d '{"execute": false}'
@@ -258,7 +269,7 @@ curl -X POST "https://YOUR_DOMAIN/api/admin/market/orders/ORDER_ID/simulate-comp
 
 ```bash
 # Execute real credit (one-time; returns 409 if already credited)
-curl -X POST "https://YOUR_DOMAIN/api/admin/market/orders/ORDER_ID/simulate-complete" \
+curl -X POST "https://YOUR_DOMAIN/api/admin/supamarket/orders/ORDER_ID/simulate-complete" \
   -H "Authorization: Bearer YOUR_ADMIN_JWT" \
   -H "Content-Type: application/json" \
   -d '{"execute": true}'
@@ -269,27 +280,27 @@ curl -X POST "https://YOUR_DOMAIN/api/admin/market/orders/ORDER_ID/simulate-comp
 Use this to confirm which provider is active at runtime:
 
 ```bash
-curl "https://YOUR_DOMAIN/api/market/ai/health" \
+curl "https://YOUR_DOMAIN/api/supamarket/ai/health" \
   -H "x-cron-key: YOUR_CRON_SECRET"
 ```
 
 Or from this repo:
 
 ```bash
-AI_HEALTH_URL="https://YOUR_DOMAIN/api/market/ai/health" CRON_SECRET="YOUR_CRON_SECRET" npm run ai:health
+AI_HEALTH_URL="https://YOUR_DOMAIN/api/supamarket/ai/health" CRON_SECRET="YOUR_CRON_SECRET" npm run ai:health
 ```
 
 Manual run cron-check from this repo:
 
 ```bash
-AI_CRON_URL="https://YOUR_DOMAIN/api/market/ai/dispute/cron-check" AI_CRON_LIMIT=25 CRON_SECRET="YOUR_CRON_SECRET" npm run ai:cron:run
+AI_CRON_URL="https://YOUR_DOMAIN/api/supamarket/ai/dispute/cron-check" AI_CRON_LIMIT=25 CRON_SECRET="YOUR_CRON_SECRET" npm run ai:cron:run
 ```
 
 Run both checks in one command:
 
 ```bash
-AI_HEALTH_URL="https://YOUR_DOMAIN/api/market/ai/health" \
-AI_CRON_URL="https://YOUR_DOMAIN/api/market/ai/dispute/cron-check" \
+AI_HEALTH_URL="https://YOUR_DOMAIN/api/supamarket/ai/health" \
+AI_CRON_URL="https://YOUR_DOMAIN/api/supamarket/ai/dispute/cron-check" \
 AI_CRON_LIMIT=25 \
 CRON_SECRET="YOUR_CRON_SECRET" \
 npm run ai:ops:check

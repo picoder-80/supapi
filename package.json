@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "ai:health": "node scripts/ai-health-check.mjs",
+    "market:e2e": "node --env-file=.env.local scripts/market-e2e.mjs",
     "ai:cron:run": "node scripts/ai-cron-run.mjs",
     "ai:ops:check": "node scripts/ai-ops-check.mjs",
     "db:generate": "prisma generate",
@@ -26,6 +27,7 @@
     "next": "^16.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-quill-new": "^3.8.3",
     "resend": "^4.0.0",
     "uuid": "^11.0.3",
     "zod": "^3.23.8"

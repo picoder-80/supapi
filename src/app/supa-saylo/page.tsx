@@ -287,7 +287,7 @@ export default function SupaSayloPage() {
                     {isTake && <div className={styles.takeBadge}>π Pi Take</div>}
 
                     <div className={styles.postTop}>
-                      <Link href={`/myspace/${author.username}`} className={styles.postAvatar}>
+                      <Link href={`/supaspace/${author.username}`} className={styles.postAvatar}>
                         {author.avatar_url
                           ? <img src={author.avatar_url} alt={author.username} className={styles.postAvatarImg} />
                           : <span className={styles.postAvatarInitial}>{getInitial(author.username)}</span>
@@ -296,7 +296,7 @@ export default function SupaSayloPage() {
 
                       <div className={styles.postRight}>
                         <div className={styles.postMeta}>
-                          <Link href={`/myspace/${author.username}`} className={styles.postAuthor}>
+                          <Link href={`/supaspace/${author.username}`} className={styles.postAuthor}>
                             {author.display_name ?? author.username}
                             {author.kyc_status === "verified" && <span className={styles.kyc}> ✅</span>}
                           </Link>

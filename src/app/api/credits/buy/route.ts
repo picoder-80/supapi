@@ -1,8 +1,10 @@
 // src/app/api/credits/buy/route.ts
+// CORS enabled for Pi Sandbox (sandbox.minepi.com)
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
+import * as R from "@/lib/api";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,9 +26,17 @@ const PACKAGES: Record<string, number> = {
   starter: 100, popular: 500, pro: 1000, whale: 5000,
 };
 
+function withCors(res: NextResponse, req: NextRequest): NextResponse {
+  return R.withCors(res, req.headers.get("origin"));
+}
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: R.corsHeaders("*") });
+}
+
 export async function POST(req: NextRequest) {
   const userId = getUserId(req);
-  if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  if (!userId) return withCors(NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 }), req);
 
   const { paymentId, txid, action, pkg, sc } = await req.json();
 
@@ -41,10 +51,10 @@ export async function POST(req: NextRequest) {
         const err = await res.text();
         console.error("[credits/buy approve]", err);
       }
-      return NextResponse.json({ success: true });
+      return withCors(NextResponse.json({ success: true }), req);
     } catch (e: any) {
       console.error("[credits/buy approve]", e);
-      return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+      return withCors(NextResponse.json({ success: false, error: e.message }, { status: 500 }), req);
     }
   }
 
@@ -58,7 +68,7 @@ export async function POST(req: NextRequest) {
       .eq("activity", "buy_sc")
       .maybeSingle();
 
-    if (existing) return NextResponse.json({ success: true, data: { already: true } });
+    if (existing) return withCors(NextResponse.json({ success: true, data: { already: true } }), req);
 
     // Complete on Pi Platform
     try {
@@ -73,11 +83,11 @@ export async function POST(req: NextRequest) {
       if (!res.ok) {
         const err = await res.text();
         console.error("[credits/buy complete]", err);
-        return NextResponse.json({ success: false, error: "Pi complete failed" }, { status: 500 });
+        return withCors(NextResponse.json({ success: false, error: "Pi complete failed" }, { status: 500 }), req);
       }
     } catch (e: any) {
       console.error("[credits/buy complete]", e);
-      return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+      return withCors(NextResponse.json({ success: false, error: e.message }, { status: 500 }), req);
     }
 
     // Credit SC to wallet
@@ -90,7 +100,7 @@ export async function POST(req: NextRequest) {
     const { data: wallet } = await supabase
       .from("supapi_credits").select("balance, total_earned").eq("user_id", userId).single();
 
-    if (!wallet) return NextResponse.json({ success: false, error: "Wallet not found" }, { status: 500 });
+    if (!wallet) return withCors(NextResponse.json({ success: false, error: "Wallet not found" }, { status: 500 }), req);
 
     const newBalance = wallet.balance + scAmount;
 
@@ -107,8 +117,8 @@ export async function POST(req: NextRequest) {
       note: `💎 Bought ${scAmount} SC with Pi`,
     });
 
-    return NextResponse.json({ success: true, data: { sc: scAmount, newBalance } });
+    return withCors(NextResponse.json({ success: true, data: { sc: scAmount, newBalance } }), req);
   }
 
-  return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
+  return withCors(NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 }), req);
 }

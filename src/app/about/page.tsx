@@ -3,23 +3,65 @@
 import Link from "next/link";
 import styles from "./page.module.css";
 
-const platforms = [
-  { emoji: "🛍️", label: "Marketplace",   desc: "Buy & sell with Pi" },
-  { emoji: "💼", label: "Gigs",           desc: "Freelance in Pi" },
-  { emoji: "📚", label: "Academy",        desc: "Learn & teach" },
-  { emoji: "🏠", label: "Stay",           desc: "Rent with Pi" },
-  { emoji: "🎮", label: "Arcade",         desc: "Play & earn" },
-  { emoji: "📰", label: "Newsfeed",       desc: "Pioneer community" },
-  { emoji: "💰", label: "Wallet",         desc: "Pi transactions" },
-  { emoji: "🤝", label: "Referral",       desc: "Invite & earn" },
-  { emoji: "📍", label: "Locator",        desc: "Pi businesses near you" },
-  { emoji: "🧑‍💻", label: "Jobs",           desc: "Hire & get hired" },
-  { emoji: "🎁", label: "Daily Rewards",  desc: "Check-in & earn" },
-  { emoji: "🎬", label: "Reels",          desc: "Short pioneer videos" },
-  { emoji: "📈", label: "Market Value",   desc: "Pi live market data" },
-  { emoji: "📋", label: "Classifieds",    desc: "Promote services" },
-  { emoji: "🪐", label: "MySpace",        desc: "Your Pi profile" },
-  { emoji: "ℹ️", label: "About Us",       desc: "Our story" },
+type PlatformItem = { href: string; emoji: string; label: string; desc: string };
+
+const platformCategories: { title: string; platforms: PlatformItem[] }[] = [
+  {
+    title: "Buy & Sell",
+    platforms: [
+      { href: "/supamarket",        emoji: "🛍️", label: "SupaMarket",   desc: "Buy & sell with Pi" },
+      { href: "/supaskil",          emoji: "💼", label: "SupaSkil",     desc: "Freelance in Pi" },
+      { href: "/supabulk",       emoji: "📦", label: "SupaBulk",     desc: "B2B wholesale" },
+      { href: "/supaauto", emoji: "🚗", label: "SupaAuto",    desc: "Automotive marketplace" },
+      { href: "/supadomus",         emoji: "🏠", label: "SupaDomus",   desc: "Property marketplace" },
+      { href: "/classifieds",   emoji: "📋", label: "Supasifieds",  desc: "Promote services" },
+      { href: "/supascrow",     emoji: "🛡️", label: "SupaScrow",   desc: "Secure Pi escrow" },
+    ],
+  },
+  {
+    title: "Social & Feed",
+    platforms: [
+      { href: "/social-feeds", emoji: "📱", label: "SupaFeeds",   desc: "Post, Reels & Live" },
+      { href: "/newsfeed",     emoji: "📰", label: "Newsfeed",   desc: "Pioneer community" },
+      { href: "/reels",        emoji: "🎬", label: "Reels",       desc: "Short pioneer videos" },
+      { href: "/live",         emoji: "🔴", label: "Live",        desc: "Live streams" },
+      { href: "/supa-livvi",   emoji: "✨", label: "SupaLivvi",   desc: "Lifestyle & discovery" },
+      { href: "/supa-saylo",   emoji: "🧵", label: "SupaSaylo",   desc: "Conversations & threads" },
+      { href: "/supaspace",      emoji: "🪐", label: "SupaSpace",  desc: "Your Pi profile" },
+    ],
+  },
+  {
+    title: "Learn & Play",
+    platforms: [
+      { href: "/supademy",  emoji: "📚", label: "SupaDemy",      desc: "Learn & teach" },
+      { href: "/supanova",   emoji: "🎮", label: "SupaNova",       desc: "Play & earn" },
+      { href: "/rewards",  emoji: "🎁", label: "Daily Rewards",  desc: "Check-in & earn" },
+      { href: "/referral", emoji: "🤝", label: "Referral",       desc: "Invite & earn" },
+      { href: "/supapets", emoji: "🐾", label: "SupaPets",      desc: "Virtual pets & SC" },
+    ],
+  },
+  {
+    title: "Stay & Go",
+    platforms: [
+      { href: "/supastay",     emoji: "🏠", label: "SupaStay",      desc: "Rent with Pi" },
+      { href: "/supaendoro",   emoji: "🛞", label: "SupaEndoro",    desc: "P2P vehicle rental" },
+      { href: "/locator",  emoji: "📍", label: "Locator",       desc: "Pi businesses near you" },
+      { href: "/pioneers", emoji: "🌍", label: "I Am a Pioneer", desc: "Find nearby Pioneers" },
+    ],
+  },
+  {
+    title: "Work",
+    platforms: [
+      { href: "/supahiro", emoji: "🧑‍💻", label: "SupaHiro", desc: "Hire & get hired" },
+    ],
+  },
+  {
+    title: "Wallet & Tools",
+    platforms: [
+      { href: "/wallet",   emoji: "💰", label: "Wallet",       desc: "Pi transactions" },
+      { href: "/pi-value", emoji: "📈", label: "Market Value", desc: "Pi live market data" },
+    ],
+  },
 ];
 
 const values = [
@@ -43,7 +85,7 @@ export default function AboutPage() {
           We are Supapi — the Pi Network Super App on a mission to turn Pi from a mined coin into a thriving, real-world economy.
         </p>
         <div className={styles.heroActions}>
-          <Link href="/market" className={styles.btnPrimary}>Start Exploring</Link>
+          <Link href="/supamarket" className={styles.btnPrimary}>Start Exploring</Link>
           <Link href="/referral" className={styles.btnOutline}>Earn Pi ↗</Link>
         </div>
       </section>
@@ -64,7 +106,7 @@ export default function AboutPage() {
             </div>
             <div className={styles.statsGrid}>
               <div className={styles.statCard}>
-                <div className={styles.statNum}>16</div>
+                <div className={styles.statNum}>25+</div>
                 <div className={styles.statLabel}>Platforms</div>
               </div>
               <div className={styles.statCard}>
@@ -123,20 +165,27 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 16 Platforms */}
+      {/* Platforms by category */}
       <section className={styles.sectionAlt}>
         <div className="container">
           <div className={styles.sectionLabel}>WHAT WE OFFER</div>
-          <h2 className={styles.sectionTitle}>16 Platforms. One Super App.</h2>
-          <p className={styles.bodyText} style={{ marginBottom: 32, maxWidth: 600 }}>
-            Supapi is not one thing — it is sixteen powerful platforms united under one roof, one wallet, and one Pi identity.
+          <h2 className={styles.sectionTitle}>Our Platforms. One Super App.</h2>
+          <p className={styles.bodyText} style={{ marginBottom: 40, maxWidth: 600 }}>
+            Supapi is not one thing — it is many powerful platforms united under one roof, one wallet, and one Pi identity.
           </p>
-          <div className={styles.platformGrid}>
-            {platforms.map(p => (
-              <div key={p.label} className={styles.platformCard}>
-                <span className={styles.platformEmoji}>{p.emoji}</span>
-                <span className={styles.platformLabel}>{p.label}</span>
-                <span className={styles.platformDesc}>{p.desc}</span>
+          <div className={styles.platformCategories}>
+            {platformCategories.map(cat => (
+              <div key={cat.title} className={styles.platformCategory}>
+                <h3 className={styles.platformCategoryTitle}>{cat.title}</h3>
+                <div className={styles.platformGrid}>
+                  {cat.platforms.map(p => (
+                    <Link key={p.href} href={p.href} className={styles.platformCard}>
+                      <span className={styles.platformEmoji}>{p.emoji}</span>
+                      <span className={styles.platformLabel}>{p.label}</span>
+                      <span className={styles.platformDesc}>{p.desc}</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -149,7 +198,7 @@ export default function AboutPage() {
           <div className={styles.sectionLabel} style={{ color: "rgba(255,255,255,0.5)" }}>OUR VISION</div>
           <h2 className={styles.sectionTitleWhite}>A World Where Pi is Everywhere</h2>
           <p className={styles.bodyTextLight} style={{ fontSize: 16, lineHeight: 1.9, marginBottom: 16 }}>
-            We envision a world where Pi is not just mined — it is used. Where every cup of coffee, every freelance project, every product sold, and every service rendered can be transacted in Pi. Where a miner in Kuala Lumpur, Lagos, São Paulo, or Manila has equal access to economic opportunity simply by opening Supapi.
+            We envision a world where Pi is not just mined — it is used. Where every cup of coffee, every freelance project, every product sold, and every service rendered can be transacted in Pi. Where a miner in Paris, Lagos, São Paulo, or Manila has equal access to economic opportunity simply by opening Supapi.
           </p>
           <p className={styles.bodyTextLight} style={{ fontSize: 16, lineHeight: 1.9, marginBottom: 32 }}>
             We are building that world — one feature, one Pioneer, one transaction at a time. And we need you with us.

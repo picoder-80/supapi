@@ -1,6 +1,6 @@
 // app/api/payments/incomplete/route.ts
 // Handle incomplete payments found during Pi.authenticate()
-// Called by onIncompletePaymentFound callback
+// Called by onIncompletePaymentFound callback. CORS enabled for Pi Sandbox.
 
 import { NextRequest } from "next/server";
 import { z } from "zod";
@@ -18,11 +18,17 @@ const schema = z.object({
   }),
 });
 
+const cors = (req: NextRequest) => req.headers.get("origin");
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: R.corsHeaders("*") });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body   = await req.json();
     const parsed = schema.safeParse(body);
-    if (!parsed.success) return R.badRequest("Invalid payment data");
+    if (!parsed.success) return R.withCors(R.badRequest("Invalid payment data"), cors(req));
 
     const { payment } = parsed.data;
     const paymentId   = payment.identifier;
@@ -66,16 +72,16 @@ export async function POST(req: NextRequest) {
           .eq("pi_payment_id", paymentId);
       }
 
-      return R.ok({ paymentId }, "Incomplete payment completed");
+      return R.withCors(R.ok({ paymentId }, "Incomplete payment completed"), cors(req));
     }
 
     // No txid — payment was approved but user didn't confirm
     // Just log it, Pi will handle expiry
     console.log("[Incomplete] Payment has no txid yet:", paymentId);
-    return R.ok({ paymentId }, "Incomplete payment acknowledged");
+    return R.withCors(R.ok({ paymentId }, "Incomplete payment acknowledged"), cors(req));
 
   } catch (err) {
     console.error("[Incomplete] Error:", err);
-    return R.serverError();
+    return R.withCors(R.serverError(), cors(req));
   }
 }

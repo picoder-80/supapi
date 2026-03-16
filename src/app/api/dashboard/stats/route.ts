@@ -12,7 +12,18 @@ export async function GET(req: NextRequest) {
     const supabase = await createAdminClient();
     const uid = payload.userId;
 
-    const [ordersRes, referralsRes, earningsRes, txRes] = await Promise.all([
+    const [
+      ordersRes,
+      referralsRes,
+      earningsRes,
+      txRes,
+      creditsRes,
+      listingsRes,
+      gigsRes,
+      recentOrdersRes,
+      creditTxRes,
+      petsRes,
+    ] = await Promise.all([
       supabase.from("orders").select("id", { count: "exact", head: true })
         .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`),
       supabase.from("referrals").select("id", { count: "exact", head: true })
@@ -21,18 +32,41 @@ export async function GET(req: NextRequest) {
         .eq("user_id", uid).eq("type", "sale").eq("status", "completed"),
       supabase.from("transactions").select("id, type, amount_pi, memo, status, created_at")
         .eq("user_id", uid).order("created_at", { ascending: false }).limit(5),
+      supabase.from("supapi_credits").select("balance").eq("user_id", uid).maybeSingle(),
+      supabase.from("listings").select("id", { count: "exact", head: true })
+        .eq("seller_id", uid).eq("status", "active"),
+      supabase.from("gigs").select("id", { count: "exact", head: true })
+        .eq("seller_id", uid).eq("status", "active"),
+      supabase.from("orders")
+        .select("id, status, amount_pi, created_at, listing:listing_id(title)")
+        .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase.from("credit_transactions")
+        .select("id, type, amount, activity, note, created_at")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase.from("supapets_pets").select("id", { count: "exact", head: true }).eq("user_id", uid),
     ]);
 
     const earned = (earningsRes.data ?? []).reduce((s: number, t: any) => s + Number(t.amount_pi), 0);
+    const scBalance = creditsRes.data?.balance ?? 0;
 
     return NextResponse.json({
       success: true,
       data: {
-        orders:       ordersRes.count   ?? 0,
-        referrals:    referralsRes.count ?? 0,
-        earned:       earned.toFixed(2),
+        orders: ordersRes.count ?? 0,
+        referrals: referralsRes.count ?? 0,
+        earned: earned.toFixed(2),
         transactions: txRes.data ?? [],
-      }
+        sc_balance: Number(scBalance),
+        listings: listingsRes.count ?? 0,
+        gigs: gigsRes.count ?? 0,
+        recent_orders: recentOrdersRes.data ?? [],
+        credit_transactions: creditTxRes.data ?? [],
+        pets: petsRes.count ?? 0,
+      },
     });
   } catch {
     return NextResponse.json({ success: false }, { status: 500 });

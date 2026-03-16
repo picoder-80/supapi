@@ -351,7 +351,7 @@ export default function SupaLivviPage() {
                       <span className={styles.authorMeta}>{timeAgo(selectedPost.created_at)}</span>
                     </div>
                     <Link
-                      href={`/myspace/${author.username}`}
+                      href={`/supaspace/${author.username}`}
                       className={styles.viewProfileLink}
                       onClick={e => e.stopPropagation()}
                     >

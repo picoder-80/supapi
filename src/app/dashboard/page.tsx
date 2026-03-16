@@ -4,34 +4,8 @@ export const dynamic = "force-dynamic";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import PiPriceWidget from "@/components/PiPriceWidget";
 import { isAdminRole } from "@/lib/admin/roles";
 import styles from "./page.module.css";
-
-const QUICK_ACTIONS = [
-  { href: "/market",   emoji: "🛍️", label: "Market"   },
-  { href: "/rewards",  emoji: "🎁", label: "Rewards"  },
-  { href: "/referral", emoji: "🤝", label: "Referral" },
-  { href: "/myspace",  emoji: "🪐", label: "MySpace"  },
-];
-
-const PLATFORMS = [
-  { href: "/market",      emoji: "🛍️", label: "Marketplace" },
-  { href: "/gigs",        emoji: "💼", label: "Gigs"        },
-  { href: "/academy",     emoji: "📚", label: "Academy"     },
-  { href: "/stay",        emoji: "🏡", label: "Stay"        },
-  { href: "/arcade",      emoji: "🎮", label: "Arcade"      },
-  { href: "/newsfeed",    emoji: "📰", label: "Newsfeed"    },
-  { href: "/wallet",      emoji: "💰", label: "Wallet"      },
-  { href: "/referral",    emoji: "🤝", label: "Referral"    },
-  { href: "/locator",     emoji: "📍", label: "Locator"     },
-  { href: "/jobs",        emoji: "🧑‍💻", label: "Jobs"        },
-  { href: "/rewards",     emoji: "🎁", label: "Rewards"     },
-  { href: "/reels",       emoji: "🎬", label: "Reels"       },
-  { href: "/pi-value",    emoji: "📈", label: "Pi Value"    },
-  { href: "/classifieds", emoji: "📋", label: "Classifieds" },
-  { href: "/myspace",     emoji: "🪐", label: "MySpace"     },
-];
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
 function getGreeting() {
@@ -42,8 +16,16 @@ function getGreeting() {
 }
 
 interface Stats {
-  orders: number; referrals: number; earned: string;
+  orders: number;
+  referrals: number;
+  earned: string;
+  sc_balance?: number;
+  listings?: number;
+  gigs?: number;
+  pets?: number;
   transactions: Array<{ id: string; type: string; amount_pi: number; memo: string; status: string; created_at: string }>;
+  recent_orders?: Array<{ id: string; status: string; amount_pi: number; created_at: string; listing?: { title: string } }>;
+  credit_transactions?: Array<{ id: string; type: string; amount: number; activity?: string; note?: string; created_at: string }>;
 }
 
 interface Profile {
@@ -79,19 +61,17 @@ const PROFILE_SECTIONS = [
   },
   {
     key: "shipping", label: "Shipping Address", icon: "📦",
-    desc: "Auto-filled when buying on Marketplace & Stay",
+    desc: "Auto-filled when buying on SupaMarket & SupaStay",
     fields: [
       { key: "address_line1", label: "Address Line 1", type: "text", placeholder: "Street address" },
       { key: "address_line2", label: "Address Line 2", type: "text", placeholder: "Apt, suite, unit (optional)" },
-      { key: "city",          label: "City",           type: "text", placeholder: "Kuala Lumpur" },
-      { key: "state",         label: "State",          type: "text", placeholder: "Selangor" },
-      { key: "postcode",      label: "Postcode",       type: "text", placeholder: "50000" },
-      { key: "country",       label: "Country",        type: "text", placeholder: "Malaysia" },
+      { key: "city",          label: "City",           type: "text", placeholder: "Los Angeles" },
+      { key: "state",         label: "State",          type: "text", placeholder: "California" },
+      { key: "postcode",      label: "Postcode",       type: "text", placeholder: "10001" },
+      { key: "country",       label: "Country",        type: "text", placeholder: "United States" },
     ],
   },
 ];
-
-type VerifyStep = "idle" | "checking" | "done" | "error";
 
 export default function DashboardPage() {
   const { user, isHydrating, login, isLoading } = useAuth();
@@ -103,12 +83,19 @@ export default function DashboardPage() {
   const [editData, setEditData]         = useState<Record<string, string>>({});
   const [saving, setSaving]             = useState(false);
   const [saveMsg, setSaveMsg]           = useState("");
-  const [verifyStep, setVerifyStep]     = useState<VerifyStep>("idle");
-  const [verifyError, setVerifyError]   = useState("");
-  const [kycDeclaring, setKycDeclaring] = useState(false);
-  const [verifySheet, setVerifySheet]   = useState<"wallet" | "kyc" | null>(null);
+  const [ordersPage, setOrdersPage]     = useState(1);
+  const [activityPage, setActivityPage] = useState(1);
 
   const token = () => typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "";
+  const PAGE_SIZE = 5;
+  const recentOrders = stats?.recent_orders ?? [];
+  const creditTxs = stats?.credit_transactions ?? [];
+  const ordersTotalPages = Math.max(1, Math.ceil(recentOrders.length / PAGE_SIZE));
+  const activityTotalPages = Math.max(1, Math.ceil(creditTxs.length / PAGE_SIZE));
+  const ordersPageSafe = Math.min(ordersPage, ordersTotalPages);
+  const activityPageSafe = Math.min(activityPage, activityTotalPages);
+  const ordersPageItems = recentOrders.slice((ordersPageSafe - 1) * PAGE_SIZE, ordersPageSafe * PAGE_SIZE);
+  const activityPageItems = creditTxs.slice((activityPageSafe - 1) * PAGE_SIZE, activityPageSafe * PAGE_SIZE);
 
   const fetchStats = useCallback(async () => {
     if (!token()) return;
@@ -131,6 +118,11 @@ export default function DashboardPage() {
     } catch {}
     setLoadingProfile(false);
   }, []);
+
+  const refreshAll = useCallback(() => {
+    fetchStats();
+    fetchProfile();
+  }, [fetchStats, fetchProfile]);
 
   useEffect(() => {
     if (user) { fetchStats(); fetchProfile(); }
@@ -165,50 +157,6 @@ export default function DashboardPage() {
     setSaving(false);
   };
 
-  const handleKycDeclare = async () => {
-    setKycDeclaring(true);
-    try {
-      const r = await fetch("/api/verify/kyc", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
-        body: JSON.stringify({ action: "self_declare" }),
-      });
-      const d = await r.json();
-      if (d.success) {
-        setProfile(prev => ({ ...prev, kyc_self_declared: true }));
-        setVerifySheet(null);
-      }
-    } catch {}
-    setKycDeclaring(false);
-  };
-
-  // 1-click wallet verify — uses wallet_address already captured from Pi authenticate()
-  const handleWalletVerify = async () => {
-    setVerifyStep("checking");
-    setVerifyError("");
-    try {
-      const r = await fetch("/api/verify/wallet/init", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
-      });
-      const d = await r.json();
-      if (d.success && (d.verified || d.already)) {
-        setVerifyStep("done");
-        setProfile(prev => ({ ...prev, wallet_verified: true, wallet_address: d.wallet_address }));
-        setTimeout(() => { setVerifySheet(null); setVerifyStep("idle"); }, 2000);
-      } else if (d.need_relogin) {
-        setVerifyError("Please sign out and sign in again to link your wallet.");
-        setVerifyStep("error");
-      } else {
-        setVerifyError(d.error ?? "Verification failed. Please try again.");
-        setVerifyStep("error");
-      }
-    } catch {
-      setVerifyError("Network error. Please try again.");
-      setVerifyStep("error");
-    }
-  };
-
   const profileComplete = () => {
     const fields = ["display_name","phone","email","address_line1","city","postcode","country"];
     const filled = fields.filter(f => String(profile[f as keyof Profile] ?? "").trim()).length;
@@ -232,12 +180,9 @@ export default function DashboardPage() {
     </div>
   );
 
-  const isAdmin         = isAdminRole(user.role);
-  const pct             = profileComplete();
-  const activeSec       = PROFILE_SECTIONS.find(s => s.key === activeSection);
-  const hasKyc          = profile.kyc_self_declared || profile.kyc_proof_verified;
-  const hasWallet       = profile.wallet_verified;
-  const isFullyVerified = hasKyc && hasWallet;
+  const isAdmin   = isAdminRole(user.role);
+  const pct       = profileComplete();
+  const activeSec = PROFILE_SECTIONS.find(s => s.key === activeSection);
 
   return (
     <div>
@@ -247,7 +192,7 @@ export default function DashboardPage() {
             <div className={styles.greeting}>{getGreeting()},</div>
             <div className={styles.username}><span className={styles.usernamePi}>π</span> {user.username}</div>
           </div>
-          <Link href="/myspace" className={styles.avatar}>
+          <Link href="/supaspace" className={styles.avatar}>
             {(profile.avatar_url || user.avatar_url)
               ? <img src={profile.avatar_url || user.avatar_url!} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
               : getInitial(user.username)
@@ -257,17 +202,28 @@ export default function DashboardPage() {
         <div className={styles.statRow}>
           <div className={styles.statCard}>
             <div className={styles.statValue}>{loadingStats ? "..." : `${stats?.earned ?? "0.00"}π`}</div>
-            <div className={styles.statLabel}>Supapi Earnings</div>
+            <div className={styles.statLabel}>Earnings</div>
           </div>
-          <div className={styles.statCard}>
+          <Link href="/wallet" className={styles.statCard}>
+            <div className={styles.statValue}>{loadingStats ? "..." : `${stats?.sc_balance ?? 0}`}</div>
+            <div className={styles.statLabel}>SC Balance</div>
+          </Link>
+          <Link href="/supamarket/orders" className={styles.statCard}>
             <div className={styles.statValue}>{loadingStats ? "..." : (stats?.orders ?? 0)}</div>
             <div className={styles.statLabel}>Orders</div>
-          </div>
-          <div className={styles.statCard}>
+          </Link>
+          <Link href="/referral" className={styles.statCard}>
             <div className={styles.statValue}>{loadingStats ? "..." : (stats?.referrals ?? 0)}</div>
             <div className={styles.statLabel}>Referrals</div>
-          </div>
+          </Link>
+          <Link href="/supapets" className={styles.statCard}>
+            <div className={styles.statValue}>{loadingStats ? "..." : (stats?.pets ?? 0)}</div>
+            <div className={styles.statLabel}>Pets</div>
+          </Link>
         </div>
+        <button type="button" className={styles.refreshBtn} onClick={refreshAll} disabled={loadingStats} aria-label="Refresh">
+          {loadingStats ? "⏳" : "↻"} Refresh
+        </button>
       </div>
 
       <div className={styles.body}>
@@ -289,7 +245,7 @@ export default function DashboardPage() {
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <div className={styles.sectionTitle}>My Profile</div>
-            <Link href="/myspace" className={styles.sectionLink}>View public ↗</Link>
+            <Link href="/supaspace" className={styles.sectionLink}>View public ↗</Link>
           </div>
           <div className={styles.profileCard}>
             <div className={styles.profileAvatar}>
@@ -303,14 +259,10 @@ export default function DashboardPage() {
               <div className={styles.profilePiId}>@{user.username}</div>
               <div className={styles.profileBadges}>
                 <span className={styles.badge}>🪐 Pioneer</span>
-                {hasKyc && !profile.kyc_proof_verified && <span className={`${styles.badge} ${styles.badgeKyc}`}>🟡 KYC Pioneer</span>}
-                {profile.kyc_proof_verified && <span className={`${styles.badge} ${styles.badgeKycProof}`}>🔵 KYC Proof</span>}
-                {hasWallet && <span className={`${styles.badge} ${styles.badgeWallet}`}>🟢 Wallet Verified</span>}
-                {isFullyVerified && <span className={`${styles.badge} ${styles.badgeVerified}`}>🟣 Verified Pioneer</span>}
                 {isAdmin && <span className={`${styles.badge} ${styles.badgeAdmin}`}>⚙️ Admin</span>}
               </div>
             </div>
-            <Link href="/myspace" className={styles.profileEdit}>✏️</Link>
+            <Link href="/supaspace" className={styles.profileEdit}>✏️</Link>
           </div>
 
           <div className={styles.profileProgress}>
@@ -343,160 +295,83 @@ export default function DashboardPage() {
           })}
         </div>
 
-        {/* Pioneer Verification */}
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.sectionTitle}>Pioneer Verification</div>
-            <span className={styles.optionalTag}>Optional</span>
-          </div>
-          <div className={styles.verifyIntro}>
-            Earn trust badges shown on your profile, listings & gigs. Free & takes seconds.
-          </div>
-
-          <div className={`${styles.verifyCard} ${hasKyc ? styles.verifyCardDone : ""}`}>
-            <div className={styles.verifyCardLeft}>
-              <div className={styles.verifyBadgeIcon}>🟡</div>
-              <div className={styles.verifyCardInfo}>
-                <div className={styles.verifyCardTitle}>KYC Pioneer</div>
-                <div className={styles.verifyCardDesc}>Self-declare that you have completed Pi Network KYC. No documents needed.</div>
-                {hasKyc && <div className={styles.verifyCardStatus}>✅ Declared</div>}
+        {/* What's Next — incomplete profile tips */}
+        {pct < 100 && (
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}><div className={styles.sectionTitle}>What&apos;s Next</div></div>
+            <div className={styles.whatsNextCard}>
+              <div className={styles.whatsNextIcon}>🎯</div>
+              <div className={styles.whatsNextText}>
+                Complete your profile ({pct}%) to unlock faster checkout & earn 10 SC bonus.
               </div>
+              <button type="button" className={styles.whatsNextBtn} onClick={() => openSection("personal")}>
+                Complete Profile →
+              </button>
             </div>
-            {!hasKyc ? <button className={styles.verifyCardBtn} onClick={() => setVerifySheet("kyc")}>Claim →</button> : <div className={styles.verifyCardCheck}>✓</div>}
           </div>
+        )}
 
-          <div className={`${styles.verifyCard} ${hasWallet ? styles.verifyCardDone : ""}`}>
-            <div className={styles.verifyCardLeft}>
-              <div className={styles.verifyBadgeIcon}>🟢</div>
-              <div className={styles.verifyCardInfo}>
-                <div className={styles.verifyCardTitle}>Wallet Verified</div>
-                <div className={styles.verifyCardDesc}>Link your Pi wallet to Supapi. Auto-detected from your Pi login — zero cost.</div>
-                {hasWallet && (
-                  <div className={styles.verifyCardStatus}>
-                    ✅ Linked · <span className={styles.verifyWalletAddr}>{profile.wallet_address ? `${profile.wallet_address.slice(0,8)}...${profile.wallet_address.slice(-6)}` : ""}</span>
+        {/* Recent Orders — 5 per page */}
+        {recentOrders.length > 0 && (
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionTitle}>Recent Orders</div>
+              <Link href="/supamarket/orders" className={styles.sectionLink}>View all →</Link>
+            </div>
+            <div className={styles.activityList}>
+              {ordersPageItems.map((o) => (
+                <Link key={o.id} href={`/supamarket/orders/${o.id}`} className={styles.activityItem}>
+                  <div className={styles.activityIcon}>📦</div>
+                  <div className={styles.activityInfo}>
+                    <div className={styles.activityTitle}>{o.listing?.title ?? "Order"}</div>
+                    <div className={styles.activitySub}>{o.status} · {Number(o.amount_pi).toFixed(2)}π</div>
                   </div>
-                )}
-              </div>
+                  <span className={styles.activityArrow}>›</span>
+                </Link>
+              ))}
             </div>
-            {!hasWallet
-              ? <button className={styles.verifyCardBtn} onClick={() => { setVerifySheet("wallet"); setVerifyStep("idle"); setVerifyError(""); }}>Verify →</button>
-              : <div className={styles.verifyCardCheck}>✓</div>
-            }
-          </div>
-
-          {isFullyVerified && (
-            <div className={styles.verifyAllDone}>
-              <span>🟣</span>
-              <div>
-                <div className={styles.verifyAllDoneTitle}>Verified Pioneer</div>
-                <div className={styles.verifyAllDoneSub}>Highest trust level on Supapi!</div>
+            {ordersTotalPages > 1 && (
+              <div className={styles.pager}>
+                <button type="button" className={styles.pagerBtn} disabled={ordersPageSafe === 1} onClick={() => setOrdersPage((p) => Math.max(1, p - 1))}>← Prev</button>
+                <span className={styles.pagerInfo}>Page {ordersPageSafe} of {ordersTotalPages}</span>
+                <button type="button" className={styles.pagerBtn} disabled={ordersPageSafe === ordersTotalPages} onClick={() => setOrdersPage((p) => Math.min(ordersTotalPages, p + 1))}>Next →</button>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* Recent Activity (SC) — 5 per page */}
+        {creditTxs.length > 0 && (
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionTitle}>Recent Activity</div>
+              <Link href="/rewards" className={styles.sectionLink}>View all →</Link>
             </div>
-          )}
-        </div>
-
-        <PiPriceWidget />
-
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}><div className={styles.sectionTitle}>Quick Access</div></div>
-          <div className={styles.quickGrid}>
-            {QUICK_ACTIONS.map((item) => (
-              <Link key={item.href} href={item.href} className={styles.quickItem}>
-                <span className={styles.quickEmoji}>{item.emoji}</span>
-                <span className={styles.quickLabel}>{item.label}</span>
-              </Link>
-            ))}
+            <div className={styles.activityList}>
+              {activityPageItems.map((tx) => (
+                <div key={tx.id} className={styles.activityItem}>
+                  <div className={styles.activityIcon}>{tx.amount >= 0 ? "💎" : "↗"}</div>
+                  <div className={styles.activityInfo}>
+                    <div className={styles.activityTitle}>{tx.note ?? tx.activity ?? (tx.amount >= 0 ? "Earned" : "Spent")}</div>
+                    <div className={styles.activitySub}>{new Date(tx.created_at).toLocaleDateString()}</div>
+                  </div>
+                  <span className={`${styles.activityAmount} ${tx.amount < 0 ? styles.activityAmountNeg : ""}`}>
+                    {tx.amount >= 0 ? "+" : ""}{tx.amount} SC
+                  </span>
+                </div>
+              ))}
+            </div>
+            {activityTotalPages > 1 && (
+              <div className={styles.pager}>
+                <button type="button" className={styles.pagerBtn} disabled={activityPageSafe === 1} onClick={() => setActivityPage((p) => Math.max(1, p - 1))}>← Prev</button>
+                <span className={styles.pagerInfo}>Page {activityPageSafe} of {activityTotalPages}</span>
+                <button type="button" className={styles.pagerBtn} disabled={activityPageSafe === activityTotalPages} onClick={() => setActivityPage((p) => Math.min(activityTotalPages, p + 1))}>Next →</button>
+              </div>
+            )}
           </div>
-        </div>
-
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.sectionTitle}>All Platforms</div>
-            <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>15 services</span>
-          </div>
-          <div className={styles.platformsGrid}>
-            {PLATFORMS.map((item) => (
-              <Link key={item.href} href={item.href} className={styles.platformCard}>
-                <span className={styles.platformEmoji}>{item.emoji}</span>
-                <span className={styles.platformLabel}>{item.label}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
+        )}
 
       </div>
-
-      {/* KYC Sheet */}
-      {verifySheet === "kyc" && (
-        <div className={styles.sheetOverlay} onClick={() => setVerifySheet(null)}>
-          <div className={styles.sheet} onClick={e => e.stopPropagation()}>
-            <div className={styles.sheetHandle} />
-            <div className={styles.sheetHeader}>
-              <div><div className={styles.sheetTitle}>🟡 KYC Pioneer</div><div className={styles.sheetDesc}>Self-declaration — no documents required</div></div>
-              <button className={styles.sheetClose} onClick={() => setVerifySheet(null)}>✕</button>
-            </div>
-            <div className={styles.sheetBody}>
-              <div className={styles.kycDeclareBox}>
-                <div className={styles.kycDeclareIcon}>🪐</div>
-                <div className={styles.kycDeclareText}>By claiming this badge, you confirm that you have completed Pi Network KYC verification as a Pioneer. This is based on your honour — no documents are uploaded or stored.</div>
-                <div className={styles.kycDeclareNote}>⚠️ False declarations may result in badge removal.</div>
-              </div>
-              <button className={styles.saveBtn} onClick={handleKycDeclare} disabled={kycDeclaring}>
-                {kycDeclaring ? "Claiming..." : "✅ I confirm — Claim KYC Pioneer Badge"}
-              </button>
-              <button className={styles.cancelBtn} onClick={() => setVerifySheet(null)}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Wallet Verify Sheet */}
-      {verifySheet === "wallet" && (
-        <div className={styles.sheetOverlay} onClick={() => verifyStep !== "checking" && setVerifySheet(null)}>
-          <div className={styles.sheet} onClick={e => e.stopPropagation()}>
-            <div className={styles.sheetHandle} />
-            <div className={styles.sheetHeader}>
-              <div><div className={styles.sheetTitle}>🟢 Wallet Verification</div><div className={styles.sheetDesc}>Link your Pi wallet — free & instant</div></div>
-              <button className={styles.sheetClose} onClick={() => setVerifySheet(null)} disabled={verifyStep === "checking"}>✕</button>
-            </div>
-            <div className={styles.sheetBody}>
-              {verifyStep === "idle" && (
-                <>
-                  <div className={styles.walletVerifySteps}>
-                    <div className={styles.walletVerifyStep}><div className={styles.walletVerifyStepNum}>✓</div><div>Your Pi wallet address is automatically captured when you sign in with Pi</div></div>
-                    <div className={styles.walletVerifyStep}><div className={styles.walletVerifyStepNum}>✓</div><div>No transaction needed — zero cost, completely free</div></div>
-                    <div className={styles.walletVerifyStep}><div className={styles.walletVerifyStepNum}>✓</div><div>Your wallet address will be linked to your Supapi profile</div></div>
-                  </div>
-                  <div className={styles.walletVerifyNote}>
-                    💡 Wallet address is read from Pi SDK during login. No private key or seed phrase is ever accessed.
-                  </div>
-                  <button className={styles.saveBtn} onClick={handleWalletVerify}>Link My Pi Wallet →</button>
-                </>
-              )}
-              {verifyStep === "checking" && (
-                <div className={styles.verifyChecking}>
-                  <div className={styles.verifyCheckingSpinner}>⏳</div>
-                  <div>Linking your wallet...</div>
-                </div>
-              )}
-              {verifyStep === "done" && (
-                <div className={styles.verifyDone}>
-                  <div className={styles.verifyDoneIcon}>✅</div>
-                  <div className={styles.verifyDoneTitle}>Wallet Linked!</div>
-                  <div className={styles.verifyDoneSub}>🟢 Badge added to your profile</div>
-                </div>
-              )}
-              {verifyStep === "error" && (
-                <>
-                  <div className={styles.verifyError}>{verifyError}</div>
-                  <button className={styles.saveBtn} onClick={() => setVerifyStep("idle")}>Try Again</button>
-                  <button className={styles.cancelBtn} onClick={() => setVerifySheet(null)}>Cancel</button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Profile Edit Sheet */}
       {activeSection && activeSec && (

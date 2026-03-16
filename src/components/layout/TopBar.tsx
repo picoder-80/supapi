@@ -11,36 +11,36 @@ import styles from "./TopBar.module.css";
 const navLinks = [
   { href: "/",            label: "🏠 Home"         },
   { href: "/dashboard",   label: "👤 Dashboard"     },
-  { href: "/market",      label: "🛍️ Market"        },
-  { href: "/gigs",        label: "💼 Gigs"          },
-  { href: "/academy",     label: "📚 Academy"       },
-  { href: "/stay",        label: "🏡 Stay"          },
-  { href: "/arcade",      label: "🎮 Arcade"        },
+  { href: "/supamarket",      label: "🛍️ SupaMarket"    },
+  { href: "/supaskil",        label: "💼 SupaSkil"      },
+  { href: "/supademy",     label: "📚 SupaDemy"      },
+  { href: "/stay",        label: "🏡 SupaStay"      },
+  { href: "/supanova",      label: "🎮 SupaNova"       },
   { href: "/newsfeed",    label: "📰 Newsfeed"      },
+  { href: "/supafeeds", label: "📱 SupaFeeds"    },
   { href: "/wallet",      label: "💰 Wallet"        },
   { href: "/referral",    label: "🤝 Referral"      },
   { href: "/locator",     label: "📍 Locator"       },
-  { href: "/jobs",        label: "🧑‍💻 Jobs"          },
+  { href: "/supahiro",        label: "🧑‍💻 SupaHiro"      },
   { href: "/rewards",     label: "🎁 Rewards"       },
   { href: "/reels",       label: "🎬 Reels"         },
+  { href: "/live",        label: "🔴 Live"          },
   { href: "/pi-value",    label: "📈 Pi Value"      },
-  { href: "/classifieds", label: "📋 Classifieds"   },
-  { href: "/myspace",     label: "🪐 MySpace"       },
+  { href: "/supasifieds", label: "📋 Supasifieds"   },
+  { href: "/supaspace",     label: "🪐 SupaSpace"     },
   { href: "/pioneers",    label: "🌍 Pioneers"      },
   { href: "/supa-livvi",  label: "✨ SupaLivvi"     },
   { href: "/supa-saylo",  label: "🧵 SupaSaylo"     },
-  { href: "/bulkhub",          label: "📦 BulkHub"          },
-  { href: "/machina-market",  label: "🚗 MachinaMarket"   },
-  { href: "/domus",            label: "🏠 Domus"           },
-  { href: "/endoro",           label: "🛞 Endoro"          },
+  { href: "/supabulk",          label: "📦 SupaBulk"        },
+  { href: "/supaauto",  label: "🚗 SupaAuto"        },
+  { href: "/domus",            label: "🏠 SupaDomus"       },
+  { href: "/supaendoro",           label: "🛞 SupaEndoro"      },
 ];
 
 export default function TopBar() {
   const pathname  = usePathname();
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLAnchorElement>(null);
-
-  if (pathname.startsWith("/admin")) return null;
 
   useEffect(() => {
     if (!scrollRef.current || !activeRef.current) return;
@@ -49,6 +49,8 @@ export default function TopBar() {
     const scrollTo = active.offsetLeft - container.offsetWidth / 2 + active.offsetWidth / 2;
     container.scrollTo({ left: scrollTo, behavior: "smooth" });
   }, [pathname]);
+
+  if (pathname.startsWith("/admin")) return null;
 
   return (
     <header className={styles.header}>

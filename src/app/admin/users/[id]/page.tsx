@@ -31,6 +31,7 @@ function Badge({ status }: { status: string }) {
 }
 function fmt(iso: string) { return new Date(iso).toLocaleDateString("en-MY", { day:"numeric", month:"short", year:"numeric" }); }
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
+const PAGE_SIZE = 10;
 
 export default function AdminUserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -42,6 +43,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
   const [banReason, setBanReason] = useState("");
   const [showBan, setShowBan]     = useState(false);
   const [saving, setSaving] = useState(false);
+  const [ordersPage, setOrdersPage] = useState(1);
 
   useEffect(() => { setToken(localStorage.getItem("supapi_admin_token") ?? ""); }, []);
 
@@ -158,7 +160,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
         <div className={styles.listCard}>
           <div className={styles.cardTitle}>Recent Listings ({listing_count})</div>
           {listings.map((l: any) => (
-            <Link key={l.id} href={`/market/${l.id}`} className={styles.listRow}>
+            <Link key={l.id} href={`/supamarket/${l.id}`} className={styles.listRow}>
               <div className={styles.listTitle}>{l.title}</div>
               <div className={styles.listMeta}>
                 <span className={styles.piAmt}>{Number(l.price_pi).toFixed(2)} π</span>
@@ -170,20 +172,36 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
         </div>
       )}
 
-      {/* Orders */}
+      {/* Orders — 10 per page */}
       {orders.length > 0 && (
         <div className={styles.listCard}>
           <div className={styles.cardTitle}>Recent Orders ({order_count})</div>
-          {orders.map((o: any) => (
-            <Link key={o.id} href={`/market/orders/${o.id}`} className={styles.listRow}>
-              <div className={styles.listTitle}>{o.id.slice(0, 10)}…</div>
-              <div className={styles.listMeta}>
-                <span className={styles.piAmt}>{Number(o.amount_pi).toFixed(2)} π</span>
-                <Badge status={o.status} />
-                <span className={styles.listDate}>{fmt(o.created_at)}</span>
-              </div>
-            </Link>
-          ))}
+          {(() => {
+            const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
+            const pageSafe = Math.min(ordersPage, totalPages);
+            const pageOrders = orders.slice((pageSafe - 1) * PAGE_SIZE, pageSafe * PAGE_SIZE);
+            return (
+              <>
+                {pageOrders.map((o: any) => (
+                  <Link key={o.id} href={`/supamarket/orders/${o.id}`} className={styles.listRow}>
+                    <div className={styles.listTitle}>{o.id.slice(0, 10)}…</div>
+                    <div className={styles.listMeta}>
+                      <span className={styles.piAmt}>{Number(o.amount_pi).toFixed(2)} π</span>
+                      <Badge status={o.status} />
+                      <span className={styles.listDate}>{fmt(o.created_at)}</span>
+                    </div>
+                  </Link>
+                ))}
+                {totalPages > 1 && (
+                  <div className={styles.pager}>
+                    <button type="button" className={styles.pagerBtn} disabled={pageSafe === 1} onClick={() => setOrdersPage((p) => Math.max(1, p - 1))}>← Prev</button>
+                    <span className={styles.pagerInfo}>Page {pageSafe} of {totalPages}</span>
+                    <button type="button" className={styles.pagerBtn} disabled={pageSafe === totalPages} onClick={() => setOrdersPage((p) => Math.min(totalPages, p + 1))}>Next →</button>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
 

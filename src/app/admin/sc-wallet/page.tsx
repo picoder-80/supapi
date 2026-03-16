@@ -42,7 +42,7 @@ function formatActivityLabel(activity: string) {
   if (!key) return "Unknown";
 
   // Backward compatibility for old marketplace event naming.
-  if (key === "first_listing") return "Marketplace First Listing";
+  if (key === "first_listing") return "SupaMarket First Listing";
 
   const firstListingMatch = key.match(/^([a-z0-9]+)_first_listing$/i);
   if (firstListingMatch) {
@@ -93,7 +93,7 @@ export default function AdminSCWalletPage() {
     const token = localStorage.getItem("supapi_admin_token") ?? "";
     setLoading(true);
     const params = new URLSearchParams({
-      limit: "40",
+      limit: "10",
       page: String(nextPage),
       q: nextQ,
       type: nextType,

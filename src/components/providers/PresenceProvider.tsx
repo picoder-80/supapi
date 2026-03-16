@@ -38,15 +38,16 @@ export default function PresenceProvider({ children }: { children: ReactNode }) 
 
     const beat = async () => {
       try {
-        await fetch("/api/myspace/heartbeat", {
+        const res = await fetch("/api/supaspace/heartbeat", {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
         });
-        // Update own entry in map immediately
-        setLastSeenMap(prev => ({
-          ...prev,
-          [user.id]: new Date().toISOString(),
-        }));
+        if (res.ok) {
+          setLastSeenMap(prev => ({
+            ...prev,
+            [user.id]: new Date().toISOString(),
+          }));
+        }
       } catch {}
     };
 
@@ -58,7 +59,7 @@ export default function PresenceProvider({ children }: { children: ReactNode }) 
   // Fetch last_seen for a specific user — called by useProfileOnline
   const fetchLastSeen = async (userId: string) => {
     try {
-      const r = await fetch(`/api/myspace/lastseen/${userId}`);
+      const r = await fetch(`/api/supaspace/lastseen/${userId}`);
       const d = await r.json();
       if (d.success && d.data?.last_seen) {
         setLastSeenMap(prev => ({ ...prev, [userId]: d.data.last_seen }));
@@ -90,7 +91,7 @@ export function useProfileOnline(userId: string | null | undefined): boolean {
 
     const check = async () => {
       try {
-        const r = await fetch(`/api/myspace/lastseen/${userId}`);
+        const r = await fetch(`/api/supaspace/lastseen/${userId}`);
         const d = await r.json();
         if (d.success && d.data?.last_seen) {
           const diff = Date.now() - new Date(d.data.last_seen).getTime();

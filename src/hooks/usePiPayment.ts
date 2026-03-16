@@ -3,12 +3,12 @@
 // hooks/usePiPayment.ts
 
 import { useState } from "react";
-import { createPiPayment } from "@/lib/pi/sdk";
+import { createPiPayment, getApiBase } from "@/lib/pi/sdk";
 
 interface PaymentOptions {
   amountPi:    number;
   memo:        string;
-  type:        "listing" | "gig" | "course" | "stay" | "game";
+  type:        "listing" | "gig" | "course" | "stay" | "game" | "supapod_tip";
   referenceId: string;
   metadata?:   Record<string, unknown>;
   onSuccess?:  (paymentId: string, txid: string) => void;
@@ -38,7 +38,8 @@ export function usePiPayment() {
         // ✅ FIRE AND FORGET — do NOT await, Pi Browser needs to proceed immediately
         onReadyForServerApproval: (paymentId: string) => {
           console.log("[Payment] onReadyForServerApproval:", paymentId);
-          fetch("/api/payments/approve", {
+          const base = getApiBase();
+          fetch(`${base || ""}/api/payments/approve`, {
             method:  "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -55,7 +56,8 @@ export function usePiPayment() {
         onReadyForServerCompletion: async (paymentId: string, txid: string) => {
           console.log("[Payment] onReadyForServerCompletion:", paymentId, txid);
           try {
-            const res = await fetch("/api/payments/complete", {
+            const base = getApiBase();
+            const res = await fetch(`${base || ""}/api/payments/complete`, {
               method:  "POST",
               headers: { "Content-Type": "application/json" },
               body:    JSON.stringify({ paymentId, txid }),

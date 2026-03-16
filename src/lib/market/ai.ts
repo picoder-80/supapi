@@ -29,7 +29,7 @@ export interface SupportTriageResult {
   source: "heuristic" | "llm";
 }
 
-type ProviderName = "anthropic" | "openai" | "heuristic";
+type ProviderName = "anthropic" | "openai" | "deepseek" | "heuristic";
 
 function clampConfidence(n: number): number {
   return Math.max(0, Math.min(1, n));
@@ -48,14 +48,14 @@ function getMaxAutoResolvePi(): number {
 }
 
 function getProviderOrder(): ProviderName[] {
-  const raw = process.env.AI_PROVIDER_ORDER ?? "anthropic,openai,heuristic";
+  const raw = process.env.AI_PROVIDER_ORDER ?? "anthropic,openai,deepseek,heuristic";
   const parsed = raw
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean) as ProviderName[];
 
-  const valid = parsed.filter((p): p is ProviderName => ["anthropic", "openai", "heuristic"].includes(p));
-  if (valid.length === 0) return ["anthropic", "openai", "heuristic"];
+  const valid = parsed.filter((p): p is ProviderName => ["anthropic", "openai", "deepseek", "heuristic"].includes(p));
+  if (valid.length === 0) return ["anthropic", "openai", "deepseek", "heuristic"];
   if (!valid.includes("heuristic")) valid.push("heuristic");
   return valid;
 }
@@ -173,6 +173,29 @@ async function callOpenAI(prompt: string): Promise<string | null> {
   return data?.choices?.[0]?.message?.content ?? null;
 }
 
+async function callDeepSeek(prompt: string): Promise<string | null> {
+  const key = process.env.DEEPSEEK_API_KEY;
+  if (!key) return null;
+
+  const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      model: process.env.DEEPSEEK_MODEL ?? "deepseek-chat",
+      temperature: 0.2,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+    }),
+  });
+
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content ?? null;
+}
+
 async function runPromptWithFallback(prompt: string): Promise<{ text: string | null; provider: ProviderName }> {
   const order = getProviderOrder();
 
@@ -183,6 +206,9 @@ async function runPromptWithFallback(prompt: string): Promise<{ text: string | n
         if (text) return { text, provider };
       } else if (provider === "openai") {
         const text = await callOpenAI(prompt);
+        if (text) return { text, provider };
+      } else if (provider === "deepseek") {
+        const text = await callDeepSeek(prompt);
         if (text) return { text, provider };
       } else if (provider === "heuristic") {
         return { text: null, provider };

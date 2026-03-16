@@ -8,129 +8,140 @@ import styles from "./page.module.css";
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
 
-interface Pioneer {
+interface StatusPost {
   id: string;
-  username: string;
-  display_name: string | null;
-  avatar_url: string | null;
-  kyc_status: string;
-  bio: string | null;
-}
-
-interface FeedData {
-  following: Pioneer[];
-  popular: Pioneer[];
+  user_id: string;
+  body: string;
+  created_at: string;
+  user?: { username: string; display_name: string | null; avatar_url: string | null };
 }
 
 export default function NewsfeedPage() {
   const { user } = useAuth();
-  const [tab, setTab] = useState<"following" | "popular">("following");
-  const [feed, setFeed] = useState<FeedData>({ following: [], popular: [] });
+  const [statusText, setStatusText] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [feed, setFeed] = useState<StatusPost[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const token = () => (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "");
+
+  const fetchFeed = async () => {
+    setLoading(true);
+    try {
+      const r = await fetch("/api/newsfeed/status", {
+        headers: user ? { Authorization: `Bearer ${token()}` } : {},
+      });
+      const d = await r.json();
+      if (d.success && d.data?.posts) setFeed(d.data.posts);
+      else setFeed([]);
+    } catch { setFeed([]); }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetch_ = async () => {
-      setLoading(true);
-      try {
-        const uid = user?.id ?? "";
-        const r = await fetch(`/api/newsfeed${uid ? `?userId=${uid}` : ""}`);
-        const d = await r.json();
-        if (d.success) setFeed(d.data);
-      } catch {}
-      setLoading(false);
-    };
-    fetch_();
+    fetchFeed();
   }, [user?.id]);
 
-  useEffect(() => {
-    if (user) setTab("following");
-    else setTab("popular");
-  }, [user]);
-
-  const list = tab === "following" ? feed.following : feed.popular;
+  const handlePost = async () => {
+    const text = statusText.trim();
+    if (!text || !user || !token()) return;
+    setPosting(true);
+    try {
+      const r = await fetch("/api/newsfeed/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+        body: JSON.stringify({ body: text }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        setStatusText("");
+        fetchFeed();
+      } else alert(d.error ?? "Failed to post");
+    } catch { alert("Failed to post"); }
+    setPosting(false);
+  };
 
   return (
     <div className={styles.page}>
-      {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerTop}>
           <h1 className={styles.title}>📰 Newsfeed</h1>
-          <div className={styles.headerSub}>Posts & updates from pioneers</div>
-        </div>
-        <div className={styles.tabs}>
-          <button className={`${styles.tab} ${tab === "following" ? styles.tabActive : ""}`} onClick={() => setTab("following")}>
-            👥 Following
-          </button>
-          <button className={`${styles.tab} ${tab === "popular" ? styles.tabActive : ""}`} onClick={() => setTab("popular")}>
-            🔥 Popular
-          </button>
+          <div className={styles.headerSub}>Status updates from pioneers you follow</div>
         </div>
       </div>
 
-      {/* Content */}
       <div className={styles.body}>
-        {/* Coming soon banner */}
-        <div className={styles.comingSoonBanner}>
-          <div className={styles.comingSoonIcon}>✍️</div>
-          <div>
-            <div className={styles.comingSoonTitle}>Post feed coming soon</div>
-            <div className={styles.comingSoonDesc}>Text posts, images & links from pioneers you follow will appear here. For now, discover and follow pioneers below.</div>
-          </div>
-        </div>
-
-        {/* Not logged in */}
-        {tab === "following" && !user ? (
-          <div className={styles.loginPrompt}>
-            <div className={styles.loginIcon}>🪐</div>
-            <div className={styles.loginTitle}>Sign in to see your feed</div>
-            <div className={styles.loginSub}>Follow pioneers to see their posts here</div>
-            <Link href="/dashboard" className={styles.loginBtn}>Sign In with Pi →</Link>
-          </div>
-        ) : tab === "following" && user && list.length === 0 && !loading ? (
-          <div className={styles.empty}>
-            <div className={styles.emptyIcon}>👥</div>
-            <div className={styles.emptyTitle}>Not following anyone yet</div>
-            <div className={styles.emptyDesc}>Discover pioneers below and follow them to build your feed</div>
-            <button className={styles.emptyBtn} onClick={() => setTab("popular")}>Discover Popular Pioneers →</button>
-          </div>
-        ) : loading ? (
-          <div className={styles.empty}>
-            <div className={styles.emptyIcon}>⏳</div>
-            <div className={styles.emptyTitle}>Loading feed...</div>
-          </div>
-        ) : list.length > 0 ? (
-          <div className={styles.pioneerGrid}>
-            {list.map((p) => (
-              <Link key={p.id} href={`/myspace/${p.username}`} className={styles.pioneerCard}>
-                <div className={styles.cardTop}>
-                  <div className={styles.avatar}>
-                    {p.avatar_url
-                      ? <img src={p.avatar_url} alt={p.username} className={styles.avatarImg} />
-                      : <span className={styles.avatarInitial}>{getInitial(p.username)}</span>
-                    }
-                  </div>
-                  <div className={styles.userInfo}>
-                    <div className={styles.displayName}>
-                      {p.display_name ?? p.username}
-                      {p.kyc_status === "verified" && <span className={styles.kycBadge}>✅</span>}
-                    </div>
-                    <div className={styles.username}>@{p.username}</div>
-                  </div>
-                </div>
-                {p.bio && <div className={styles.bio}>{p.bio}</div>}
-                <div className={styles.cardFooter}>
-                  <span className={styles.pioneerTag}>🪐 Pioneer</span>
-                  <span className={styles.viewBtn}>View Profile →</span>
-                </div>
-              </Link>
-            ))}
+        {user ? (
+          <div className={styles.createBox}>
+            <div className={styles.createRow}>
+              <div className={styles.createAvatar}>
+                {user.avatar_url ? <img src={user.avatar_url} alt="" /> : getInitial(user.username)}
+              </div>
+              <textarea
+                className={styles.createInput}
+                placeholder="What's on your mind?"
+                value={statusText}
+                onChange={e => setStatusText(e.target.value)}
+                maxLength={500}
+                rows={2}
+              />
+            </div>
+            <div className={styles.createActions}>
+              <span className={styles.charCount}>{statusText.length}/500</span>
+              <button
+                className={styles.postBtn}
+                onClick={handlePost}
+                disabled={posting || !statusText.trim()}
+              >
+                {posting ? "Posting..." : "Post Status"}
+              </button>
+            </div>
           </div>
         ) : (
-          <div className={styles.empty}>
-            <div className={styles.emptyIcon}>📰</div>
-            <div className={styles.emptyTitle}>No pioneers found</div>
+          <div className={styles.loginPrompt}>
+            <div className={styles.loginIcon}>🪐</div>
+            <div className={styles.loginTitle}>Sign in to post status</div>
+            <div className={styles.loginSub}>Share what's on your mind with the Pi community</div>
+            <Link href="/dashboard" className={styles.loginBtn}>Sign In with Pi →</Link>
           </div>
         )}
+
+        <div className={styles.feedSection}>
+          <div className={styles.feedTitle}>Status Feed</div>
+          {loading ? (
+            <div className={styles.empty}><div className={styles.emptyIcon}>⏳</div><div>Loading...</div></div>
+          ) : feed.length === 0 ? (
+            <div className={styles.empty}>
+              <div className={styles.emptyIcon}>📰</div>
+              <div className={styles.emptyTitle}>No status updates yet</div>
+              <div className={styles.emptyDesc}>
+                {user ? "Be the first to post a status! Or discover more pioneers in SupaFeeds." : "Sign in to see status updates from pioneers you follow."}
+              </div>
+              {user && <Link href="/supafeeds" className={styles.emptyBtn}>Discover SupaFeeds →</Link>}
+            </div>
+          ) : (
+            <div className={styles.feedList}>
+              {feed.map((p) => (
+                <div key={p.id} className={styles.statusCard}>
+                  <div className={styles.statusHeader}>
+                    <Link href={`/supaspace/${p.user?.username ?? ""}`} className={styles.statusAvatar}>
+                      {p.user?.avatar_url ? <img src={p.user.avatar_url} alt="" /> : getInitial(p.user?.username ?? "?")}
+                    </Link>
+                    <div className={styles.statusMeta}>
+                      <Link href={`/supaspace/${p.user?.username ?? ""}`} className={styles.statusName}>
+                        {p.user?.display_name ?? p.user?.username ?? "?"}
+                      </Link>
+                      <span className={styles.statusTime}>
+                        {new Date(p.created_at).toLocaleDateString(undefined, { dateStyle: "short", timeStyle: "short" })}
+                      </span>
+                    </div>
+                  </div>
+                  <div className={styles.statusBody}>{p.body}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

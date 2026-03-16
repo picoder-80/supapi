@@ -6,29 +6,32 @@ import styles from "./PublicPlatformFrame.module.css";
 
 const PLATFORM_PREFIXES = [
   "/about",
-  "/market",
-  "/gigs",
-  "/academy",
-  "/stay",
-  "/arcade",
+  "/supamarket",
+  "/supaskil",
+  "/supademy",
+  "/supastay",
+  "/supanova",
   "/newsfeed",
+  "/supafeeds",
   "/wallet",
   "/referral",
   "/locator",
-  "/jobs",
+  "/supahiro",
   "/rewards",
   "/reels",
+  "/live",
   "/pi-value",
-  "/classifieds",
-  "/myspace",
+  "/supasifieds",
+  "/supaspace",
   "/pioneers",
   "/supa-livvi",
   "/supa-saylo",
-  "/bulkhub",
-  "/machina-market",
-  "/domus",
-  "/endoro",
+  "/supabulk",
+  "/supaauto",
+  "/supadomus",
+  "/supaendoro",
   "/supapets",
+  "/supascrow",
   "/dashboard",
 ];
 
@@ -41,5 +44,9 @@ function shouldUsePlatformFrame(pathname: string): boolean {
 export default function PublicPlatformFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const framed = useMemo(() => shouldUsePlatformFrame(pathname), [pathname]);
-  return <div className={framed ? styles.framed : undefined}>{children}</div>;
+  return (
+    <div className={framed ? styles.framed : styles.fullWidth}>
+      {children}
+    </div>
+  );
 }
