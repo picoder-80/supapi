@@ -19,6 +19,7 @@ const navLinks = [
   { href: "/newsfeed",    label: "📰 Newsfeed"      },
   { href: "/supafeeds", label: "📱 SupaFeeds"    },
   { href: "/wallet",      label: "💰 Wallet"        },
+  { href: "/sc-p2p",      label: "💸 SC P2P"        },
   { href: "/referral",    label: "🤝 Referral"      },
   { href: "/locator",     label: "📍 Locator"       },
   { href: "/supahiro",        label: "🧑‍💻 SupaHiro"      },

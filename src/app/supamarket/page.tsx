@@ -33,6 +33,12 @@ function timeAgo(iso: string) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+function formatPiStat(value: number | null): string {
+  if (!value || value <= 0) return "0π";
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}Kπ`;
+  return `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}π`;
+}
+
 function CountrySelect({ value, onChange }: { value: string; onChange: (code: string) => void }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -92,7 +98,7 @@ function MarketPageContent() {
   const [listings, setListings]     = useState<Listing[]>([]);
   const [total, setTotal]           = useState(0);
   const [deliveredCount, setDeliveredCount] = useState<number | null>(null);
-  const [escrowPi, setEscrowPi] = useState<number | null>(null);
+  const [totalPiTransactions, setTotalPiTransactions] = useState<number | null>(null);
   const [loading, setLoading]       = useState(true);
   const [page, setPage]             = useState(1);
   const [country, setCountry]       = useState("MY");
@@ -115,12 +121,14 @@ function MarketPageContent() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/supamarket/stats")
+    fetch(`/api/supamarket/stats?t=${Date.now()}`, { cache: "no-store" })
       .then(r => r.json())
       .then(d => {
         if (!d.success || !d.data) return;
         if (typeof d.data.delivered === "number") setDeliveredCount(d.data.delivered);
-        if (typeof d.data.escrow_pi === "number") setEscrowPi(d.data.escrow_pi);
+        if (typeof d.data.total_pi_transactions === "number") {
+          setTotalPiTransactions(d.data.total_pi_transactions);
+        }
       })
       .catch(() => {});
   }, []);
@@ -183,11 +191,15 @@ function MarketPageContent() {
           <div className={styles.heroStatDiv} />
           <div className={styles.heroStat}>
             <span className={styles.heroStatNum}>
-              {escrowPi !== null && escrowPi > 0
-                ? `${escrowPi >= 1000 ? `${(escrowPi / 1000).toFixed(1)}K` : Math.round(escrowPi).toLocaleString()}π`
-                : "0π"}
+              {formatPiStat(totalPiTransactions)}
             </span>
-            <span className={styles.heroStatLabel}>Pi Escrow</span>
+            <span
+              className={styles.heroStatLabel}
+              title="Calculated from completed orders only."
+              aria-label="Calculated from completed orders only."
+            >
+              Total Pi Transactions
+            </span>
           </div>
           <div className={styles.heroStatDiv} />
           <div className={styles.heroStat}>

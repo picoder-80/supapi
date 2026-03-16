@@ -234,8 +234,8 @@ export default function PublicProfilePage() {
   };
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#1A1A2E,#0F3460)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 14 }}>Loading profile...</span>
+    <div className={styles.loadingPage}>
+      <span className={styles.loadingText}>Loading profile...</span>
     </div>
   );
 
@@ -251,7 +251,19 @@ export default function PublicProfilePage() {
   const name   = profile?.display_name || profile?.username || username;
 
   return (
-    <div>
+    <div className={styles.page}>
+      <header className={styles.publicTopBar}>
+        <Link href="/supaspace" className={styles.publicTopIconBtn} aria-label="Back">
+          ←
+        </Link>
+        <div className={styles.publicTopBarCenter}>
+          <div className={styles.publicTopBarTitle}>@{username}</div>
+          <div className={styles.publicTopBarSub}>SupaSpace Profile</div>
+        </div>
+        <button type="button" className={styles.publicTopIconBtn} onClick={handleShare} aria-label="Share profile">
+          🔗
+        </button>
+      </header>
       {/* Cover + Avatar */}
       <div className={styles.coverSection}>
         <div
@@ -273,7 +285,7 @@ export default function PublicProfilePage() {
         </div>
 
         <div className={styles.avatarAnchor}>
-          <div className={styles.avatarWrapper} style={{ cursor: "default" }}>
+          <div className={`${styles.avatarWrapper} ${styles.avatarStatic}`}>
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt={name} className={styles.avatarImg} />
             ) : (
@@ -314,8 +326,8 @@ export default function PublicProfilePage() {
 
         <div className={styles.displayName}>{name}</div>
         {profile?.kyc_status === "verified" && (
-          <div style={{ marginTop: 8 }}>
-            <span className={styles.metaItem} style={{ background: "rgba(39,174,96,0.12)", color: "#27ae60", border: "1px solid rgba(39,174,96,0.35)" }}>
+          <div className={styles.kycWrap}>
+            <span className={`${styles.metaItem} ${styles.kycVerifiedPill}`}>
               ✅ KYC Verified
             </span>
           </div>
@@ -610,10 +622,10 @@ export default function PublicProfilePage() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHandle} />
             <div className={styles.modalTitle}>💬 Message @{username}</div>
-            <div style={{ textAlign: "center", padding: "20px 0" }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>🚀</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)", marginBottom: 8 }}>Coming Soon</div>
-              <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.6 }}>Direct messaging between Pi users is coming soon!</div>
+            <div className={styles.messageSoon}>
+              <div className={styles.messageSoonIcon}>🚀</div>
+              <div className={styles.messageSoonTitle}>Coming Soon</div>
+              <div className={styles.messageSoonText}>Direct messaging between Pi users is coming soon!</div>
             </div>
             <button className={styles.modalSave} onClick={() => setShowMsg(false)}>Got it</button>
           </div>

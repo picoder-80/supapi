@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/security/audit";
 import { hasAdminPermission } from "@/lib/admin/permissions";
+import { logDisputeEvent } from "@/lib/security/dispute-audit";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -17,6 +18,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   const { decision, reasoning } = await req.json(); // "refund" | "release"
   if (!decision) return NextResponse.json({ success: false, error: "decision required" }, { status: 400 });
+  if (decision === "refund") {
+    return NextResponse.json(
+      { success: false, error: "Use /api/admin/disputes/[id]/refund for buyer-favour refund flow." },
+      { status: 400 }
+    );
+  }
 
   const supabase = await createAdminClient();
 
@@ -47,6 +54,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       targetType: "dispute",
       targetId: id,
       detail: { decision, order_id: dispute.order_id },
+    });
+    await logDisputeEvent({
+      platform: "market",
+      disputeId: id,
+      orderId: dispute.order_id,
+      actorType: "admin",
+      actorId: auth.userId,
+      eventType: "admin_resolved",
+      fromStatus: dispute.order?.status ?? "disputed",
+      toStatus: newOrderStatus,
+      decision,
+      confidence: null,
+      reasonExcerpt: reasoning ?? "Manual decision by admin",
+      metadata: { override: true },
     });
   }
 

@@ -14,6 +14,7 @@ function timeAgo(iso: string) {
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
   pending:    { label: "Pending",    color: "#744210", bg: "#FFFAF0" },
+  escrow:     { label: "Paid",       color: "#276749", bg: "#F0FFF4" },
   paid:       { label: "Paid",       color: "#276749", bg: "#F0FFF4" },
   shipped:    { label: "Shipped",    color: "#2B6CB0", bg: "#EBF8FF" },
   meetup_set: { label: "Meetup Set", color: "#553C9A", bg: "#FAF5FF" },
@@ -27,6 +28,7 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string }> 
 const PAGE_SIZE = 10;
 const STATUS_CLASS: Record<string, string> = {
   pending: "statusPending",
+  escrow: "statusPaid",
   paid: "statusPaid",
   shipped: "statusShipped",
   meetup_set: "statusMeetup",

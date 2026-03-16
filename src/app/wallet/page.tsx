@@ -62,7 +62,11 @@ const SC_TYPE_META: Record<string, { icon: string; color: string }> = {
   spend:    { icon: "⬇️", color: "#FC8181" },
   buy:      { icon: "🛒", color: "#4299E1" },
   gift:     { icon: "🎁", color: "#F687B3" },
+  gift_sent: { icon: "🎁", color: "#FC8181" },
+  gift_received: { icon: "🎁", color: "#48BB78" },
   transfer: { icon: "↔️", color: "#F6AD55" },
+  transfer_out: { icon: "↗️", color: "#FC8181" },
+  transfer_in: { icon: "↙️", color: "#48BB78" },
   default:  { icon: "💎", color: "#F5A623" },
 };
 
@@ -448,7 +452,8 @@ export default function WalletPage() {
               <div className={styles.txnList}>
                 {scPageItems.map((txn: ScTxn) => {
                   const meta = SC_TYPE_META[txn.type] ?? SC_TYPE_META.default;
-                  const isSpend = txn.type === "spend";
+                  const amount = Number(txn.amount ?? 0);
+                  const isSpend = amount < 0;
                   return (
                     <div key={txn.id} className={styles.txnRow}>
                       <div className={styles.txnIcon} style={{ background: meta.color + "18" }}>
@@ -460,7 +465,7 @@ export default function WalletPage() {
                       </div>
                       <div className={styles.txnRight}>
                         <div className={`${styles.txnAmount} ${isSpend ? styles.txnAmountNeg : styles.txnAmountPos}`}>
-                          {isSpend ? "-" : "+"}{Math.abs(txn.amount)} SC
+                          {isSpend ? "-" : "+"}{Math.abs(amount)} SC
                         </div>
                         <div className={styles.txnBalance}>{txn.balance_after} SC</div>
                       </div>

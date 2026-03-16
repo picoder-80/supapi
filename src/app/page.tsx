@@ -68,6 +68,7 @@ const platformCategories: { id: string; title: string; modules: ModuleItem[] }[]
     title: "Wallet & Tools",
     modules: [
       { href: "/wallet",   emoji: "💰", label: "Wallet",       desc: "Transactions & history" },
+      { href: "/sc-p2p",   emoji: "💸", label: "SC P2P",       desc: "Transfer SupaCredit to Pioneers" },
       { href: "/pi-value", emoji: "📈", label: "Market Value", desc: "Pi Live Market Data & Pi USD Converter" },
       { href: "/about",    emoji: "ℹ️", label: "About Us",     desc: "Our story, mission & vision" },
     ],

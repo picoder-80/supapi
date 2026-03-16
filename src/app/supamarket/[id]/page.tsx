@@ -403,7 +403,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                 <div className={styles.sellerMeta}>★ 5.0 · 0 sales</div>
                 <div className={styles.sellerSub}>@{listing.seller.username}</div>
               </div>
-              <span className={styles.viewShopBtn}>View Shop</span>
+              <span className={styles.viewShopBtn}>View Profile</span>
             </Link>
           </div>
 
@@ -502,7 +502,12 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                       </button>
                     )}
                   </div>
-                  <button className={styles.nextBtn} onClick={() => { setError(""); setCheckoutStep("details"); }}>Continue →</button>
+                  <button
+                    className={`${styles.nextBtn} ${styles.singleActionBtn}`}
+                    onClick={() => { setError(""); setCheckoutStep("details"); }}
+                  >
+                    Continue →
+                  </button>
                 </>
               )}
 

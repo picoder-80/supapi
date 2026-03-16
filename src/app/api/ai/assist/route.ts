@@ -27,6 +27,13 @@ type MemoryRow = {
   created_at: string;
 };
 
+function stripProviderTag(text: string): string {
+  return String(text ?? "")
+    .replace(/\s*\[provider:(anthropic|openai|deepseek|heuristic)\]\s*/gi, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function getUserId(req: NextRequest): string | null {
   try {
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
@@ -53,7 +60,10 @@ async function readRecentMemory(userId: string, limit = 20): Promise<MemoryRow[]
       .order("created_at", { ascending: false })
       .limit(limit);
     if (error) return [];
-    return (data ?? []) as MemoryRow[];
+    return ((data ?? []) as MemoryRow[]).map((row) => ({
+      ...row,
+      answer: stripProviderTag(String(row.answer ?? "")),
+    }));
   } catch {
     return [];
   }
@@ -73,7 +83,7 @@ async function writeMemory(params: {
       platform: params.platform,
       mode: params.mode,
       question: params.question,
-      answer: params.answer,
+      answer: stripProviderTag(params.answer),
       provider: params.provider,
       metadata: {},
     });
@@ -124,15 +134,16 @@ export async function POST(req: NextRequest) {
 
     const mergedContext = `${clientContext}\nserver_recent_memory:\n${memoryContext}`.trim();
     const result = await runPlatformAssistant({ platform, mode, message, context: mergedContext });
+    const cleanAnswer = stripProviderTag(result.answer);
     const preset = getPlatformAIPreset(platform);
 
-    if (userId && result.ok && result.answer) {
+    if (userId && result.ok && cleanAnswer) {
       await writeMemory({
         userId,
         platform,
         mode,
         question: message,
-        answer: result.answer,
+        answer: cleanAnswer,
         provider: result.provider,
       });
     }
@@ -147,7 +158,7 @@ export async function POST(req: NextRequest) {
         platform,
         mode,
         provider: result.provider,
-        answer: result.answer,
+        answer: cleanAnswer,
         suggestions: result.suggestions,
         quick_prompts: getQuickPromptsForMode(platform, mode),
         focus_areas: preset.focus_areas,

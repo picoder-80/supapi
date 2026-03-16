@@ -172,8 +172,8 @@ export default function MySpacePage() {
   };
 
   if (isHydrating) return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#1A1A2E,#0F3460)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 14 }}>Loading...</span>
+    <div className={styles.loadingPage}>
+      <span className={styles.loadingText}>Loading...</span>
     </div>
   );
 
@@ -190,7 +190,10 @@ export default function MySpacePage() {
 
 
   return (
-    <div>
+    <div className={styles.page}>
+      <header className={styles.topBar}>
+        <div className={styles.topBarTitle}>SupaSpace</div>
+      </header>
       {/* Cover + Avatar */}
       <div className={styles.coverSection}>
         <div
@@ -210,7 +213,7 @@ export default function MySpacePage() {
             </button>
             <button className={styles.coverEditBtn} onClick={() => setShowEdit(true)}>✏️ Edit Profile</button>
           </div>
-          <input ref={coverFileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleCoverChange} />
+          <input ref={coverFileRef} type="file" accept="image/*" className={styles.hiddenInput} onChange={handleCoverChange} />
         </div>
 
         <div className={styles.avatarAnchor}>
@@ -224,7 +227,7 @@ export default function MySpacePage() {
             )}
             <div className={styles.avatarEditOverlay}>📷</div>
           </div>
-          <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarChange} />
+          <input ref={fileRef} type="file" accept="image/*" className={styles.hiddenInput} onChange={handleAvatarChange} />
         </div>
       </div>
 
@@ -246,8 +249,8 @@ export default function MySpacePage() {
 
         <div className={styles.displayName}>{displayName}</div>
         {user.kyc_status === "verified" && (
-          <div style={{ marginTop: 8 }}>
-            <span className={styles.metaItem} style={{ background: "rgba(39,174,96,0.12)", color: "#27ae60", border: "1px solid rgba(39,174,96,0.35)" }}>
+          <div className={styles.kycWrap}>
+            <span className={`${styles.metaItem} ${styles.kycVerifiedPill}`}>
               ✅ KYC Verified
             </span>
           </div>
@@ -516,10 +519,10 @@ export default function MySpacePage() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHandle} />
             <div className={styles.modalTitle}>💬 Messages</div>
-            <div style={{ textAlign: "center", padding: "20px 0" }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>🚀</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)", marginBottom: 8 }}>Coming Soon</div>
-              <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.6 }}>Direct messaging between Pi users is coming soon!</div>
+            <div className={styles.messageSoon}>
+              <div className={styles.messageSoonIcon}>🚀</div>
+              <div className={styles.messageSoonTitle}>Coming Soon</div>
+              <div className={styles.messageSoonText}>Direct messaging between Pi users is coming soon!</div>
             </div>
             <button className={styles.modalSave} onClick={() => setShowMsg(false)}>Got it</button>
           </div>

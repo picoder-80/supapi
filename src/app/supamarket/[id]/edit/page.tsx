@@ -393,7 +393,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 </div>
 
                 {error && <div className={styles.error}>{error}</div>}
-                <button className={styles.nextBtn} onClick={goNextFromDetails}>Next: Photos →</button>
+                <button className={`${styles.nextBtn} ${styles.nextBtnBlock}`} onClick={goNextFromDetails}>Next: Photos →</button>
               </div>
             )}
 

@@ -19,6 +19,12 @@ function getUserId(req: NextRequest): string | null {
   } catch { return null; }
 }
 
+function normalizeListingStatusForUi(status: unknown): string {
+  const raw = String(status ?? "");
+  if (raw === "removed") return "deleted";
+  return raw;
+}
+
 export async function GET(req: NextRequest) {
   const userId = getUserId(req);
   if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
@@ -32,6 +38,7 @@ export async function GET(req: NextRequest) {
       .select("id, title, description, price_pi, category, subcategory, condition, buying_method, images, stock, status, location, views, likes, is_boosted, boost_tier, boost_expires_at, created_at, updated_at")
       .eq("seller_id", userId)
       .neq("status", "deleted")
+      .neq("status", "removed")
       .order("created_at", { ascending: false });
 
     if (status) query = query.eq("status", status);
@@ -39,7 +46,11 @@ export async function GET(req: NextRequest) {
     const { data, error } = await query;
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
 
-    return NextResponse.json({ success: true, data: data ?? [] });
+    const normalized = (data ?? []).map((row: Record<string, unknown>) => ({
+      ...row,
+      status: normalizeListingStatusForUi(row.status),
+    }));
+    return NextResponse.json({ success: true, data: normalized });
   } catch {
     return NextResponse.json({ success: false, error: "Server error" }, { status: 500 });
   }

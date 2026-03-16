@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
 import { analyzeDispute } from "@/lib/market/ai";
+import { logDisputeEvent } from "@/lib/security/dispute-audit";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -279,6 +280,17 @@ export async function POST(req: NextRequest) {
       if (insertDisputeErr || !disputeRow) {
         return NextResponse.json({ success: false, error: "Failed to create dispute" }, { status: 500 });
       }
+      await logDisputeEvent({
+        platform: "supascrow",
+        disputeId: disputeRow.id,
+        dealId: dealId,
+        actorType: "user",
+        actorId: userId,
+        eventType: "opened",
+        fromStatus: deal.status,
+        toStatus: "disputed",
+        reasonExcerpt: reason || null,
+      });
 
       const amount = Number(deal.amount_pi ?? 0);
       const analysis = await analyzeDispute({
@@ -286,6 +298,7 @@ export async function POST(req: NextRequest) {
         amount_pi: amount,
         order_status: deal.status,
       });
+      const autoResolveEnabled = (process.env.SUPASCROW_AI_AUTO_RESOLVE_ENABLED ?? "true").toLowerCase() !== "false";
 
       await supabase
         .from("supascrow_disputes")
@@ -296,10 +309,28 @@ export async function POST(req: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq("id", disputeRow.id);
+      await logDisputeEvent({
+        platform: "supascrow",
+        disputeId: disputeRow.id,
+        dealId: dealId,
+        actorType: "system",
+        actorId: null,
+        eventType: "analysis_updated",
+        fromStatus: "disputed",
+        toStatus: "disputed",
+        decision: analysis.decision,
+        confidence: analysis.confidence,
+        reasonExcerpt: analysis.reasoning,
+        metadata: { auto_resolve_enabled: autoResolveEnabled },
+      });
 
       const threshold = Math.min(1, Math.max(0, Number(process.env.SUPASCROW_AI_AUTO_THRESHOLD ?? process.env.MARKET_AI_AUTO_RESOLVE_THRESHOLD ?? "0.78")));
       const maxAuto = deal.currency === "sc" ? Number(process.env.SUPASCROW_AI_MAX_AUTO_SC ?? 5000) : Number(process.env.MARKET_AI_MAX_AUTO_RESOLVE_PI ?? 300);
-      const autoResolve = analysis.confidence >= threshold && amount <= maxAuto && (analysis.decision === "refund" || analysis.decision === "release");
+      const autoResolve =
+        autoResolveEnabled &&
+        analysis.confidence >= threshold &&
+        amount <= maxAuto &&
+        (analysis.decision === "refund" || analysis.decision === "release");
 
       if (autoResolve && analysis.decision !== "manual_review") {
         const resolution = analysis.decision === "refund" ? "refund_to_buyer" : "release_to_seller";
@@ -320,6 +351,20 @@ export async function POST(req: NextRequest) {
         const now = new Date().toISOString();
         await supabase.from("supascrow_deals").update({ status: resolution === "release_to_seller" ? "released" : "refunded", released_at: resolution === "release_to_seller" ? now : undefined, updated_at: now }).eq("id", dealId);
         await supabase.from("supascrow_disputes").update({ resolution, resolved_at: now, updated_at: now }).eq("id", disputeRow.id);
+        await logDisputeEvent({
+          platform: "supascrow",
+          disputeId: disputeRow.id,
+          dealId: dealId,
+          actorType: "system",
+          actorId: null,
+          eventType: "auto_resolved",
+          fromStatus: "disputed",
+          toStatus: resolution === "release_to_seller" ? "released" : "refunded",
+          decision: analysis.decision,
+          confidence: analysis.confidence,
+          reasonExcerpt: analysis.reasoning,
+          metadata: { resolution },
+        });
         const outcomeMsg = resolution === "release_to_seller" ? "Funds have been released to the seller." : "Refund has been issued to the buyer.";
         return NextResponse.json({
           success: true,

@@ -126,6 +126,26 @@ export default function MyListingsPage() {
     setActionId(null);
   };
 
+  const handleDeleteListing = async (id: string) => {
+    setActionId(id);
+    try {
+      const r = await fetch(`/api/supamarket/listings/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token()}` },
+      });
+      const d = await r.json();
+      if (d.success) {
+        showToast("Listing deleted!");
+        setListings(prev => prev.filter(l => l.id !== id));
+      } else {
+        showToast(d.error ?? "Delete failed", "error");
+      }
+    } catch {
+      showToast("Something went wrong", "error");
+    }
+    setActionId(null);
+  };
+
   const filtered = filter === "all" ? listings : listings.filter(l => l.status === filter);
 
   if (!user) return null;
@@ -264,7 +284,7 @@ export default function MyListingsPage() {
                         className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
                         title="Delete"
                         disabled={actionId === listing.id}
-                        onClick={() => { if (confirm("Delete this listing?")) handleStatusChange(listing.id, "deleted"); }}
+                        onClick={() => { if (confirm("Delete this listing?")) handleDeleteListing(listing.id); }}
                       >
                         🗑
                       </button>

@@ -114,6 +114,7 @@ CREATE TABLE orders (
                    CHECK (status IN (
                      'pending',      -- created, waiting for payment
                      'paid',         -- payment successful, in escrow
+                    'escrow',       -- compatibility status on legacy deployments
                      'shipped',      -- seller shipped
                      'meetup_set',   -- meetup arranged
                      'delivered',    -- buyer says received

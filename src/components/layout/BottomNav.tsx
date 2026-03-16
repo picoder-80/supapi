@@ -15,6 +15,7 @@ const SCROLL_ITEMS = [
   { href: "/newsfeed",    emoji: "📰",  label: "Newsfeed"   },
   { href: "/supafeeds", emoji: "📱",  label: "SupaFeeds"  },
   { href: "/wallet",      emoji: "💰",  label: "Wallet"     },
+  { href: "/sc-p2p",      emoji: "💸",  label: "SC P2P"     },
   { href: "/referral",    emoji: "🤝",  label: "Referral"   },
   { href: "/locator",     emoji: "📍",  label: "Locator"    },
   { href: "/supahiro",        emoji: "🧑‍💻",  label: "SupaHiro"  },

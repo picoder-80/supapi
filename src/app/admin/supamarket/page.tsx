@@ -14,7 +14,7 @@ interface Stats {
 }
 interface Listing { id:string; title:string; price_pi:number; category:string; status:string; stock:number; views:number; created_at:string; images:string[]; seller:{id:string;username:string;display_name:string|null;avatar_url:string|null;kyc_status:string;is_banned:boolean}; }
 interface Order   { id:string; status:string; amount_pi:number; buying_method:string; created_at:string; pi_payment_id:string; listing:{id:string;title:string;images:string[]}|null; buyer:{id:string;username:string;display_name:string|null}; seller:{id:string;username:string;display_name:string|null}; }
-interface Dispute { id:string; reason:string; status:string; ai_decision:string; ai_reasoning:string; ai_confidence:number; created_at:string; resolved_at:string; opened_by_user:{id:string;username:string;display_name:string|null}; order:{id:string;amount_pi:number;status:string;buyer:{username:string};seller:{username:string};listing:{title:string}}|null; }
+interface Dispute { id:string; reason:string; evidence?: string[]; status:string; ai_decision:string; ai_reasoning:string; ai_confidence:number; created_at:string; resolved_at:string | null; refund_status?: string | null; refund_txid?: string | null; refund_amount_pi?: number | null; opened_by_user:{id:string;username:string;display_name:string|null}; order:{id:string;amount_pi:number;status:string;buyer:{username:string};seller:{username:string};listing:{title:string}}|null; }
 interface User    { id:string; username:string; display_name:string|null; avatar_url:string|null; kyc_status:string; role:string; is_banned:boolean; ban_reason:string|null; seller_verified:boolean; created_at:string; last_seen:string|null; }
 interface SupportTicket {
   id: string;
@@ -97,6 +97,10 @@ export default function AdminMarketPage() {
   const [overrideDecision, setOverrideDecision] = useState<"refund"|"release">("release");
   const [overrideReason, setOverrideReason] = useState(""); const [overriding, setOverriding] = useState(false);
   const [applyingId, setApplyingId] = useState<string|null>(null);
+  const [refundTarget, setRefundTarget] = useState<Dispute | null>(null);
+  const [refunding, setRefunding] = useState(false);
+  const [refundSuccess, setRefundSuccess] = useState<{ disputeId: string; txid: string; amount: number } | null>(null);
+  const [disputeToast, setDisputeToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null);
   const [exporting, setExporting] = useState<string | null>(null);
   const [recentOrdersPage, setRecentOrdersPage] = useState(1);
   const [ordersListPage, setOrdersListPage] = useState(1);
@@ -171,12 +175,40 @@ export default function AdminMarketPage() {
   const overrideDispute = async () => {
     if(!overrideId)return;
     setOverriding(true);
-    const r=await adminFetch(`/api/admin/supamarket/disputes/${overrideId}`,{method:"PATCH",body:JSON.stringify({decision:overrideDecision,reasoning:overrideReason})});
-    const d=await r.json();
-    if(d.success){
-      setDisputes(prev=>prev.map(dp=>dp.id===overrideId?{...dp,ai_decision:overrideDecision,status:"resolved",ai_reasoning:`[Admin Override] ${overrideReason}`}:dp));
-      setOverrideId(null);
-      setOverrideReason("");
+    if (overrideDecision === "refund") {
+      const r = await adminFetch(`/api/admin/disputes/${overrideId}/refund`, { method: "POST" });
+      const d = await r.json();
+      if (d.success) {
+        setDisputes((prev) =>
+          prev.map((dp) =>
+            dp.id === overrideId
+              ? {
+                  ...dp,
+                  status: "resolved",
+                  ai_decision: "refund",
+                  refund_status: "completed",
+                  refund_txid: String(d?.refund?.txid ?? ""),
+                  refund_amount_pi: Number(d?.refund?.amount_pi ?? dp.order?.amount_pi ?? 0),
+                  resolved_at: new Date().toISOString(),
+                  order: dp.order ? { ...dp.order, status: "refunded" } : dp.order,
+                }
+              : dp
+          )
+        );
+        showDisputeToast("Refund issued — Pi sent to buyer", "ok");
+        setOverrideId(null);
+        setOverrideReason("");
+      } else {
+        showDisputeToast(d.error ?? "Refund failed", "err");
+      }
+    } else {
+      const r=await adminFetch(`/api/admin/supamarket/disputes/${overrideId}`,{method:"PATCH",body:JSON.stringify({decision:overrideDecision,reasoning:overrideReason})});
+      const d=await r.json();
+      if(d.success){
+        setDisputes(prev=>prev.map(dp=>dp.id===overrideId?{...dp,ai_decision:overrideDecision,status:"resolved",ai_reasoning:`[Admin Override] ${overrideReason}`}:dp));
+        setOverrideId(null);
+        setOverrideReason("");
+      }
     }
     setOverriding(false);
   };
@@ -185,13 +217,77 @@ export default function AdminMarketPage() {
     if (decision !== "refund" && decision !== "release") return;
     setApplyingId(disputeId);
     try {
-      const r = await adminFetch(`/api/admin/supamarket/disputes/${disputeId}`, { method: "PATCH", body: JSON.stringify({ decision, reasoning: reasoning?.trim() || "Applied suggested resolution." }) });
-      const d = await r.json();
-      if (d.success) {
-        setDisputes(prev => prev.map(dp => dp.id === disputeId ? { ...dp, ai_decision: decision, status: "resolved", ai_reasoning: reasoning || "Applied suggested resolution." } : dp));
+      if (decision === "refund") {
+        const r = await adminFetch(`/api/admin/disputes/${disputeId}/refund`, { method: "POST" });
+        const d = await r.json();
+        if (d.success) {
+          setDisputes((prev) =>
+            prev.map((dp) =>
+              dp.id === disputeId
+                ? {
+                    ...dp,
+                    status: "resolved",
+                    ai_decision: "refund",
+                    refund_status: "completed",
+                    refund_txid: String(d?.refund?.txid ?? ""),
+                    refund_amount_pi: Number(d?.refund?.amount_pi ?? dp.order?.amount_pi ?? 0),
+                    resolved_at: new Date().toISOString(),
+                    order: dp.order ? { ...dp.order, status: "refunded" } : dp.order,
+                  }
+                : dp
+            )
+          );
+          showDisputeToast("Refund issued — Pi sent to buyer", "ok");
+        } else {
+          showDisputeToast(d.error ?? "Refund failed", "err");
+        }
+      } else {
+        const r = await adminFetch(`/api/admin/supamarket/disputes/${disputeId}`, { method: "PATCH", body: JSON.stringify({ decision, reasoning: reasoning?.trim() || "Applied suggested resolution." }) });
+        const d = await r.json();
+        if (d.success) {
+          setDisputes(prev => prev.map(dp => dp.id === disputeId ? { ...dp, ai_decision: decision, status: "resolved", ai_reasoning: reasoning || "Applied suggested resolution." } : dp));
+        }
       }
     } finally {
       setApplyingId(null);
+    }
+  };
+  const showDisputeToast = (msg: string, type: "ok" | "err" = "ok") => {
+    setDisputeToast({ msg, type });
+    setTimeout(() => setDisputeToast(null), 3200);
+  };
+  const issueBuyerRefund = async () => {
+    if (!refundTarget) return;
+    setRefunding(true);
+    setRefundSuccess(null);
+    try {
+      const r = await adminFetch(`/api/admin/disputes/${refundTarget.id}/refund`, { method: "POST" });
+      const d = await r.json();
+      if (!d.success) {
+        showDisputeToast(d.error ?? "Refund failed", "err");
+        return;
+      }
+      const txid = String(d?.refund?.txid ?? "n/a");
+      const amount = Number(d?.refund?.amount_pi ?? refundTarget.order?.amount_pi ?? 0);
+      setRefundSuccess({ disputeId: refundTarget.id, txid, amount });
+      showDisputeToast("Refund issued — Pi sent to buyer", "ok");
+      setDisputes((prev) =>
+        prev.map((dp) =>
+          dp.id === refundTarget.id
+            ? {
+                ...dp,
+                status: "resolved",
+                refund_status: "completed",
+                refund_txid: txid,
+                refund_amount_pi: amount,
+                resolved_at: new Date().toISOString(),
+                order: dp.order ? { ...dp.order, status: "refunded" } : dp.order,
+              }
+            : dp
+        )
+      );
+    } finally {
+      setRefunding(false);
     }
   };
   const updateUser = async (userId: string, patch: object, msg: string) => { const r=await adminFetch(`/api/admin/users/${userId}`,{method:"PATCH",body:JSON.stringify(patch)}); const d=await r.json(); if(d.success){setUsers(prev=>prev.map(u=>u.id===userId?{...u,...d.data}:u));setUserActionMsg(prev=>({...prev,[userId]:msg}));setTimeout(()=>setUserActionMsg(prev=>{const n={...prev};delete n[userId];return n;}),2500);} setBanUserId(null);setBanReason(""); };
@@ -250,6 +346,11 @@ export default function AdminMarketPage() {
 
   return (
     <div className={styles.page}>
+      {disputeToast && (
+        <div className={`${styles.disputeToast} ${disputeToast.type === "ok" ? styles.disputeToastOk : styles.disputeToastErr}`}>
+          {disputeToast.msg}
+        </div>
+      )}
       <div className={styles.header}>
         <div className={styles.headerMain}>
           <span className={styles.icon}>🛍️</span>
@@ -434,13 +535,44 @@ export default function AdminMarketPage() {
                   <div className={styles.disputeRight}><Badge status={d.status}/><div className={styles.piAmt}>{Number(d.order?.amount_pi??0).toFixed(2)} π</div></div>
                 </div>
                 <div className={styles.disputeReason}><strong>Reason:</strong> {d.reason}</div>
+                {!!d.evidence?.length && (
+                  <div className={styles.disputeEvidenceWrap}>
+                    <div className={styles.disputeEvidenceTitle}>Evidence</div>
+                    <div className={styles.disputeEvidenceGrid}>
+                      {d.evidence.filter((item) => /^https?:\/\//i.test(item)).slice(0, 6).map((url) => (
+                        <a key={url} href={url} target="_blank" rel="noopener noreferrer" className={styles.disputeEvidenceLink}>
+                          <img src={url} alt="Dispute evidence" className={styles.disputeEvidenceImg} />
+                        </a>
+                      ))}
+                    </div>
+                    {d.evidence.filter((item) => !/^https?:\/\//i.test(item)).length > 0 && (
+                      <div className={styles.disputeEvidenceMeta}>
+                        {d.evidence.filter((item) => !/^https?:\/\//i.test(item)).slice(0, 4).join(" · ")}
+                      </div>
+                    )}
+                  </div>
+                )}
                 {d.ai_decision&&<div className={`${styles.aiDecision} ${d.ai_decision==="refund"?styles.aiRefund:d.ai_decision==="manual_review"?styles.aiManual:styles.aiRelease}`}>
                   <strong>Suggested resolution:</strong> {d.ai_decision==="refund"?"↩️ Refund":d.ai_decision==="manual_review"?"🕵️ Manual Review":"✅ Release"} · {Math.round((d.ai_confidence??0)*100)}% confidence
                   <div className={styles.aiReasoning}>{d.ai_reasoning}</div>
                 </div>}
+                {(d.refund_status === "completed" || d.refund_txid) && (
+                  <div className={styles.refundDoneBanner}>
+                    <span>✅ Refund issued</span>
+                    <span>{Number(d.refund_amount_pi ?? d.order?.amount_pi ?? 0).toFixed(2)}π</span>
+                    <span className={styles.mono}>tx: {(d.refund_txid ?? "").slice(0, 20)}{(d.refund_txid ?? "").length > 20 ? "…" : ""}</span>
+                  </div>
+                )}
                 {d.status!=="resolved"&&(
                   <>
                     {(d.ai_decision==="refund"||d.ai_decision==="release")&&<button className={styles.applySuggestionBtn} disabled={!!applyingId} onClick={()=>applySuggestion(d.id,d.ai_decision,d.ai_reasoning)}>{applyingId===d.id?"…":"Apply suggestion"}</button>}
+                    <button
+                      className={styles.refundBuyerBtn}
+                      onClick={() => setRefundTarget(d)}
+                      disabled={d.refund_status === "completed" || !!d.refund_txid}
+                    >
+                      Rule in Buyer's Favour
+                    </button>
                     <button className={styles.overrideBtn} onClick={()=>setOverrideId(d.id)}>⚖️ Admin Override</button>
                   </>
                 )}
@@ -639,6 +771,43 @@ export default function AdminMarketPage() {
             <div className={styles.modalBtns}>
               <button className={styles.modalCancel} onClick={()=>setBanUserId(null)}>Cancel</button>
               <button className={styles.modalDanger} disabled={!banReason.trim()} onClick={()=>updateUser(banUserId,{is_banned:true,ban_reason:banReason},"🚫 Banned")}>Ban User</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {refundTarget && (
+        <div className={styles.modalOverlay} onClick={() => !refunding && setRefundTarget(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalTitle}>Rule in Buyer's Favour</div>
+            {refundSuccess ? (
+              <div className={styles.refundSuccessState}>
+                <div className={styles.refundSuccessIcon}>✅</div>
+                <div className={styles.refundSuccessTitle}>Refund issued successfully</div>
+                <div className={styles.refundSuccessMeta}>
+                  {refundSuccess.amount.toFixed(2)}π sent · tx: {refundSuccess.txid}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className={styles.modalHint}>
+                  This will send an automatic A2U refund to buyer wallet for
+                  <strong> {Number(refundTarget.order?.amount_pi ?? 0).toFixed(2)}π</strong>.
+                </div>
+                <div className={styles.modalHintMuted}>
+                  Action is idempotent. If already refunded, system will return existing refund info.
+                </div>
+              </>
+            )}
+            <div className={styles.modalBtns}>
+              <button className={styles.modalCancel} onClick={() => setRefundTarget(null)} disabled={refunding}>
+                {refundSuccess ? "Close" : "Cancel"}
+              </button>
+              {!refundSuccess && (
+                <button className={styles.refundConfirmBtn} onClick={issueBuyerRefund} disabled={refunding}>
+                  {refunding ? "Issuing refund..." : "Confirm & Issue Refund"}
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -2,19 +2,18 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const dynamic = "force-dynamic";
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Orders with Pi still in escrow (not yet released/completed/refunded/cancelled)
-const ESCROW_STATUSES = ["paid", "shipped", "meetup_set", "delivered"];
-
 export async function GET() {
   try {
     const [
       { count: deliveredCount },
-      { data: escrowRows },
+      { data: completedRows },
     ] = await Promise.all([
       supabase
         .from("orders")
@@ -22,20 +21,34 @@ export async function GET() {
         .in("status", ["delivered", "completed"]),
       supabase
         .from("orders")
-        .select("amount_pi")
-        .in("status", ESCROW_STATUSES),
+        .select("amount_pi, price_pi")
+        .eq("status", "completed"),
     ]);
 
-    const escrowPi = escrowRows?.reduce((sum, o) => sum + Number(o.amount_pi ?? 0), 0) ?? 0;
+    const totalPiTransactions = completedRows?.reduce((sum, o: {
+      amount_pi: number | string | null;
+      price_pi?: number | string | null;
+    }) => {
+      return sum + Number(o.amount_pi ?? o.price_pi ?? 0);
+    }, 0) ?? 0;
 
     return NextResponse.json({
       success: true,
       data: {
         delivered: deliveredCount ?? 0,
-        escrow_pi: escrowPi,
+        total_pi_transactions: totalPiTransactions,
+      },
+    }, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
       },
     });
   } catch {
-    return NextResponse.json({ success: false, error: "Server error" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Server error" }, {
+      status: 500,
+      headers: {
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
+      },
+    });
   }
 }

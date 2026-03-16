@@ -45,6 +45,12 @@ interface Transaction {
   ref_user?: { username: string; avatar_url: string | null } | null;
 }
 
+interface UserSuggestion {
+  id: string;
+  username: string;
+  display_name: string | null;
+}
+
 const ACTIVITY_META: Record<string, { emoji: string; label: string }> = {
   daily_checkin:    { emoji: "📅", label: "Daily Check-in" },
   streak_bonus:     { emoji: "🔥", label: "Streak Bonus" },
@@ -95,6 +101,8 @@ export default function RewardsPage() {
   const [transferUsername, setTransferUsername] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
   const [transferring, setTransferring] = useState(false);
+  const [transferSuggestions, setTransferSuggestions] = useState<UserSuggestion[]>([]);
+  const [giftSuggestions, setGiftSuggestions] = useState<UserSuggestion[]>([]);
   const [txPage, setTxPage] = useState(1);
 
   const token = () => typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "";
@@ -137,6 +145,42 @@ export default function RewardsPage() {
   const txPageItems = transactions.slice((txPageSafe - 1) * TX_PAGE_SIZE, txPageSafe * TX_PAGE_SIZE);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  useEffect(() => {
+    const query = transferUsername.trim();
+    if (!user || query.length < 2) {
+      setTransferSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`, {
+          headers: { Authorization: `Bearer ${token()}` },
+        });
+        const d = await r.json();
+        if (d.success) setTransferSuggestions(d.data?.users ?? []);
+      } catch {}
+    }, 220);
+    return () => clearTimeout(timer);
+  }, [transferUsername, user]);
+
+  useEffect(() => {
+    const query = giftUsername.trim();
+    if (!user || query.length < 2) {
+      setGiftSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`, {
+          headers: { Authorization: `Bearer ${token()}` },
+        });
+        const d = await r.json();
+        if (d.success) setGiftSuggestions(d.data?.users ?? []);
+      } catch {}
+    }, 220);
+    return () => clearTimeout(timer);
+  }, [giftUsername, user]);
 
   const handleCheckin = async () => {
     if (!canCheckin || checking) return;
@@ -574,9 +618,15 @@ export default function RewardsPage() {
               <input
                 className={styles.transferInput}
                 placeholder="@username"
+                list="rewards-transfer-user-suggestions"
                 value={transferUsername}
                 onChange={e => setTransferUsername(e.target.value.replace("@", ""))}
               />
+              <datalist id="rewards-transfer-user-suggestions">
+                {transferSuggestions.map((u) => (
+                  <option key={u.id} value={u.username} label={u.display_name ? `${u.display_name} (@${u.username})` : `@${u.username}`} />
+                ))}
+              </datalist>
             </div>
             <div className={styles.transferAmountRow}>
               <input
@@ -666,9 +716,15 @@ export default function RewardsPage() {
             <input
               className={styles.giftUsernameInput}
               placeholder="Enter @username"
+              list="rewards-gift-user-suggestions"
               value={giftUsername}
               onChange={e => setGiftUsername(e.target.value.replace("@", ""))}
             />
+            <datalist id="rewards-gift-user-suggestions">
+              {giftSuggestions.map((u) => (
+                <option key={u.id} value={u.username} label={u.display_name ? `${u.display_name} (@${u.username})` : `@${u.username}`} />
+              ))}
+            </datalist>
             <div className={styles.giftModalInfo}>
               <div className={styles.giftModalRow}>
                 <span className={styles.giftModalLabel}>Gift</span>

@@ -41,6 +41,10 @@ async function sendEmail({ to, subject, html }: SendEmailOptions) {
   }
 }
 
+export async function sendPlatformEmail(options: SendEmailOptions) {
+  return sendEmail(options);
+}
+
 export async function sendWelcomeEmail(email: string, username: string) {
   return sendEmail({
     to: email,

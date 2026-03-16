@@ -1,0 +1,371 @@
+.page {
+  min-height: 100vh;
+  background: #f8f9fd;
+  font-family: var(--font-sans);
+  color: #1a1a2e;
+  padding-bottom: calc(var(--bottomnav-h, 60px) + 24px);
+}
+
+.authWall {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.authIcon {
+  font-size: 52px;
+  margin-bottom: 12px;
+}
+
+.authTitle {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 800;
+  color: #1a1a2e;
+}
+
+.authSub {
+  margin: 0 0 18px;
+  color: #718096;
+  font-size: 14px;
+}
+
+.authBtn {
+  min-height: 46px;
+  border: none;
+  border-radius: 999px;
+  background: #f5a623;
+  color: #1a1a2e;
+  padding: 0 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.toast {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.toastSuccess {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.toastError {
+  background: #fff;
+  color: #9b2335;
+  border: 1px solid #fed7d7;
+}
+
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 12px;
+  background: linear-gradient(135deg, #1a1a2e, #0f3460);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.iconBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.topTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.content {
+  width: min(860px, 100%);
+  margin: 0 auto;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.balanceCard,
+.transferCard,
+.emptyCard,
+.txList {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(15, 52, 96, 0.08);
+}
+
+.balanceCard {
+  padding: 18px;
+}
+
+.balanceLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #718096;
+}
+
+.balanceValue {
+  margin-top: 6px;
+  font-size: 32px;
+  font-weight: 900;
+  color: #f5a623;
+}
+
+.balanceHint {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #718096;
+}
+
+.transferCard {
+  padding: 16px;
+}
+
+.transferTitle {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.transferSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #718096;
+}
+
+.openTransferBtn {
+  margin-top: 12px;
+  min-height: 46px;
+  width: 100%;
+  border-radius: 999px;
+  border: none;
+  background: #f5a623;
+  color: #1a1a2e;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sectionTitle {
+  margin: 2px 0 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1a1a2e;
+}
+
+.emptyCard {
+  padding: 18px;
+  color: #718096;
+  font-size: 13px;
+}
+
+.txList {
+  overflow: hidden;
+}
+
+.txRow {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.txRow:last-child {
+  border-bottom: none;
+}
+
+.txLeft {
+  min-width: 0;
+}
+
+.txLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.txTime {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #718096;
+}
+
+.txAmount {
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.txIn {
+  color: #276749;
+}
+
+.txOut {
+  color: #9b2335;
+}
+
+/* transfer modal: aligned with rewards modal style */
+.transferModal {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.transferModalBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: all;
+}
+
+.transferModalSheet {
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  padding: 24px;
+  position: relative;
+  pointer-events: all;
+  max-height: 82vh;
+  overflow-y: auto;
+}
+
+.transferModalHandle {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: #e2e8f0;
+  margin: 0 auto 20px;
+}
+
+.transferModalEmoji {
+  font-size: 46px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.transferModalTitle {
+  font-size: 18px;
+  font-weight: 900;
+  color: #1a1a2e;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.transferModalSub {
+  text-align: center;
+  color: #718096;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.transferInput {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #1a1a2e;
+  font-family: inherit;
+  background: #f8f9fd;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.transferInput:focus {
+  outline: none;
+  border-color: #f5a623;
+}
+
+.transferModalInfo {
+  background: #f8f9fd;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.transferModalRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.transferModalLabel {
+  color: #718096;
+}
+
+.transferModalVal {
+  color: #1a1a2e;
+  font-weight: 700;
+}
+
+.transferModalValGold {
+  color: #f5a623;
+  font-weight: 800;
+}
+
+.transferModalConfirmBtn {
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f5a623, #e6951a);
+  color: #1a1a2e;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.transferModalConfirmBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.transferModalCancelBtn {
+  width: 100%;
+  min-height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #718096;
+  font-size: 14px;
+  cursor: pointer;
+}
+

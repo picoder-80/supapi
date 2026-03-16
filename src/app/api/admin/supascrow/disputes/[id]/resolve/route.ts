@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { hasAdminPermission } from "@/lib/admin/permissions";
 import { logAdminAction } from "@/lib/security/audit";
+import { logDisputeEvent } from "@/lib/security/dispute-audit";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -89,6 +90,19 @@ export async function POST(
     targetType: "supascrow_dispute",
     targetId: disputeId,
     detail: { deal_id: deal.id, resolution },
+  });
+  await logDisputeEvent({
+    platform: "supascrow",
+    disputeId: disputeId,
+    dealId: deal.id,
+    actorType: "admin",
+    actorId: auth.userId,
+    eventType: "admin_resolved",
+    fromStatus: "disputed",
+    toStatus: resolution === "release_to_seller" ? "released" : "refunded",
+    decision: resolution === "release_to_seller" ? "release" : "refund",
+    reasonExcerpt: "Resolved by admin panel action.",
+    metadata: { resolution },
   });
 
   return NextResponse.json({

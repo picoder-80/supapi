@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { verifyToken } from "@/lib/auth/jwt";
 import { analyzeDispute, shouldAutoResolveDispute } from "@/lib/market/ai";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { logDisputeEvent } from "@/lib/security/dispute-audit";
 
 // POST — open dispute and run AI auto-check
 export async function POST(req: NextRequest) {
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "A dispute is already open for this order" }, { status: 400 });
 
     // Create dispute record
-    const { data: dispute } = await supabase
+    const { data: dispute, error: disputeInsertErr } = await supabase
       .from("disputes")
       .insert({
         order_id, opened_by: payload.userId,
@@ -61,11 +62,29 @@ export async function POST(req: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .select().single();
+    if (disputeInsertErr || !dispute?.id) {
+      return NextResponse.json({ success: false, error: disputeInsertErr?.message ?? "Failed to create dispute" }, { status: 500 });
+    }
+    await logDisputeEvent({
+      platform: "market",
+      disputeId: dispute.id,
+      orderId: order_id,
+      actorType: "user",
+      actorId: payload.userId,
+      eventType: "opened",
+      fromStatus: order.status,
+      toStatus: "disputed",
+      reasonExcerpt: reason,
+      metadata: { evidence_count: Array.isArray(evidence) ? evidence.length : 0 },
+    });
 
     // Update order status
-    await supabase.from("orders")
+    const { error: orderDisputedErr } = await supabase.from("orders")
       .update({ status: "disputed", updated_at: new Date().toISOString() })
       .eq("id", order_id);
+    if (orderDisputedErr) {
+      return NextResponse.json({ success: false, error: orderDisputedErr.message }, { status: 500 });
+    }
 
     const analysis = await analyzeDispute({
       reason,
@@ -79,7 +98,7 @@ export async function POST(req: NextRequest) {
     const autoResolve = autoPolicy.ok;
     const newOrderStatus = analysis.decision === "refund" ? "refunded" : "completed";
 
-    await supabase
+    const { error: disputeAiUpdateErr } = await supabase
       .from("disputes")
       .update({
         status: autoResolve ? "resolved" : "open",
@@ -90,12 +109,46 @@ export async function POST(req: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", dispute?.id);
+    if (disputeAiUpdateErr) {
+      return NextResponse.json({ success: false, error: disputeAiUpdateErr.message }, { status: 500 });
+    }
+    await logDisputeEvent({
+      platform: "market",
+      disputeId: dispute.id,
+      orderId: order_id,
+      actorType: "system",
+      actorId: null,
+      eventType: "analysis_updated",
+      fromStatus: "disputed",
+      toStatus: autoResolve ? "resolved" : "open",
+      decision: analysis.decision,
+      confidence: analysis.confidence,
+      reasonExcerpt: analysis.reasoning,
+      metadata: { auto_resolve_reason: autoPolicy.reason },
+    });
 
     if (autoResolve) {
-      await supabase.from("orders").update({
+      const { error: autoOrderUpdateErr } = await supabase.from("orders").update({
         status: newOrderStatus,
         updated_at: new Date().toISOString(),
       }).eq("id", order_id);
+      if (autoOrderUpdateErr) {
+        return NextResponse.json({ success: false, error: autoOrderUpdateErr.message }, { status: 500 });
+      }
+      await logDisputeEvent({
+        platform: "market",
+        disputeId: dispute.id,
+        orderId: order_id,
+        actorType: "system",
+        actorId: null,
+        eventType: "auto_resolved",
+        fromStatus: "disputed",
+        toStatus: newOrderStatus,
+        decision: analysis.decision,
+        confidence: analysis.confidence,
+        reasonExcerpt: analysis.reasoning,
+        metadata: { auto_resolve_reason: autoPolicy.reason },
+      });
 
       // Escrow handling when auto-resolved
       if (newOrderStatus === "completed") {

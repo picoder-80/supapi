@@ -99,6 +99,149 @@ async function recoverMissingTransaction(params: {
   return true;
 }
 
+async function markOrderPaid(params: {
+  supabase: Awaited<ReturnType<typeof createAdminClient>>;
+  orderId: string;
+  paymentId: string;
+  userId: string;
+  listingId?: string | null;
+  commissionPct: number;
+  commissionPi: number;
+  netPi: number;
+}) {
+  const orderId = params.orderId.trim();
+
+  const tryUpdateById = async (targetOrderId: string) => {
+    const updatePaid = await params.supabase
+      .from("orders")
+      .update({
+        commission_pct: params.commissionPct,
+        commission_pi: params.commissionPi,
+        seller_net_pi: params.netPi,
+        status: "paid",
+        pi_payment_id: params.paymentId,
+      })
+      .eq("id", targetOrderId)
+      .select("id")
+      .maybeSingle();
+
+    if (updatePaid.data?.id) return true;
+    if (!updatePaid.error) {
+      console.warn("[Complete] Order paid sync affected 0 rows:", targetOrderId);
+      return false;
+    }
+
+    const code = (updatePaid.error as { code?: string } | null)?.code;
+    console.error("[Complete] Full order paid sync failed:", targetOrderId, updatePaid.error);
+
+    // Compatibility fallback: some deployments still enforce "escrow" instead of "paid".
+    if (code === "23514") {
+      const updateEscrow = await params.supabase
+        .from("orders")
+        .update({
+          commission_pct: params.commissionPct,
+          commission_pi: params.commissionPi,
+          seller_net_pi: params.netPi,
+          status: "escrow",
+          pi_payment_id: params.paymentId,
+        })
+        .eq("id", targetOrderId)
+        .select("id")
+        .maybeSingle();
+
+      if (updateEscrow.data?.id) {
+        console.log("[Complete] Escrow-status fallback sync succeeded:", targetOrderId);
+        return true;
+      }
+
+      if (!updateEscrow.error) {
+        console.warn("[Complete] Escrow-status fallback affected 0 rows:", targetOrderId);
+      } else {
+        console.error("[Complete] Escrow-status fallback failed:", targetOrderId, updateEscrow.error);
+      }
+
+      // Last compatibility fallback: keep status "pending" but attach payment_id + commission fields.
+      // UI/API can derive effective paid state from pending + pi_payment_id.
+      const updatePending = await params.supabase
+        .from("orders")
+        .update({
+          commission_pct: params.commissionPct,
+          commission_pi: params.commissionPi,
+          seller_net_pi: params.netPi,
+          status: "pending",
+          pi_payment_id: params.paymentId,
+        })
+        .eq("id", targetOrderId)
+        .select("id")
+        .maybeSingle();
+
+      if (updatePending.data?.id) {
+        console.log("[Complete] Pending-status compatibility sync succeeded:", targetOrderId);
+        return true;
+      }
+
+      if (!updatePending.error) {
+        console.warn("[Complete] Pending-status compatibility sync affected 0 rows:", targetOrderId);
+      } else {
+        console.error("[Complete] Pending-status compatibility sync failed:", targetOrderId, updatePending.error);
+      }
+    }
+
+    // Backward-compatible fallback for databases that do not yet have commission columns.
+    if (code === "PGRST204") {
+      const minimalUpdate = await params.supabase
+        .from("orders")
+        .update({
+          status: "paid",
+          pi_payment_id: params.paymentId,
+        })
+        .eq("id", targetOrderId)
+        .select("id")
+        .maybeSingle();
+
+      if (minimalUpdate.data?.id) {
+        console.log("[Complete] Fallback order paid sync succeeded:", targetOrderId);
+        return true;
+      }
+
+      if (!minimalUpdate.error) {
+        console.warn("[Complete] Fallback order paid sync affected 0 rows:", targetOrderId);
+      } else {
+        console.error("[Complete] Fallback order paid sync failed:", targetOrderId, minimalUpdate.error);
+      }
+      return false;
+    }
+
+    return false;
+  };
+
+  if (await tryUpdateById(orderId)) return true;
+
+  // Secondary repair path: try to resolve by buyer + listing if direct order id update missed.
+  if (params.listingId) {
+    const fallbackOrder = await params.supabase
+      .from("orders")
+      .select("id, status, created_at")
+      .eq("buyer_id", params.userId)
+      .eq("listing_id", params.listingId)
+      .in("status", ["pending", "escrow", "paid"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (fallbackOrder.data?.id) {
+      console.warn("[Complete] Using fallback order resolution:", {
+        fromOrderId: orderId,
+        toOrderId: fallbackOrder.data.id,
+        listingId: params.listingId,
+      });
+      return tryUpdateById(String(fallbackOrder.data.id));
+    }
+  }
+
+  return false;
+}
+
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: R.corsHeaders("*") });
 }
@@ -182,8 +325,11 @@ export async function POST(req: NextRequest) {
 
   // ── Create ESCROW record (locked — not yet released to seller) ──
   const meta = (transaction.metadata ?? {}) as Record<string, unknown>;
-  const metaOrderId = typeof meta.order_id === "string" ? meta.order_id : null;
-  const orderId = metaOrderId ?? (transaction.reference_type === "listing" ? transaction.reference_id : null);
+  const metaOrderId = typeof meta.order_id === "string" ? meta.order_id.trim() : null;
+  const metaListingId = typeof meta.listing_id === "string" ? meta.listing_id.trim() : null;
+  const refOrderId =
+    typeof transaction.reference_id === "string" ? transaction.reference_id.trim() : transaction.reference_id;
+  const orderId = metaOrderId ?? (transaction.reference_type === "listing" ? refOrderId : null);
   const platform = meta.platform ?? "market";
   const grossPi  = parseFloat(String(transaction.amount_pi ?? 0));
 
@@ -230,13 +376,19 @@ export async function POST(req: NextRequest) {
 
     // Always sync order as paid when payment is completed,
     // even if seller row fetch/upsert path had transient issues.
-    await supabase.from("orders").update({
-      commission_pct: commissionPct,
-      commission_pi:  commissionPi,
-      seller_net_pi:  netPi,
-      status:         "paid",
-      pi_payment_id:  paymentId,
-    }).eq("id", orderId);
+    const paidSynced = await markOrderPaid({
+      supabase,
+      orderId,
+      paymentId,
+      userId: payload.userId,
+      listingId: metaListingId,
+      commissionPct,
+      commissionPi,
+      netPi,
+    });
+    if (!paidSynced) {
+      console.error("[Complete] Unable to mark order as paid after fallback attempts:", { orderId, paymentId });
+    }
   }
 
   // ── Referral reward on first purchase ──────────────────────

@@ -15,7 +15,8 @@ import * as R from "@/lib/api";
 type Params = { params: Promise<{ id: string }> };
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  pending:    ["paid", "cancelled"],
+  pending:    ["paid", "escrow", "cancelled"],
+  escrow:     ["shipped", "meetup_set", "cancelled"],
   paid:       ["shipped", "meetup_set", "cancelled"],
   shipped:    ["delivered"],
   meetup_set: ["delivered"],
@@ -29,12 +30,32 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 // Who can trigger which transition
 const TRANSITION_ACTOR: Record<string, "buyer" | "seller" | "both"> = {
   paid:       "both",
+  escrow:     "both",
   shipped:    "seller",
   meetup_set: "seller",
   delivered:  "buyer",   // buyer confirms received
   completed:  "buyer",   // buyer confirms satisfied → releases escrow
   disputed:   "buyer",
   cancelled:  "both",
+};
+
+const getEffectiveOrderStatus = (order: {
+  status: string;
+  pi_payment_id?: string | null;
+  tracking_number?: string | null;
+  meetup_location?: string | null;
+  buying_method?: string | null;
+}) => {
+  if (order.status !== "pending") return order.status;
+  if (!order.pi_payment_id) return order.status;
+
+  const hasTracking = Boolean(order.tracking_number?.trim());
+  const hasMeetup = Boolean(order.meetup_location?.trim());
+  const method = order.buying_method ?? "";
+
+  if ((method === "ship" || method === "both") && hasTracking) return "shipped";
+  if ((method === "meetup" || method === "both") && hasMeetup) return "meetup_set";
+  return "paid";
 };
 
 async function creditSellerEarnings(params: {
@@ -103,7 +124,8 @@ export async function GET(req: NextRequest, { params }: Params) {
       .single();
 
     if (error || !data) return withCors(NextResponse.json({ success: false, error: "Not found" }, { status: 404 }), req);
-    return withCors(NextResponse.json({ success: true, data }), req);
+    const normalized = { ...data, status: getEffectiveOrderStatus(data) };
+    return withCors(NextResponse.json({ success: true, data: normalized }), req);
   } catch {
     return withCors(NextResponse.json({ success: false }, { status: 500 }), req);
   }
@@ -131,9 +153,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     // Validate transition
     if (newStatus) {
-      const allowed = VALID_TRANSITIONS[order.status] ?? [];
+      const effectiveStatus = getEffectiveOrderStatus(order);
+      const allowed = VALID_TRANSITIONS[effectiveStatus] ?? [];
       if (!allowed.includes(newStatus))
-        return withCors(NextResponse.json({ success: false, error: `Cannot move from ${order.status} to ${newStatus}` }, { status: 400 }), req);
+        return withCors(NextResponse.json({ success: false, error: `Cannot move from ${effectiveStatus} to ${newStatus}` }, { status: 400 }), req);
 
       // Validate actor
       const actor = TRANSITION_ACTOR[newStatus];
@@ -218,11 +241,29 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       console.log(`[Escrow Cancelled] orderId=${id} — admin to process refund manually`);
     }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("orders").update(updates).eq("id", id).select().single();
 
+    // Compatibility fallback for legacy status constraints that reject shipped/meetup_set.
+    if (error && (error as { code?: string }).code === "23514" && (newStatus === "shipped" || newStatus === "meetup_set")) {
+      const fallbackUpdates = { ...updates };
+      delete fallbackUpdates.status;
+      const retry = await supabase
+        .from("orders")
+        .update(fallbackUpdates)
+        .eq("id", id)
+        .select()
+        .single();
+      data = retry.data;
+      error = retry.error;
+      if (!error) {
+        console.warn(`[Orders PATCH] Legacy status constraint fallback used for ${newStatus} on order ${id}`);
+      }
+    }
+
     if (error) return withCors(NextResponse.json({ success: false, error: error.message }, { status: 500 }), req);
-    return withCors(NextResponse.json({ success: true, data }), req);
+    const normalized = { ...data, status: getEffectiveOrderStatus(data) };
+    return withCors(NextResponse.json({ success: true, data: normalized }), req);
   } catch {
     return withCors(NextResponse.json({ success: false }, { status: 500 }), req);
   }

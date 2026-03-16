@@ -481,6 +481,10 @@ textarea.input { min-height: 110px; padding-top: 12px; }
   cursor: pointer;
   transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
+.nextBtnBlock {
+  width: 100%;
+  display: block;
+}
 .nextBtn:hover,
 .publishBtn:hover:not(:disabled),
 .stickyBuyBtn:hover:not(:disabled) { transform: translateY(-1px); }

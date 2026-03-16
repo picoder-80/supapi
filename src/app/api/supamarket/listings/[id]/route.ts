@@ -4,6 +4,18 @@ import { verifyToken } from "@/lib/auth/jwt";
 
 type Params = { params: Promise<{ id: string }> };
 
+function normalizeListingStatusForUi(status: unknown): string {
+  const raw = String(status ?? "");
+  if (raw === "removed") return "deleted";
+  return raw;
+}
+
+function fallbackStatuses(requested: string): string[] {
+  if (requested === "paused") return ["paused", "removed"];
+  if (requested === "deleted") return ["deleted", "removed"];
+  return [requested];
+}
+
 // GET — single listing detail (optionally includes liked when Authorization present)
 export async function GET(req: NextRequest, { params }: Params) {
   try {
@@ -59,15 +71,47 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     for (const key of allowed) { if (key in body) updates[key] = body[key]; }
 
     const supabase = await createAdminClient();
-    const { data, error } = await supabase
-      .from("listings")
-      .update(updates)
-      .eq("id", id)
-      .eq("seller_id", payload.userId) // only own listings
-      .select().single();
+    const requestedStatus = typeof updates.status === "string" ? String(updates.status) : null;
+    if (!requestedStatus) {
+      const { data, error } = await supabase
+        .from("listings")
+        .update(updates)
+        .eq("id", id)
+        .eq("seller_id", payload.userId) // only own listings
+        .select()
+        .single();
 
-    if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    return NextResponse.json({ success: true, data });
+      if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+      return NextResponse.json({ success: true, data: { ...data, status: normalizeListingStatusForUi(data?.status) } });
+    }
+
+    let lastError: { message?: string; code?: string } | null = null;
+    for (const statusCandidate of fallbackStatuses(requestedStatus)) {
+      const nextUpdates = { ...updates, status: statusCandidate };
+      const { data, error } = await supabase
+        .from("listings")
+        .update(nextUpdates)
+        .eq("id", id)
+        .eq("seller_id", payload.userId)
+        .select()
+        .single();
+
+      if (!error && data) {
+        return NextResponse.json({
+          success: true,
+          data: { ...data, status: normalizeListingStatusForUi(data.status) },
+        });
+      }
+
+      if (!error) {
+        return NextResponse.json({ success: false, error: "Listing not found or unauthorized" }, { status: 404 });
+      }
+
+      lastError = error as { message?: string; code?: string };
+      if ((lastError?.code ?? "") !== "23514") break;
+    }
+
+    return NextResponse.json({ success: false, error: lastError?.message ?? "Update failed" }, { status: 500 });
   } catch {
     return NextResponse.json({ success: false }, { status: 500 });
   }
@@ -83,10 +127,22 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     if (!payload) return NextResponse.json({ success: false }, { status: 401 });
 
     const supabase = await createAdminClient();
-    await supabase.from("listings")
-      .update({ status: "deleted", updated_at: new Date().toISOString() })
-      .eq("id", id).eq("seller_id", payload.userId);
+    const tryStatuses = ["deleted", "removed"];
+    let lastError: { message?: string; code?: string } | null = null;
+    for (const status of tryStatuses) {
+      const { error } = await supabase
+        .from("listings")
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .eq("seller_id", payload.userId);
+      if (!error) return NextResponse.json({ success: true });
+      lastError = error as { message?: string; code?: string };
+      if ((lastError?.code ?? "") !== "23514") break;
+    }
 
+    if (lastError) {
+      return NextResponse.json({ success: false, error: lastError.message ?? "Delete failed" }, { status: 500 });
+    }
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ success: false }, { status: 500 });

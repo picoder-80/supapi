@@ -3,6 +3,28 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { verifyToken } from "@/lib/auth/jwt";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
+const normalizePaidStatus = <T extends {
+  status?: string | null;
+  pi_payment_id?: string | null;
+  tracking_number?: string | null;
+  meetup_location?: string | null;
+  buying_method?: string | null;
+}>(order: T): T => {
+  if (order.status !== "pending" || !order.pi_payment_id) return order;
+
+  const hasTracking = Boolean(order.tracking_number?.trim());
+  const hasMeetup = Boolean(order.meetup_location?.trim());
+  const method = order.buying_method ?? "";
+
+  if ((method === "ship" || method === "both") && hasTracking) {
+    return { ...order, status: "shipped" };
+  }
+  if ((method === "meetup" || method === "both") && hasMeetup) {
+    return { ...order, status: "meetup_set" };
+  }
+  return { ...order, status: "paid" };
+};
+
 // GET — list orders (buyer or seller)
 export async function GET(req: NextRequest) {
   try {
@@ -29,7 +51,8 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false });
 
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    return NextResponse.json({ success: true, data: data ?? [] });
+    const normalized = (data ?? []).map((o) => normalizePaidStatus(o));
+    return NextResponse.json({ success: true, data: normalized });
   } catch {
     return NextResponse.json({ success: false }, { status: 500 });
   }

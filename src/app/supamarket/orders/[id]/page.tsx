@@ -19,7 +19,7 @@ interface Order {
   listing: { id: string; title: string; images: string[]; price_pi: number; description: string; location: string; category: string } | null;
   buyer:  { id: string; username: string; display_name: string | null; avatar_url: string | null; phone: string; email: string };
   seller: { id: string; username: string; display_name: string | null; avatar_url: string | null; phone: string };
-  disputes: { id: string; reason: string; status: string; ai_decision: string; ai_reasoning: string; ai_confidence: number; created_at: string }[];
+  disputes: { id: string; reason: string; evidence?: string[]; status: string; ai_decision: string; ai_reasoning: string; ai_confidence: number; created_at: string }[];
 }
 
 interface SupportTriageResult {
@@ -31,7 +31,7 @@ interface SupportTriageResult {
 
 const STATUS_STEPS = ["pending","paid","shipped","delivered","completed"];
 const STATUS_LABELS: Record<string,string> = {
-  pending:"Pending Payment", paid:"Payment Confirmed", shipped:"Shipped",
+  pending:"Pending Payment", escrow:"Payment Confirmed", paid:"Payment Confirmed", shipped:"Shipped",
   meetup_set:"Meetup Arranged", delivered:"Delivered", completed:"Completed",
   disputed:"Under Dispute", refunded:"Refunded", cancelled:"Cancelled",
 };
@@ -50,9 +50,21 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [loading, setLoading]     = useState(true);
   const [updating, setUpdating]   = useState(false);
   const [trackingInput, setTrackingInput] = useState("");
+  const [courierInput, setCourierInput] = useState("");
   const [meetupInput, setMeetupInput]     = useState("");
   const [showDispute, setShowDispute]     = useState(false);
   const [disputeReason, setDisputeReason] = useState("");
+  const [disputeCategory, setDisputeCategory] = useState("delivery_issue");
+  const [disputeExpectedOutcome, setDisputeExpectedOutcome] = useState<"refund" | "release" | "manual_review">("refund");
+  const [incidentDate, setIncidentDate] = useState("");
+  const [evidenceUrls, setEvidenceUrls] = useState<string[]>([]);
+  const [uploadingEvidence, setUploadingEvidence] = useState(false);
+  const [dragOverEvidence, setDragOverEvidence] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number; current: string }>({
+    done: 0,
+    total: 0,
+    current: "",
+  });
   const [disputing, setDisputing] = useState(false);
   const [disputeResult, setDisputeResult] = useState<any>(null);
   const [supportText, setSupportText] = useState("");
@@ -70,6 +82,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       if (d.success) {
         setOrder(d.data);
         setTrackingInput(d.data.tracking_number ?? "");
+        setCourierInput(d.data.tracking_carrier ?? "");
         setMeetupInput(d.data.meetup_location ?? "");
       }
     } catch {}
@@ -100,11 +113,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     const token = localStorage.getItem("supapi_token");
     if (!token) return;
     setDisputing(true);
+    const evidencePayload = [
+      ...evidenceUrls,
+      `Case category: ${disputeCategory}`,
+      `Preferred outcome: ${disputeExpectedOutcome}`,
+      ...(incidentDate ? [`Incident date: ${incidentDate}`] : []),
+    ];
+
     try {
       const r = await fetch("/api/supamarket/dispute", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ order_id: id, reason: disputeReason }),
+        body: JSON.stringify({ order_id: id, reason: disputeReason, evidence: evidencePayload }),
       });
       const d = await r.json();
       if (d.success) {
@@ -117,6 +137,58 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       else setMsg(d.error ?? "Dispute failed");
     } catch { setMsg("Something went wrong"); }
     setDisputing(false);
+  };
+
+  const uploadEvidenceFiles = async (filesInput: FileList | File[] | null) => {
+    if (!filesInput || filesInput.length === 0) return;
+    if (evidenceUrls.length >= 6) {
+      setMsg("Maximum 6 evidence images");
+      return;
+    }
+    const token = localStorage.getItem("supapi_token");
+    if (!token) return;
+
+    const allowedTypes = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
+    const uploadList = Array.from(filesInput)
+      .filter((f) => allowedTypes.has(String(f.type).toLowerCase()))
+      .slice(0, Math.max(0, 6 - evidenceUrls.length));
+    if (!uploadList.length) {
+      setMsg("Only JPEG, PNG, or WEBP images are allowed");
+      return;
+    }
+    setUploadingEvidence(true);
+    setUploadProgress({ done: 0, total: uploadList.length, current: "" });
+    setMsg("");
+    try {
+      for (let i = 0; i < uploadList.length; i += 1) {
+        const file = uploadList[i];
+        setUploadProgress({ done: i, total: uploadList.length, current: file.name });
+        const fd = new FormData();
+        fd.append("order_id", id);
+        fd.append("image", file);
+        const r = await fetch("/api/supamarket/dispute/upload", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        });
+        const d = await r.json();
+        if (!d?.success || !d?.data?.url) {
+          setMsg(d?.error ?? "Evidence upload failed");
+          continue;
+        }
+        setEvidenceUrls((prev) => [...prev, String(d.data.url)].slice(0, 6));
+      }
+    } catch {
+      setMsg("Evidence upload failed");
+    }
+    setUploadProgress((prev) => ({ ...prev, done: prev.total, current: "" }));
+    setUploadingEvidence(false);
+  };
+
+  const handleEvidenceDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragOverEvidence(false);
+    await uploadEvidenceFiles(e.dataTransfer?.files ?? null);
   };
 
   const handleSupportTriage = async () => {
@@ -202,8 +274,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const isBuyer  = user.id === order.buyer?.id;
   const isSeller = user.id === order.seller?.id;
   const dispute  = order.disputes?.[0];
-  const stepIdx  = STATUS_STEPS.indexOf(order.status);
-  const isActive = !["completed","refunded","cancelled","disputed"].includes(order.status);
+  const normalizedStatus = order.status === "escrow" ? "paid" : order.status;
+  const stepIdx  = STATUS_STEPS.indexOf(normalizedStatus);
+  const isActive = !["completed","refunded","cancelled","disputed"].includes(normalizedStatus);
 
   return (
     <div className={styles.page}>
@@ -286,7 +359,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         </div>
 
         {/* Seller actions */}
-        {isSeller && order.status === "paid" && (
+        {isSeller && (order.status === "paid" || order.status === "escrow") && (
           <div className={styles.section}>
             <div className={styles.sectionTitle}>{order.buying_method === "ship" ? "📦 Ship This Order" : "📍 Arrange Meetup"}</div>
             {order.buying_method === "ship" ? (
@@ -294,10 +367,17 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 <div className={styles.trackingInputWrap}>
                   <input
                     className={styles.input}
+                    placeholder="Courier company (e.g. Pos Laju, DHL, FedEx, J&T)"
+                    value={courierInput}
+                    onChange={e => setCourierInput(e.target.value)}
+                  />
+                  <input
+                    className={styles.input}
                     placeholder="Paste tracking number or full tracking URL (worldwide)"
                     value={trackingInput}
                     onChange={e => setTrackingInput(e.target.value)}
                   />
+                  <div className={styles.trackingHint}>Enter courier manually for country-specific carriers; link will still be auto-generated when possible.</div>
                   {trackingInput.trim() && (() => {
                     const detected = detectTracking(trackingInput);
                     return detected ? (
@@ -311,13 +391,43 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   })()}
                 </div>
                 <button className={styles.actionBtn} disabled={updating}
-                  onClick={() => {
-                    const detected = detectTracking(trackingInput);
-                    const extra: Record<string, string> = { tracking_number: trackingInput.trim() };
-                    if (detected) {
-                      extra.tracking_carrier = detected.carrier;
-                      if (detected.trackingUrl) extra.tracking_url = detected.trackingUrl;
+                  onClick={async () => {
+                    const token = localStorage.getItem("supapi_token");
+                    if (!token) return;
+
+                    const extra: Record<string, string> = {
+                      tracking_number: trackingInput.trim(),
+                    };
+                    if (courierInput.trim()) extra.tracking_carrier = courierInput.trim();
+
+                    try {
+                      const rr = await fetch("/api/supamarket/tracking/resolve", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({
+                          tracking_number: trackingInput.trim(),
+                          courier_company: courierInput.trim(),
+                        }),
+                      });
+                      const rd = await rr.json();
+                      if (rd?.success && rd?.data) {
+                        extra.tracking_number = String(rd.data.tracking_number ?? extra.tracking_number);
+                        extra.tracking_carrier = String(rd.data.tracking_carrier ?? extra.tracking_carrier ?? "");
+                        if (rd.data.tracking_url) extra.tracking_url = String(rd.data.tracking_url);
+                      } else {
+                        const detected = detectTracking(trackingInput);
+                        if (detected && !extra.tracking_carrier) extra.tracking_carrier = detected.carrier;
+                        if (detected?.trackingUrl) extra.tracking_url = detected.trackingUrl;
+                      }
+                    } catch {
+                      const detected = detectTracking(trackingInput);
+                      if (detected && !extra.tracking_carrier) extra.tracking_carrier = detected.carrier;
+                      if (detected?.trackingUrl) extra.tracking_url = detected.trackingUrl;
                     }
+
                     updateStatus("shipped", extra);
                   }}>
                   {updating ? "Updating..." : "Mark as Shipped 📦"}
@@ -384,11 +494,92 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             ) : (
               <>
                 <div className={styles.disputeNote}>Describe your issue clearly. Our team will review and resolve it shortly.</div>
+                <div className={styles.disputeMetaGrid}>
+                  <div className={styles.formField}>
+                    <label className={styles.formLabel}>Issue Category</label>
+                    <select className={styles.input} value={disputeCategory} onChange={(e) => setDisputeCategory(e.target.value)}>
+                      <option value="delivery_issue">Delivery issue</option>
+                      <option value="item_not_as_described">Item not as described</option>
+                      <option value="damaged_item">Damaged item</option>
+                      <option value="wrong_item">Wrong item</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div className={styles.formField}>
+                    <label className={styles.formLabel}>Preferred Outcome</label>
+                    <select
+                      className={styles.input}
+                      value={disputeExpectedOutcome}
+                      onChange={(e) => setDisputeExpectedOutcome(e.target.value as "refund" | "release" | "manual_review")}
+                    >
+                      <option value="refund">Refund</option>
+                      <option value="release">Release to seller</option>
+                      <option value="manual_review">Manual review</option>
+                    </select>
+                  </div>
+                </div>
+                <div className={styles.formField}>
+                  <label className={styles.formLabel}>Incident Date (optional)</label>
+                  <input
+                    className={styles.input}
+                    type="date"
+                    value={incidentDate}
+                    onChange={(e) => setIncidentDate(e.target.value)}
+                  />
+                </div>
                 <textarea className={styles.input} rows={4} placeholder="e.g. Item not received, item damaged, wrong item sent..."
                   value={disputeReason} onChange={e => setDisputeReason(e.target.value)} />
+                <div className={styles.formField}>
+                  <label className={styles.formLabel}>Evidence Photos (up to 6)</label>
+                  <div
+                    className={`${styles.dropZone} ${dragOverEvidence ? styles.dropZoneActive : ""}`}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOverEvidence(true);
+                    }}
+                    onDragLeave={() => setDragOverEvidence(false)}
+                    onDrop={handleEvidenceDrop}
+                  >
+                    <div className={styles.dropZoneTitle}>Drop images here or choose files</div>
+                    <div className={styles.dropZoneSub}>Accepted: JPEG, PNG, WEBP</div>
+                    <input
+                      className={styles.fileInput}
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      multiple
+                      onChange={(e) => uploadEvidenceFiles(e.target.files)}
+                      disabled={uploadingEvidence || evidenceUrls.length >= 6}
+                    />
+                  </div>
+                  <div className={styles.inputHint}>
+                    Upload screenshots, damaged item photo, delivery proof, or relevant chat proof.
+                  </div>
+                  {uploadingEvidence && (
+                    <div className={styles.uploading}>
+                      Uploading {uploadProgress.done}/{uploadProgress.total}
+                      {uploadProgress.current ? ` · ${uploadProgress.current}` : ""}
+                    </div>
+                  )}
+                  {evidenceUrls.length > 0 && (
+                    <div className={styles.evidenceGrid}>
+                      {evidenceUrls.map((url) => (
+                        <div key={url} className={styles.evidenceItem}>
+                          <img src={url} alt="Dispute evidence" className={styles.evidenceImg} />
+                          <button
+                            type="button"
+                            className={styles.removeEvidenceBtn}
+                            onClick={() => setEvidenceUrls((prev) => prev.filter((v) => v !== url))}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div className={styles.btnRow}>
                   <button className={styles.cancelBtn} onClick={() => setShowDispute(false)}>Cancel</button>
-                  <button className={styles.disputeBtn} disabled={disputing || !disputeReason.trim()} onClick={handleDispute}>
+                  <button className={styles.disputeBtn} disabled={disputing || uploadingEvidence || !disputeReason.trim()} onClick={handleDispute}>
                     {disputing ? "Submitting..." : "Submit Dispute"}
                   </button>
                 </div>
@@ -418,6 +609,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               <div className={styles.disputeReasoning}>{disputeResult?.reasoning ?? dispute?.ai_reasoning}</div>
               {(disputeResult?.confidence ?? dispute?.ai_confidence) && (
                 <div className={styles.disputeConfidence}>Confidence: {Math.round((disputeResult?.confidence ?? dispute?.ai_confidence) * 100)}%</div>
+              )}
+              {!!dispute?.evidence?.length && (
+                <div className={styles.resultEvidenceWrap}>
+                  <div className={styles.resultEvidenceTitle}>Submitted evidence</div>
+                  <div className={styles.resultEvidenceGrid}>
+                    {dispute.evidence.filter((item) => /^https?:\/\//i.test(item)).slice(0, 6).map((url) => (
+                      <a key={url} href={url} target="_blank" rel="noopener noreferrer" className={styles.resultEvidenceLink}>
+                        <img src={url} alt="Evidence" className={styles.resultEvidenceImg} />
+                      </a>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </div>

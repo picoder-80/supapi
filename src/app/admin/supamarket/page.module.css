@@ -87,6 +87,44 @@
 .disputeMeta { font-size:11px; color:var(--color-text-muted); }
 .disputeRight { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
 .disputeReason { font-size:13px; color:var(--color-text-muted); margin-bottom:10px; }
+.disputeEvidenceWrap {
+  margin-bottom: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.02);
+  padding: 10px;
+}
+.disputeEvidenceTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-light);
+  margin-bottom: 8px;
+}
+.disputeEvidenceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.disputeEvidenceLink {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  display: block;
+  background: #fff;
+}
+.disputeEvidenceImg {
+  width: 100%;
+  height: 92px;
+  object-fit: cover;
+  display: block;
+}
+.disputeEvidenceMeta {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
 .aiDecision { border-radius:10px; padding:12px; margin-bottom:12px; font-size:13px; }
 .aiRefund { background:rgba(39,174,96,0.08); border:1px solid rgba(39,174,96,0.2); color:#27ae60; }
 .aiRelease { background:rgba(41,128,185,0.08); border:1px solid rgba(41,128,185,0.2); color:#2980b9; }
@@ -96,6 +134,21 @@
 .applySuggestionBtn { padding:8px 18px; border-radius:8px; background:rgba(59,130,246,0.15); color:#2563eb; border:1px solid rgba(59,130,246,0.3); font-size:12px; font-weight:700; cursor:pointer; margin-right:8px; }
 .applySuggestionBtn:hover:not(:disabled) { background:rgba(59,130,246,0.25); }
 .applySuggestionBtn:disabled { opacity:0.6; cursor:not-allowed; }
+.refundBuyerBtn { padding:8px 16px; border-radius:8px; background:#fff9ee; color:#1A1A2E; border:1px solid #F5A623; font-size:12px; font-weight:700; cursor:pointer; margin-right:8px; }
+.refundBuyerBtn:disabled { opacity:0.6; cursor:not-allowed; }
+.refundDoneBanner {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  font-size:12px;
+  margin-bottom:10px;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid rgba(39,174,96,0.35);
+  background:rgba(39,174,96,0.08);
+  color:#276749;
+}
 .empty { text-align:center; padding:40px; color:var(--color-text-light); font-size:15px; }
 
 /* Support tickets */
@@ -167,6 +220,53 @@
 .modalConfirm:disabled { opacity:0.5; cursor:not-allowed; }
 .modalDanger  { flex:2; padding:12px; border-radius:10px; background:#e74c3c; color:var(--color-text); font-weight:800; font-size:14px; border:none; cursor:pointer; }
 .modalDanger:disabled { opacity:0.5; cursor:not-allowed; }
+.refundConfirmBtn {
+  flex:2;
+  padding:12px;
+  border-radius:16px;
+  background:#F5A623;
+  color:#1A1A2E;
+  font-weight:800;
+  font-size:14px;
+  border:none;
+  cursor:pointer;
+}
+.refundConfirmBtn:disabled { opacity:0.6; cursor:not-allowed; }
+.modalHint {
+  font-size:14px;
+  color:var(--color-text);
+  line-height:1.5;
+  background:#fff;
+  border:1px solid #E2E8F0;
+  border-radius:16px;
+  padding:12px;
+  margin-bottom:10px;
+}
+.modalHintMuted { font-size:12px; color:#718096; margin-bottom:10px; }
+.refundSuccessState {
+  border:1px solid #E2E8F0;
+  border-radius:16px;
+  background:#fff;
+  padding:14px;
+  margin-bottom:12px;
+  text-align:center;
+}
+.refundSuccessIcon { font-size:24px; color:#27ae60; margin-bottom:6px; }
+.refundSuccessTitle { font-size:14px; font-weight:800; color:#1A1A2E; }
+.refundSuccessMeta { font-size:12px; color:#718096; margin-top:6px; word-break:break-all; }
+.disputeToast {
+  position:fixed;
+  top:76px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:220;
+  padding:10px 16px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:700;
+}
+.disputeToastOk { background:#1A1A2E; color:#fff; }
+.disputeToastErr { background:#fff; color:#9B2335; border:1px solid #fecaca; }
 
 @media (max-width:640px) { .statGrid,.commStatGrid { grid-template-columns:repeat(2,1fr); } .table { font-size:12px; } .table th,.table td { padding:8px; } }
 
@@ -201,6 +301,7 @@
   .tableWrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
   .actionBtns { gap:5px; }
   .okBtn, .warnBtn, .dangerBtn, .overrideBtn, .applySuggestionBtn { font-size:10px; padding:5px 9px; }
+  .disputeEvidenceGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .exportBtn { width:100%; text-align:center; }
   .modal { max-width:100%; border-radius:14px; padding:16px; }
   .quickLinks { padding:0 0 10px; }

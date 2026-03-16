@@ -402,6 +402,97 @@
 }
 .disputeOpenBtn:hover { transform: translateY(-1px); }
 
+.disputeMetaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.formField { margin-bottom: 10px; }
+.formLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #718096;
+  margin-bottom: 6px;
+}
+
+.fileInput {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px dashed #cbd5e0;
+  border-radius: 10px;
+  background: #f8f9fd;
+  color: #1a1a2e;
+  font-size: 13px;
+}
+
+.dropZone {
+  border: 1px dashed #cbd5e0;
+  border-radius: 12px;
+  padding: 10px;
+  background: #f8f9fd;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+.dropZoneActive {
+  border-color: #f5a623;
+  background: #fff9ee;
+}
+.dropZoneTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+}
+.dropZoneSub {
+  font-size: 11px;
+  color: #718096;
+  margin-bottom: 8px;
+}
+.inputHint {
+  margin-top: 6px;
+  color: #718096;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.uploading {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #b7791f;
+}
+.evidenceGrid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.evidenceItem {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+.evidenceImg {
+  width: 100%;
+  height: 88px;
+  object-fit: cover;
+  display: block;
+}
+.removeEvidenceBtn {
+  width: 100%;
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  background: #fff;
+  color: #9b2335;
+  font-size: 11px;
+  font-weight: 700;
+  min-height: 32px;
+}
+
 .btnRow { display: flex; gap: 10px; }
 .cancelBtn {
   flex: 1;
@@ -430,6 +521,32 @@
 .disputeDecision { font-size: 16px; font-weight: 800; color: #1a1a2e; margin-bottom: 8px; }
 .disputeReasoning { font-size: 13px; color: #718096; line-height: 1.6; margin-bottom: 8px; }
 .disputeConfidence { font-size: 11px; color: #718096; font-weight: 700; }
+.resultEvidenceWrap { margin-top: 10px; }
+.resultEvidenceTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #718096;
+  margin-bottom: 6px;
+}
+.resultEvidenceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.resultEvidenceLink {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  display: block;
+}
+.resultEvidenceImg {
+  width: 100%;
+  height: 76px;
+  object-fit: cover;
+  display: block;
+}
 
 .supportResult {
   margin-top: 12px;
@@ -458,6 +575,12 @@
   .section {
     min-height: 120px;
   }
+}
+
+@media (max-width: 640px) {
+  .disputeMetaGrid { grid-template-columns: 1fr; }
+  .evidenceGrid,
+  .resultEvidenceGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

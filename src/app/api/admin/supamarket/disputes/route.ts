@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   const supabase = await createAdminClient();
   let query = supabase
     .from("disputes")
-    .select(`id, reason, status, ai_decision, ai_reasoning, ai_confidence, created_at, resolved_at,
+    .select(`id, reason, evidence, status, ai_decision, ai_reasoning, ai_confidence, created_at, resolved_at, refund_status, refund_txid, refund_amount_pi,
       opened_by_user:opened_by(id, username, display_name, avatar_url),
       order:order_id(id, amount_pi, status, buyer:buyer_id(username), seller:seller_id(username), listing:listing_id(title))`,
       { count: "exact" })
