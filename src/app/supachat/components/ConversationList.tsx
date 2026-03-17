@@ -14,6 +14,7 @@ type Conversation = {
     username: string;
     display_name?: string | null;
     avatar_url?: string | null;
+    verified?: boolean;
   } | null;
 };
 
