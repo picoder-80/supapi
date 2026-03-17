@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -66,7 +66,7 @@ function timeAgo(iso: string) {
   return `${Math.floor(d / 86400)}d`;
 }
 
-export default function SupaScrowPage() {
+function SupaScrowPageInner() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -526,5 +526,22 @@ export default function SupaScrowPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SupaScrowPage() {
+  return (
+    <Suspense fallback={
+      <div className={styles.page}>
+        <div className={styles.introHero}>
+          <div className={styles.heroBadge}>🔒 Secure Pi Escrow</div>
+          <div className={styles.introIcon}>🛡️</div>
+          <h1 className={styles.title}>SupaScrow</h1>
+          <p className={styles.sub}>Loading...</p>
+        </div>
+      </div>
+    }>
+      <SupaScrowPageInner />
+    </Suspense>
   );
 }
