@@ -55,8 +55,9 @@ const PROFILE_SECTIONS = [
     fields: [
       { key: "display_name", label: "Display Name",  type: "text",     placeholder: "Your name" },
       { key: "bio",          label: "Bio",            type: "textarea", placeholder: "Tell the community about yourself..." },
-      { key: "phone",        label: "Phone Number",   type: "tel",      placeholder: "+60 1X-XXXXXXX" },
+      { key: "phone",        label: "Phone Number",   type: "tel",      placeholder: "+1 (555) 123-4567" },
       { key: "email",        label: "Email",          type: "email",    placeholder: "your@email.com" },
+      { key: "wallet_address", label: "Public Pi Wallet Address", type: "text", placeholder: "For payments, Pi escrow payouts & transactions" },
     ],
   },
   {
@@ -69,6 +70,13 @@ const PROFILE_SECTIONS = [
       { key: "state",         label: "State",          type: "text", placeholder: "California" },
       { key: "postcode",      label: "Postcode",       type: "text", placeholder: "10001" },
       { key: "country",       label: "Country",        type: "text", placeholder: "United States" },
+    ],
+  },
+  {
+    key: "wallet", label: "Pi Wallet Address", icon: "π",
+    desc: "Used for receiving payments, Pi escrow payouts, and other Pi transactions across Supapi platforms.",
+    fields: [
+      { key: "wallet_address", label: "Public Pi Wallet Address", type: "text", placeholder: "Your Pi wallet address" },
     ],
   },
 ];
@@ -150,15 +158,16 @@ export default function DashboardPage() {
       const d = await r.json();
       if (d.success) {
         setProfile(prev => ({ ...prev, ...editData }));
-        setSaveMsg("✅ Saved!");
-        setTimeout(() => { setActiveSection(null); setSaveMsg(""); }, 1000);
+        setSaveMsg(d.sc_rewarded ? `✅ Saved! +${d.sc_amount ?? 10} SC earned!` : "✅ Saved!");
+        if (d.sc_rewarded) fetchStats();
+        setTimeout(() => { setActiveSection(null); setSaveMsg(""); }, 1500);
       } else { setSaveMsg("❌ Failed to save"); }
     } catch { setSaveMsg("❌ Error"); }
     setSaving(false);
   };
 
   const profileComplete = () => {
-    const fields = ["display_name","phone","email","address_line1","city","postcode","country"];
+    const fields = ["display_name","phone","email","address_line1","city","postcode","country","wallet_address"];
     const filled = fields.filter(f => String(profile[f as keyof Profile] ?? "").trim()).length;
     return Math.round((filled / fields.length) * 100);
   };

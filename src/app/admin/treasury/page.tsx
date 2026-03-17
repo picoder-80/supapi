@@ -2,15 +2,17 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import AdminPageHero from "@/components/admin/AdminPageHero";
 
 const PLATFORM_EMOJI: Record<string, string> = {
   market: "🛍️", gigs: "💼", endoro: "🚗",
-  domus: "🏠", bulkhub: "📦", default: "🪐",
+  domus: "🏠", bulkhub: "📦", supascrow: "🛡️", default: "🪐",
 };
 
 const PLATFORM_LABEL: Record<string, string> = {
   market: "SupaMarket", gigs: "SupaSkil", endoro: "SupaEndoro",
-  domus: "SupaDomus", bulkhub: "SupaBulk",
+  domus: "SupaDomus", bulkhub: "SupaBulk", supascrow: "SupaScrow",
 };
 
 interface TreasurySummary {
@@ -115,45 +117,52 @@ export default function AdminTreasuryPage() {
   const months = Object.entries(monthly_trend).sort(([a], [b]) => a.localeCompare(b)).slice(-6);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F8F9FD", paddingBottom: 80 }}>
+    <div className="adminPage">
+      <AdminPageHero
+        icon="💰"
+        title="Treasury Overview"
+        subtitle="Revenue, commission, and payout management"
+      />
 
-      {/* Hero */}
-      <div style={{ background: "linear-gradient(135deg,#1A1A2E,#0F3460)", padding: "24px 20px 32px" }}>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 4 }}>Admin · Treasury</div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>💰 Treasury Overview</div>
-        <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-          {["all","month","week"].map(p => (
-            <button key={p} onClick={() => setPeriod(p)}
-              style={{ padding: "6px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
-                background: period === p ? "#F5A623" : "rgba(255,255,255,0.12)",
-                color: period === p ? "#1A1A2E" : "#fff" }}>
-              {p === "all" ? "All Time" : p === "month" ? "This Month" : "This Week"}
-            </button>
+      <div className="adminSection">
+        <div className="adminSectionRow">
+          <h2 className="adminSectionTitle"><span className="adminSectionIcon">📅</span> Period</h2>
+          <div style={{ display: "flex", gap: 8 }}>
+            {["all","month","week"].map(p => (
+              <button key={p} onClick={() => setPeriod(p)}
+                style={{
+                  padding: "8px 16px", borderRadius: 10, cursor: "pointer", fontSize: 12, fontWeight: 600,
+                  background: period === p ? "var(--color-gold)" : "var(--color-bg)",
+                  color: period === p ? "#1a1a2e" : "var(--color-text-muted)",
+                  border: period !== p ? "1px solid var(--color-border)" : "none",
+                }}
+              >
+                {p === "all" ? "All Time" : p === "month" ? "This Month" : "This Week"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Summary Cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginTop: 16, marginBottom: 20 }}>
+          {[
+            { label: "Total Revenue", value: summary.total_gross_pi, primary: false, warn: false, sub: "gross from all platforms" },
+            { label: "Supapi Commission", value: summary.total_commission_pi, primary: true, warn: false, sub: "your earnings" },
+            { label: "Pending Payouts", value: summary.pending_payouts_pi, primary: false, warn: true, sub: "owed to sellers" },
+            { label: "Available Balance", value: summary.available_balance_pi, primary: true, warn: false, sub: "commission − payouts" },
+          ].map(c => (
+            <div key={c.label} className={`adminCard ${c.primary && !c.warn ? "adminCardPrimary" : ""}`}>
+              <div className="adminCardLabel">{c.label}</div>
+              <div className={`adminCardValue ${c.warn ? "adminCardValueWarn" : ""}`}>π {c.value.toFixed(4)}</div>
+              <div className="adminCardSub">{c.sub}</div>
+            </div>
           ))}
         </div>
       </div>
 
-      <div style={{ padding: "0 16px" }}>
-
-        {/* Summary Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: -20, marginBottom: 20 }}>
-          {[
-            { label: "Total Revenue", value: summary.total_gross_pi, color: "#1A1A2E", sub: "gross from all platforms" },
-            { label: "Supapi Commission", value: summary.total_commission_pi, color: "#F5A623", sub: "your earnings" },
-            { label: "Pending Payouts", value: summary.pending_payouts_pi, color: "#e74c3c", sub: "owed to sellers" },
-            { label: "Available Balance", value: summary.available_balance_pi, color: "#27ae60", sub: "commission − payouts" },
-          ].map(c => (
-            <div key={c.label} style={{ background: "#fff", borderRadius: 16, padding: "16px 14px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
-              <div style={{ fontSize: 11, color: "#718096", marginBottom: 4 }}>{c.label}</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: c.color }}>π {c.value.toFixed(4)}</div>
-              <div style={{ fontSize: 10, color: "#aaa", marginTop: 2 }}>{c.sub}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Platform Breakdown */}
-        <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A2E", marginBottom: 16 }}>Revenue by Platform</div>
+      {/* Platform Breakdown */}
+      <div className="adminSection">
+          <div className="adminSectionTitle"><span className="adminSectionIcon">📊</span> Revenue by Platform</div>
           {Object.entries(by_platform).length === 0 && (
             <div style={{ fontSize: 13, color: "#aaa", textAlign: "center", padding: "20px 0" }}>No revenue recorded yet</div>
           )}
@@ -170,12 +179,12 @@ export default function AdminTreasuryPage() {
               </div>
             </div>
           ))}
-        </div>
+      </div>
 
-        {/* Monthly Trend */}
-        {months.length > 0 && (
-          <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A2E", marginBottom: 16 }}>Monthly Commission (Last 6 Months)</div>
+      {/* Monthly Trend */}
+      {months.length > 0 && (
+        <div className="adminSection">
+            <div className="adminSectionTitle"><span className="adminSectionIcon">📈</span> Monthly Commission (Last 6 Months)</div>
             {months.map(([month, amount]) => {
               const max = Math.max(...months.map(([,v]) => v), 0.001);
               const pct = (amount / max) * 100;
@@ -191,12 +200,12 @@ export default function AdminTreasuryPage() {
                 </div>
               );
             })}
-          </div>
-        )}
+        </div>
+      )}
 
-        {/* Commission Rates */}
-        <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A2E", marginBottom: 12 }}>Commission Rates</div>
+      {/* Commission Rates */}
+      <div className="adminSection">
+          <div className="adminSectionTitle"><span className="adminSectionIcon">%</span> Commission Rates</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {commission_configs.filter(c => c.key.startsWith("commission_")).map(c => {
               const platform = c.key.replace("commission_", "");
@@ -211,13 +220,13 @@ export default function AdminTreasuryPage() {
           </div>
           <div style={{ fontSize: 11, color: "#aaa", marginTop: 10 }}>
             To update rates → Admin Market Commission settings
-          </div>
         </div>
+      </div>
 
-        {/* Pending Withdrawals */}
-        <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+      {/* Pending Withdrawals */}
+      <div className="adminSection">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A2E" }}>
+            <div className="adminSectionTitle" style={{ marginBottom: 0 }}>
               Pending Withdrawals
               {pending_withdrawals.length > 0 && (
                 <span style={{ marginLeft: 8, background: "#e74c3c", color: "#fff", borderRadius: 10, padding: "2px 8px", fontSize: 11 }}>
@@ -278,12 +287,12 @@ export default function AdminTreasuryPage() {
               )}
             </div>
           ))}
-        </div>
+      </div>
 
-        {/* Recent Processed */}
-        {recent_withdrawals.length > 0 && (
-          <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A2E", marginBottom: 12 }}>Recent Processed</div>
+      {/* Recent Processed */}
+      {recent_withdrawals.length > 0 && (
+        <div className="adminSection">
+            <div className="adminSectionTitle"><span className="adminSectionIcon">✅</span> Recent Processed</div>
             {recent_withdrawals.map(w => (
               <div key={w.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f0f0f0" }}>
                 <div>
@@ -298,9 +307,11 @@ export default function AdminTreasuryPage() {
                 </div>
               </div>
             ))}
-          </div>
-        )}
+        </div>
+      )}
 
+      <div className="adminQuickLinks">
+        <Link href="/admin/dashboard" className="adminBackBtn">Back to Dashboard</Link>
       </div>
 
       {/* Pay Modal */}

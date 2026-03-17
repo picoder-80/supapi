@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
 import BuyCreditsWidget from "@/components/BuyCreditsWidget";
+import LiveGiftPanel from "@/components/feed/LiveGiftPanel";
+import LiveCardActions from "@/components/feed/LiveCardActions";
 import styles from "./page.module.css";
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
@@ -18,15 +20,37 @@ export default function WatchLivePage() {
     user_id: string;
     title: string | null;
     stream_url: string | null;
+    status?: string;
     viewer_count: number;
+    like_count?: number;
+    comment_count?: number;
+    is_liked?: boolean;
     user?: { username: string; display_name: string | null; avatar_url: string | null };
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
+  const fetchSession = () => {
+    if (!id) return;
+    fetch(`/api/live/${id}`, {
+      headers: user ? { Authorization: `Bearer ${token()}` } : {},
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && d.data) setSession(d.data);
+        else setNotFound(true);
+      })
+      .catch(() => setNotFound(true));
+  };
+
+  const token = () => (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "");
+
   useEffect(() => {
     if (!id) return;
-    fetch(`/api/live/${id}`)
+    setLoading(true);
+    fetch(`/api/live/${id}`, {
+      headers: user ? { Authorization: `Bearer ${token()}` } : {},
+    })
       .then(r => r.json())
       .then(d => {
         if (d.success && d.data) setSession(d.data);
@@ -34,7 +58,15 @@ export default function WatchLivePage() {
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, user?.id]);
+
+  useEffect(() => {
+    if (!id || !session || session.status !== "live") return;
+    fetch(`/api/live/${id}/view`, { method: "POST" })
+      .then(r => r.json())
+      .then(d => { if (d.success && d.data?.viewer_count != null) setSession(s => s ? { ...s, viewer_count: d.data.viewer_count } : s); })
+      .catch(() => {});
+  }, [id, session?.id]);
 
   if (loading) {
     return (
@@ -56,8 +88,6 @@ export default function WatchLivePage() {
     );
   }
 
-  const name = session.user?.display_name ?? session.user?.username ?? "?";
-
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -68,9 +98,23 @@ export default function WatchLivePage() {
       <div className={styles.body}>
         <div className={styles.liveCard}>
           <div className={styles.liveVideoWrap}>
-            <div className={styles.livePlaceholder} />
-            <span className={styles.liveBadge}>● LIVE</span>
+            {session.stream_url ? (
+              <video
+                src={session.stream_url}
+                autoPlay
+                playsInline
+                muted
+                controls
+                className={styles.liveVideo}
+              />
+            ) : (
+              <div className={styles.livePlaceholder} />
+            )}
+            {session.status === "live" && <span className={styles.liveBadge}>● LIVE</span>}
             <span className={styles.liveViewerCount}>👁 {session.viewer_count} watching</span>
+            {session.like_count !== undefined && (
+              <span className={styles.liveLikeCount}>❤️ {session.like_count}</span>
+            )}
             <div className={styles.liveHostBar}>
               <span className={styles.liveHostAvatar}>
                 {session.user?.avatar_url ? <img src={session.user.avatar_url} alt="" /> : getInitial(session.user?.username ?? "?")}
@@ -82,6 +126,43 @@ export default function WatchLivePage() {
           </div>
           {session.title && <div className={styles.liveTitle}>{session.title}</div>}
         </div>
+        {user && session.user_id === user.id && session.status === "live" && (
+          <div className={styles.endLiveWrap}>
+            <button
+              type="button"
+              className={styles.endLiveBtn}
+              onClick={() => {
+                fetch(`/api/live/${session.id}`, {
+                  method: "PATCH",
+                  headers: { Authorization: `Bearer ${token()}` },
+                })
+                  .then(r => r.json())
+                  .then(d => { if (d.success) setSession(s => s ? { ...s, status: "ended" } : s); });
+              }}
+            >
+              End Live
+            </button>
+          </div>
+        )}
+        {user && (
+          <div style={{ padding: "0 16px" }}>
+            <LiveCardActions
+              sessionId={session.id}
+              isEnded={session.status === "ended"}
+              likeCount={session.like_count ?? 0}
+              commentCount={session.comment_count ?? 0}
+              isLiked={session.is_liked ?? false}
+              onLike={() => setSession((s) => s ? { ...s, is_liked: true, like_count: (s.like_count ?? 0) + 1 } : s)}
+              onUnlike={() => setSession((s) => s ? { ...s, is_liked: false, like_count: Math.max(0, (s.like_count ?? 1) - 1) } : s)}
+              onRefresh={() => fetchSession()}
+              token={() => (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "")}
+            />
+            <LiveGiftPanel
+              sessionId={session.id}
+              token={() => (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "")}
+            />
+          </div>
+        )}
       </div>
 
       <BuyCreditsWidget className={styles.buyCreditsSection} />

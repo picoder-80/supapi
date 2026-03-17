@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./BottomNav.module.css";
+import { getSupaChatBrowserClient } from "@/lib/supachat/client";
 
 const SCROLL_ITEMS = [
   { href: "/",            emoji: "🏠",  label: "Home"       },
@@ -15,6 +16,7 @@ const SCROLL_ITEMS = [
   { href: "/newsfeed",    emoji: "📰",  label: "Newsfeed"   },
   { href: "/supafeeds", emoji: "📱",  label: "SupaFeeds"  },
   { href: "/wallet",      emoji: "💰",  label: "Wallet"     },
+  { href: "/supachat",    emoji: "💬",  label: "Chat"       },
   { href: "/sc-p2p",      emoji: "💸",  label: "SC P2P"     },
   { href: "/referral",    emoji: "🤝",  label: "Referral"   },
   { href: "/locator",     emoji: "📍",  label: "Locator"    },
@@ -40,6 +42,24 @@ const SCROLL_ITEMS = [
 export default function BottomNav() {
   const pathname  = usePathname();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [chatUnread, setChatUnread] = useState(0);
+  const token = useMemo(
+    () => (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : ""),
+    []
+  );
+  const supabase = useMemo(() => getSupaChatBrowserClient(), []);
+
+  const userId = useMemo(() => {
+    if (!token) return "";
+    const part = token.split(".")[1];
+    if (!part) return "";
+    try {
+      const payload = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+      return String(payload.sub || payload.user_id || payload.id || "");
+    } catch {
+      return "";
+    }
+  }, [token]);
 
   useEffect(() => {
     if (pathname.startsWith("/admin")) return;
@@ -55,6 +75,57 @@ export default function BottomNav() {
       + (activeRect.width / 2);
     container.scrollTo({ left: scrollTo, behavior: "instant" });
   }, [pathname]);
+
+  useEffect(() => {
+    if (!token) return;
+    let active = true;
+    const loadUnread = async () => {
+      try {
+        const r = await fetch("/api/supachat/conversations?unread=1", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const d = await r.json();
+        if (!active || !d?.success) return;
+        const total = (d.data ?? []).reduce((sum: number, c: any) => sum + Number(c.unread_count || 0), 0);
+        setChatUnread(total);
+      } catch {}
+    };
+    loadUnread();
+    if (!userId) return () => void 0;
+
+    const channel = supabase
+      .channel(`supachat-unread-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "supachat_conversations",
+          filter: `participant_1=eq.${userId}`,
+        },
+        () => {
+          loadUnread();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "supachat_conversations",
+          filter: `participant_2=eq.${userId}`,
+        },
+        () => {
+          loadUnread();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
+  }, [token, userId, supabase]);
 
   if (pathname.startsWith("/admin")) return null;
 
@@ -84,7 +155,12 @@ export default function BottomNav() {
               data-active={isActive}
               className={`${styles.item} ${isActive ? styles.active : ""}`}
             >
-              <span className={styles.emoji}>{item.emoji}</span>
+              <span className={styles.emojiWrap}>
+                <span className={styles.emoji}>{item.emoji}</span>
+                {item.href === "/supachat" && chatUnread > 0 && (
+                  <span className={styles.unreadBadge}>{chatUnread > 99 ? "99+" : chatUnread}</span>
+                )}
+              </span>
               <span className={styles.label}>{item.label}</span>
             </Link>
           );

@@ -21,6 +21,16 @@ function getUserId(req: NextRequest): string | null {
   } catch { return null; }
 }
 
+async function getSupaEndoroCommissionPct(): Promise<number> {
+  const { data } = await supabase
+    .from("platform_config")
+    .select("value")
+    .eq("key", "commission_supaendoro")
+    .maybeSingle();
+  const pct = parseFloat(String(data?.value ?? "5")) || 0;
+  return Math.min(50, Math.max(0, pct));
+}
+
 async function enrichVehicles(vehicles: any[]) {
   if (!vehicles?.length) return [];
   const hostIds = [...new Set(vehicles.map((v: any) => v.host_id))];
@@ -216,7 +226,8 @@ export async function POST(req: NextRequest) {
     const rental  = parseFloat(vehicle.daily_rate_pi) * days;
     const deposit = parseFloat(vehicle.deposit_pi ?? 0);
     const delivery = pickup_type === "delivery" ? parseFloat(vehicle.delivery_fee_pi ?? 0) : 0;
-    const fee     = rental * 0.05;
+    const commissionPct = await getSupaEndoroCommissionPct();
+    const fee     = Math.round(rental * (commissionPct / 100) * 1000000) / 1000000;
     const total   = rental + deposit + delivery;
 
     const { data, error } = await supabase.from("endoro_bookings").insert({

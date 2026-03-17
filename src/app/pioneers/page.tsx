@@ -33,11 +33,6 @@ const STATUS_OPTS = [
   { id: "active", label: "🟢 Active",   desc: "Open to meet" },
   { id: "away",   label: "🟡 Away",     desc: "Busy now" },
 ];
-const VISIBLE_OPTS = [
-  { id: "everyone", label: "🌍 Everyone" },
-  { id: "verified", label: "✅ KYC Verified only" },
-];
-
 function getInitial(u: string) { return (u ?? "?").charAt(0).toUpperCase(); }
 
 export default function PioneersPage() {
@@ -48,10 +43,12 @@ export default function PioneersPage() {
   const [pins, setPins]     = useState<PioneerPin[]>([]);
   const [users, setUsers]   = useState<Record<string, PioneerUser>>({});
   const [groups, setGroups] = useState<PioneerGroup[]>([]);
+  const [myGroupIds, setMyGroupIds] = useState<Set<string>>(new Set());
   const [myPin, setMyPin]   = useState<PioneerPin | null>(null);
   const [loading, setLoading]   = useState(true);
   const [view, setView]         = useState<"map" | "list" | "groups">("map");
   const [showPin, setShowPin]   = useState(false);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [saving, setSaving]     = useState(false);
   const [removing, setRemoving] = useState(false);
   const [selected, setSelected] = useState<PioneerPin | null>(null);
@@ -62,6 +59,12 @@ export default function PioneersPage() {
   const [form, setForm] = useState({
     precision: "district", status: "active", visible_to: "everyone", note: "",
   });
+  // Create group form
+  const [groupForm, setGroupForm] = useState({
+    name: "", description: "", location: "", cover_emoji: "🏘️",
+  });
+  const [creatingGroup, setCreatingGroup] = useState(false);
+  const [joiningId, setJoiningId] = useState<string | null>(null);
 
   const showToast = (msg: string, type: "success" | "error" = "success") => {
     setToast({ msg, type });
@@ -78,13 +81,14 @@ export default function PioneersPage() {
         setPins(d.data.pins ?? []);
         setUsers(d.data.users ?? {});
         setGroups(d.data.groups ?? []);
+        setMyGroupIds(new Set(d.data.my_group_ids ?? []));
         if (user?.id) {
           const mine = (d.data.pins ?? []).find((p: PioneerPin) => p.user_id === user.id);
           setMyPin(mine ?? null);
           if (mine) setForm({
             precision:  mine.precision,
             status:     mine.status,
-            visible_to: mine.visible_to,
+            visible_to: "everyone",
             note:       mine.note ?? "",
           });
         }
@@ -123,6 +127,47 @@ export default function PioneersPage() {
       } else { showToast(d.error ?? "Failed to save pin", "error"); }
     } catch { showToast("Something went wrong", "error"); }
     setSaving(false);
+  };
+
+  const handleCreateGroup = async () => {
+    if (!user) { router.push("/dashboard"); return; }
+    const name = groupForm.name.trim();
+    if (!name) { showToast("Group name required", "error"); return; }
+    setCreatingGroup(true);
+    try {
+      const r = await fetch("/api/pioneers/groups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+        body: JSON.stringify(groupForm),
+      });
+      const d = await r.json();
+      if (d.success) {
+        showToast("Group created!");
+        setShowCreateGroup(false);
+        setGroupForm({ name: "", description: "", location: "", cover_emoji: "🏘️" });
+        fetchData();
+      } else { showToast(d.error ?? "Failed to create group", "error"); }
+    } catch { showToast("Something went wrong", "error"); }
+    setCreatingGroup(false);
+  };
+
+  const handleJoinGroup = async (g: PioneerGroup) => {
+    if (!user) { router.push("/dashboard"); return; }
+    if (!g.is_public) { showToast("Private groups require an invite", "error"); return; }
+    setJoiningId(g.id);
+    try {
+      const r = await fetch(`/api/pioneers/groups/${g.id}/join`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token()}` },
+      });
+      const d = await r.json();
+      if (d.success) {
+        showToast("Joined!");
+        setMyGroupIds(prev => new Set([...prev, g.id]));
+        fetchData();
+      } else { showToast(d.error ?? "Failed to join", "error"); }
+    } catch { showToast("Something went wrong", "error"); }
+    setJoiningId(null);
   };
 
   const handleRemovePin = async () => {
@@ -292,24 +337,62 @@ export default function PioneersPage() {
               <div className={styles.groupsTitle}>Local Pi Chapters</div>
               <div className={styles.groupsSub}>Join or create a Pioneer group in your area</div>
             </div>
+            <div className={styles.groupsHeaderMeta}>
+              <span className={styles.groupsMetaChip}>🏘️ {groups.length} groups</span>
+              <span className={styles.groupsMetaChip}>🌍 Community</span>
+              {user && (
+                <button className={styles.groupsCreateBtn} onClick={() => setShowCreateGroup(true)}>
+                  ➕ Create
+                </button>
+              )}
+            </div>
           </div>
-          {groups.length === 0 ? (
+
+          {loading ? (
+            <div className={styles.groupGrid}>
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className={styles.groupSkeletonCard}>
+                  <div className={styles.groupSkeletonEmoji} />
+                  <div className={styles.groupSkeletonLineLg} />
+                  <div className={styles.groupSkeletonLineMd} />
+                  <div className={styles.groupSkeletonLineSm} />
+                </div>
+              ))}
+            </div>
+          ) : groups.length === 0 ? (
             <div className={styles.empty}>
               <div className={styles.emptyIcon}>🏘️</div>
               <div className={styles.emptyTitle}>No groups yet</div>
               <div className={styles.emptyDesc}>Start the first Pi chapter in your area!</div>
+              <button className={styles.emptyBtn} onClick={() => user ? setShowCreateGroup(true) : router.push("/dashboard")}>
+                {user ? "➕ Create Group" : "Sign in to Create Group"}
+              </button>
             </div>
           ) : (
             <div className={styles.groupGrid}>
               {groups.map(g => (
                 <div key={g.id} className={styles.groupCard}>
-                  <div className={styles.groupEmoji}>{g.cover_emoji}</div>
+                  <div className={styles.groupCardTop}>
+                    <div className={styles.groupEmoji}>{g.cover_emoji}</div>
+                    <span className={styles.groupVisibility}>{g.is_public ? "Public" : "Private"}</span>
+                  </div>
                   <div className={styles.groupName}>{g.name}</div>
                   <div className={styles.groupLocation}>📍 {g.location}</div>
                   <div className={styles.groupDesc}>{g.description}</div>
+                  <div className={styles.groupMeta}>Created {new Date(g.created_at).toLocaleDateString()}</div>
                   <div className={styles.groupFooter}>
-                    <span className={styles.groupMembers}>👥 {g.member_count} members</span>
-                    <button className={styles.groupJoinBtn}>Join</button>
+                    <span className={styles.groupMembers}>👥 {g.member_count ?? 0} members</span>
+                    {myGroupIds.has(g.id) ? (
+                      <span className={styles.groupJoined}>✓ Joined</span>
+                    ) : (
+                      <button
+                        className={styles.groupJoinBtn}
+                        onClick={() => handleJoinGroup(g)}
+                        disabled={joiningId === g.id}
+                      >
+                        {joiningId === g.id ? "..." : g.is_public ? "Join" : "Request"}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -363,6 +446,58 @@ export default function PioneersPage() {
         </div>
       )}
 
+      {/* ── Create Group Modal ── */}
+      {showCreateGroup && (
+        <div className={styles.pinModal}>
+          <div className={styles.pinModalBackdrop} onClick={() => !creatingGroup && setShowCreateGroup(false)} />
+          <div className={styles.pinModalSheet}>
+            <div className={styles.pinModalHandle} />
+            <div className={styles.pinModalTitle}>➕ Create Local Pi Chapter</div>
+            <div className={styles.pinModalSub}>Start a Pioneer group in your area</div>
+
+            <div className={styles.pinFormLabel}>Group Name *</div>
+            <input
+              className={styles.pinNoteInput}
+              placeholder="e.g. Pi Kuala Lumpur"
+              value={groupForm.name}
+              onChange={e => setGroupForm(f => ({ ...f, name: e.target.value }))}
+              maxLength={80}
+            />
+
+            <div className={styles.pinFormLabel}>Location</div>
+            <input
+              className={styles.pinNoteInput}
+              placeholder="e.g. Kuala Lumpur, Malaysia"
+              value={groupForm.location}
+              onChange={e => setGroupForm(f => ({ ...f, location: e.target.value }))}
+            />
+
+            <div className={styles.pinFormLabel}>Description</div>
+            <textarea
+              className={styles.pinNoteInput}
+              placeholder="What's this chapter about?"
+              value={groupForm.description}
+              onChange={e => setGroupForm(f => ({ ...f, description: e.target.value }))}
+              rows={2}
+            />
+
+            <div className={styles.pinFormLabel}>Emoji</div>
+            <input
+              className={styles.pinNoteInput}
+              placeholder="🏘️"
+              value={groupForm.cover_emoji}
+              onChange={e => setGroupForm(f => ({ ...f, cover_emoji: e.target.value }))}
+              maxLength={4}
+            />
+
+            <button className={styles.pinSaveBtn} onClick={handleCreateGroup} disabled={creatingGroup || !groupForm.name.trim()}>
+              {creatingGroup ? "Creating..." : "Create Group"}
+            </button>
+            <button className={styles.pinCancelBtn} onClick={() => setShowCreateGroup(false)} disabled={creatingGroup}>Cancel</button>
+          </div>
+        </div>
+      )}
+
       {/* ── Pin Myself Modal ── */}
       {showPin && (
         <div className={styles.pinModal}>
@@ -404,20 +539,6 @@ export default function PioneersPage() {
                 >
                   <span className={styles.pinOptionLabel}>{o.label}</span>
                   <span className={styles.pinOptionDesc}>{o.desc}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Visible to */}
-            <div className={styles.pinFormLabel}>Visible to</div>
-            <div className={styles.pinOptionRow}>
-              {VISIBLE_OPTS.map(o => (
-                <button
-                  key={o.id}
-                  className={`${styles.pinOptionHalf} ${form.visible_to === o.id ? styles.pinOptionActive : ""}`}
-                  onClick={() => setForm(f => ({ ...f, visible_to: o.id }))}
-                >
-                  <span className={styles.pinOptionLabel}>{o.label}</span>
                 </button>
               ))}
             </div>

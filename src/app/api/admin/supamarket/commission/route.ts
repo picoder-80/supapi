@@ -41,11 +41,18 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid commission (0-50%)" }, { status: 400 });
 
   const supabase = await createAdminClient();
-  await supabase.from("platform_config").update({
-    value: String(commission_pct),
-    updated_at: new Date().toISOString(),
-    updated_by: auth.userId,
-  }).eq("key", "market_commission_pct");
+  const val = String(commission_pct);
+  const now = new Date().toISOString();
+  await Promise.all([
+    supabase.from("platform_config").upsert(
+      { key: "market_commission_pct", value: val, updated_at: now },
+      { onConflict: "key" }
+    ),
+    supabase.from("platform_config").upsert(
+      { key: "commission_market", value: val, updated_at: now },
+      { onConflict: "key" }
+    ),
+  ]);
 
   return NextResponse.json({ success: true, data: { commission_pct } });
 }

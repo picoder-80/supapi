@@ -1,0 +1,122 @@
+.page {
+  min-height: 100vh;
+  background: #F8F9FD;
+  color: #1A1A2E;
+  font-family: var(--font-sans);
+  padding-bottom: calc(var(--bottomnav-h, 64px) + 72px + env(safe-area-inset-bottom, 0px));
+}
+
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #1A1A2E, #0F3460);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+.backBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+}
+.topBarText { min-width: 0; }
+.topBarName { color: #fff; font-size: 14px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topBarMeta { color: rgba(255, 255, 255, 0.8); font-size: 11px; }
+
+.reconnectBanner {
+  background: rgba(245, 166, 35, 0.16);
+  color: #744210;
+  border-bottom: 1px solid rgba(245, 166, 35, 0.4);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+}
+
+.memberStrip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 8px 12px;
+  scrollbar-width: none;
+}
+.memberStrip::-webkit-scrollbar { display: none; }
+.memberChip {
+  min-width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid #E2E8F0;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1A1A2E;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+}
+
+.sanctionBanner {
+  margin: 0 12px 8px;
+  border-radius: 12px;
+  background: #7f1d1d;
+  color: #fff;
+  border: 1px solid #b91c1c;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.paywall {
+  margin: 24px auto;
+  width: min(420px, 100%);
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 18px;
+  text-align: center;
+}
+.paywallTitle { font-size: 16px; font-weight: 800; color: #1A1A2E; }
+.paywallSub { font-size: 13px; color: #718096; margin-top: 6px; }
+.payBtn {
+  margin-top: 12px;
+  min-height: 42px;
+  border-radius: 999px;
+  border: none;
+  padding: 0 16px;
+  background: #F5A623;
+  color: #1A1A2E;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.empty { text-align: center; padding: 20px; color: #718096; font-size: 13px; }
+
+.skeletonWrap { display: grid; gap: 8px; }
+.skeletonBubble {
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #F0F0F0 25%, #E8E8E8 50%, #F0F0F0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

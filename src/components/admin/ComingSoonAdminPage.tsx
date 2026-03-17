@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import AdminPageHero from "./AdminPageHero";
 import styles from "./ComingSoonAdminPage.module.css";
 
 type ComingSoonAdminPageProps = {
@@ -27,21 +28,10 @@ export default function ComingSoonAdminPage({
   features = DEFAULT_FEATURES,
 }: ComingSoonAdminPageProps) {
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerMain}>
-          <span className={styles.icon}>{icon}</span>
-          <div>
-            <h1 className={styles.title}>{title}</h1>
-            <p className={styles.sub}>{subtitle}</p>
-          </div>
-        </div>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.topBackBtn}`}>
-          Back to Dashboard
-        </Link>
-      </div>
+    <div className="adminPage">
+      <AdminPageHero icon={icon} title={title} subtitle={subtitle} />
 
-      <div className={styles.card}>
+      <div className={`adminContentCard ${styles.comingSoonCard}`}>
         <div className={styles.cardIcon}>🚧</div>
         <div className={styles.cardTitle}>Admin Panel Coming Soon</div>
         <div className={styles.cardSub}>The {panelName} admin panel is under development.</div>
@@ -55,10 +45,8 @@ export default function ComingSoonAdminPage({
         </div>
       </div>
 
-      <div className={styles.quickLinks}>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>
-          Back to Dashboard
-        </Link>
+      <div className="adminQuickLinks">
+        <Link href="/admin/dashboard" className="adminBackBtn">Back to Dashboard</Link>
       </div>
     </div>
   );

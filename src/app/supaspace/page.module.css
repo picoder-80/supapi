@@ -388,10 +388,16 @@
 }
 /* Message — background biru lembut */
 .messageBtn {
-  background: rgba(52, 152, 219, 0.2);
-  color: #2980B9;
+  min-width: 118px;
+  width: auto;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: #F5A623;
+  color: #1A1A2E;
+  font-size: 14px;
+  font-weight: 700;
 }
-.messageBtn:hover { background: rgba(52, 152, 219, 0.35); color: #1A5276; transform: translateY(-1px); }
+.messageBtn:hover { background: #E39A1E; color: #1A1A2E; transform: translateY(-1px); }
 
 /* Share — background gold lembut (selari dengan Follow) */
 .shareBtn {
@@ -399,6 +405,28 @@
   color: #B8860B;
 }
 .shareBtn:hover { background: var(--color-gold); color: #1A1A2E; transform: translateY(-1px); }
+
+.tipBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 90px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid #F5A623;
+  background: #fff;
+  color: #B7791F;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: all 150ms;
+}
+.tipBtn:hover {
+  background: rgba(245,166,35,0.12);
+  transform: translateY(-1px);
+}
 
 .displayName {
   font-size: 22px;

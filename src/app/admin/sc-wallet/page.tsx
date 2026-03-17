@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import AdminPageHero from "@/components/admin/AdminPageHero";
 import styles from "./page.module.css";
 
 type SCResponse = {
@@ -159,19 +160,15 @@ export default function AdminSCWalletPage() {
   }, [data]);
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerMain}>
-          <span className={styles.icon}>💎</span>
-          <div>
-            <h1 className={styles.title}>Supa Credits Admin Wallet</h1>
-            <p className={styles.sub}>Monitor wallet analytics, filter activities, and export transaction data</p>
-          </div>
-        </div>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.topBackBtn}`}>Back to Dashboard</Link>
-      </div>
+    <div className="adminPage">
+      <AdminPageHero
+        icon="💎"
+        title="Supa Credits Admin Wallet"
+        subtitle="Monitor wallet analytics, filter activities, and export transaction data"
+      />
 
-      <div className={styles.filterRow}>
+      <div className="adminSection">
+        <div className={styles.filterRow}>
         <input
           className={styles.input}
           placeholder="Search username/activity/note..."
@@ -192,31 +189,32 @@ export default function AdminSCWalletPage() {
         </select>
         <button className={styles.btn} onClick={() => fetchData(q, type, activity, 1)}>Apply</button>
         <button className={styles.btn} onClick={exportCsv}>Export CSV</button>
-      </div>
+        </div>
 
-      <div className={styles.grid}>
+        <div className={styles.grid}>
         {summaryCards.map((card) => (
-          <div key={card.label} className={styles.card}>
-            <div className={styles.cardLabel}>{card.label}</div>
-            <div className={styles.cardValue}>{card.value}</div>
+          <div key={card.label} className="adminCard">
+            <div className="adminCardLabel">{card.label}</div>
+            <div className="adminCardValue">{card.value}</div>
           </div>
         ))}
-      </div>
+        </div>
 
-      <div className={styles.section}>
-        <div className={styles.sectionTitle}>Recent SC Transactions</div>
+        <div className="adminSectionRow" style={{ marginBottom: 0 }}>
+          <h2 className="adminSectionTitle">Recent SC Transactions</h2>
+        </div>
         {!!data?.pagination && (
           <div className={styles.pagerMeta}>
             Showing page {data.pagination.page}/{data.pagination.total_pages} · {data.pagination.total} result(s)
           </div>
         )}
         {loading ? (
-          <div className={styles.empty}>Loading...</div>
+          <div className="adminLoading">Loading...</div>
         ) : !data?.recent_transactions?.length ? (
-          <div className={styles.empty}>No transactions found.</div>
+          <div className="adminEmpty">No transactions found.</div>
         ) : (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
+          <div className="adminTableWrap">
+            <table className="adminTable">
               <thead>
                 <tr>
                   <th>User</th>
@@ -262,8 +260,8 @@ export default function AdminSCWalletPage() {
         )}
       </div>
 
-      <div className={styles.quickLinks}>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>Back to Dashboard</Link>
+      <div className="adminQuickLinks">
+        <Link href="/admin/dashboard" className="adminBackBtn">Back to Dashboard</Link>
       </div>
     </div>
   );

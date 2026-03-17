@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import AdminPageHero from "@/components/admin/AdminPageHero";
 import styles from "./page.module.css";
 
 const RichTextEditor = dynamic(() => import("@/components/admin/RichTextEditor"), { ssr: false });
@@ -293,19 +294,14 @@ export default function AdminEmailListPage() {
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerMain}>
-          <span className={styles.icon}>📧</span>
-          <div>
-            <h1 className={styles.title}>Email Broadcast</h1>
-            <p className={styles.sub}>Pioneer email broadcast for marketing campaigns. Users must add email in Dashboard → Personal Info. Check &quot;Include all roles&quot; to see admins.</p>
-          </div>
-        </div>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.topBackBtn}`}>Back to Dashboard</Link>
-      </div>
+    <div className="adminPage">
+      <AdminPageHero
+        icon="📧"
+        title="Email Broadcast"
+        subtitle="Pioneer email broadcast for marketing campaigns. Users must add email in Dashboard → Personal Info. Check Include all roles to see admins."
+      />
 
-      <div className={styles.card}>
+      <div className="adminContentCard">
         <div className={styles.filterRow}>
           <input
             className={styles.input}
@@ -513,8 +509,8 @@ export default function AdminEmailListPage() {
         {!!blastMsg && <div className={styles.msg}>{blastMsg}</div>}
       </div>
 
-      <div className={styles.quickLinks}>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>Back to Dashboard</Link>
+      <div className="adminQuickLinks">
+        <Link href="/admin/dashboard" className="adminBackBtn">Back to Dashboard</Link>
       </div>
     </div>
   );

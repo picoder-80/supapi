@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 
   let query = supabase
     .from("businesses")
-    .select("id,name,category,description,address,city,country,lat,lng,phone,website,image_url,images,verified,avg_rating,review_count,created_at")
+    .select("id,name,category,description,address,city,country,lat,lng,phone,website,image_url,images,verified,avg_rating,review_count,opening_hours,created_at")
     .eq("status", "approved")
     .order("verified", { ascending: false })
     .order("avg_rating", { ascending: false })
@@ -63,11 +63,19 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { name, category, description, address, city, state, country, lat, lng, phone, website, pi_wallet, image_url } = body;
+  const { name, category, description, address, city, state, country, lat, lng, phone, website, pi_wallet, image_url, opening_hours } = body;
 
   if (!name || !category || !address || !city) {
     return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
   }
+
+  const hours = Array.isArray(opening_hours) && opening_hours.length >= 7
+    ? opening_hours.slice(0, 7)
+    : [
+        { day: "Monday", time: "" }, { day: "Tuesday", time: "" }, { day: "Wednesday", time: "" },
+        { day: "Thursday", time: "" }, { day: "Friday", time: "" }, { day: "Saturday", time: "" },
+        { day: "Sunday", time: "" },
+      ];
 
   const { data, error } = await supabase
     .from("businesses")
@@ -77,6 +85,7 @@ export async function POST(req: Request) {
       country: country || "United States",
       lat: lat || null, lng: lng || null,
       phone, website, pi_wallet, image_url, images: body.images ?? [],
+      opening_hours: hours,
       status: "pending",
     })
     .select()

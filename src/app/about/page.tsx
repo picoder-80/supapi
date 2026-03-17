@@ -207,6 +207,30 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* Legal links */}
+      <section className={styles.section}>
+        <div className="container" style={{ textAlign: "center", marginBottom: 24, display: "flex", gap: 24, justifyContent: "center", flexWrap: "wrap" }}>
+          <Link href="/contact" style={{ fontSize: 14, fontWeight: 600, color: "#4A5568", textDecoration: "none" }}>
+            Contact
+          </Link>
+          <Link href="/faq" style={{ fontSize: 14, fontWeight: 600, color: "#4A5568", textDecoration: "none" }}>
+            FAQ
+          </Link>
+          <Link href="/privacy" style={{ fontSize: 14, fontWeight: 600, color: "#4A5568", textDecoration: "none" }}>
+            Privacy Policy
+          </Link>
+          <Link href="/disclaimer" style={{ fontSize: 14, fontWeight: 600, color: "#4A5568", textDecoration: "none" }}>
+            Disclaimer
+          </Link>
+          <Link href="/returns-refunds" style={{ fontSize: 14, fontWeight: 600, color: "#4A5568", textDecoration: "none" }}>
+            Returns & Refunds
+          </Link>
+          <Link href="/terms" style={{ fontSize: 14, fontWeight: 600, color: "#4A5568", textDecoration: "none" }}>
+            Terms of Service
+          </Link>
+        </div>
+      </section>
+
       {/* Promise */}
       <section className={styles.section}>
         <div className="container">

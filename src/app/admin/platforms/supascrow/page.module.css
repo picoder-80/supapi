@@ -81,6 +81,92 @@
   text-transform: uppercase;
 }
 
+.commRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.commStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.commLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.commValue {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-gold);
+}
+
+.commEdit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.commInput {
+  width: 64px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.commInput:focus {
+  outline: none;
+  border-color: var(--color-gold);
+}
+
+.commPctLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.saveCommBtn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  background: var(--color-gold);
+  color: #1a1a2e;
+  cursor: pointer;
+}
+
+.saveCommBtn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.saveCommBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.commMsg {
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.commNote {
+  font-size: 11px;
+  color: var(--color-text-light);
+}
+
 .filterRow {
   display: flex;
   align-items: center;

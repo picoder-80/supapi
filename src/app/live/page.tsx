@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import heroStyles from "@/styles/feed-hero.module.css";
 import styles from "./page.module.css";
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
@@ -43,16 +44,39 @@ export default function LivePage() {
     fetchFeed();
   }, [user?.id]);
 
+  useEffect(() => {
+    const onVisible = () => { if (user && document.visibilityState === "visible") fetchFeed(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [user?.id]);
+
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerTop}>
-          <h1 className={styles.title}>🔴 Live</h1>
-          <div className={styles.headerSub}>Live streams from pioneers you follow</div>
+    <div className={heroStyles.page}>
+      <div className={heroStyles.header}>
+        <div className={heroStyles.heroBg} aria-hidden />
+        <div className={heroStyles.headerInner}>
+          <div className={heroStyles.headerTop}>
+            <div className={heroStyles.titleRow}>
+              <h1 className={heroStyles.title}>Live</h1>
+              {user && (
+                <button
+                  type="button"
+                  className={`${heroStyles.refreshBtn} ${loading ? heroStyles.refreshBtnLoading : ""}`}
+                  onClick={() => fetchFeed()}
+                  disabled={loading}
+                  aria-label="Refresh feed"
+                >
+                  <span className={heroStyles.refreshIcon} aria-hidden>↻</span>
+                  <span className={heroStyles.refreshLabel}>Refresh</span>
+                </button>
+              )}
+            </div>
+            <p className={heroStyles.headerSub}>Live streams from pioneers you follow</p>
+          </div>
         </div>
       </div>
 
-      <div className={styles.body}>
+      <div className={heroStyles.body}>
         {user ? (
           <div className={styles.createBox}>
             <div className={styles.createRow}>
@@ -99,7 +123,7 @@ export default function LivePage() {
                     </div>
                     <div className={styles.statusMeta}>
                       <span className={styles.statusName}>
-                        {s.user?.display_name ?? s.user?.username ?? "?"}
+                        @{s.user?.username ?? "?"}
                       </span>
                       <span className={styles.statusTime}>
                         {new Date(s.started_at).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}

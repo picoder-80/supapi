@@ -35,6 +35,25 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     if (error || !data) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
 
+    // Seller rating: reviews on seller's listings + completed sales count
+    const sellerId = (data as { seller_id?: string }).seller_id;
+    let sellerRatingAvg = 0;
+    let sellerRatingCount = 0;
+    let sellerSalesCount = 0;
+    if (sellerId) {
+      const { data: sellerListings } = await supabase.from("listings").select("id").eq("seller_id", sellerId);
+      const listingIds = (sellerListings ?? []).map((r: { id: string }) => r.id);
+      if (listingIds.length > 0) {
+        const { data: reviewRows } = await supabase.from("reviews").select("rating").eq("target_type", "listing").in("target_id", listingIds);
+        if (reviewRows?.length) {
+          sellerRatingCount = reviewRows.length;
+          sellerRatingAvg = reviewRows.reduce((s, r) => s + Number((r as { rating: number }).rating), 0) / sellerRatingCount;
+        }
+      }
+      const { count: salesCount } = await supabase.from("orders").select("id", { count: "exact", head: true }).eq("seller_id", sellerId).eq("status", "completed");
+      sellerSalesCount = salesCount ?? 0;
+    }
+
     const auth = req.headers.get("authorization")?.replace("Bearer ", "");
     const payload = auth ? verifyToken(auth) : null;
     let liked = false;
@@ -48,7 +67,18 @@ export async function GET(req: NextRequest, { params }: Params) {
       liked = !!likeRow;
     }
 
-    return NextResponse.json({ success: true, data: { ...data, liked } });
+    const seller = (data as { seller?: Record<string, unknown> }).seller;
+    const enriched = {
+      ...data,
+      liked,
+      seller: seller ? {
+        ...seller,
+        rating_avg: Math.round(sellerRatingAvg * 100) / 100,
+        rating_count: sellerRatingCount,
+        sales_count: sellerSalesCount,
+      } : seller,
+    };
+    return NextResponse.json({ success: true, data: enriched });
   } catch {
     return NextResponse.json({ success: false }, { status: 500 });
   }

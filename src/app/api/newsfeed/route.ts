@@ -12,25 +12,40 @@ export async function GET(req: NextRequest) {
 
     const supabase = await createAdminClient();
 
-    // Get who user follows
+    // Get who user follows (follows table may not exist yet)
     let followingIds: string[] = [];
     if (userId) {
-      const { data: follows } = await supabase
-        .from("follows")
-        .select("following_id")
-        .eq("follower_id", userId);
-      followingIds = (follows ?? []).map((f: any) => f.following_id);
+      try {
+        const { data: follows } = await supabase
+          .from("follows")
+          .select("following_id")
+          .eq("follower_id", userId);
+        followingIds = (follows ?? []).map((f: { following_id: string }) => f.following_id);
+      } catch {
+        // follows table may not exist — continue with empty
+      }
     }
 
-    // Get popular pioneers (users with most followers — as proxy for popular content)
-    const { data: popular } = await supabase
-      .from("users")
-      .select("id, username, display_name, avatar_url, kyc_status, bio")
-      .not("id", "in", userId ? `(${[userId, ...followingIds].join(",")})` : `(${userId ?? "00000000-0000-0000-0000-000000000000"})`)
-      .limit(6);
+    // Get popular pioneers (other users, limit 6)
+    const excludeIds = userId ? [userId, ...followingIds] : [];
+    let popular: { id: string; username: string; display_name: string | null; avatar_url: string | null; kyc_status: string; bio: string | null }[] = [];
+    if (excludeIds.length > 0) {
+      const { data } = await supabase
+        .from("users")
+        .select("id, username, display_name, avatar_url, kyc_status, bio")
+        .not("id", "in", `(${excludeIds.join(",")})`)
+        .limit(6);
+      popular = data ?? [];
+    } else {
+      const { data } = await supabase
+        .from("users")
+        .select("id, username, display_name, avatar_url, kyc_status, bio")
+        .limit(6);
+      popular = data ?? [];
+    }
 
     // Get followed users profiles
-    let following: any[] = [];
+    let following: { id: string; username: string; display_name: string | null; avatar_url: string | null; kyc_status: string; bio: string | null }[] = [];
     if (followingIds.length > 0) {
       const { data } = await supabase
         .from("users")
@@ -44,7 +59,7 @@ export async function GET(req: NextRequest) {
       success: true,
       data: {
         following,
-        popular: popular ?? [],
+        popular,
         has_posts: false, // Will be true when posts table exists
       }
     });

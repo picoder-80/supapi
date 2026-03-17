@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import AdminShell from "@/components/admin/AdminShell";
 import "@/styles/globals.css";
 import "@/styles/admin.css";
+import "@/styles/admin-page-shared.css";
 
 export const metadata: Metadata = {
   title: { default: "Supapi Admin", template: "%s | Admin" },

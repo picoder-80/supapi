@@ -54,7 +54,14 @@ interface ReferralStatsData {
   total_earnings_pi: number;
   pending_pi: number;
 }
-
+interface SupaChatRevenueData {
+  total_pi: number;
+  by_type: Record<string, number>;
+  by_day: Record<string, number>;
+  top_rooms: Array<{ room_id: string; room_name: string; amount_pi: number }>;
+  active_verified_badges: number;
+  active_promotions: number;
+}
 function fmtDate(iso?: string | null) {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("en-MY", { day:"numeric", month:"short" });
@@ -77,10 +84,37 @@ export default function AdminDashboardPage() {
   const [treasury,   setTreasury]   = useState<TreasuryData | null>(null);
   const [scWallet, setScWallet] = useState<SCWalletData | null>(null);
   const [referralStats, setReferralStats] = useState<ReferralStatsData | null>(null);
+  const [supaChatRevenue, setSupaChatRevenue] = useState<SupaChatRevenueData | null>(null);
+  const [a2uConfigured, setA2uConfigured] = useState<boolean | null>(null);
   const [period, setPeriod] = useState<"all" | "month" | "week">("all");
   const [loading,    setLoading]    = useState(true);
   const [msg, setMsg] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const exportSupaChatRevenueCsv = async () => {
+    const token = localStorage.getItem("supapi_admin_token") ?? "";
+    if (!token) return;
+    try {
+      const r = await fetch(`/api/admin/supachat/revenue/export?period=${period}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!r.ok) {
+        setMsg("Failed to export SupaChat revenue CSV.");
+        return;
+      }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `supachat-revenue-${period}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setMsg("Failed to export SupaChat revenue CSV.");
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("supapi_admin_token") ?? "";
@@ -90,12 +124,16 @@ export default function AdminDashboardPage() {
       safeFetch(`/api/admin/treasury?period=${period}`, token),
       safeFetch("/api/admin/sc-wallet?limit=8", token),
       safeFetch("/api/admin/referral?type=stats", token),
+      safeFetch(`/api/admin/supachat/revenue?period=${period}`, token),
+      safeFetch("/api/admin/config/a2u", token),
     ])
-      .then(([t, sc, rs]) => {
+      .then(([t, sc, rs, sr, a2u]) => {
       if (t?.success) setTreasury(t.data);
       else setMsg("Failed to load treasury.");
       if (sc?.success) setScWallet(sc.data);
       if (rs?.success) setReferralStats(rs.data);
+      if (sr?.success) setSupaChatRevenue(sr.data);
+      if (a2u?.success) setA2uConfigured(a2u.data?.a2u_configured ?? false);
       })
       .finally(() => setLoading(false));
   }, [period]);
@@ -133,23 +171,46 @@ export default function AdminDashboardPage() {
   return (
     <div className={styles.page}>
 
-      {/* ── Header ── */}
-      <div className={styles.header}>
-        <div className={styles.headerMain}>
-          <span className={styles.icon}>🏠</span>
+      {/* ── Hero Header ── */}
+      <div className={styles.hero}>
+        <div className={styles.heroContent}>
+          <div className={styles.heroIcon}>π</div>
           <div>
-          <h1 className={styles.title}>Main Dashboard</h1>
+            <h1 className={styles.heroTitle}>Admin Dashboard</h1>
+            <p className={styles.heroSub}>Overview of treasury, referrals, and platform revenue</p>
           </div>
         </div>
-        <div className={styles.liveTag}>● LIVE</div>
+        <div className={styles.heroBadge}>
+          <span className={styles.heroBadgeDot} />
+          Live
+        </div>
       </div>
+
+      {/* Pi A2U Status — Admin Tools */}
+      {a2uConfigured !== null && (
+        <div className={`${styles.a2uBanner} ${a2uConfigured ? styles.a2uBannerOk : styles.a2uBannerWarn}`}>
+          <span className={styles.a2uIcon}>{a2uConfigured ? "✅" : "⚠️"}</span>
+          <div>
+            <div className={styles.a2uTitle}>Pi A2U Payout</div>
+            <div className={styles.a2uSub}>
+              {a2uConfigured
+                ? "Aktif — Pi dihantar terus ke wallet penerima (SupaChat, SupaScrow, dll.)"
+                : "Tidak dikonfigurasi — Set PI_PAYOUT_API_URL dan PI_PAYOUT_API_KEY dalam .env"}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className={styles.section}>
         <div className={styles.sectionRow}>
-          <h2 className={styles.sectionTitle}>Treasury Wallet</h2>
-          <div className={styles.periodWrap}>
+          <h2 className={styles.sectionTitle}><span className={styles.sectionIcon}>🏦</span> Treasury Wallet</h2>
+          <div className={styles.sectionActions}>
+            <div className={styles.periodWrap}>
             <button className={`${styles.periodBtn} ${period==="week" ? styles.periodBtnActive : ""}`} onClick={() => setPeriod("week")}>7d</button>
             <button className={`${styles.periodBtn} ${period==="month" ? styles.periodBtnActive : ""}`} onClick={() => setPeriod("month")}>Month</button>
             <button className={`${styles.periodBtn} ${period==="all" ? styles.periodBtnActive : ""}`} onClick={() => setPeriod("all")}>All</button>
+            </div>
+            <Link href="/admin/platforms/wallet" className={styles.sectionLink}>Treasury Admin →</Link>
           </div>
         </div>
         {loading && <div className={styles.loading}>Loading treasury data...</div>}
@@ -157,7 +218,7 @@ export default function AdminDashboardPage() {
         {treasury ? (
           <>
             <div className={styles.treasuryGrid}>
-              <div className={styles.treasuryCard}>
+              <div className={`${styles.treasuryCard} ${styles.treasuryCardPrimary}`}>
                 <div className={styles.treasuryLabel}>Available Balance</div>
                 <div className={styles.treasuryValue}>{Number(treasury.summary.available_balance_pi).toFixed(4)} π</div>
                 <div className={styles.treasurySub}>Estimated after pending payouts</div>
@@ -210,8 +271,8 @@ export default function AdminDashboardPage() {
 
       <div className={styles.section}>
         <div className={styles.sectionRow}>
-          <h2 className={styles.sectionTitle}>Supa Credits Wallet</h2>
-          <Link href="/admin/sc-wallet" className={styles.seeAll}>Open SC Admin →</Link>
+          <h2 className={styles.sectionTitle}><span className={styles.sectionIcon}>💎</span> Supa Credits Wallet</h2>
+          <Link href="/admin/sc-wallet" className={styles.sectionLink}>Open SC Admin →</Link>
         </div>
         {!scWallet ? (
           <div className={styles.loading}>Loading SC wallet data...</div>
@@ -240,8 +301,8 @@ export default function AdminDashboardPage() {
 
       <div className={styles.section}>
         <div className={styles.sectionRow}>
-          <h2 className={styles.sectionTitle}>Referral Stats</h2>
-          <Link href="/admin/platforms/referral" className={styles.seeAll}>Open Referral Admin →</Link>
+          <h2 className={styles.sectionTitle}><span className={styles.sectionIcon}>🤝</span> Referral Stats</h2>
+          <Link href="/admin/platforms/referral" className={styles.sectionLink}>Open Referral Admin →</Link>
         </div>
         <div className={styles.referralGrid}>
           <div className={styles.treasuryCard}>
@@ -261,6 +322,73 @@ export default function AdminDashboardPage() {
             <div className={styles.treasuryValue}>{Number(referralStats?.total_earnings_pi ?? 0).toFixed(2)} π</div>
           </div>
         </div>
+      </div>
+
+      <div className={styles.section}>
+        <div className={styles.sectionRow}>
+          <h2 className={styles.sectionTitle}><span className={styles.sectionIcon}>💬</span> SupaChat Revenue</h2>
+          <div className={styles.sectionActions}>
+            <button type="button" className={styles.exportCsvBtn} onClick={exportSupaChatRevenueCsv}>
+              Export CSV
+            </button>
+            <Link href="/admin/platforms/supachat" className={styles.sectionLink}>SupaChat Admin →</Link>
+            <Link href="/supachat" className={styles.sectionLink}>Open SupaChat →</Link>
+          </div>
+        </div>
+        {!supaChatRevenue ? (
+          <div className={styles.loading}>Loading SupaChat revenue...</div>
+        ) : (
+          <>
+            <div className={styles.referralGrid}>
+              <div className={styles.treasuryCard}>
+                <div className={styles.treasuryLabel}>Total Revenue</div>
+                <div className={styles.treasuryValue}>{Number(supaChatRevenue.total_pi ?? 0).toFixed(4)} π</div>
+              </div>
+              <div className={styles.treasuryCard}>
+                <div className={styles.treasuryLabel}>Active Verified Badges</div>
+                <div className={styles.treasuryValue}>{Number(supaChatRevenue.active_verified_badges ?? 0).toFixed(0)}</div>
+              </div>
+              <div className={styles.treasuryCard}>
+                <div className={styles.treasuryLabel}>Active Promotions</div>
+                <div className={styles.treasuryValue}>{Number(supaChatRevenue.active_promotions ?? 0).toFixed(0)}</div>
+              </div>
+              <div className={styles.treasuryCard}>
+                <div className={styles.treasuryLabel}>Transfer Commission</div>
+                <div className={styles.treasuryValue}>{Number(supaChatRevenue.by_type?.transfer_commission ?? 0).toFixed(4)} π</div>
+              </div>
+            </div>
+            <div className={styles.splitGrid}>
+              <div className={styles.panel}>
+                <div className={styles.panelTitle}>Revenue Breakdown</div>
+                {Object.entries(supaChatRevenue.by_type ?? {}).length ? (
+                  Object.entries(supaChatRevenue.by_type)
+                    .sort((a, b) => Number(b[1]) - Number(a[1]))
+                    .map(([k, v]) => (
+                      <div key={k} className={styles.row}>
+                        <div className={styles.rowInfo}>
+                          <div className={styles.rowTitle}>{k}</div>
+                        </div>
+                        <span className={styles.badge}>{Number(v).toFixed(4)} π</span>
+                      </div>
+                    ))
+                ) : <div className={styles.empty}>No SupaChat revenue yet</div>}
+              </div>
+              <div className={styles.panel}>
+                <div className={styles.panelTitle}>Top Revenue Rooms</div>
+                {supaChatRevenue.top_rooms?.length ? (
+                  supaChatRevenue.top_rooms.map((r) => (
+                    <div key={r.room_id} className={styles.row}>
+                      <div className={styles.rowInfo}>
+                        <div className={styles.rowTitle}>{r.room_name}</div>
+                      </div>
+                      <span className={styles.badge}>{Number(r.amount_pi).toFixed(4)} π</span>
+                    </div>
+                  ))
+                ) : <div className={styles.empty}>No room revenue yet</div>}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
     </div>

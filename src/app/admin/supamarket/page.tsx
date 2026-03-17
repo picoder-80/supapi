@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import AdminTabs from "@/components/admin/AdminTabs";
+import AdminPageHero from "@/components/admin/AdminPageHero";
 import styles from "./page.module.css";
 
 interface Stats {
@@ -345,22 +346,18 @@ export default function AdminMarketPage() {
   };
 
   return (
-    <div className={styles.page}>
+    <div className="adminPage">
       {disputeToast && (
         <div className={`${styles.disputeToast} ${disputeToast.type === "ok" ? styles.disputeToastOk : styles.disputeToastErr}`}>
           {disputeToast.msg}
         </div>
       )}
-      <div className={styles.header}>
-        <div className={styles.headerMain}>
-          <span className={styles.icon}>🛍️</span>
-          <div>
-            <h1 className={styles.title}>SupaMarket Admin</h1>
-            <p className={styles.sub}>Manage listings, orders, disputes, support, and commission settings</p>
-          </div>
-        </div>
-        <Link href="/admin/dashboard" className={styles.backBtn}>Back to Dashboard</Link>
-      </div>
+      <AdminPageHero
+        icon="🛍️"
+        title="SupaMarket Admin"
+        subtitle="Manage listings, orders, disputes, support, and commission settings"
+        showBadge
+      />
 
       <AdminTabs tabs={TABS} active={tab} onChange={(id) => setTab(id as TabId)} />
 
@@ -733,8 +730,8 @@ export default function AdminMarketPage() {
         )}
       </div>
 
-      <div className={styles.quickLinks}>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>Back to Dashboard</Link>
+      <div className="adminQuickLinks">
+        <Link href="/admin/dashboard" className="adminBackBtn">Back to Dashboard</Link>
       </div>
 
       {overrideId&&(

@@ -27,7 +27,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     .eq("id", disputeId)
     .single();
 
-  if (disputeErr || !dispute?.order) {
+  const order = Array.isArray(dispute?.order) ? dispute?.order[0] : dispute?.order;
+
+  if (disputeErr || !order) {
     return NextResponse.json({ success: false, error: "Dispute not found" }, { status: 404 });
   }
 
@@ -47,13 +49,13 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ success: false, error: "Refund is already processing" }, { status: 409 });
   }
 
-  const amountPi = Number(dispute.order.amount_pi ?? 0);
+  const amountPi = Number(order.amount_pi ?? 0);
   if (!Number.isFinite(amountPi) || amountPi <= 0) {
     return NextResponse.json({ success: false, error: "Invalid order amount for refund" }, { status: 400 });
   }
 
-  const buyerId = String(dispute.order.buyer_id ?? "");
-  const sellerId = String(dispute.order.seller_id ?? "");
+  const buyerId = String(order.buyer_id ?? "");
+  const sellerId = String(order.seller_id ?? "");
   const { data: users } = await supabase
     .from("users")
     .select("id, username, display_name, email, pi_uid")
@@ -68,7 +70,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { data: txRows } = await supabase
     .from("transactions")
     .select("id, pi_payment_id, txid, status, amount_pi, reference_id, reference_type, metadata")
-    .eq("reference_id", dispute.order.id)
+    .eq("reference_id", order.id)
     .order("created_at", { ascending: false })
     .limit(5);
 
@@ -78,7 +80,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     .eq("id", disputeId);
 
   try {
-    const refund = await issueA2URefund(buyer.pi_uid, amountPi, disputeId, dispute.order.id);
+    const refund = await issueA2URefund(buyer.pi_uid, amountPi, disputeId, order.id);
     const now = new Date().toISOString();
 
     await supabase
@@ -98,36 +100,36 @@ export async function POST(req: NextRequest, { params }: Params) {
     await supabase
       .from("orders")
       .update({ status: "refunded", updated_at: now })
-      .eq("id", dispute.order.id);
+      .eq("id", order.id);
 
     // Compatible with newer schema; fallback keeps old deployments working.
     const earningsRes = await supabase
       .from("seller_earnings")
       .update({ status: "refunded", updated_at: now })
-      .eq("order_id", dispute.order.id)
+      .eq("order_id", order.id)
       .in("status", ["escrow", "pending", "paid"]);
     if ((earningsRes as any)?.error?.code === "23514") {
       await supabase
         .from("seller_earnings")
         .update({ status: "cancelled", updated_at: now })
-        .eq("order_id", dispute.order.id)
+        .eq("order_id", order.id)
         .in("status", ["escrow", "pending", "paid"]);
     }
 
     await supabase
       .from("transactions")
       .update({ status: "refunded" })
-      .eq("reference_id", dispute.order.id)
+      .eq("reference_id", order.id)
       .eq("status", "completed");
 
     await supabase.from("dispute_audit_logs").insert({
       platform: "market",
       dispute_id: disputeId,
-      order_id: dispute.order.id,
+      order_id: order.id,
       actor_type: "admin",
       actor_id: auth.userId,
       event_type: "refund_issued",
-      from_status: dispute.order.status ?? "disputed",
+      from_status: order.status ?? "disputed",
       to_status: "refunded",
       decision: "refund",
       confidence: null,
@@ -147,7 +149,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       action: "market_dispute_refund_issue",
       targetType: "dispute",
       targetId: disputeId,
-      detail: { order_id: dispute.order.id, amount_pi: amountPi, txid: refund.txid ?? refund.paymentId },
+      detail: { order_id: order.id, amount_pi: amountPi, txid: refund.txid ?? refund.paymentId },
     });
 
     // Notification (best effort): email buyer and seller if available.
@@ -156,7 +158,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         to: buyer.email,
         subject: "Dispute Resolved — Refund Approved",
         html: `
-          <p>Your dispute for Order #${dispute.order.id} has been resolved. ${amountPi.toFixed(2)}π has been sent back to your Pi wallet.</p>
+          <p>Your dispute for Order #${order.id} has been resolved. ${amountPi.toFixed(2)}π has been sent back to your Pi wallet.</p>
         `,
       });
     }
@@ -165,7 +167,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         to: seller.email,
         subject: "Dispute Updated — Refund Issued",
         html: `
-          <p>Order #${dispute.order.id.slice(0, 8)} dispute has been resolved in buyer's favour.</p>
+          <p>Order #${order.id.slice(0, 8)} dispute has been resolved in buyer's favour.</p>
           <p>Refund amount: <strong>${amountPi.toFixed(2)}π</strong>.</p>
         `,
       });
@@ -175,7 +177,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       success: true,
       refund: {
         dispute_id: disputeId,
-        order_id: dispute.order.id,
+        order_id: order.id,
         amount_pi: amountPi,
         paymentId: refund.paymentId,
         txid: refund.txid ?? refund.paymentId,

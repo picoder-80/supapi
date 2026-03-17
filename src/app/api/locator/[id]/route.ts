@@ -28,6 +28,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (String(biz.owner_id) !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
+  const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const hours = Array.isArray(body.opening_hours) && body.opening_hours.length >= 7
+    ? body.opening_hours.slice(0, 7)
+    : DAYS.map(d => ({ day: d, time: "" }));
+
   const { error } = await supabase.from("businesses").update({
     name:        body.name,
     category:    body.category,
@@ -43,6 +48,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     pi_wallet:   body.pi_wallet || null,
     image_url:   body.image_url || null,
     images:      body.images ?? [],
+    opening_hours: hours,
     status:      "pending",
     verified:    false,
     updated_at:  new Date().toISOString(),

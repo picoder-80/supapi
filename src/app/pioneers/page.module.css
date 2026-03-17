@@ -388,6 +388,21 @@
 .groupsHeader {
   margin-bottom: 16px;
 }
+.groupsHeaderMeta {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.groupsMetaChip {
+  font-size: 11px;
+  font-weight: 700;
+  color: #B7791F;
+  background: rgba(245,166,35,0.12);
+  border: 1px solid rgba(245,166,35,0.35);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
 .groupsTitle { font-size: 18px; font-weight: 700; color: #1A1A2E; }
 .groupsSub   { font-size: 13px; color: #718096; margin-top: 2px; }
 
@@ -414,10 +429,30 @@
   box-shadow: 0 8px 24px rgba(245,166,35,0.1);
 }
 
-.groupEmoji    { font-size: 28px; margin-bottom: 8px; }
+.groupCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.groupEmoji    { font-size: 28px; }
+.groupVisibility {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1A1A2E;
+  background: #F7FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 999px;
+  padding: 3px 8px;
+}
 .groupName     { font-size: 14px; font-weight: 700; color: #1A1A2E; margin-bottom: 4px; }
 .groupLocation { font-size: 11px; color: #718096; margin-bottom: 6px; }
 .groupDesc     { font-size: 12px; color: #4A5568; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.groupMeta {
+  font-size: 11px;
+  color: #718096;
+  margin-bottom: 10px;
+}
 
 .groupFooter {
   display: flex;
@@ -426,6 +461,24 @@
 }
 
 .groupMembers { font-size: 12px; color: #718096; }
+
+.groupsCreateBtn {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1A1A2E;
+  background: #F5A623;
+  border: none;
+  padding: 5px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.groupJoined {
+  font-size: 11px;
+  font-weight: 700;
+  color: #27ae60;
+}
 
 .groupJoinBtn {
   background: #F5A623;
@@ -436,7 +489,34 @@
   padding: 5px 14px;
   border-radius: 8px;
   cursor: pointer;
+  font-family: inherit;
 }
+.groupJoinBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.groupSkeletonCard {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #E2E8F0;
+  padding: 16px;
+}
+.groupSkeletonEmoji,
+.groupSkeletonLineLg,
+.groupSkeletonLineMd,
+.groupSkeletonLineSm {
+  border-radius: 10px;
+  background: linear-gradient(90deg, #F0F0F0 25%, #E8E8E8 50%, #F0F0F0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+.groupSkeletonEmoji {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 10px;
+  border-radius: 50%;
+}
+.groupSkeletonLineLg { height: 14px; width: 85%; margin-bottom: 8px; }
+.groupSkeletonLineMd { height: 12px; width: 62%; margin-bottom: 8px; }
+.groupSkeletonLineSm { height: 12px; width: 46%; }
 
 /* ── Profile Modal (Pioneer popup) ── */
 .profileModal {

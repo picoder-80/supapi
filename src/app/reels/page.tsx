@@ -4,7 +4,9 @@ export const dynamic = "force-dynamic";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import heroStyles from "@/styles/feed-hero.module.css";
 import styles from "./page.module.css";
+import ReelCardActions from "@/components/feed/ReelCardActions";
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
 
@@ -17,6 +19,7 @@ interface ReelItem {
   view_count: number;
   comment_count: number;
   created_at: string;
+  is_liked?: boolean;
   user?: { username: string; display_name: string | null; avatar_url: string | null };
 }
 
@@ -44,16 +47,39 @@ export default function ReelsPage() {
     fetchFeed();
   }, [user?.id]);
 
+  useEffect(() => {
+    const onVisible = () => { if (user && document.visibilityState === "visible") fetchFeed(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [user?.id]);
+
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerTop}>
-          <h1 className={styles.title}>🎬 Reels</h1>
-          <div className={styles.headerSub}>Short videos from pioneers you follow</div>
+    <div className={heroStyles.page}>
+      <div className={heroStyles.header}>
+        <div className={heroStyles.heroBg} aria-hidden />
+        <div className={heroStyles.headerInner}>
+          <div className={heroStyles.headerTop}>
+            <div className={heroStyles.titleRow}>
+              <h1 className={heroStyles.title}>Reels</h1>
+              {user && (
+                <button
+                  type="button"
+                  className={`${heroStyles.refreshBtn} ${loading ? heroStyles.refreshBtnLoading : ""}`}
+                  onClick={() => fetchFeed()}
+                  disabled={loading}
+                  aria-label="Refresh feed"
+                >
+                  <span className={heroStyles.refreshIcon} aria-hidden>↻</span>
+                  <span className={heroStyles.refreshLabel}>Refresh</span>
+                </button>
+              )}
+            </div>
+            <p className={heroStyles.headerSub}>Short videos from pioneers you follow</p>
+          </div>
         </div>
       </div>
 
-      <div className={styles.body}>
+      <div className={heroStyles.body}>
         {user ? (
           <div className={styles.createBox}>
             <div className={styles.createRow}>
@@ -100,10 +126,10 @@ export default function ReelsPage() {
                     </Link>
                     <div className={styles.statusMeta}>
                       <Link href={`/supaspace/${r.user?.username ?? ""}`} className={styles.statusName}>
-                        {r.user?.display_name ?? r.user?.username ?? "?"}
+                        @{r.user?.username ?? "?"}
                       </Link>
                       <span className={styles.statusTime}>
-                        {new Date(r.created_at).toLocaleDateString(undefined, { dateStyle: "short", timeStyle: "short" })}
+                        {new Date(r.created_at).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
                       </span>
                     </div>
                   </div>
@@ -113,14 +139,34 @@ export default function ReelsPage() {
                       controls
                       playsInline
                       className={styles.reelVideo}
+                      onPlay={(e) => {
+                        const v = e.currentTarget;
+                        if (v.dataset.viewed) return;
+                        v.dataset.viewed = "1";
+                        fetch(`/api/reels/${r.id}/view`, { method: "POST" }).then(() => fetchFeed());
+                      }}
                     />
                   </div>
                   {r.caption && <div className={styles.statusBody}>{r.caption}</div>}
                   <div className={styles.reelStats}>
-                    <span>❤️ {r.like_count}</span>
-                    <span>👁 {r.view_count}</span>
-                    <span>💬 {r.comment_count}</span>
+                    <span>👁 {r.view_count} views</span>
                   </div>
+                  {user && (
+                    <ReelCardActions
+                      reelId={r.id}
+                      isOwner={r.user_id === user.id}
+                      likeCount={r.like_count}
+                      commentCount={r.comment_count}
+                      isLiked={r.is_liked ?? false}
+                      caption={r.caption}
+                      onLike={() => setFeed((prev) => prev.map((x) => x.id === r.id ? { ...x, is_liked: true, like_count: x.like_count + 1 } : x))}
+                      onUnlike={() => setFeed((prev) => prev.map((x) => x.id === r.id ? { ...x, is_liked: false, like_count: Math.max(0, x.like_count - 1) } : x))}
+                      onDelete={() => setFeed((prev) => prev.filter((x) => x.id !== r.id))}
+                      onEditCaption={(c) => setFeed((prev) => prev.map((x) => x.id === r.id ? { ...x, caption: c || null } : x))}
+                      onRefresh={fetchFeed}
+                      token={token}
+                    />
+                  )}
                 </div>
               ))}
             </div>

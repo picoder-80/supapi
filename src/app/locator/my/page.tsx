@@ -22,6 +22,7 @@ interface Business {
   lat: number | null; lng: number | null;
   phone: string; website: string; pi_wallet: string; image_url: string;
   images: string[];
+  opening_hours?: { day: string; time: string }[];
   status: string; verified: boolean;
   avg_rating: number; review_count: number;
   created_at: string; updated_at: string;
@@ -53,6 +54,7 @@ export default function MyListingsPage() {
   // Edit form state
   const [form, setForm] = useState<Partial<Business>>({});
   const [images, setImages] = useState<{ file?: File; preview: string; existing?: string }[]>([]);
+  const [openingHours, setOpeningHours] = useState<{ day: string; time: string }[]>([]);
 
   const token = () => localStorage.getItem("supapi_token") ?? "";
 
@@ -71,6 +73,8 @@ export default function MyListingsPage() {
   useEffect(() => { if (user) load(); }, [user, load]);
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+  const setOpenTime = (day: string, time: string) =>
+    setOpeningHours(prev => prev.map(h => h.day === day ? { ...h, time } : h));
 
   // ── Open edit modal ────────────────────────────────────────────────
   const openEdit = (b: Business) => {
@@ -163,6 +167,7 @@ export default function MyListingsPage() {
           lng: form.lng ? parseFloat(String(form.lng)) : null,
           image_url: imageUrl,
           images: allUrls,
+          opening_hours: openingHours,
         }),
       });
       const d = await r.json();
@@ -367,6 +372,24 @@ export default function MyListingsPage() {
               <div className={styles.field}>
                 <label className={styles.fieldLabel}>Country</label>
                 <input className={styles.input} value={form.country ?? ""} onChange={e => set("country", e.target.value)} />
+              </div>
+
+              {/* Opening Hours */}
+              <div className={styles.field}>
+                <label className={styles.fieldLabel}>🕐 Opening Hours</label>
+                <div className={styles.hoursGrid}>
+                  {openingHours.map((h) => (
+                    <div key={h.day} className={styles.hoursRow}>
+                      <div className={styles.hoursDay}>{h.day}</div>
+                      <input
+                        className={styles.input}
+                        placeholder="e.g. 9am - 5pm, Closed"
+                        value={h.time}
+                        onChange={e => setOpenTime(h.day, e.target.value)}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className={styles.gpsBox}>

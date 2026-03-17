@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import AdminPageHero from "@/components/admin/AdminPageHero";
 import styles from "./page.module.css";
 
 type Deal = {
@@ -62,6 +63,10 @@ export default function AdminSupaScrowPage() {
   const [msg, setMsg] = useState("");
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"deals" | "disputes" | null>(null);
+  const [commPct, setCommPct] = useState("");
+  const [commTotal, setCommTotal] = useState(0);
+  const [savingComm, setSavingComm] = useState(false);
+  const [commMsg, setCommMsg] = useState("");
 
   useEffect(() => {
     setToken(localStorage.getItem("supapi_admin_token") ?? "");
@@ -114,6 +119,42 @@ export default function AdminSupaScrowPage() {
     fetchDisputes();
   }, [token]);
 
+  useEffect(() => {
+    if (!token) return;
+    fetch(`/api/admin/supascrow/commission`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) {
+          setCommPct(String(d.data.commission_pct));
+          setCommTotal(d.data.total_commission_pi ?? 0);
+        }
+      });
+  }, [token]);
+
+  const saveCommission = async () => {
+    const pct = parseFloat(commPct);
+    if (isNaN(pct) || pct < 0 || pct > 50) {
+      setCommMsg("Enter 0–50");
+      return;
+    }
+    setSavingComm(true);
+    setCommMsg("");
+    try {
+      const r = await fetch("/api/admin/supascrow/commission", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ commission_pct: pct }),
+      });
+      const d = await r.json();
+      setCommMsg(d.success ? "✅ Saved!" : `❌ ${d.error ?? "Failed"}`);
+      setTimeout(() => setCommMsg(""), 2500);
+    } catch {
+      setCommMsg("❌ Request failed");
+    } finally {
+      setSavingComm(false);
+    }
+  };
+
   const resolveDispute = async (disputeId: string, resolution: "release_to_seller" | "refund_to_buyer") => {
     if (!token || resolvingId) return;
     setResolvingId(disputeId);
@@ -160,23 +201,48 @@ export default function AdminSupaScrowPage() {
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerMain}>
-          <span className={styles.icon}>🛡️</span>
-          <div>
-            <h1 className={styles.title}>SupaScrow</h1>
-            <p className={styles.sub}>Monitor escrow deals and resolve disputes</p>
-          </div>
-        </div>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.topBackBtn}`}>
-          Back to Dashboard
-        </Link>
-      </div>
+    <div className="adminPage">
+      <AdminPageHero
+        icon="🛡️"
+        title="SupaScrow"
+        subtitle="Monitor escrow deals and resolve disputes"
+      />
 
       {!!msg && <div className={styles.msg}>{msg}</div>}
 
-      <section className={styles.section}>
+      <section className="adminSection">
+        <h2 className={styles.sectionTitle}>Commission (Pi deals only)</h2>
+        <div className={styles.commRow}>
+          <div className={styles.commStat}>
+            <span className={styles.commLabel}>Current rate</span>
+            <span className={styles.commValue}>{commPct || "—"}%</span>
+          </div>
+          <div className={styles.commStat}>
+            <span className={styles.commLabel}>Total collected</span>
+            <span className={styles.commValue}>π {Number(commTotal).toFixed(4)}</span>
+          </div>
+          <div className={styles.commEdit}>
+            <input
+              type="number"
+              min={0}
+              max={50}
+              step={0.5}
+              value={commPct}
+              onChange={(e) => setCommPct(e.target.value)}
+              className={styles.commInput}
+              placeholder="5"
+            />
+            <span className={styles.commPctLabel}>%</span>
+            <button className={styles.saveCommBtn} onClick={saveCommission} disabled={savingComm}>
+              {savingComm ? "Saving…" : "Save"}
+            </button>
+          </div>
+        </div>
+        {commMsg && <div className={styles.commMsg}>{commMsg}</div>}
+        <div className={styles.commNote}>Commission deducted from seller payout on Pi release. SC deals: no commission. Range: 0–50%.</div>
+      </section>
+
+      <section className="adminSection">
         <h2 className={styles.sectionTitle}>Open Disputes</h2>
         {loadingDisputes ? (
           <div className={styles.empty}>Loading…</div>
@@ -243,7 +309,7 @@ export default function AdminSupaScrowPage() {
         )}
       </section>
 
-      <section className={styles.section}>
+      <section className="adminSection">
         <div className={styles.filterRow}>
           <h2 className={styles.sectionTitle}>All Deals ({totalDeals})</h2>
           <div className={styles.exportRow}>
@@ -311,10 +377,8 @@ export default function AdminSupaScrowPage() {
         )}
       </section>
 
-      <div className={styles.quickLinks}>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>
-          Back to Dashboard
-        </Link>
+      <div className="adminQuickLinks">
+        <Link href="/admin/dashboard" className="adminBackBtn">Back to Dashboard</Link>
       </div>
     </div>
   );

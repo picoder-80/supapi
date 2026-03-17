@@ -407,17 +407,20 @@ export default function SupaPetsPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerMain}>
-          <div>
-            <div className={styles.heroBadge}>🎮 Pi Virtual Pet Game</div>
-          </div>
           <span className={styles.icon}>🐾</span>
           <div className={styles.headerText}>
+            <div className={styles.heroBadge}>🎮 Pi Virtual Pet Game</div>
             <h1 className={styles.title}>SupaPets</h1>
             <p className={styles.sub}>Hatch pets, care daily, and grow your Supapi Credit rewards.</p>
+            <div className={styles.heroMetaRow}>
+              <span className={styles.heroMetaChip}>🔥 Streak: {Number(data?.daily?.streak ?? 0)} day(s)</span>
+              <span className={styles.heroMetaChip}>🎁 Next: +{Number(data?.daily?.next_reward_sc ?? 20)} SC</span>
+            </div>
           </div>
         </div>
         <Link href="/rewards" className={styles.walletBtn}>
-          💎 Wallet: {Number(data?.wallet_balance_sc ?? 0).toLocaleString()} SC
+          <span className={styles.walletLabel}>💎 Wallet</span>
+          <span className={styles.walletValue}>{Number(data?.wallet_balance_sc ?? 0).toLocaleString()} SC</span>
         </Link>
       </div>
 

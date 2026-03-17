@@ -1,34 +1,7 @@
-/* Same layout as newsfeed and reels */
-.page {
-  min-height: 100vh;
-  background: #F8F9FD;
-  padding-bottom: calc(var(--bottomnav-h) + 24px);
-}
-
-.header {
-  background: linear-gradient(135deg, #1A1A2E 0%, #0F3460 100%);
-  padding: 28px 20px 0;
-}
-.headerTop { margin-bottom: 20px; }
-.title {
-  font-size: 24px;
-  font-weight: 800;
-  color: #fff;
-  margin-bottom: 4px;
-}
-.headerSub {
-  font-size: 13px;
-  color: rgba(255,255,255,0.5);
-}
-
-.body { padding: 20px 0; width: 100%; max-width: 100%; box-sizing: border-box; }
-
 .loginPrompt, .empty {
   text-align: center; padding: 48px 24px;
   background: #fff; border-radius: 16px;
   border: 1.5px dashed #E2E8F0;
-  margin-left: 16px;
-  margin-right: 16px;
 }
 .loginIcon, .emptyIcon { font-size: 40px; margin-bottom: 12px; }
 .loginTitle, .emptyTitle {
@@ -58,8 +31,6 @@
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 20px;
-  margin-left: 16px;
-  margin-right: 16px;
 }
 .createRow { display: flex; gap: 12px; align-items: flex-start; }
 .createAvatar {
@@ -97,7 +68,7 @@
 
 /* Feed - full width, video area edge-to-edge */
 .feedSection { margin-top: 24px; }
-.feedTitle { font-size: 15px; font-weight: 700; color: var(--color-text); margin-bottom: 12px; padding-left: 16px; padding-right: 16px; }
+.feedTitle { font-size: 15px; font-weight: 700; color: var(--color-text); margin-bottom: 12px; }
 .feedList { display: flex; flex-direction: column; gap: 0; }
 .statusCard {
   background: #fff;

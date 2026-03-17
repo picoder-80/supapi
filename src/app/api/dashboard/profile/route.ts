@@ -33,7 +33,7 @@ export async function PATCH(req: NextRequest) {
     if (!payload) return NextResponse.json({ success: false }, { status: 401 });
 
     const body = await req.json();
-    const allowed = ["display_name", "bio", "phone", "email", "address_line1", "address_line2", "city", "state", "postcode", "country"];
+    const allowed = ["display_name", "bio", "phone", "email", "address_line1", "address_line2", "city", "state", "postcode", "country", "wallet_address"];
     const updates: Record<string, string> = { updated_at: new Date().toISOString() };
     for (const key of allowed) {
       if (key in body) updates[key] = body[key];
@@ -44,7 +44,7 @@ export async function PATCH(req: NextRequest) {
     // Check if profile just became complete — award SC one time
     const { data: before } = await supabase
       .from("users")
-      .select("phone, email, address_line1, city, postcode, country, display_name, profile_complete_rewarded")
+      .select("phone, email, address_line1, city, postcode, country, display_name, wallet_address")
       .eq("id", payload.userId)
       .single();
 
@@ -58,46 +58,44 @@ export async function PATCH(req: NextRequest) {
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
 
     // ── SC reward for completing profile (one time only) ──
+    // Uses supapi_credits + credit_transactions (same as other rewards)
     let scRewarded = false;
-    if (before && !before.profile_complete_rewarded) {
+    if (before) {
       const merged = { ...before, ...updates };
-      const requiredFields = ["display_name", "phone", "email", "address_line1", "city", "postcode", "country"];
+      const requiredFields = ["display_name", "phone", "email", "address_line1", "city", "postcode", "country", "wallet_address"];
       const allFilled = requiredFields.every(f => merged[f as keyof typeof merged]?.toString().trim());
 
       if (allFilled) {
-        // Award 10 SC
-        const SC_REWARD = 10;
-        // Award SC
-        try {
-          const { error: rpcErr } = await supabase.rpc("increment_sc_balance", {
-            p_user_id: payload.userId,
-            p_amount:  SC_REWARD,
+        // Check if already claimed via credit_transactions
+        const { data: existing } = await supabase
+          .from("credit_transactions")
+          .select("id")
+          .eq("user_id", payload.userId)
+          .eq("activity", "profile_complete")
+          .limit(1)
+          .maybeSingle();
+
+        if (!existing) {
+          const SC_REWARD = 10;
+          await supabase.from("supapi_credits").upsert({ user_id: payload.userId }, { onConflict: "user_id", ignoreDuplicates: true });
+          const { data: wallet } = await supabase.from("supapi_credits").select("balance, total_earned").eq("user_id", payload.userId).single();
+          const nextBalance = (wallet?.balance ?? 0) + SC_REWARD;
+          await supabase.from("supapi_credits").update({
+            balance: nextBalance,
+            total_earned: (wallet?.total_earned ?? 0) + SC_REWARD,
+            updated_at: new Date().toISOString(),
+          }).eq("user_id", payload.userId);
+          await supabase.from("credit_transactions").insert({
+            user_id: payload.userId,
+            type: "earn",
+            activity: "profile_complete",
+            amount: SC_REWARD,
+            balance_after: nextBalance,
+            note: "Profile completion reward",
           });
-          if (rpcErr) throw rpcErr;
-        } catch {
-          // Fallback — direct update
-          const { data: u } = await supabase.from("users").select("balance").eq("id", payload.userId).single();
-          await supabase.from("users").update({ balance: (u?.balance ?? 0) + SC_REWARD }).eq("id", payload.userId);
+          scRewarded = true;
+          console.log(`[Profile] SC reward ${SC_REWARD} awarded to ${payload.userId}`);
         }
-
-        // Mark as rewarded so it only happens once
-        await supabase.from("users")
-          .update({ profile_complete_rewarded: true })
-          .eq("id", payload.userId);
-
-        // Record transaction
-        try {
-          await supabase.from("sc_transactions").insert({
-            user_id:     payload.userId,
-            type:        "earn",
-            amount:      SC_REWARD,
-            source:      "profile_complete",
-            description: "Profile completion reward",
-          });
-        } catch {} // ignore if table doesn't exist yet
-
-        scRewarded = true;
-        console.log(`[Profile] SC reward ${SC_REWARD} awarded to ${payload.userId}`);
       }
     }
 

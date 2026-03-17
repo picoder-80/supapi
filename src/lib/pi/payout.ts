@@ -1,6 +1,7 @@
 type OwnerTransferInput = {
   amountPi: number;
-  destinationWallet: string;
+  destinationWallet?: string;
+  recipientUid?: string;
   note?: string | null;
 };
 
@@ -28,19 +29,31 @@ export async function executeOwnerTransfer(input: OwnerTransferInput): Promise<O
     };
   }
 
+  const uid = input.recipientUid?.trim();
+  const wallet = input.destinationWallet?.trim();
+  if (!uid && !wallet) {
+    return {
+      ok: false,
+      provider: "custom_api",
+      message: "Either recipientUid or destinationWallet required",
+    };
+  }
+
   try {
+    const body: Record<string, unknown> = {
+      amount_pi: input.amountPi,
+      note: input.note ?? "",
+    };
+    if (uid) body.recipient_uid = uid;
+    if (wallet) body.destination_wallet = wallet;
+
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        asset: "PI",
-        amount_pi: input.amountPi,
-        destination_wallet: input.destinationWallet,
-        note: input.note ?? "",
-      }),
+      body: JSON.stringify(body),
     });
 
     const payload = await response.json().catch(() => ({}));

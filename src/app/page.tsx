@@ -28,6 +28,7 @@ const platformCategories: { id: string; title: string; modules: ModuleItem[] }[]
     modules: [
       { href: "/social-feeds", emoji: "📱", label: "SupaFeeds",    desc: "Post, Reels & Live in one combined feed" },
       { href: "/newsfeed",     emoji: "📰", label: "Newsfeed",     desc: "Status updates from pioneers you follow" },
+      { href: "/supachat",     emoji: "💬", label: "SupaChat",     desc: "Real-time chat, rooms, and Pi social tipping" },
       { href: "/reels",        emoji: "🎬", label: "Reels",        desc: "Short videos from pioneers" },
       { href: "/live",         emoji: "🔴", label: "Live",         desc: "Live streams from pioneers you follow" },
       { href: "/supa-livvi",   emoji: "✨", label: "SupaLivvi",   desc: "Pi Lifestyle & Discovery" },
@@ -71,6 +72,12 @@ const platformCategories: { id: string; title: string; modules: ModuleItem[] }[]
       { href: "/sc-p2p",   emoji: "💸", label: "SC P2P",       desc: "Transfer SupaCredit to Pioneers" },
       { href: "/pi-value", emoji: "📈", label: "Market Value", desc: "Pi Live Market Data & Pi USD Converter" },
       { href: "/about",    emoji: "ℹ️", label: "About Us",     desc: "Our story, mission & vision" },
+      { href: "/contact", emoji: "✉️", label: "Contact",     desc: "Send us a message" },
+      { href: "/faq",     emoji: "❓", label: "FAQ",          desc: "Frequently asked questions" },
+      { href: "/privacy",  emoji: "🔒", label: "Privacy",      desc: "Privacy Policy & data practices" },
+      { href: "/disclaimer", emoji: "⚠️", label: "Disclaimer",  desc: "Important limitations & conditions" },
+      { href: "/returns-refunds", emoji: "↩️", label: "Returns & Refunds", desc: "Return, refund & dispute policy" },
+      { href: "/terms", emoji: "📜", label: "Terms of Service", desc: "Rules & conditions for using Supapi" },
     ],
   },
 ];

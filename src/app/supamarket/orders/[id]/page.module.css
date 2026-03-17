@@ -385,6 +385,26 @@
   line-height: 1.6;
   margin-bottom: 12px;
 }
+
+.reviewStars {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.reviewStarBtn {
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  color: #f5a623;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+.reviewStarBtn:hover { transform: scale(1.1); }
+
 .confirmBtn {
   width: 100%;
   border: none;

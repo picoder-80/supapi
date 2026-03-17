@@ -323,6 +323,25 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── SupaScrow escrow: mark deal funded ──
+  if (transaction.reference_type === "supascrow") {
+    const dealId = transaction.reference_id;
+    if (dealId) {
+      const { data: deal } = await supabase
+        .from("supascrow_deals")
+        .select("id, buyer_id, status")
+        .eq("id", dealId)
+        .single();
+      if (deal && deal.buyer_id === payload.userId && deal.status === "accepted") {
+        await supabase
+          .from("supascrow_deals")
+          .update({ status: "funded", pi_payment_id: paymentId, updated_at: new Date().toISOString() })
+          .eq("id", dealId);
+        console.log("[Complete] SupaScrow deal funded:", dealId);
+      }
+    }
+  }
+
   // ── Create ESCROW record (locked — not yet released to seller) ──
   const meta = (transaction.metadata ?? {}) as Record<string, unknown>;
   const metaOrderId = typeof meta.order_id === "string" ? meta.order_id.trim() : null;

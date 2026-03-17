@@ -4,7 +4,10 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import CreateEscrowModal from "@/components/supascrow/CreateEscrowModal";
+import { usePiPayment } from "@/hooks/usePiPayment";
+import { ensurePaymentReady } from "@/lib/pi/sdk";
 import styles from "./page.module.css";
 
 type Deal = {
@@ -66,6 +69,7 @@ function timeAgo(iso: string) {
 export default function SupaScrowPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const token = () => (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "");
 
   const [loading, setLoading] = useState(true);
@@ -77,15 +81,11 @@ export default function SupaScrowPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const [createSeller, setCreateSeller] = useState("");
-  const [createTitle, setCreateTitle] = useState("");
-  const [createAmount, setCreateAmount] = useState("");
-  const [createDesc, setCreateDesc] = useState("");
-  const [createCurrency, setCreateCurrency] = useState<"pi" | "sc">("sc");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [trackingCarrier, setTrackingCarrier] = useState("");
   const [disputeReason, setDisputeReason] = useState("");
   const [scBalance, setScBalance] = useState<number | null>(null);
+  const { pay: payWithPi, isPaying: piPaying } = usePiPayment();
 
   const fetchScBalance = useCallback(async () => {
     if (!user) return;
@@ -101,6 +101,7 @@ export default function SupaScrowPage() {
   useEffect(() => {
     fetchScBalance();
   }, [fetchScBalance]);
+
 
   useEffect(() => {
     if (!selectedDeal) return;
@@ -146,6 +147,12 @@ export default function SupaScrowPage() {
   useEffect(() => {
     fetchDeals();
   }, [fetchDeals]);
+
+  const dealIdFromUrl = searchParams.get("deal");
+  useEffect(() => {
+    if (!user || !dealIdFromUrl) return;
+    fetchDealDetail(dealIdFromUrl);
+  }, [user, dealIdFromUrl, fetchDealDetail]);
 
   const runAction = async (
     action: string,
@@ -217,66 +224,10 @@ export default function SupaScrowPage() {
     }
   };
 
-  const resolveSeller = async (username: string): Promise<string | null> => {
-    const r = await fetch(`/api/supascrow?lookup=${encodeURIComponent(username)}`, {
-      headers: { Authorization: `Bearer ${token()}` },
-    });
-    const d = await r.json();
-    return d?.data?.id ?? null;
-  };
-
-  const handleCreateSubmit = async () => {
-    const sellerUsername = createSeller.trim().replace(/^@/, "");
-    if (!sellerUsername || !createTitle.trim() || !createAmount.trim()) {
-      setMsg("Fill seller username, title, and amount");
-      return;
-    }
-    const amount = parseFloat(createAmount);
-    if (isNaN(amount) || amount <= 0) {
-      setMsg("Invalid amount");
-      return;
-    }
-    setBusy(true);
-    setMsg("");
-    try {
-      const sellerId = await resolveSeller(sellerUsername);
-      if (!sellerId) {
-        setMsg("Seller username not found");
-        setBusy(false);
-        return;
-      }
-      const r = await fetch("/api/supascrow", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token()}`,
-        },
-        body: JSON.stringify({
-          action: "create",
-          seller_id: sellerId,
-          title: createTitle.trim(),
-          amount_pi: amount,
-          description: createDesc.trim() || undefined,
-          currency: createCurrency,
-        }),
-      });
-      const d = await r.json();
-      if (d?.success) {
-        setShowCreate(false);
-        setCreateSeller("");
-        setCreateTitle("");
-        setCreateAmount("");
-        setCreateDesc("");
-        await fetchDeals();
-        setMsg("✅ Deal created");
-      } else {
-        setMsg(`❌ ${d?.error ?? "Failed"}`);
-      }
-    } catch {
-      setMsg("❌ Create failed");
-    } finally {
-      setBusy(false);
-    }
+  const handleDealCreated = async (dealId?: string) => {
+    await fetchDeals();
+    setMsg("✅ Deal created");
+    if (dealId) fetchDealDetail(dealId);
   };
 
   if (!user) {
@@ -324,11 +275,9 @@ export default function SupaScrowPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerMain}>
-          <div>
-            <div className={styles.heroBadge}>🔒 Secure Escrow</div>
-          </div>
           <span className={styles.icon}>🛡️</span>
           <div className={styles.headerText}>
+            <div className={styles.heroBadge}>🔒 Secure Escrow</div>
             <h1 className={styles.title}>SupaScrow</h1>
             <p className={styles.sub}>Create deals, chat, fund, ship, and release safely.</p>
           </div>
@@ -407,59 +356,12 @@ export default function SupaScrowPage() {
         )}
       </section>
 
-      {/* Create modal */}
       {showCreate && (
-        <div className={styles.modalOverlay} onClick={() => !busy && setShowCreate(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalTitle}>Create Escrow Deal</div>
-            <input
-              className={styles.input}
-              placeholder="Seller username (e.g. johndoe)"
-              value={createSeller}
-              onChange={(e) => setCreateSeller(e.target.value)}
-            />
-            <input
-              className={styles.input}
-              placeholder="Deal title"
-              value={createTitle}
-              onChange={(e) => setCreateTitle(e.target.value)}
-            />
-            <div className={styles.inputRow}>
-              <input
-                className={styles.input}
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="Amount"
-                value={createAmount}
-                onChange={(e) => setCreateAmount(e.target.value)}
-              />
-              <select
-                className={styles.select}
-                value={createCurrency}
-                onChange={(e) => setCreateCurrency(e.target.value as "pi" | "sc")}
-              >
-                <option value="sc">SC</option>
-                <option value="pi">Pi</option>
-              </select>
-            </div>
-            <textarea
-              className={styles.textarea}
-              placeholder="Description (optional)"
-              value={createDesc}
-              onChange={(e) => setCreateDesc(e.target.value)}
-              rows={2}
-            />
-            <div className={styles.modalActions}>
-              <button className={styles.btnSecondary} onClick={() => setShowCreate(false)} disabled={busy}>
-                Cancel
-              </button>
-              <button className={styles.btnPrimary} onClick={handleCreateSubmit} disabled={busy}>
-                {busy ? "Creating..." : "Create"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <CreateEscrowModal
+          onClose={() => setShowCreate(false)}
+          onSuccess={handleDealCreated}
+          token={token()}
+        />
       )}
 
       {/* Deal detail modal */}
@@ -510,9 +412,47 @@ export default function SupaScrowPage() {
                 </button>
               )}
               {selectedDeal.status === "accepted" && selectedDeal.buyer_id === user?.id && (
-                <button className={styles.btnPrimary} onClick={() => runAction("fund", { deal_id: selectedDeal.id })} disabled={busy}>
-                  Fund Escrow
-                </button>
+                selectedDeal.currency === "pi" ? (
+                  <button
+                    className={styles.btnPrimary}
+                    onClick={async () => {
+                      if (!selectedDeal || busy || piPaying) return;
+                      const amount = Number(selectedDeal.amount_pi) || 0;
+                      if (amount <= 0) { setMsg("Invalid amount"); return; }
+                      setBusy(true);
+                      setMsg("");
+                      const dealId = selectedDeal.id;
+                      try {
+                        await ensurePaymentReady();
+                        payWithPi({
+                          amountPi: amount,
+                          memo: `SupaScrow: ${selectedDeal.title}`,
+                          type: "supascrow",
+                          referenceId: dealId,
+                          onSuccess: async () => {
+                            setMsg("✅ Escrow funded!");
+                            await fetchDealDetail(dealId);
+                            await fetchDeals();
+                            fetchScBalance();
+                            setBusy(false);
+                          },
+                          onCancel: () => { setMsg("Payment cancelled"); setBusy(false); },
+                          onError: (err) => { setMsg(`❌ ${err.message}`); setBusy(false); },
+                        });
+                      } catch (e: any) {
+                        setMsg(`❌ ${e?.message ?? "Pi payment failed. Open in Pi Browser."}`);
+                        setBusy(false);
+                      }
+                    }}
+                    disabled={busy || piPaying}
+                  >
+                    {busy || piPaying ? "Opening Pi payment..." : "Fund Escrow (π)"}
+                  </button>
+                ) : (
+                  <button className={styles.btnPrimary} onClick={() => runAction("fund", { deal_id: selectedDeal.id })} disabled={busy}>
+                    Fund Escrow
+                  </button>
+                )
               )}
               {selectedDeal.status === "funded" && selectedDeal.seller_id === user?.id && (
                 <div className={styles.trackingRow}>

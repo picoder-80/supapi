@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import AdminPageHero from "@/components/admin/AdminPageHero";
 import styles from "./page.module.css";
 
 interface Config { key: string; value: string; description: string; }
@@ -84,21 +85,16 @@ export default function AdminReferralPage() {
     parseFloat(configs.referral_l3_pct ?? "1"));
 
   return (
-    <div className={styles.page}>
+    <div className="adminPage">
+      <AdminPageHero
+        icon="🤝"
+        title="Referral Admin"
+        subtitle="Manage commission rates & program settings"
+        showBadge
+      />
 
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>🤝 Referral Admin</h1>
-          <p className={styles.sub}>Manage commission rates & program settings</p>
-        </div>
-        <div className={styles.headerActions}>
-          <div className={styles.liveTag}>● LIVE</div>
-          <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.topBackBtn}`}>Back to Dashboard</Link>
-        </div>
-      </div>
-
-      {/* Stats row */}
       {stats && (
+        <div className="adminSection">
         <div className={styles.statsGrid}>
           <div className={styles.statCard}>
             <div className={styles.statValue} style={{ color: "#F5A623" }}>{stats.total_referrals.toLocaleString()}</div>
@@ -117,6 +113,7 @@ export default function AdminReferralPage() {
             <div className={styles.statLabel}>Total Earned</div>
           </div>
         </div>
+        </div>
       )}
 
       {/* Tabs */}
@@ -133,7 +130,7 @@ export default function AdminReferralPage() {
 
       {/* ── RATES TAB ── */}
       {tab === "rates" && (
-        <div className={styles.section}>
+        <div className="adminSection">
           <div className={styles.warningBox}>
             ⚠️ Rate changes will affect <b>all new transactions</b> immediately. Existing transactions are not affected.
           </div>
@@ -189,7 +186,7 @@ export default function AdminReferralPage() {
 
       {/* ── STATS TAB ── */}
       {tab === "stats" && (
-        <div className={styles.section}>
+        <div className="adminSection">
           <div className={styles.statsDetailGrid}>
             <div className={styles.detailCard}>
               <div className={styles.detailIcon}>💰</div>
@@ -232,7 +229,7 @@ export default function AdminReferralPage() {
 
       {/* ── TOP EARNERS TAB ── */}
       {tab === "earners" && (
-        <div className={styles.section}>
+        <div className="adminSection">
           <div className={styles.earnerList}>
             {topEarners.length === 0 ? (
               <div className={styles.empty}>
@@ -261,10 +258,9 @@ export default function AdminReferralPage() {
         </div>
       )}
 
-      <div className={styles.quickLinks}>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>Back to Dashboard</Link>
+      <div className="adminQuickLinks">
+        <Link href="/admin/dashboard" className="adminBackBtn">Back to Dashboard</Link>
       </div>
-
     </div>
   );
 }

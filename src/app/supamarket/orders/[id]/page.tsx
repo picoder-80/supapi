@@ -16,6 +16,7 @@ interface Order {
   tracking_number: string; tracking_carrier?: string; tracking_url?: string;
   notes: string; pi_payment_id: string;
   created_at: string; updated_at: string;
+  has_review?: boolean;
   listing: { id: string; title: string; images: string[]; price_pi: number; description: string; location: string; category: string } | null;
   buyer:  { id: string; username: string; display_name: string | null; avatar_url: string | null; phone: string; email: string };
   seller: { id: string; username: string; display_name: string | null; avatar_url: string | null; phone: string };
@@ -71,6 +72,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [supportLoading, setSupportLoading] = useState(false);
   const [supportResult, setSupportResult] = useState<SupportTriageResult | null>(null);
   const [msg, setMsg]             = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   const fetchOrder = async () => {
     const token = localStorage.getItem("supapi_token");
@@ -464,6 +468,62 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <div className={styles.confirmNote}>Happy with your purchase? Mark as complete to finalise payment.</div>
             <button className={styles.confirmBtn} disabled={updating} onClick={() => updateStatus("completed")}>
               {updating ? "Updating..." : "Complete Order 🎉"}
+            </button>
+          </div>
+        )}
+
+        {/* Buyer rate seller (completed, not yet reviewed) */}
+        {isBuyer && order.status === "completed" && !order.has_review && (
+          <div className={styles.section}>
+            <div className={styles.sectionTitle}>⭐ Rate Seller</div>
+            <div className={styles.confirmNote}>How was your experience? Your rating helps other buyers.</div>
+            <div className={styles.reviewStars}>
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className={styles.reviewStarBtn}
+                  onClick={() => setReviewRating(s)}
+                  aria-label={`${s} star${s > 1 ? "s" : ""}`}
+                >
+                  {s <= reviewRating ? "★" : "☆"}
+                </button>
+              ))}
+            </div>
+            <textarea
+              className={styles.input}
+              rows={2}
+              placeholder="Optional: Add a comment..."
+              value={reviewComment}
+              onChange={(e) => setReviewComment(e.target.value)}
+              disabled={reviewSubmitting}
+            />
+            <button
+              className={styles.confirmBtn}
+              disabled={reviewSubmitting}
+              onClick={async () => {
+                const token = localStorage.getItem("supapi_token");
+                if (!token) return;
+                setReviewSubmitting(true);
+                setMsg("");
+                try {
+                  const r = await fetch(`/api/supamarket/orders/${id}/review`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ rating: reviewRating, comment: reviewComment || undefined }),
+                  });
+                  const d = await r.json();
+                  if (d.success) {
+                    setMsg("Thanks for your review!");
+                    await fetchOrder();
+                  } else setMsg(d.error ?? "Failed to submit review");
+                } catch {
+                  setMsg("Something went wrong");
+                }
+                setReviewSubmitting(false);
+              }}
+            >
+              {reviewSubmitting ? "Submitting..." : "Submit Review"}
             </button>
           </div>
         )}

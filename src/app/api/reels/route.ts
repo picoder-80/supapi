@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
       .in("id", reelIds)
       .order("created_at", { ascending: false });
 
-    const withUser = (reels ?? []).map((r: any) => ({
+    let withUser = (reels ?? []).map((r: any) => ({
       id: r.id,
       user_id: r.user_id,
       video_url: r.video_url,
@@ -71,6 +71,22 @@ export async function GET(req: NextRequest) {
       created_at: r.created_at,
       user: Array.isArray(r.user) ? r.user[0] : r.user,
     }));
+
+    if (userId && withUser.length > 0) {
+      try {
+        const { data: likes } = await supabase
+          .from("reel_likes")
+          .select("reel_id")
+          .eq("user_id", userId)
+          .in("reel_id", withUser.map((r: any) => r.id));
+        const likedSet = new Set((likes ?? []).map((l: any) => l.reel_id));
+        withUser = withUser.map((r: any) => ({ ...r, is_liked: likedSet.has(r.id) }));
+      } catch {
+        withUser = withUser.map((r: any) => ({ ...r, is_liked: false }));
+      }
+    } else {
+      withUser = withUser.map((r: any) => ({ ...r, is_liked: false }));
+    }
 
     return NextResponse.json({ success: true, data: { reels: withUser } });
   } catch {

@@ -6,6 +6,8 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useProfileOnline } from "@/components/providers/PresenceProvider";
+import SendPiModal from "@/components/supachat/SendPiModal";
+import ToastBanner from "@/components/ui/ToastBanner";
 import styles from "../page.module.css";
 
 /* Susunan tab seragam dengan /supaspace: [1st], Reviews, Status, Reels, Live */
@@ -41,7 +43,6 @@ export default function PublicProfilePage() {
   const [activeTab,  setActiveTab] = useState("bio");
   const [following,  setFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
-  const [showMsg,    setShowMsg]   = useState(false);
   const [stats,      setStats]     = useState<Record<string, number | string>>({});
   const [showLiveDemo, setShowLiveDemo] = useState(false);
   const [liveViewers] = useState(() => 128 + Math.floor(Math.random() * 200));
@@ -61,8 +62,17 @@ export default function PublicProfilePage() {
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [statusPosts, setStatusPosts] = useState<{ id: string; body: string; created_at: string }[]>([]);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
+  const [tipModalOpen, setTipModalOpen] = useState(false);
 
   const isOwnProfile = me?.username === username;
+
+  const showToast = (msg: string, type: "success" | "error" = "success") => {
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    setToast({ msg, type });
+    toastTimerRef.current = window.setTimeout(() => setToast(null), 2800);
+  };
 
   // Tabs auto-scroll
   useEffect(() => {
@@ -82,6 +92,12 @@ export default function PublicProfilePage() {
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [username]);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    };
+  }, []);
 
   // Fetch stats
   useEffect(() => {
@@ -233,6 +249,40 @@ export default function PublicProfilePage() {
     else { navigator.clipboard.writeText(window.location.href); alert("Profile link copied!"); }
   };
 
+  const handleMessage = async () => {
+    if (!me || !token) {
+      alert("Sign in required");
+      window.location.href = "/dashboard";
+      return;
+    }
+    if (!profile?.id) return;
+    try {
+      const r = await fetch("/api/supachat/dm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ receiverId: profile.id }),
+      });
+      const d = await r.json();
+      if (d.success && d.data?.conversationId) {
+        window.location.href = `/supachat/dm/${d.data.conversationId}`;
+      } else {
+        alert(d.error || "Unable to open chat");
+      }
+    } catch {
+      alert("Unable to open chat");
+    }
+  };
+
+  const openTipModal = () => {
+    if (!me || !token) {
+      alert("Sign in required");
+      window.location.href = "/dashboard";
+      return;
+    }
+    if (!profile?.id) return;
+    setTipModalOpen(true);
+  };
+
   if (loading) return (
     <div className={styles.loadingPage}>
       <span className={styles.loadingText}>Loading profile...</span>
@@ -252,6 +302,21 @@ export default function PublicProfilePage() {
 
   return (
     <div className={styles.page}>
+      {toast && <ToastBanner type={toast.type} message={toast.msg} />}
+      {tipModalOpen && profile?.id && token && (
+        <SendPiModal
+          onClose={() => setTipModalOpen(false)}
+          onSuccess={() => showToast("Tip sent!", "success")}
+          onCancelled={() => showToast("Payment cancelled", "error")}
+          onError={(msg) => showToast(msg, "error")}
+          receiverId={profile.id}
+          receiverUsername={username}
+          token={token}
+          senderId={me?.id}
+          defaultNote={`Tip for @${username}`}
+          redirectToDm
+        />
+      )}
       <header className={styles.publicTopBar}>
         <Link href="/supaspace" className={styles.publicTopIconBtn} aria-label="Back">
           ←
@@ -319,7 +384,8 @@ export default function PublicProfilePage() {
                 {followLoading ? "..." : following ? "Unfollow" : me ? "+ Follow" : "Sign in to follow"}
               </button>
             )}
-            <button type="button" className={styles.messageBtn} onClick={() => setShowMsg(true)} title="Message" aria-label="Message">💬</button>
+            <button type="button" className={styles.messageBtn} onClick={handleMessage} title="Message" aria-label="Message">💬 Message</button>
+            <button type="button" className={styles.tipBtn} onClick={openTipModal} title="Tip" aria-label="Tip">π Tip</button>
             <button type="button" className={styles.shareBtn} onClick={handleShare} title="Share" aria-label="Share">🔗</button>
           </div>
         </div>
@@ -616,21 +682,6 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
-      {/* Message Modal */}
-      {showMsg && (
-        <div className={styles.modalOverlay} onClick={() => setShowMsg(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHandle} />
-            <div className={styles.modalTitle}>💬 Message @{username}</div>
-            <div className={styles.messageSoon}>
-              <div className={styles.messageSoonIcon}>🚀</div>
-              <div className={styles.messageSoonTitle}>Coming Soon</div>
-              <div className={styles.messageSoonText}>Direct messaging between Pi users is coming soon!</div>
-            </div>
-            <button className={styles.modalSave} onClick={() => setShowMsg(false)}>Got it</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

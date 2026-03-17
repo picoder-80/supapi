@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import AdminPageHero from "@/components/admin/AdminPageHero";
 import styles from "./page.module.css";
 
 interface User {
@@ -81,20 +82,15 @@ export default function UsersPage() {
   };
 
   return (
-    <div className={styles.page}>
+    <div className="adminPage">
+      <AdminPageHero
+        icon="👥"
+        title="Users"
+        subtitle="Manage user directory, review roles, and run moderation actions"
+      />
 
-      <div className={styles.header}>
-        <div className={styles.headerMain}>
-          <span className={styles.icon}>👥</span>
-          <div>
-            <h1 className={styles.title}>Users</h1>
-            <p className={styles.sub}>Manage user directory, review roles, and run moderation actions</p>
-          </div>
-        </div>
-        <Link href="/admin/dashboard" className={`${styles.dashboardBackBtn} ${styles.topDashboardBackBtn}`}>Back to Dashboard</Link>
-      </div>
-
-      <div className={styles.filterBar}>
+      <div className="adminSection">
+        <div className={styles.filterBar}>
         <input
           className={styles.searchInput}
           placeholder="Search username or email..."
@@ -112,15 +108,15 @@ export default function UsersPage() {
         </select>
       </div>
 
-      <div className={styles.userCount}>{total.toLocaleString()} total users</div>
-      {!!err && <div className={styles.userCount} style={{ color: "#e74c3c" }}>{err}</div>}
+        <div className={styles.userCount}>{total.toLocaleString()} total users</div>
+        {!!err && <div className={styles.userCount} style={{ color: "#e74c3c" }}>{err}</div>}
 
-      {loading ? (
-        <div className={styles.loading}>Loading users...</div>
-      ) : !users.length ? (
-        <div className={styles.empty}>No users found.</div>
-      ) : (
-        <div className={styles.userList}>
+        {loading ? (
+          <div className="adminLoading">Loading users...</div>
+        ) : !users.length ? (
+          <div className="adminEmpty">No users found.</div>
+        ) : (
+          <div className={styles.userList}>
           {users.map((u) => (
             <div key={u.id} className={`${styles.userRow} ${u.role === "banned" ? styles.userRowBanned : ""}`}>
               <div className={styles.userAvatar}>
@@ -149,21 +145,21 @@ export default function UsersPage() {
               </div>
             </div>
           ))}
-        </div>
-      )}
+          </div>
+        )}
 
-      <div className={styles.pagination}>
+        <div className={styles.pagination}>
         <span>Page {page} / {totalPages} · {total} total</span>
         <div style={{ display: "flex", gap: 8 }}>
           <button className={styles.pageBtn} disabled={loading || page <= 1} onClick={() => setPage((p) => p - 1)}>← Prev</button>
           <button className={styles.pageBtn} disabled={loading || page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next →</button>
         </div>
+        </div>
       </div>
 
-      <div className={styles.quickLinks}>
-        <Link href="/admin/dashboard" className={`${styles.dashboardBackBtn} ${styles.bottomDashboardBackBtn}`}>Back to Dashboard</Link>
+      <div className="adminQuickLinks">
+        <Link href="/admin/dashboard" className="adminBackBtn">Back to Dashboard</Link>
       </div>
-
     </div>
   );
 }

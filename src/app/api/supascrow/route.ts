@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
 import { analyzeDispute } from "@/lib/market/ai";
 import { logDisputeEvent } from "@/lib/security/dispute-audit";
+import { executeOwnerTransfer, isOwnerTransferConfigured } from "@/lib/pi/payout";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,6 +29,18 @@ const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   delivered: ["released"],
   disputed: ["released", "refunded"],
 };
+
+async function getSupaScrowCommissionPct(): Promise<number> {
+  const { data } = await supabase.from("platform_config").select("value").eq("key", "commission_supascrow").maybeSingle();
+  const pct = parseFloat(String(data?.value ?? "5")) || 0;
+  return Math.min(50, Math.max(0, pct));
+}
+
+function calcCommission(gross: number, pct: number): { commissionPi: number; netPi: number } {
+  const commissionPi = Math.round((gross * (pct / 100)) * 1000000) / 1000000;
+  const netPi = Math.round((gross - commissionPi) * 1000000) / 1000000;
+  return { commissionPi, netPi };
+}
 
 export async function GET(req: NextRequest) {
   const userId = getUserId(req);
@@ -180,6 +193,13 @@ export async function POST(req: NextRequest) {
     const amount = Math.round(Number(deal.amount_pi) || 0);
     if (amount <= 0) return NextResponse.json({ success: false, error: "Invalid amount" }, { status: 400 });
 
+    if (deal.currency === "pi") {
+      return NextResponse.json(
+        { success: false, error: "Use Pi payment to fund. Open in Pi Browser and click Fund Escrow." },
+        { status: 400 }
+      );
+    }
+
     if (deal.currency === "sc") {
       await supabase.from("supapi_credits").upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
       const { data: wallet } = await supabase.from("supapi_credits").select("balance, total_spent").eq("user_id", userId).single();
@@ -243,14 +263,62 @@ export async function POST(req: NextRequest) {
     if (action === "release") {
       if (!isBuyer) return NextResponse.json({ success: false, error: "Only buyer can release funds" }, { status: 403 });
       if (deal.status !== "delivered") return NextResponse.json({ success: false, error: "Deal must be delivered first" }, { status: 400 });
-      const amount = Math.round(Number(deal.amount_pi) || 0);
-      if (deal.currency === "sc" && amount > 0) {
+      const gross = Number(deal.amount_pi) || 0;
+      const grossRounded = Math.round(gross * 1000000) / 1000000;
+
+      // Commission only applies to Pi (SC: no commission for now)
+      const commissionPct = deal.currency === "pi" ? await getSupaScrowCommissionPct() : 0;
+      const { commissionPi, netPi } = calcCommission(grossRounded, commissionPct);
+      const sellerPayout = deal.currency === "pi" ? netPi : grossRounded;
+
+      if (deal.currency === "sc" && grossRounded > 0) {
         await supabase.from("supapi_credits").upsert({ user_id: deal.seller_id }, { onConflict: "user_id", ignoreDuplicates: true });
         const { data: w } = await supabase.from("supapi_credits").select("balance, total_earned").eq("user_id", deal.seller_id).single();
-        const next = (Number(w?.balance ?? 0)) + amount;
-        await supabase.from("supapi_credits").update({ balance: next, total_earned: Number(w?.total_earned ?? 0) + amount, updated_at: new Date().toISOString() }).eq("user_id", deal.seller_id);
-        await supabase.from("credit_transactions").insert({ user_id: deal.seller_id, type: "earn", activity: "supascrow_release", amount, balance_after: next, note: `SupaScrow release #${dealId.slice(0, 8)}` });
+        const next = (Number(w?.balance ?? 0)) + grossRounded;
+        await supabase.from("supapi_credits").update({ balance: next, total_earned: Number(w?.total_earned ?? 0) + grossRounded, updated_at: new Date().toISOString() }).eq("user_id", deal.seller_id);
+        await supabase.from("credit_transactions").insert({ user_id: deal.seller_id, type: "earn", activity: "supascrow_release", amount: grossRounded, balance_after: next, note: `SupaScrow release #${dealId.slice(0, 8)}` });
       }
+
+      if (deal.currency === "pi" && grossRounded > 0) {
+        const { data: seller } = await supabase.from("users").select("pi_uid, wallet_address").eq("id", deal.seller_id).single();
+        const s = seller as { pi_uid?: string; wallet_address?: string } | null;
+        const uid = s?.pi_uid?.trim();
+        const wallet = s?.wallet_address?.trim();
+        if (!uid && !wallet) {
+          return NextResponse.json(
+            { success: false, error: "Seller must sign in with Pi (pi_uid) or add wallet address before Pi can be released." },
+            { status: 400 }
+          );
+        }
+        if (!isOwnerTransferConfigured()) {
+          return NextResponse.json(
+            { success: false, error: "Pi payout not configured. Contact admin to set PI_PAYOUT_API_URL." },
+            { status: 503 }
+          );
+        }
+        const transfer = await executeOwnerTransfer({
+          amountPi: sellerPayout,
+          recipientUid: uid || undefined,
+          destinationWallet: wallet || undefined,
+          note: `SupaScrow release #${dealId.slice(0, 8)}`,
+        });
+        if (!transfer.ok) {
+          return NextResponse.json(
+            { success: false, error: transfer.message ?? "Pi payout failed" },
+            { status: 502 }
+          );
+        }
+        if (commissionPi > 0) {
+          await supabase.from("admin_revenue").insert({
+            platform: "supascrow",
+            order_id: null,
+            gross_pi: grossRounded,
+            commission_pi: commissionPi,
+            commission_pct: commissionPct,
+          });
+        }
+      }
+
       const { error: upErr } = await supabase.from("supascrow_deals").update({ status: "released", released_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", dealId);
       if (upErr) return NextResponse.json({ success: false, error: upErr.message }, { status: 500 });
       return NextResponse.json({ success: true, data: { message: "Funds released to seller" } });
@@ -334,19 +402,61 @@ export async function POST(req: NextRequest) {
 
       if (autoResolve && analysis.decision !== "manual_review") {
         const resolution = analysis.decision === "refund" ? "refund_to_buyer" : "release_to_seller";
-        if (resolution === "release_to_seller" && deal.currency === "sc" && amount > 0) {
-          await supabase.from("supapi_credits").upsert({ user_id: deal.seller_id }, { onConflict: "user_id", ignoreDuplicates: true });
-          const { data: w } = await supabase.from("supapi_credits").select("balance, total_earned").eq("user_id", deal.seller_id).single();
-          const next = (Number(w?.balance ?? 0)) + amount;
-          await supabase.from("supapi_credits").update({ balance: next, total_earned: Number(w?.total_earned ?? 0) + amount, updated_at: new Date().toISOString() }).eq("user_id", deal.seller_id);
-          await supabase.from("credit_transactions").insert({ user_id: deal.seller_id, type: "earn", activity: "supascrow_release", amount, balance_after: next, note: `SupaScrow release #${dealId.slice(0, 8)}` });
+        const grossRounded = Math.round(amount * 1000000) / 1000000;
+        const commissionPct = deal.currency === "pi" ? await getSupaScrowCommissionPct() : 0;
+        const { commissionPi, netPi } = calcCommission(grossRounded, commissionPct);
+        const sellerPayout = deal.currency === "pi" ? netPi : grossRounded;
+
+        if (resolution === "release_to_seller" && grossRounded > 0) {
+          if (deal.currency === "sc") {
+            await supabase.from("supapi_credits").upsert({ user_id: deal.seller_id }, { onConflict: "user_id", ignoreDuplicates: true });
+            const { data: w } = await supabase.from("supapi_credits").select("balance, total_earned").eq("user_id", deal.seller_id).single();
+            const next = (Number(w?.balance ?? 0)) + grossRounded;
+            await supabase.from("supapi_credits").update({ balance: next, total_earned: Number(w?.total_earned ?? 0) + grossRounded, updated_at: new Date().toISOString() }).eq("user_id", deal.seller_id);
+            await supabase.from("credit_transactions").insert({ user_id: deal.seller_id, type: "earn", activity: "supascrow_release", amount: grossRounded, balance_after: next, note: `SupaScrow release #${dealId.slice(0, 8)}` });
+          } else if (deal.currency === "pi" && isOwnerTransferConfigured()) {
+            const { data: seller } = await supabase.from("users").select("pi_uid, wallet_address").eq("id", deal.seller_id).single();
+            const s = seller as { pi_uid?: string; wallet_address?: string } | null;
+            const uid = s?.pi_uid?.trim();
+            const wallet = s?.wallet_address?.trim();
+            if (uid || wallet) {
+              const tx = await executeOwnerTransfer({ amountPi: sellerPayout, recipientUid: uid || undefined, destinationWallet: wallet || undefined, note: `SupaScrow release #${dealId.slice(0, 8)}` });
+              if (!tx.ok) {
+                await supabase.from("supascrow_disputes").update({ resolution: "pending", updated_at: new Date().toISOString() }).eq("id", disputeRow.id);
+                return NextResponse.json({ success: true, data: { message: "Dispute received. Pi payout failed — will be reviewed manually.", auto_resolved: false } });
+              }
+              if (commissionPi > 0) {
+                await supabase.from("admin_revenue").insert({
+                  platform: "supascrow",
+                  order_id: null,
+                  gross_pi: grossRounded,
+                  commission_pi: commissionPi,
+                  commission_pct: commissionPct,
+                });
+              }
+            }
+          }
         }
-        if (resolution === "refund_to_buyer" && deal.currency === "sc" && amount > 0) {
-          await supabase.from("supapi_credits").upsert({ user_id: deal.buyer_id }, { onConflict: "user_id", ignoreDuplicates: true });
-          const { data: w } = await supabase.from("supapi_credits").select("balance, total_earned").eq("user_id", deal.buyer_id).single();
-          const next = (Number(w?.balance ?? 0)) + amount;
-          await supabase.from("supapi_credits").update({ balance: next, total_earned: Number(w?.total_earned ?? 0) + amount, updated_at: new Date().toISOString() }).eq("user_id", deal.buyer_id);
-          await supabase.from("credit_transactions").insert({ user_id: deal.buyer_id, type: "earn", activity: "supascrow_refund_admin", amount, balance_after: next, note: `SupaScrow refund #${dealId.slice(0, 8)}` });
+        if (resolution === "refund_to_buyer" && amountRounded > 0) {
+          if (deal.currency === "sc") {
+            await supabase.from("supapi_credits").upsert({ user_id: deal.buyer_id }, { onConflict: "user_id", ignoreDuplicates: true });
+            const { data: w } = await supabase.from("supapi_credits").select("balance, total_earned").eq("user_id", deal.buyer_id).single();
+            const next = (Number(w?.balance ?? 0)) + amountRounded;
+            await supabase.from("supapi_credits").update({ balance: next, total_earned: Number(w?.total_earned ?? 0) + amountRounded, updated_at: new Date().toISOString() }).eq("user_id", deal.buyer_id);
+            await supabase.from("credit_transactions").insert({ user_id: deal.buyer_id, type: "earn", activity: "supascrow_refund_admin", amount: amountRounded, balance_after: next, note: `SupaScrow refund #${dealId.slice(0, 8)}` });
+          } else if (deal.currency === "pi" && isOwnerTransferConfigured()) {
+            const { data: buyer } = await supabase.from("users").select("pi_uid, wallet_address").eq("id", deal.buyer_id).single();
+            const b = buyer as { pi_uid?: string; wallet_address?: string } | null;
+            const uid = b?.pi_uid?.trim();
+            const wallet = b?.wallet_address?.trim();
+            if (uid || wallet) {
+              const tx = await executeOwnerTransfer({ amountPi: amountRounded, recipientUid: uid || undefined, destinationWallet: wallet || undefined, note: `SupaScrow refund #${dealId.slice(0, 8)}` });
+              if (!tx.ok) {
+                await supabase.from("supascrow_disputes").update({ resolution: "pending", updated_at: new Date().toISOString() }).eq("id", disputeRow.id);
+                return NextResponse.json({ success: true, data: { message: "Dispute received. Pi refund failed — will be reviewed manually.", auto_resolved: false } });
+              }
+            }
+          }
         }
         const now = new Date().toISOString();
         await supabase.from("supascrow_deals").update({ status: resolution === "release_to_seller" ? "released" : "refunded", released_at: resolution === "release_to_seller" ? now : undefined, updated_at: now }).eq("id", dealId);

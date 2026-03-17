@@ -125,6 +125,22 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     if (error || !data) return withCors(NextResponse.json({ success: false, error: "Not found" }, { status: 404 }), req);
     const normalized = { ...data, status: getEffectiveOrderStatus(data) };
+
+    // has_review: whether buyer has left a review for this order's listing
+    let hasReview = false;
+    const listingId = (data as { listing_id?: string }).listing_id;
+    if (listingId && (data as { buyer_id?: string }).buyer_id === payload.userId) {
+      const { data: rev } = await supabase
+        .from("reviews")
+        .select("id")
+        .eq("target_type", "listing")
+        .eq("target_id", listingId)
+        .eq("reviewer_id", payload.userId)
+        .maybeSingle();
+      hasReview = !!rev;
+    }
+    (normalized as Record<string, unknown>).has_review = hasReview;
+
     return withCors(NextResponse.json({ success: true, data: normalized }), req);
   } catch {
     return withCors(NextResponse.json({ success: false }, { status: 500 }), req);

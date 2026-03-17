@@ -18,6 +18,7 @@ const CATEGORIES = [
 
 const MAX_IMAGES = 4;
 
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 export default function RegisterBusinessPage() {
   const router    = useRouter();
@@ -30,6 +31,9 @@ export default function RegisterBusinessPage() {
     phone: "", website: "", pi_wallet: "",
     lat: "", lng: "",
   });
+  const [openingHours, setOpeningHours] = useState(
+    DAYS.map(d => ({ day: d, time: "" }))
+  );
 
   const [images, setImages]       = useState<{ file: File; preview: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -38,6 +42,8 @@ export default function RegisterBusinessPage() {
   const [locating, setLocating]     = useState(false);
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+  const setOpenTime = (day: string, time: string) =>
+    setOpeningHours(prev => prev.map(h => h.day === day ? { ...h, time } : h));
 
   // ── Image handling ────────────────────────────────────────────────
   const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,6 +130,7 @@ export default function RegisterBusinessPage() {
           lng:       form.lng ? parseFloat(form.lng) : null,
           image_url: imageUrls[0] ?? null,       // primary image
           images:    imageUrls,                   // all images
+          opening_hours: openingHours,
         }),
       });
       const d = await r.json();
@@ -183,7 +190,7 @@ export default function RegisterBusinessPage() {
 
           <div className={styles.field}>
             <label className={styles.fieldLabel}>Business Name *</label>
-            <input className={styles.input} placeholder="e.g. Kedai Makan Pi"
+            <input className={styles.input} placeholder="e.g. Pi Cafe"
               value={form.name} onChange={e => set("name", e.target.value)} />
           </div>
 
@@ -196,7 +203,7 @@ export default function RegisterBusinessPage() {
 
           <div className={styles.field}>
             <label className={styles.fieldLabel}>Phone</label>
-            <input className={styles.input} type="tel" placeholder="+60 1X-XXXXXXX"
+            <input className={styles.input} type="tel" placeholder="+1 (555) 123-4567"
               value={form.phone} onChange={e => set("phone", e.target.value)} />
           </div>
 
@@ -240,7 +247,7 @@ export default function RegisterBusinessPage() {
             type="file"
             accept="image/*"
             multiple
-            style={{ display: "none" }}
+            className={styles.hiddenFileInput}
             onChange={handleImagePick}
           />
         </div>
@@ -295,6 +302,25 @@ export default function RegisterBusinessPage() {
             <button type="button" className={styles.gpsBtn} onClick={handleLocate} disabled={locating}>
               {locating ? "⏳ Detecting location..." : "🎯 Use My Location"}
             </button>
+          </div>
+        </div>
+
+        {/* Opening Hours */}
+        <div className={styles.fieldGroup}>
+          <div className={styles.groupTitle}>🕐 Opening Hours</div>
+          <div className={styles.photoSub}>e.g. 9am - 5pm, Closed, or 24 hours</div>
+          <div className={styles.hoursGrid}>
+            {openingHours.map((h) => (
+              <div key={h.day} className={styles.hoursRow}>
+                <div className={styles.hoursDay}>{h.day}</div>
+                <input
+                  className={styles.input}
+                  placeholder="Not provided"
+                  value={h.time}
+                  onChange={e => setOpenTime(h.day, e.target.value)}
+                />
+              </div>
+            ))}
           </div>
         </div>
 

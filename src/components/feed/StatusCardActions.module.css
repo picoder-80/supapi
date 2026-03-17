@@ -1,0 +1,49 @@
+.wrap { margin-top: 10px; }
+.actions { display: flex; gap: 16px; flex-wrap: wrap; }
+.actionBtn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px 0;
+}
+.actionBtn:hover { color: var(--color-gold); }
+.editBox { margin-top: 12px; padding-top: 12px; border-top: 1px solid #E2E8F0; }
+.editInput { width: 100%; padding: 10px; border: 1px solid #E2E8F0; border-radius: 10px; font-size: 14px; font-family: inherit; resize: vertical; }
+.editInput:focus { outline: none; border-color: var(--color-gold); }
+.editActions { display: flex; gap: 12px; margin-top: 8px; }
+.editActions button { font-size: 13px; padding: 6px 14px; border-radius: 8px; border: 1px solid #E2E8F0; background: #fff; cursor: pointer; }
+.editActions button:last-child { background: var(--color-gold); color: #1A1A2E; border-color: var(--color-gold); }
+.commentsBox { margin-top: 12px; padding-top: 12px; border-top: 1px solid #E2E8F0; }
+.comment {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.commentAvatar {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1A1A2E;
+  text-decoration: none;
+}
+.commentAvatar img { width: 100%; height: 100%; object-fit: cover; }
+.commentContent { flex: 1; min-width: 0; }
+.commentUser { font-weight: 600; color: var(--color-text); margin-right: 6px; text-decoration: none; }
+.commentUser:hover { color: var(--color-gold); }
+.commentBody { color: var(--color-text); }
+.commentForm { display: flex; gap: 8px; margin-top: 10px; }
+.commentInput { flex: 1; padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 13px; }
+.commentForm button { padding: 8px 14px; background: var(--color-gold); color: #1A1A2E; border: none; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; }

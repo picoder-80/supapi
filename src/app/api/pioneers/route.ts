@@ -73,16 +73,39 @@ export async function GET(req: NextRequest) {
     }).filter(Boolean);
 
     // Fetch groups
-    const { data: groups } = await supabase
+    const { data: groupsData } = await supabase
       .from("pioneer_groups")
       .select("id, name, description, lat, lng, location, cover_emoji, member_count, is_public, created_at")
       .eq("is_public", true)
       .order("member_count", { ascending: false })
       .limit(100);
+    const groupsList = groupsData ?? [];
+
+    // If member_count column missing, compute from members table
+    const groupsWithCount = await Promise.all(
+      groupsList.map(async (g: any) => {
+        if (g.member_count != null) return g;
+        const { count } = await supabase
+          .from("pioneer_group_members")
+          .select("id", { count: "exact", head: true })
+          .eq("group_id", g.id);
+        return { ...g, member_count: count ?? 0 };
+      })
+    );
+
+    let myGroupIds: string[] = [];
+    const uid = getUserId(req);
+    if (uid) {
+      const { data: memberships } = await supabase
+        .from("pioneer_group_members")
+        .select("group_id")
+        .eq("user_id", uid);
+      myGroupIds = (memberships ?? []).map((m: any) => m.group_id);
+    }
 
     return NextResponse.json({
       success: true,
-      data: { pins: processedPins, users: usersMap, groups: groups ?? [] }
+      data: { pins: processedPins, users: usersMap, groups: groupsWithCount, my_group_ids: myGroupIds }
     });
   } catch (err: any) {
     console.error("[pioneers GET]", err);

@@ -6,10 +6,12 @@
 }
 
 .header {
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
   color: var(--color-white);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -17,13 +19,52 @@
   margin-bottom: 14px;
   padding: 14px;
   box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  isolation: isolate;
+}
+
+.header::before,
+.header::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.header::before {
+  width: 180px;
+  height: 180px;
+  right: -50px;
+  top: -70px;
+  background: radial-gradient(circle, rgba(245, 166, 35, 0.24) 0%, rgba(245, 166, 35, 0) 70%);
+}
+
+.header::after {
+  width: 140px;
+  height: 140px;
+  left: -60px;
+  bottom: -70px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 68%);
 }
 
 .headerMain {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: flex-start;
   gap: 10px;
   min-width: 0;
+}
+
+.headerMain::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -6px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0));
 }
 
 .headerText {
@@ -31,20 +72,25 @@
 }
 
 .headerActions {
+  position: relative;
+  z-index: 1;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .walletChip {
   font-size: 12px;
   font-weight: 700;
-  color: var(--color-gold);
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: rgba(245, 166, 35, 0.12);
-  border: 1px solid rgba(245, 166, 35, 0.25);
+  color: rgba(255, 255, 255, 0.96);
+  padding: 7px 11px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .icon {
@@ -64,6 +110,7 @@
   margin: 3px 0 0;
   color: rgba(255, 255, 255, 0.7);
   font-size: 13px;
+  line-height: 1.4;
 }
 
 .heroBadge {
@@ -77,6 +124,7 @@
   font-size: 11px;
   font-weight: 700;
   margin-bottom: 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 .introHero {
@@ -227,6 +275,7 @@
 .tabs {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .tab {
@@ -400,6 +449,8 @@
   z-index: 1000;
   padding: 16px;
   overflow-y: auto;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .modal {
@@ -418,6 +469,201 @@
   font-weight: 800;
   color: var(--color-text);
   margin-bottom: 14px;
+}
+
+/* ── Create Escrow Deal — Premium Modal ── */
+.createModal {
+  max-width: 440px;
+  width: 100%;
+  max-height: 90vh;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(245, 166, 35, 0.2);
+  box-shadow: 0 20px 50px rgba(15, 52, 96, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  animation: createModalIn 0.3s var(--supa-ease, ease-out) both;
+}
+
+@keyframes createModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.createModalHeader {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  color: var(--color-white);
+  padding: 24px 20px;
+  text-align: center;
+  position: relative;
+}
+
+.createModalHeader::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.createModalIcon {
+  font-size: 40px;
+  line-height: 1;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+}
+
+.createModalBadge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  background: rgba(245, 166, 35, 0.18);
+  border: 1px solid rgba(245, 166, 35, 0.4);
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin-bottom: 12px;
+}
+
+.createModalTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-white);
+}
+
+.createModalSub {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.4;
+}
+
+.createModalBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.createModalFooter {
+  flex-shrink: 0;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 16px 20px 20px;
+  background: rgba(0, 0, 0, 0.02);
+  border-top: 1px solid var(--color-border);
+}
+
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formGroup:last-of-type {
+  margin-bottom: 0;
+}
+
+.formLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+.formLabelOpt {
+  font-weight: 500;
+  color: var(--color-text-light);
+}
+
+.feeNote {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 12px;
+  line-height: 1.4;
+}
+
+.createModal .input,
+.createModal .textarea {
+  width: 100%;
+  margin-bottom: 0;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  padding: 12px 14px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.createModal .textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.createModal .input:focus,
+.createModal .textarea:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: var(--supa-focus-ring);
+}
+
+.amountRow {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.amountInput {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.amountInput:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: var(--supa-focus-ring);
+}
+
+.currencySelect {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  min-width: 90px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.currencySelect:focus {
+  outline: none;
+  border-color: var(--color-gold);
 }
 
 .modalClose {
@@ -453,6 +699,17 @@
 .inputRow .input {
   flex: 1;
   margin-bottom: 0;
+}
+
+.currencyPreview {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .select {
@@ -606,4 +863,96 @@
   background: rgba(255, 255, 255, 0.03);
   border-radius: 10px;
   margin-bottom: 10px;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 12px 10px calc(var(--bottomnav-h, 64px) + 20px + env(safe-area-inset-bottom));
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .headerMain {
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .icon {
+    font-size: 26px;
+  }
+
+  .headerText {
+    flex: 1;
+  }
+
+  .heroBadge {
+    margin-bottom: 6px;
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+
+  .title {
+    font-size: 20px;
+    line-height: 1.15;
+  }
+
+  .sub {
+    font-size: 12px;
+    line-height: 1.35;
+    margin-top: 4px;
+  }
+
+  .headerActions {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .walletChip {
+    font-size: 11px;
+    padding: 5px 9px;
+  }
+
+  .btnPrimary {
+    min-height: 38px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .section {
+    padding: 12px;
+  }
+
+  .filterRow {
+    align-items: flex-start;
+  }
+
+  .tabs {
+    width: 100%;
+  }
+
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 7px 8px;
+    font-size: 11px;
+  }
+
+  .currencyPreview {
+    padding: 10px 10px;
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btnPrimary:hover:not(:disabled) {
+    transform: none;
+    filter: none;
+  }
 }

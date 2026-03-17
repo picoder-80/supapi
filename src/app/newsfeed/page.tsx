@@ -4,7 +4,9 @@ export const dynamic = "force-dynamic";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import heroStyles from "@/styles/feed-hero.module.css";
 import styles from "./page.module.css";
+import StatusCardActions from "@/components/feed/StatusCardActions";
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
 
@@ -13,6 +15,9 @@ interface StatusPost {
   user_id: string;
   body: string;
   created_at: string;
+  like_count?: number;
+  comment_count?: number;
+  is_liked?: boolean;
   user?: { username: string; display_name: string | null; avatar_url: string | null };
 }
 
@@ -42,6 +47,13 @@ export default function NewsfeedPage() {
     fetchFeed();
   }, [user?.id]);
 
+  // Refresh when user returns to tab (e.g. from SupaSpace or another tab)
+  useEffect(() => {
+    const onVisible = () => { if (user && document.visibilityState === "visible") fetchFeed(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [user?.id]);
+
   const handlePost = async () => {
     const text = statusText.trim();
     if (!text || !user || !token()) return;
@@ -62,15 +74,32 @@ export default function NewsfeedPage() {
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerTop}>
-          <h1 className={styles.title}>📰 Newsfeed</h1>
-          <div className={styles.headerSub}>Status updates from pioneers you follow</div>
+    <div className={heroStyles.page}>
+      <div className={heroStyles.header}>
+        <div className={heroStyles.heroBg} aria-hidden />
+        <div className={heroStyles.headerInner}>
+          <div className={heroStyles.headerTop}>
+            <div className={heroStyles.titleRow}>
+              <h1 className={heroStyles.title}>Newsfeed</h1>
+              {user && (
+                <button
+                  type="button"
+                  className={`${heroStyles.refreshBtn} ${loading ? heroStyles.refreshBtnLoading : ""}`}
+                  onClick={() => fetchFeed()}
+                  disabled={loading}
+                  aria-label="Refresh feed"
+                >
+                  <span className={heroStyles.refreshIcon} aria-hidden>↻</span>
+                  <span className={heroStyles.refreshLabel}>Refresh</span>
+                </button>
+              )}
+            </div>
+            <p className={heroStyles.headerSub}>Status updates from pioneers you follow</p>
+          </div>
         </div>
       </div>
 
-      <div className={styles.body}>
+      <div className={heroStyles.body}>
         {user ? (
           <div className={styles.createBox}>
             <div className={styles.createRow}>
@@ -129,14 +158,30 @@ export default function NewsfeedPage() {
                     </Link>
                     <div className={styles.statusMeta}>
                       <Link href={`/supaspace/${p.user?.username ?? ""}`} className={styles.statusName}>
-                        {p.user?.display_name ?? p.user?.username ?? "?"}
+                        @{p.user?.username ?? "?"}
                       </Link>
                       <span className={styles.statusTime}>
-                        {new Date(p.created_at).toLocaleDateString(undefined, { dateStyle: "short", timeStyle: "short" })}
+                        {new Date(p.created_at).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
                       </span>
                     </div>
                   </div>
                   <div className={styles.statusBody}>{p.body}</div>
+                  {user && (
+                    <StatusCardActions
+                      postId={p.id}
+                      isOwner={p.user_id === user.id}
+                      likeCount={p.like_count ?? 0}
+                      commentCount={p.comment_count ?? 0}
+                      isLiked={p.is_liked ?? false}
+                      body={p.body}
+                      onLike={() => setFeed((prev) => prev.map((x) => x.id === p.id ? { ...x, is_liked: true, like_count: (x.like_count ?? 0) + 1 } : x))}
+                      onUnlike={() => setFeed((prev) => prev.map((x) => x.id === p.id ? { ...x, is_liked: false, like_count: Math.max(0, (x.like_count ?? 1) - 1) } : x))}
+                      onDelete={() => setFeed((prev) => prev.filter((x) => x.id !== p.id))}
+                      onEdit={(newBody) => setFeed((prev) => prev.map((x) => x.id === p.id ? { ...x, body: newBody } : x))}
+                      onRefresh={fetchFeed}
+                      token={token}
+                    />
+                  )}
                 </div>
               ))}
             </div>

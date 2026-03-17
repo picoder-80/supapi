@@ -8,7 +8,7 @@ import { createPiPayment, getApiBase } from "@/lib/pi/sdk";
 interface PaymentOptions {
   amountPi:    number;
   memo:        string;
-  type:        "listing" | "gig" | "course" | "stay" | "game" | "supapod_tip";
+  type:        "listing" | "gig" | "course" | "stay" | "game" | "supapod_tip" | "supascrow";
   referenceId: string;
   metadata?:   Record<string, unknown>;
   onSuccess?:  (paymentId: string, txid: string) => void;

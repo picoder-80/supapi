@@ -21,7 +21,9 @@ export type AdminPermission =
   | "admin.payments.trace"
   | "admin.export.data"
   | "admin.supascrow.read"
-  | "admin.supascrow.write";
+  | "admin.supascrow.write"
+  | "admin.supachat.read"
+  | "admin.supachat.write";
 
 export const PERMISSIONS_BY_ROLE: Record<AdminRole, AdminPermission[]> = {
   super_admin: [
@@ -46,6 +48,8 @@ export const PERMISSIONS_BY_ROLE: Record<AdminRole, AdminPermission[]> = {
     "admin.export.data",
     "admin.supascrow.read",
     "admin.supascrow.write",
+    "admin.supachat.read",
+    "admin.supachat.write",
   ],
   admin: [
     "admin.settings.read",
@@ -68,6 +72,8 @@ export const PERMISSIONS_BY_ROLE: Record<AdminRole, AdminPermission[]> = {
     "admin.export.data",
     "admin.supascrow.read",
     "admin.supascrow.write",
+    "admin.supachat.read",
+    "admin.supachat.write",
   ],
   account_admin: [
     "admin.settings.read",
@@ -80,6 +86,7 @@ export const PERMISSIONS_BY_ROLE: Record<AdminRole, AdminPermission[]> = {
     "admin.referral.read",
     "admin.payments.trace",
     "admin.supascrow.read",
+    "admin.supachat.read",
     "admin.export.data",
   ],
   staff_admin: [
@@ -94,6 +101,8 @@ export const PERMISSIONS_BY_ROLE: Record<AdminRole, AdminPermission[]> = {
     "admin.locator.write",
     "admin.supascrow.read",
     "admin.supascrow.write",
+    "admin.supachat.read",
+    "admin.supachat.write",
   ],
   marketing_admin: [
     "admin.settings.read",
@@ -137,6 +146,8 @@ export function getPermissionLabel(permission: AdminPermission): string {
     "admin.export.data": "Export admin data",
     "admin.supascrow.read": "View SupaScrow deals and disputes",
     "admin.supascrow.write": "Resolve SupaScrow disputes (release/refund)",
+    "admin.supachat.read": "View SupaChat admin and commission",
+    "admin.supachat.write": "Manage SupaChat transfer commission",
   };
   return map[permission];
 }

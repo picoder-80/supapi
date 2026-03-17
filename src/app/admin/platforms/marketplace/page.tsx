@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import AdminPageHero from "@/components/admin/AdminPageHero";
 import styles from "./page.module.css";
 
 interface Stats {
@@ -49,21 +50,18 @@ export default function MarketplaceAdminPage() {
   }, [adminFetch]);
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <span className={styles.platformIcon}>🛍️</span>
-          <div>
-            <h1 className={styles.title}>SupaMarket</h1>
-            <p className={styles.sub}>Pi-powered buy & sell platform</p>
-          </div>
+    <div className="adminPage">
+      <AdminPageHero
+        icon="🛍️"
+        title="SupaMarket"
+        subtitle="Pi-powered buy & sell platform"
+        showBadge
+      />
+      <div className="adminSection">
+        <div className="adminSectionRow">
+          <h2 className="adminSectionTitle"><span className="adminSectionIcon">🛍️</span> Overview</h2>
+          <Link href="/admin/supamarket" className="adminSectionLink">Full Admin Panel →</Link>
         </div>
-        <div className={styles.headerActions}>
-          <Link href="/admin/supamarket" className={styles.fullAdminBtn}>Full Admin Panel →</Link>
-          <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.topBackBtn}`}>Back to Dashboard</Link>
-        </div>
-      </div>
-
       {/* Stats */}
       {loading ? (
         <div className={styles.loadingRow}>
@@ -151,9 +149,10 @@ export default function MarketplaceAdminPage() {
         ✅ SupaMarket is <strong>LIVE</strong> — Full admin panel available at{" "}
         <Link href="/admin/supamarket" className={styles.statusLink}>/admin/supamarket</Link>
       </div>
+      </div>
 
-      <div className={styles.quickLinks}>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>Back to Dashboard</Link>
+      <div className="adminQuickLinks">
+        <Link href="/admin/dashboard" className="adminBackBtn">Back to Dashboard</Link>
       </div>
     </div>
   );

@@ -18,7 +18,7 @@ const MY_PI_DASHBOARD: AdminNavItem = { href: "/dashboard", icon: "🪐", label:
 
 const MARKETPLACE: AdminNavItem = { href: "/admin/supamarket#overview", icon: "🛍️", label: "SupaMarket", status: "live" };
 const GIGS: AdminNavItem = { href: "/admin/platforms/supaskil", icon: "💼", label: "SupaSkil", status: "soon" };
-const ACADEMY: AdminNavItem = { href: "/admin/platforms/academy", icon: "📚", label: "SupaDemy", status: "soon" };
+const ACADEMY: AdminNavItem = { href: "/admin/platforms/supademy", icon: "📚", label: "SupaDemy", status: "soon" };
 const STAY: AdminNavItem = { href: "/admin/platforms/supastay", icon: "🏡", label: "SupaStay", status: "soon" };
 const ARCADE: AdminNavItem = { href: "/admin/platforms/supanova", icon: "🎮", label: "SupaNova", status: "soon" };
 const NEWSFEED: AdminNavItem = { href: "/admin/platforms/newsfeed", icon: "📰", label: "Newsfeed", status: "soon" };
@@ -31,6 +31,7 @@ const PI_VALUE: AdminNavItem = { href: "/admin/platforms/pi-value", icon: "📈"
 const CLASSIFIEDS: AdminNavItem = { href: "/admin/platforms/supasifieds", icon: "📋", label: "Supasifieds", status: "soon" };
 const MYSPACE: AdminNavItem = { href: "/admin/platforms/supaspace", icon: "🪐", label: "SupaSpace", status: "soon" };
 const SUPAPETS: AdminNavItem = { href: "/admin/platforms/supapets", icon: "🐾", label: "SupaPets", status: "soon" };
+const SUPACHAT: AdminNavItem = { href: "/admin/platforms/supachat", icon: "💬", label: "SupaChat", status: "live" };
 const SUPASCROW: AdminNavItem = { href: "/admin/platforms/supascrow", icon: "🛡️", label: "SupaScrow", status: "live" };
 const SUPAPOD: AdminNavItem = { href: "/admin/platforms/supapod", icon: "🎙️", label: "SupaPod", status: "soon" };
 
@@ -52,6 +53,7 @@ export const SIDEBAR_PLATFORM_NAV: AdminNavItem[] = [
   CLASSIFIEDS,
   MYSPACE,
   SUPAPETS,
+  SUPACHAT,
   SUPASCROW,
   SUPAPOD,
 ];
@@ -81,6 +83,7 @@ export const DASHBOARD_PLATFORM_LINKS: AdminNavItem[] = [
   CLASSIFIEDS,
   MYSPACE,
   SUPAPETS,
+  SUPACHAT,
   SUPASCROW,
   SUPAPOD,
 ];

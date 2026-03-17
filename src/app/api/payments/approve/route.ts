@@ -14,7 +14,7 @@ import * as R from "@/lib/api";
 
 const schema = z.object({
   paymentId:   z.string().min(1),
-  type:        z.enum(["listing", "gig", "course", "stay", "game", "supapod_tip"]),
+  type:        z.enum(["listing", "gig", "course", "stay", "game", "supapod_tip", "supascrow"]),
   referenceId: z.string().min(1),
   amountPi:    z.number().positive(),
   memo:        z.string(),

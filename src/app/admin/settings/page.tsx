@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import styles from "./page.module.css";
+import AdminPageHero from "@/components/admin/AdminPageHero";
 
 type AdminItem = {
   id: string;
@@ -145,94 +145,89 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerMain}>
-          <span className={styles.icon}>⚙️</span>
-          <div>
-            <h1 className={styles.title}>Admin Settings</h1>
-            <p className={styles.sub}>Manage security controls, update passwords, and provision admin accounts</p>
-          </div>
-        </div>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.topBackBtn}`}>Back to Dashboard</Link>
-      </div>
+    <div className="adminPage">
+      <AdminPageHero
+        icon="⚙️"
+        title="Admin Settings"
+        subtitle="Manage security controls, update passwords, and provision admin accounts"
+      />
 
-      {!!msg && <div className={styles.msg}>{msg}</div>}
+      {!!msg && <div className="adminMsg">{msg}</div>}
 
       {loading ? (
-        <div className={styles.empty}>Loading settings...</div>
+        <div className="adminLoading">Loading settings...</div>
       ) : (
         <>
-          <div className={styles.card}>
-            <div className={styles.cardTitle}>Your Admin Account</div>
-            <div className={styles.kvRow}><span>Username</span><strong>@{data?.me?.username ?? "—"}</strong></div>
-            <div className={styles.kvRow}><span>Email</span><strong>{data?.me?.email ?? "—"}</strong></div>
-            <div className={styles.kvRow}><span>Role</span><strong>{data?.me?.role_label ?? "—"}</strong></div>
-            <div className={styles.kvRow}><span>Created</span><strong>{fmtDate(data?.me?.created_at)}</strong></div>
+          <div className="adminContentCard">
+            <div className="adminContentCardTitle">Your Admin Account</div>
+            <div className="adminKvRow"><span>Username</span><strong>@{data?.me?.username ?? "—"}</strong></div>
+            <div className="adminKvRow"><span>Email</span><strong>{data?.me?.email ?? "—"}</strong></div>
+            <div className="adminKvRow"><span>Role</span><strong>{data?.me?.role_label ?? "—"}</strong></div>
+            <div className="adminKvRow"><span>Created</span><strong>{fmtDate(data?.me?.created_at)}</strong></div>
           </div>
 
-          <div className={styles.card}>
-            <div className={styles.cardTitle}>Change Password</div>
-            <div className={styles.formGrid}>
+          <div className="adminContentCard">
+            <div className="adminContentCardTitle">Change Password</div>
+            <div className="adminFormGrid">
               <input
-                className={styles.input}
+                className="adminInput"
                 type="password"
                 placeholder="Current password"
                 value={pass.current_password}
                 onChange={(e) => setPass((p) => ({ ...p, current_password: e.target.value }))}
               />
               <input
-                className={styles.input}
+                className="adminInput"
                 type="password"
                 placeholder="New password (min 8 chars)"
                 value={pass.new_password}
                 onChange={(e) => setPass((p) => ({ ...p, new_password: e.target.value }))}
               />
               <input
-                className={styles.input}
+                className="adminInput"
                 type="password"
                 placeholder="Confirm new password"
                 value={pass.confirm_password}
                 onChange={(e) => setPass((p) => ({ ...p, confirm_password: e.target.value }))}
               />
             </div>
-            <button className={styles.primaryBtn} disabled={savingPass} onClick={changePassword}>
+            <button className="adminPrimaryBtn" disabled={savingPass} onClick={changePassword}>
               {savingPass ? "Updating..." : "Update Password"}
             </button>
           </div>
 
           {data?.capabilities?.can_create_admin && (
-            <div className={styles.card}>
-              <div className={styles.cardTitle}>Create Admin Account</div>
-              <div className={styles.formGrid}>
+            <div className="adminContentCard">
+              <div className="adminContentCardTitle">Create Admin Account</div>
+              <div className="adminFormGrid">
                 <input
-                  className={styles.input}
+                  className="adminInput"
                   placeholder="Username"
                   value={createForm.username}
                   onChange={(e) => setCreateForm((p) => ({ ...p, username: e.target.value }))}
                 />
                 <input
-                  className={styles.input}
+                  className="adminInput"
                   placeholder="Display name (optional)"
                   value={createForm.display_name}
                   onChange={(e) => setCreateForm((p) => ({ ...p, display_name: e.target.value }))}
                 />
                 <input
-                  className={styles.input}
+                  className="adminInput"
                   type="email"
                   placeholder="Email"
                   value={createForm.email}
                   onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))}
                 />
                 <input
-                  className={styles.input}
+                  className="adminInput"
                   type="password"
                   placeholder="Temporary password"
                   value={createForm.password}
                   onChange={(e) => setCreateForm((p) => ({ ...p, password: e.target.value }))}
                 />
                 <select
-                  className={styles.input}
+                  className="adminInput adminSelect"
                   value={createForm.admin_role}
                   onChange={(e) => setCreateForm((p) => ({ ...p, admin_role: e.target.value }))}
                 >
@@ -241,19 +236,19 @@ export default function AdminSettingsPage() {
                   ))}
                 </select>
               </div>
-              <button className={styles.primaryBtn} disabled={savingCreate} onClick={createAdmin}>
+              <button className="adminPrimaryBtn" disabled={savingCreate} onClick={createAdmin}>
                 {savingCreate ? "Creating..." : "Create Admin"}
               </button>
             </div>
           )}
 
-          <div className={styles.card}>
-            <div className={styles.cardTitle}>Current Admin Accounts</div>
+          <div className="adminContentCard">
+            <div className="adminContentCardTitle">Current Admin Accounts</div>
             {!data?.admins?.length ? (
-              <div className={styles.empty}>No admin accounts found.</div>
+              <div className="adminEmpty">No admin accounts found.</div>
             ) : (
-              <div className={styles.tableWrap}>
-                <table className={styles.table}>
+              <div className="adminTableWrap">
+                <table className="adminTable">
                   <thead>
                     <tr>
                       <th>Username</th>
@@ -279,8 +274,8 @@ export default function AdminSettingsPage() {
             )}
           </div>
 
-          <div className={styles.quickLinks}>
-            <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>Back to Dashboard</Link>
+          <div className="adminQuickLinks">
+            <Link href="/admin/dashboard" className="adminBackBtn">Back to Dashboard</Link>
           </div>
         </>
       )}

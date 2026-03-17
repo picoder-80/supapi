@@ -16,9 +16,10 @@ interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
+  replyTo?: string;
 }
 
-async function sendEmail({ to, subject, html }: SendEmailOptions) {
+async function sendEmail({ to, subject, html, replyTo }: SendEmailOptions) {
   try {
     const resend = getResend();
     const { data, error } = await resend.emails.send({
@@ -26,6 +27,7 @@ async function sendEmail({ to, subject, html }: SendEmailOptions) {
       to,
       subject,
       html,
+      ...(replyTo && { reply_to: replyTo }),
     });
 
     if (error) {

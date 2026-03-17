@@ -6,6 +6,12 @@ import styles from "./PublicPlatformFrame.module.css";
 
 const PLATFORM_PREFIXES = [
   "/about",
+  "/contact",
+  "/faq",
+  "/privacy",
+  "/disclaimer",
+  "/returns-refunds",
+  "/terms",
   "/supamarket",
   "/supaskil",
   "/supademy",

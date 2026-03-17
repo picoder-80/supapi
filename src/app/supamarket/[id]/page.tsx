@@ -15,7 +15,7 @@ interface Listing {
   images: string[]; stock: number; status: string; location: string;
   views: number; likes: number; created_at: string; type: string;
   liked?: boolean;
-  seller: { id: string; username: string; display_name: string | null; avatar_url: string | null; kyc_status: string; created_at: string };
+  seller: { id: string; username: string; display_name: string | null; avatar_url: string | null; kyc_status: string; created_at: string; rating_avg?: number; rating_count?: number; sales_count?: number };
 }
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
@@ -400,7 +400,12 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                   {listing.seller.display_name ?? listing.seller.username}
                   {listing.seller.kyc_status === "verified" && <span className={styles.kycBadge}> ✅</span>}
                 </div>
-                <div className={styles.sellerMeta}>★ 5.0 · 0 sales</div>
+                <div className={styles.sellerMeta}>
+                  ★ {(listing.seller.rating_avg ?? 0) > 0 ? (listing.seller.rating_avg ?? 0).toFixed(1) : "—"}
+                  {(listing.seller.rating_count ?? 0) > 0 && ` (${listing.seller.rating_count} ${(listing.seller.rating_count ?? 0) === 1 ? "review" : "reviews"})`}
+                  {" · "}
+                  {(listing.seller.sales_count ?? 0)} {(listing.seller.sales_count ?? 0) === 1 ? "sale" : "sales"}
+                </div>
                 <div className={styles.sellerSub}>@{listing.seller.username}</div>
               </div>
               <span className={styles.viewShopBtn}>View Profile</span>

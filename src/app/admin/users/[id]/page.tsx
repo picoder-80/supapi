@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import AdminPageHero from "@/components/admin/AdminPageHero";
 import styles from "./page.module.css";
 
 interface UserDetail {
@@ -74,20 +75,15 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
   const isBanned = user.role === "banned";
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerMain}>
-          <span className={styles.icon}>👤</span>
-          <div>
-            <h1 className={styles.title}>User Detail</h1>
-            <p className={styles.sub}>Review account profile, activity, and moderation status</p>
-          </div>
-        </div>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.topBackBtn}`}>Back to Dashboard</Link>
-      </div>
+    <div className="adminPage">
+      <AdminPageHero
+        icon="👤"
+        title="User Detail"
+        subtitle="Review account profile, activity, and moderation status"
+      />
 
-      <div className={styles.quickLinks}>
-        <Link href="/admin/users" className={styles.secondaryBtn}>Back to Users</Link>
+      <div className="adminQuickLinks">
+        <Link href="/admin/users" className="adminBackBtn">Back to Users</Link>
       </div>
 
       {msg && <div className={styles.msgBanner}>{msg}</div>}
@@ -222,8 +218,8 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
         </div>
       )}
 
-      <div className={styles.quickLinks}>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>Back to Dashboard</Link>
+      <div className="adminQuickLinks">
+        <Link href="/admin/dashboard" className="adminBackBtn">Back to Dashboard</Link>
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await supabase
     .from("businesses")
-    .select("id,name,category,description,address,city,state,country,lat,lng,phone,website,pi_wallet,image_url,status,verified,avg_rating,review_count,created_at,updated_at")
+    .select("id,name,category,description,address,city,state,country,lat,lng,phone,website,pi_wallet,image_url,images,status,verified,avg_rating,review_count,opening_hours,created_at,updated_at")
     .eq("owner_id", user.userId)
     .order("created_at", { ascending: false });
 

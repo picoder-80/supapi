@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import AdminPageHero from "@/components/admin/AdminPageHero";
 import styles from "./page.module.css";
 
 interface TreasuryResponse {
@@ -168,19 +169,14 @@ export default function PlatformAdminPage() {
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerMain}>
-          <span className={styles.icon}>💰</span>
-          <div>
-            <h1 className={styles.title}>Treasury Wallet</h1>
-            <p className={styles.sub}>Monitor commission health, manage payout queues, and run treasury operations</p>
-          </div>
-        </div>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.topBackBtn}`}>Back to Dashboard</Link>
-      </div>
+    <div className="adminPage">
+      <AdminPageHero
+        icon="💰"
+        title="Treasury Wallet"
+        subtitle="Monitor commission health, manage payout queues, and run treasury operations"
+      />
 
-      <div className={styles.card}>
+      <div className="adminSection">
         <div className={styles.topRow}>
           <div className={styles.periodWrap}>
             <button className={`${styles.periodBtn} ${period==="week" ? styles.periodBtnActive : ""}`} onClick={() => setPeriod("week")}>7d</button>
@@ -292,8 +288,8 @@ export default function PlatformAdminPage() {
         </div>
       </div>
 
-      <div className={styles.quickLinks}>
-        <Link href="/admin/dashboard" className={`${styles.backBtn} ${styles.bottomBackBtn}`}>Back to Dashboard</Link>
+      <div className="adminQuickLinks">
+        <Link href="/admin/dashboard" className="adminBackBtn">Back to Dashboard</Link>
       </div>
     </div>
   );
