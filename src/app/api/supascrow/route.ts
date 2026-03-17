@@ -437,20 +437,20 @@ export async function POST(req: NextRequest) {
             }
           }
         }
-        if (resolution === "refund_to_buyer" && amountRounded > 0) {
+        if (resolution === "refund_to_buyer" && grossRounded > 0) {
           if (deal.currency === "sc") {
             await supabase.from("supapi_credits").upsert({ user_id: deal.buyer_id }, { onConflict: "user_id", ignoreDuplicates: true });
             const { data: w } = await supabase.from("supapi_credits").select("balance, total_earned").eq("user_id", deal.buyer_id).single();
-            const next = (Number(w?.balance ?? 0)) + amountRounded;
-            await supabase.from("supapi_credits").update({ balance: next, total_earned: Number(w?.total_earned ?? 0) + amountRounded, updated_at: new Date().toISOString() }).eq("user_id", deal.buyer_id);
-            await supabase.from("credit_transactions").insert({ user_id: deal.buyer_id, type: "earn", activity: "supascrow_refund_admin", amount: amountRounded, balance_after: next, note: `SupaScrow refund #${dealId.slice(0, 8)}` });
+            const next = (Number(w?.balance ?? 0)) + grossRounded;
+            await supabase.from("supapi_credits").update({ balance: next, total_earned: Number(w?.total_earned ?? 0) + grossRounded, updated_at: new Date().toISOString() }).eq("user_id", deal.buyer_id);
+            await supabase.from("credit_transactions").insert({ user_id: deal.buyer_id, type: "earn", activity: "supascrow_refund_admin", amount: grossRounded, balance_after: next, note: `SupaScrow refund #${dealId.slice(0, 8)}` });
           } else if (deal.currency === "pi" && isOwnerTransferConfigured()) {
             const { data: buyer } = await supabase.from("users").select("pi_uid, wallet_address").eq("id", deal.buyer_id).single();
             const b = buyer as { pi_uid?: string; wallet_address?: string } | null;
             const uid = b?.pi_uid?.trim();
             const wallet = b?.wallet_address?.trim();
             if (uid || wallet) {
-              const tx = await executeOwnerTransfer({ amountPi: amountRounded, recipientUid: uid || undefined, destinationWallet: wallet || undefined, note: `SupaScrow refund #${dealId.slice(0, 8)}` });
+              const tx = await executeOwnerTransfer({ amountPi: grossRounded, recipientUid: uid || undefined, destinationWallet: wallet || undefined, note: `SupaScrow refund #${dealId.slice(0, 8)}` });
               if (!tx.ok) {
                 await supabase.from("supascrow_disputes").update({ resolution: "pending", updated_at: new Date().toISOString() }).eq("id", disputeRow.id);
                 return NextResponse.json({ success: true, data: { message: "Dispute received. Pi refund failed — will be reviewed manually.", auto_resolved: false } });
