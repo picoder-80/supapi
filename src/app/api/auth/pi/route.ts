@@ -55,49 +55,36 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Extract KYC + wallet from Pi API response ───────────
-    // Pi API returns: credentials.kyc (bool or string), wallet_address (string)
-    // Pi /me API does NOT return KYC — must get from authResult directly
-    // authResult.user has KYC data when "payments" scope is requested
+    // Pi may return these in authResult.user, authResult, or meData — structure varies by Pi SDK version
     const authUser: any = parsed.data.authResult?.user ?? {};
     const authResultAny: any = authResult;
+
+    // Deep search for KYC — check common paths
     const kycRaw =
-      authUser.kyc_verified ??
-      authUser.kyc ??
-      authUser.kyc_status ??
-      authUser.credentials?.kyc ??
-      authResultAny.kyc_verified ??
-      authResultAny.kyc ??
-      authResultAny.kyc_status ??
-      authResultAny.credentials?.kyc ??
-      meData.credentials?.kyc ??
-      meData.kyc_verified ??
-      meData.kyc_status ??
-      meData.kyc ??
+      authUser.kyc_verified ?? authUser.kyc ?? authUser.kyc_status ?? authUser.credentials?.kyc ??
+      authResultAny.user?.kyc_verified ?? authResultAny.user?.kyc ?? authResultAny.user?.kyc_status ??
+      authResultAny.kyc_verified ?? authResultAny.kyc ?? authResultAny.kyc_status ?? authResultAny.credentials?.kyc ??
+      meData?.credentials?.kyc ?? meData?.kyc_verified ?? meData?.kyc_status ?? meData?.kyc ??
+      meData?.user?.kyc_verified ?? meData?.user?.kyc ?? meData?.user?.credentials?.kyc ??
       null;
 
-    // Debug log — shows what Pi actually returns
-    console.log("[Auth] authResult.user:", JSON.stringify(authUser));
-    console.log("[Auth] meData:", JSON.stringify(meData));
-    console.log("[Auth] kycRaw:", kycRaw, "type:", typeof kycRaw);
-    const kycStatus    = typeof kycRaw === "boolean"
+    // Deep search for wallet_address — Pi may nest it differently
+    const walletAddress =
+      authUser.wallet_address ?? authUser.walletAddress ?? authUser.credentials?.wallet_address ??
+      authResultAny.user?.wallet_address ?? authResultAny.user?.walletAddress ??
+      authResultAny.wallet_address ?? authResultAny.walletAddress ?? authResultAny.credentials?.wallet_address ??
+      meData?.wallet_address ?? meData?.walletAddress ?? meData?.credentials?.wallet_address ??
+      meData?.user?.wallet_address ?? meData?.user?.credentials?.wallet_address ??
+      null;
+
+    const kycStatus = typeof kycRaw === "boolean"
       ? (kycRaw ? "verified" : "unverified")
       : mapKycStatus(kycRaw as string | undefined);
 
-    // Wallet address — from authResult.user or meData
-    const walletAddress =
-      authUser.wallet_address ??
-      authUser.walletAddress ??
-      authUser.credentials?.wallet_address ??
-      authResultAny.wallet_address ??
-      authResultAny.walletAddress ??
-      authResultAny.credentials?.wallet_address ??
-      meData.wallet_address ??
-      meData.credentials?.wallet_address ??
-      null;
-
-    console.log("[Auth] walletAddress:", walletAddress);
-
-    console.log(`[Auth] uid=${piUser.uid} kyc=${kycStatus} wallet=${walletAddress}`);
+    // Log for debugging — Pi API structure can change
+    console.log("[Auth] Pi response — authResult.user:", JSON.stringify(authUser));
+    console.log("[Auth] Pi response — meData:", JSON.stringify(meData));
+    console.log("[Auth] Extracted — kyc:", kycStatus, "wallet:", walletAddress ? `${walletAddress.slice(0, 12)}...` : "empty");
 
     const supabase = await createAdminClient();
 

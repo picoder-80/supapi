@@ -19,8 +19,8 @@ type Deal = {
   buyer_id: string;
   seller_id: string;
   created_at: string;
-  buyer?: { id: string; username: string; display_name: string | null };
-  seller?: { id: string; username: string; display_name: string | null };
+  buyer?: { id: string; username: string; display_name: string | null; can_receive_pi?: boolean };
+  seller?: { id: string; username: string; display_name: string | null; can_receive_pi?: boolean };
 };
 
 type DealDetail = Deal & {
@@ -483,9 +483,20 @@ function SupaScrowPageInner() {
                 </button>
               )}
               {selectedDeal.status === "delivered" && selectedDeal.buyer_id === user?.id && (
-                <button className={styles.btnPrimary} onClick={() => runAction("release", { deal_id: selectedDeal.id })} disabled={busy}>
-                  Release Funds to Seller
-                </button>
+                <>
+                  {selectedDeal.currency === "pi" && !selectedDeal.seller?.can_receive_pi && (
+                    <div className={styles.piWarning} role="alert">
+                      <strong>Seller cannot receive Pi.</strong> They must sign in with Pi and activate their wallet before funds can be released.
+                    </div>
+                  )}
+                  <button
+                    className={styles.btnPrimary}
+                    onClick={() => runAction("release", { deal_id: selectedDeal.id })}
+                    disabled={busy || (selectedDeal.currency === "pi" && !selectedDeal.seller?.can_receive_pi)}
+                  >
+                    Release Funds to Seller
+                  </button>
+                </>
               )}
               {["created", "accepted"].includes(selectedDeal.status) && (
                 <button className={styles.btnSecondary} onClick={() => runAction("cancel", { deal_id: selectedDeal.id })} disabled={busy}>

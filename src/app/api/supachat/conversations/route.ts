@@ -29,10 +29,13 @@ export async function GET(req: NextRequest) {
   if (otherUserIds.length > 0) {
     const { data: users } = await supabase
       .from("users")
-      .select("id,username,display_name,avatar_url,last_seen")
+      .select("id,username,display_name,avatar_url,last_seen,pi_uid,wallet_address,wallet_verified")
       .in("id", otherUserIds);
     (users ?? []).forEach((u: any) => {
-      usersById[u.id] = { ...u, verified: false };
+      const { pi_uid, wallet_address, wallet_verified, ...rest } = u;
+      const hasPiUid = Boolean((pi_uid ?? "").trim());
+      const hasActivatedWallet = Boolean((wallet_address ?? "").trim()) || Boolean(wallet_verified);
+      usersById[u.id] = { ...rest, verified: false, can_receive_pi: hasPiUid && hasActivatedWallet };
     });
 
     const now = new Date().toISOString();

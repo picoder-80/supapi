@@ -423,6 +423,11 @@ export default function SupaChatDMPage() {
                   rows={3}
                 />
               </div>
+              {!otherUser?.can_receive_pi && (
+                <div className={scrowStyles.piWarning} role="alert">
+                  <strong>Recipient cannot receive Pi.</strong> They must sign in with Pi and activate their wallet to receive payments.
+                </div>
+              )}
               {sendPiCommissionPct != null && (
                 <p className={scrowStyles.feeNote}>* Note: Admin fees ({sendPiCommissionPct}%) are deducted from this transfer.</p>
               )}
@@ -434,7 +439,7 @@ export default function SupaChatDMPage() {
               <button
                 className={scrowStyles.btnPrimary}
                 onClick={confirmSendPi}
-                disabled={sendPiSending || !sendPiAmount.trim() || Number(sendPiAmount) <= 0}
+                disabled={sendPiSending || !sendPiAmount.trim() || Number(sendPiAmount) <= 0 || !otherUser?.can_receive_pi}
               >
                 {sendPiSending ? "Opening..." : "Send π"}
               </button>

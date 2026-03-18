@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
+import KycBadge from "@/components/ui/KycBadge";
 import { CATEGORIES, CONDITIONS, BUYING_METHODS } from "@/lib/market/categories";
 import { ALL_COUNTRIES, getCountry } from "@/lib/market/countries";
 import styles from "./page.module.css";
@@ -388,7 +389,7 @@ function MarketPageContent() {
                       </div>
                       <span className={styles.sellerName}>
                         {l.seller?.display_name ?? l.seller?.username}
-                        {l.seller?.kyc_status === "verified" && " ✅"}
+                        {l.seller?.kyc_status === "verified" && <KycBadge size={14} />}
                       </span>
                       <span className={styles.cardTime}>{timeAgo(l.created_at)}</span>
                     </div>

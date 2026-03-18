@@ -76,12 +76,25 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
   }
 
-  // KYC is auto-managed from Pi auth sync; block manual admin override.
-  if ("kyc_status" in body) {
-    return NextResponse.json(
-      { success: false, error: "KYC status is auto-managed by Pi verification sync" },
-      { status: 400 }
-    );
+  // Admin can manually set KYC status (e.g. when Pi didn't return it but user proved verification)
+  if ("kyc_status" in body && typeof body.kyc_status === "string") {
+    if (!hasAdminPermission(auth.role, "admin.users.role_manage")) {
+      return NextResponse.json({ success: false, error: "Forbidden: no permission to update KYC" }, { status: 403 });
+    }
+    const val = body.kyc_status.trim().toLowerCase();
+    if (!["unverified", "pending", "verified"].includes(val)) {
+      return NextResponse.json({ success: false, error: "kyc_status must be unverified, pending, or verified" }, { status: 400 });
+    }
+    updates.kyc_status = val;
+    if (auth.userId) {
+      await logAdminAction({
+        adminUserId: auth.userId,
+        action: "user_kyc_update",
+        targetType: "user",
+        targetId: id,
+        detail: { kyc_status: val },
+      });
+    }
   }
 
   if (Object.keys(updates).length === 0) {

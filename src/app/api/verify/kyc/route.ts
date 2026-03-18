@@ -41,7 +41,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Failed to save" }, { status: 500 });
     }
 
-    // Update users table
+    // Update users table — only kyc_self_declared (NOT kyc_status) to avoid abuse.
+    // kyc_status "verified" requires Pi API or admin. Self-declare is for internal tracking only.
     await supabase
       .from("users")
       .update({ kyc_self_declared: true })

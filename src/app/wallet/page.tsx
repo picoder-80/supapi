@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
+import KycBadge from "@/components/ui/KycBadge";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 
@@ -596,7 +597,7 @@ export default function WalletPage() {
                         <div className={styles.referralInfo}>
                           <div className={styles.referralName}>
                             @{ref.referee?.username ?? "Pioneer"}
-                            {ref.referee?.kyc_status === "verified" && " ✅"}
+                            {ref.referee?.kyc_status === "verified" && <KycBadge size={14} />}
                           </div>
                           <div className={styles.referralTime}>{timeAgo(ref.created_at)}</div>
                         </div>

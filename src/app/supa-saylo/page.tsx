@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
+import KycBadge from "@/components/ui/KycBadge";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 
@@ -298,7 +299,7 @@ export default function SupaSayloPage() {
                         <div className={styles.postMeta}>
                           <Link href={`/supaspace/${author.username}`} className={styles.postAuthor}>
                             {author.display_name ?? author.username}
-                            {author.kyc_status === "verified" && <span className={styles.kyc}> ✅</span>}
+                            {author.kyc_status === "verified" && <span className={styles.kyc}><KycBadge size={14} /></span>}
                           </Link>
                           <span className={styles.postUsername}>@{author.username}</span>
                           <span className={styles.postDot}>·</span>

@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import KycBadge from "@/components/ui/KycBadge";
 import styles from "../../page.module.css";
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
@@ -78,7 +79,7 @@ export default function FollowersPage() {
                   <div className={styles.followListInfo}>
                     <div className={styles.followListName}>
                       {u.display_name ?? u.username}
-                      {u.kyc_status === "verified" && <span className={styles.kycBadge}>✅</span>}
+                      {u.kyc_status === "verified" && <span className={styles.kycBadge}><KycBadge size={14} /></span>}
                     </div>
                     <div className={styles.followListUsername}>@{u.username}</div>
                   </div>

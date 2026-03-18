@@ -85,7 +85,6 @@ export default function AdminDashboardPage() {
   const [scWallet, setScWallet] = useState<SCWalletData | null>(null);
   const [referralStats, setReferralStats] = useState<ReferralStatsData | null>(null);
   const [supaChatRevenue, setSupaChatRevenue] = useState<SupaChatRevenueData | null>(null);
-  const [a2uConfigured, setA2uConfigured] = useState<boolean | null>(null);
   const [period, setPeriod] = useState<"all" | "month" | "week">("all");
   const [loading,    setLoading]    = useState(true);
   const [msg, setMsg] = useState("");
@@ -125,15 +124,13 @@ export default function AdminDashboardPage() {
       safeFetch("/api/admin/sc-wallet?limit=8", token),
       safeFetch("/api/admin/referral?type=stats", token),
       safeFetch(`/api/admin/supachat/revenue?period=${period}`, token),
-      safeFetch("/api/admin/config/a2u", token),
     ])
-      .then(([t, sc, rs, sr, a2u]) => {
+      .then(([t, sc, rs, sr]) => {
       if (t?.success) setTreasury(t.data);
       else setMsg("Failed to load treasury.");
       if (sc?.success) setScWallet(sc.data);
       if (rs?.success) setReferralStats(rs.data);
       if (sr?.success) setSupaChatRevenue(sr.data);
-      if (a2u?.success) setA2uConfigured(a2u.data?.a2u_configured ?? false);
       })
       .finally(() => setLoading(false));
   }, [period]);
@@ -185,21 +182,6 @@ export default function AdminDashboardPage() {
           Live
         </div>
       </div>
-
-      {/* Pi A2U Status — Admin Tools */}
-      {a2uConfigured !== null && (
-        <div className={`${styles.a2uBanner} ${a2uConfigured ? styles.a2uBannerOk : styles.a2uBannerWarn}`}>
-          <span className={styles.a2uIcon}>{a2uConfigured ? "✅" : "⚠️"}</span>
-          <div>
-            <div className={styles.a2uTitle}>Pi A2U Payout</div>
-            <div className={styles.a2uSub}>
-              {a2uConfigured
-                ? "Aktif — Pi dihantar terus ke wallet penerima (SupaChat, SupaScrow, dll.)"
-                : "Tidak dikonfigurasi — Set PI_PAYOUT_API_URL dan PI_PAYOUT_API_KEY dalam .env"}
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className={styles.section}>
         <div className={styles.sectionRow}>
@@ -338,7 +320,7 @@ export default function AdminDashboardPage() {
         {!supaChatRevenue ? (
           <div className={styles.loading}>Loading SupaChat revenue...</div>
         ) : (
-          <>
+          <div className={styles.supaChatRevenueContent}>
             <div className={styles.referralGrid}>
               <div className={styles.treasuryCard}>
                 <div className={styles.treasuryLabel}>Total Revenue</div>
@@ -387,7 +369,7 @@ export default function AdminDashboardPage() {
                 ) : <div className={styles.empty}>No room revenue yet</div>}
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
 

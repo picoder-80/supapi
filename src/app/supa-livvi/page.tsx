@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
+import KycBadge from "@/components/ui/KycBadge";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 
@@ -250,7 +251,7 @@ export default function SupaLivviPage() {
                         <div className={styles.authorInfo}>
                           <span className={styles.authorName}>
                             {author.display_name ?? author.username}
-                            {author.kyc_status === "verified" && <span className={styles.kycBadge}> ✅</span>}
+                            {author.kyc_status === "verified" && <span className={styles.kycBadge}><KycBadge size={14} /></span>}
                           </span>
                           <span className={styles.authorMeta}>
                             {post.location && `📍 ${post.location} · `}{timeAgo(post.created_at)}
@@ -346,7 +347,7 @@ export default function SupaLivviPage() {
                     <div className={styles.authorInfo}>
                       <span className={styles.authorName}>
                         {author.display_name ?? author.username}
-                        {author.kyc_status === "verified" && <span className={styles.kycBadge}> ✅</span>}
+                        {author.kyc_status === "verified" && <span className={styles.kycBadge}><KycBadge size={14} /></span>}
                       </span>
                       <span className={styles.authorMeta}>{timeAgo(selectedPost.created_at)}</span>
                     </div>

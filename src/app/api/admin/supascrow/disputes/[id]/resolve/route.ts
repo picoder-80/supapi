@@ -86,11 +86,12 @@ export async function POST(
       await supabase.from("credit_transactions").insert({ user_id: deal.seller_id, type: "earn", activity: "supascrow_release_admin", amount: grossRounded, balance_after: next, note: `SupaScrow admin release #${deal.id.slice(0, 8)}` });
     }
     if (deal.currency === "pi" && grossRounded > 0 && isOwnerTransferConfigured()) {
-      const { data: seller } = await supabase.from("users").select("pi_uid, wallet_address").eq("id", deal.seller_id).single();
-      const s = seller as { pi_uid?: string; wallet_address?: string } | null;
+      const { data: seller } = await supabase.from("users").select("pi_uid, wallet_address, wallet_verified").eq("id", deal.seller_id).single();
+      const s = seller as { pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | null;
       const uid = s?.pi_uid?.trim();
       const wallet = s?.wallet_address?.trim();
-      if (uid || wallet) {
+      const hasActivatedWallet = !!wallet || !!s?.wallet_verified;
+      if (uid && hasActivatedWallet) {
         const tx = await executeOwnerTransfer({ amountPi: sellerPayout, recipientUid: uid || undefined, destinationWallet: wallet || undefined, note: `SupaScrow admin release #${deal.id.slice(0, 8)}` });
         if (!tx.ok) {
           return NextResponse.json({ success: false, error: tx.message ?? "Pi payout failed" }, { status: 502 });
@@ -105,7 +106,7 @@ export async function POST(
           });
         }
       } else {
-        return NextResponse.json({ success: false, error: "Seller has no wallet address" }, { status: 400 });
+        return NextResponse.json({ success: false, error: "Seller must sign in with Pi and activate their wallet to receive Pi." }, { status: 400 });
       }
     }
     await supabase.from("supascrow_deals").update({ status: "released", released_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", deal.id);

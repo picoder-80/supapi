@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import AdminPageHero from "@/components/admin/AdminPageHero";
+import KycBadge from "@/components/ui/KycBadge";
 import styles from "./page.module.css";
 
 interface User {
@@ -129,7 +130,7 @@ export default function UsersPage() {
                     {u.role}
                   </span>
                   {u.kyc_status === "verified" && (
-                    <span className={styles.kycTag}>KYC&apos;ed</span>
+                    <span className={styles.kycTag}><KycBadge size={12} /> KYC&apos;ed</span>
                   )}
                 </div>
                 <div className={styles.userSub}>{u.email ?? "—"} · Joined {new Date(u.created_at).toLocaleDateString()}</div>

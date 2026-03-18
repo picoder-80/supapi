@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useAuth } from "@/components/providers/AuthProvider";
+import KycBadge from "@/components/ui/KycBadge";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { isAdminRole } from "@/lib/admin/roles";
@@ -236,6 +237,11 @@ export default function DashboardPage() {
       </div>
 
       <div className={styles.body}>
+        {saveMsg && !activeSection && (
+          <div className={styles.saveMsg} style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10, background: saveMsg.startsWith("❌") ? "#fee2e2" : "#d1fae5", color: saveMsg.startsWith("❌") ? "#991b1b" : "#065f46" }}>
+            {saveMsg}
+          </div>
+        )}
 
         {isAdmin && (
           <Link href="/admin/dashboard" className={styles.adminBanner}>
@@ -268,6 +274,7 @@ export default function DashboardPage() {
               <div className={styles.profilePiId}>@{user.username}</div>
               <div className={styles.profileBadges}>
                 <span className={styles.badge}>🪐 Pioneer</span>
+                {profile.kyc_status === "verified" && <span className={styles.badge} style={{ background: "#27ae6022", color: "#27ae60", display: "inline-flex", alignItems: "center", gap: 4 }}><KycBadge size={12} /> KYC</span>}
                 {isAdmin && <span className={`${styles.badge} ${styles.badgeAdmin}`}>⚙️ Admin</span>}
               </div>
             </div>
@@ -303,6 +310,21 @@ export default function DashboardPage() {
             );
           })}
         </div>
+
+        {/* Pi wallet hint — when empty, user can't receive Pi */}
+        {!profile.wallet_address?.trim() && (
+          <div className={styles.section}>
+            <div className={styles.whatsNextCard} style={{ borderColor: "rgba(245,166,35,0.5)" }}>
+              <div className={styles.whatsNextIcon}>π</div>
+              <div className={styles.whatsNextText}>
+                Add your <strong>Pi Wallet Address</strong> to receive payments, tips, and escrow payouts. Open Dashboard → Pi Wallet Address, or sign in with Pi again after activating your wallet.
+              </div>
+              <button type="button" className={styles.whatsNextBtn} onClick={() => openSection("wallet")}>
+                Add Wallet Address →
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* What's Next — incomplete profile tips */}
         {pct < 100 && (

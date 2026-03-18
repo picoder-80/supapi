@@ -45,6 +45,24 @@ export async function POST(req: NextRequest) {
   const commissionPi = Number((amountPi * (commissionPct / 100)).toFixed(7));
   const netPi = Number((amountPi - commissionPi).toFixed(7));
 
+  // Pi A2U requires recipient to have pi_uid AND activated wallet. Check before creating transfer.
+  if (isOwnerTransferConfigured() && netPi > 0) {
+    const { data: receiver } = await supabase
+      .from("users")
+      .select("pi_uid, wallet_address, wallet_verified")
+      .eq("id", receiverId)
+      .single();
+    const r = receiver as { pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | null;
+    const uid = r?.pi_uid?.trim();
+    const hasActivatedWallet = !!(r?.wallet_address?.trim()) || !!r?.wallet_verified;
+    if (!uid || !hasActivatedWallet) {
+      return NextResponse.json({
+        success: false,
+        error: "Recipient must sign in with Pi and activate their wallet to receive payments.",
+      }, { status: 400 });
+    }
+  }
+
   const { data: transfer, error } = await supabase
     .from("supachat_transfers")
     .insert({

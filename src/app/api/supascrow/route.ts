@@ -81,17 +81,30 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: true });
 
     const partyIds = [...new Set([deal.buyer_id, deal.seller_id, ...(messages ?? []).map((m: { sender_id: string }) => m.sender_id)])];
-    const { data: users } = await supabase.from("users").select("id, username, display_name, avatar_url").in("id", partyIds);
+    const { data: users } = await supabase.from("users").select("id, username, display_name, avatar_url, pi_uid, wallet_address, wallet_verified").in("id", partyIds);
     const userMap = new Map((users ?? []).map((u: { id: string }) => [u.id, u]));
+
+    const toParty = (u: { id: string; username?: string; display_name?: string | null; avatar_url?: string | null; pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | undefined, id: string) => {
+      if (!u) return { id, username: "?", display_name: null, avatar_url: null, can_receive_pi: false };
+      const { pi_uid, wallet_address, wallet_verified, ...rest } = u;
+      const hasPiUid = !!(pi_uid && String(pi_uid).trim());
+      const hasActivatedWallet = !!(wallet_address && String(wallet_address).trim()) || !!wallet_verified;
+      return { ...rest, can_receive_pi: hasPiUid && hasActivatedWallet };
+    };
 
     const dealWithParties = {
       ...deal,
-      buyer: userMap.get(deal.buyer_id) ?? { id: deal.buyer_id, username: "?", display_name: null, avatar_url: null },
-      seller: userMap.get(deal.seller_id) ?? { id: deal.seller_id, username: "?", display_name: null, avatar_url: null },
+      buyer: toParty(userMap.get(deal.buyer_id) as { id: string; username?: string; display_name?: string | null; avatar_url?: string | null; pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | undefined, deal.buyer_id),
+      seller: toParty(userMap.get(deal.seller_id) as { id: string; username?: string; display_name?: string | null; avatar_url?: string | null; pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | undefined, deal.seller_id),
+    };
+    const toSender = (u: { id: string; username?: string; display_name?: string | null; avatar_url?: string | null; pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | undefined, id: string) => {
+      if (!u) return { id, username: "?", display_name: null, avatar_url: null };
+      const { pi_uid: _, wallet_address: __, wallet_verified: ___, ...rest } = u;
+      return rest;
     };
     const messagesWithSenders = (messages ?? []).map((m: { sender_id: string }) => ({
       ...m,
-      sender: userMap.get(m.sender_id) ?? { id: m.sender_id, username: "?", display_name: null, avatar_url: null },
+      sender: toSender(userMap.get(m.sender_id) as { id: string; username?: string; display_name?: string | null; avatar_url?: string | null; pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | undefined, m.sender_id),
     }));
 
     return NextResponse.json({
@@ -280,13 +293,14 @@ export async function POST(req: NextRequest) {
       }
 
       if (deal.currency === "pi" && grossRounded > 0) {
-        const { data: seller } = await supabase.from("users").select("pi_uid, wallet_address").eq("id", deal.seller_id).single();
-        const s = seller as { pi_uid?: string; wallet_address?: string } | null;
+        const { data: seller } = await supabase.from("users").select("pi_uid, wallet_address, wallet_verified").eq("id", deal.seller_id).single();
+        const s = seller as { pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | null;
         const uid = s?.pi_uid?.trim();
         const wallet = s?.wallet_address?.trim();
-        if (!uid && !wallet) {
+        const hasActivatedWallet = !!wallet || !!s?.wallet_verified;
+        if (!uid || !hasActivatedWallet) {
           return NextResponse.json(
-            { success: false, error: "Seller must sign in with Pi (pi_uid) or add wallet address before Pi can be released." },
+            { success: false, error: "Seller must sign in with Pi and activate their wallet before Pi can be released." },
             { status: 400 }
           );
         }
@@ -415,11 +429,12 @@ export async function POST(req: NextRequest) {
             await supabase.from("supapi_credits").update({ balance: next, total_earned: Number(w?.total_earned ?? 0) + grossRounded, updated_at: new Date().toISOString() }).eq("user_id", deal.seller_id);
             await supabase.from("credit_transactions").insert({ user_id: deal.seller_id, type: "earn", activity: "supascrow_release", amount: grossRounded, balance_after: next, note: `SupaScrow release #${dealId.slice(0, 8)}` });
           } else if (deal.currency === "pi" && isOwnerTransferConfigured()) {
-            const { data: seller } = await supabase.from("users").select("pi_uid, wallet_address").eq("id", deal.seller_id).single();
-            const s = seller as { pi_uid?: string; wallet_address?: string } | null;
+            const { data: seller } = await supabase.from("users").select("pi_uid, wallet_address, wallet_verified").eq("id", deal.seller_id).single();
+            const s = seller as { pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | null;
             const uid = s?.pi_uid?.trim();
             const wallet = s?.wallet_address?.trim();
-            if (uid || wallet) {
+            const hasActivatedWallet = !!wallet || !!s?.wallet_verified;
+            if (uid && hasActivatedWallet) {
               const tx = await executeOwnerTransfer({ amountPi: sellerPayout, recipientUid: uid || undefined, destinationWallet: wallet || undefined, note: `SupaScrow release #${dealId.slice(0, 8)}` });
               if (!tx.ok) {
                 await supabase.from("supascrow_disputes").update({ resolution: "pending", updated_at: new Date().toISOString() }).eq("id", disputeRow.id);
@@ -445,11 +460,12 @@ export async function POST(req: NextRequest) {
             await supabase.from("supapi_credits").update({ balance: next, total_earned: Number(w?.total_earned ?? 0) + grossRounded, updated_at: new Date().toISOString() }).eq("user_id", deal.buyer_id);
             await supabase.from("credit_transactions").insert({ user_id: deal.buyer_id, type: "earn", activity: "supascrow_refund_admin", amount: grossRounded, balance_after: next, note: `SupaScrow refund #${dealId.slice(0, 8)}` });
           } else if (deal.currency === "pi" && isOwnerTransferConfigured()) {
-            const { data: buyer } = await supabase.from("users").select("pi_uid, wallet_address").eq("id", deal.buyer_id).single();
-            const b = buyer as { pi_uid?: string; wallet_address?: string } | null;
+            const { data: buyer } = await supabase.from("users").select("pi_uid, wallet_address, wallet_verified").eq("id", deal.buyer_id).single();
+            const b = buyer as { pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | null;
             const uid = b?.pi_uid?.trim();
             const wallet = b?.wallet_address?.trim();
-            if (uid || wallet) {
+            const hasActivatedWallet = !!wallet || !!b?.wallet_verified;
+            if (uid && hasActivatedWallet) {
               const tx = await executeOwnerTransfer({ amountPi: grossRounded, recipientUid: uid || undefined, destinationWallet: wallet || undefined, note: `SupaScrow refund #${dealId.slice(0, 8)}` });
               if (!tx.ok) {
                 await supabase.from("supascrow_disputes").update({ resolution: "pending", updated_at: new Date().toISOString() }).eq("id", disputeRow.id);

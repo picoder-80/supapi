@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
+import KycBadge from "@/components/ui/KycBadge";
 import styles from "./page.module.css";
 
 /* Tab seragam dengan /supaspace/[username] */
@@ -251,7 +252,7 @@ export default function MySpacePage() {
         {user.kyc_status === "verified" && (
           <div className={styles.kycWrap}>
             <span className={`${styles.metaItem} ${styles.kycVerifiedPill}`}>
-              ✅ KYC Verified
+              <KycBadge size={14} /> KYC Verified
             </span>
           </div>
         )}

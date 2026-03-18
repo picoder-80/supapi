@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
+import KycBadge from "@/components/ui/KycBadge";
 import { useRouter } from "next/navigation";
 import { CountrySelect } from "@/components/CountrySelect";
 import styles from "./page.module.css";
@@ -429,7 +430,7 @@ export default function EndoroPage() {
                             </div>
                             <span className={styles.vehicleHostName}>
                               @{vehicle.host.username}
-                              {vehicle.host.kyc_status === "verified" && " ✅"}
+                              {vehicle.host.kyc_status === "verified" && <KycBadge size={14} />}
                             </span>
                             <span className={styles.vehicleHostTier} style={{ color: tier.color }}>
                               {tier.icon} {tier.label}

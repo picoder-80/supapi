@@ -8,6 +8,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useProfileOnline } from "@/components/providers/PresenceProvider";
 import SendPiModal from "@/components/supachat/SendPiModal";
 import ToastBanner from "@/components/ui/ToastBanner";
+import KycBadge from "@/components/ui/KycBadge";
 import styles from "../page.module.css";
 
 /* Susunan tab seragam dengan /supaspace: [1st], Reviews, Status, Reels, Live */
@@ -315,6 +316,7 @@ export default function PublicProfilePage() {
           senderId={me?.id}
           defaultNote={`Tip for @${username}`}
           redirectToDm
+          canReceivePi={!!profile?.can_receive_pi}
         />
       )}
       <header className={styles.publicTopBar}>
@@ -360,6 +362,12 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
+      {isOwnProfile && !profile?.can_receive_pi && (
+        <div className={styles.piReceiveBanner} role="alert">
+          <strong>Add your Pi wallet to receive payments.</strong> Go to <Link href="/dashboard" className={styles.piReceiveBannerLink}>Dashboard</Link> → Pi Wallet Address and add your address, or sign in with Pi again after activating your wallet.
+        </div>
+      )}
+
       {/* Profile Header — Online & @username bawah cover; actions, name, KYC, wallet, stats */}
       <div className={styles.profileHeader}>
         <div className={styles.headerBarRow}>
@@ -394,7 +402,7 @@ export default function PublicProfilePage() {
         {profile?.kyc_status === "verified" && (
           <div className={styles.kycWrap}>
             <span className={`${styles.metaItem} ${styles.kycVerifiedPill}`}>
-              ✅ KYC Verified
+              <KycBadge size={14} /> KYC Verified
             </span>
           </div>
         )}

@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
+import KycBadge from "@/components/ui/KycBadge";
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 
@@ -272,7 +273,7 @@ export default function HomePage() {
                     <div className={styles.feedUserInfo}>
                       <div className={styles.feedDisplayName}>
                         {p.display_name ?? p.username}
-                        {p.kyc_status === "verified" && <span className={styles.feedKyc}>✅</span>}
+                        {p.kyc_status === "verified" && <span className={styles.feedKyc}><KycBadge size={14} /></span>}
                       </div>
                       <div className={styles.feedUsername}>@{p.username}</div>
                     </div>

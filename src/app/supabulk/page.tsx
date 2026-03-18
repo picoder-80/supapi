@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
+import KycBadge from "@/components/ui/KycBadge";
 import { useRouter } from "next/navigation";
 import { CountrySelect } from "@/components/CountrySelect";
 import styles from "./page.module.css";
@@ -335,7 +336,7 @@ export default function BulkHubPage() {
                         </div>
                         <span className={styles.rfqBuyerName}>
                           @{rfq.buyer.username}
-                          {rfq.buyer.kyc_status === "verified" && " ✅"}
+                          {rfq.buyer.kyc_status === "verified" && <KycBadge size={14} />}
                         </span>
                       </div>
                     )}

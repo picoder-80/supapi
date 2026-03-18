@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import AdminTabs from "@/components/admin/AdminTabs";
 import AdminPageHero from "@/components/admin/AdminPageHero";
+import KycBadge from "@/components/ui/KycBadge";
 import styles from "./page.module.css";
 
 interface Stats {
@@ -417,7 +418,7 @@ export default function AdminMarketPage() {
                 <tr key={l.id}>
                   <td><div className={styles.thumbCell}>{l.images?.[0]?<img src={l.images[0]} alt="" className={styles.tableThumb}/>:"🛍️"}</div></td>
                   <td><Link href={`/supamarket/${l.id}`} className={styles.link}>{l.title}</Link></td>
-                  <td><span className={styles.userCell}>@{l.seller?.username}{l.seller?.kyc_status==="verified"&&" ✅"}{l.seller?.is_banned&&<span className={styles.bannedTag}>BANNED</span>}</span></td>
+                  <td><span className={styles.userCell}>@{l.seller?.username}{l.seller?.kyc_status==="verified"&&<KycBadge size={14} />}{l.seller?.is_banned&&<span className={styles.bannedTag}>BANNED</span>}</span></td>
                   <td className={styles.piAmt}>{Number(l.price_pi).toFixed(2)} π</td><td>{l.category}</td><td>{l.stock}</td><td>{l.views}</td>
                   <td><Badge status={l.status}/></td>
                   <td><div className={styles.actionBtns}>
@@ -658,7 +659,7 @@ export default function AdminMarketPage() {
                 <div key={u.id} className={`${styles.userCard} ${u.is_banned?styles.userCardBanned:""}`}>
                   <div className={styles.userAvatar}>{u.avatar_url?<img src={u.avatar_url} alt="" className={styles.userAvatarImg}/>:<span>{getInitial(u.username)}</span>}</div>
                   <div className={styles.userInfo}>
-                    <div className={styles.userName}>{u.display_name??u.username}{u.kyc_status==="verified"&&" ✅"}{u.seller_verified&&" 🏪"}{u.is_banned&&<span className={styles.bannedTag}>BANNED</span>}</div>
+                    <div className={styles.userName}>{u.display_name??u.username}{u.kyc_status==="verified"&&<KycBadge size={14} />}{u.seller_verified&&" 🏪"}{u.is_banned&&<span className={styles.bannedTag}>BANNED</span>}</div>
                     <div className={styles.userSub}>@{u.username} · {u.role} · Joined {fmt(u.created_at)}</div>
                     {u.ban_reason&&<div className={styles.banReason}>Ban: {u.ban_reason}</div>}
                     {userActionMsg[u.id]&&<div className={styles.actionMsg}>{userActionMsg[u.id]}</div>}

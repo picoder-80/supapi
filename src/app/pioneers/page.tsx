@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
+import KycBadge from "@/components/ui/KycBadge";
 import { useRouter } from "next/navigation";
 import nextDynamic from "next/dynamic";
 import styles from "./page.module.css";
@@ -309,7 +310,7 @@ export default function PioneersPage() {
                       <div className={styles.pioneerInfo}>
                         <div className={styles.pioneerName}>
                           {u.display_name ?? u.username}
-                          {u.kyc_status === "verified" && <span className={styles.kycBadge}>✅</span>}
+                          {u.kyc_status === "verified" && <span className={styles.kycBadge}><KycBadge size={14} /></span>}
                         </div>
                         <div className={styles.pioneerUsername}>@{u.username}</div>
                         {dist && <div className={styles.pioneerDist}>📍 {dist} km away</div>}
@@ -418,7 +419,7 @@ export default function PioneersPage() {
               <div className={styles.profileModalInfo}>
                 <div className={styles.profileModalName}>
                   {selectedUser.display_name ?? selectedUser.username}
-                  {selectedUser.kyc_status === "verified" && <span> ✅</span>}
+                  {selectedUser.kyc_status === "verified" && <span><KycBadge size={14} /></span>}
                 </div>
                 <div className={styles.profileModalUsername}>@{selectedUser.username}</div>
                 <div className={styles.profileModalMeta}>

@@ -5,6 +5,7 @@ import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AdminPageHero from "@/components/admin/AdminPageHero";
+import KycBadge from "@/components/ui/KycBadge";
 import styles from "./page.module.css";
 
 interface UserDetail {
@@ -100,7 +101,7 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
         <div className={styles.profileInfo}>
           <div className={styles.profileName}>
             {user.display_name ?? user.username}
-            {user.kyc_status === "verified" && " ✅"}
+            {user.kyc_status === "verified" && <KycBadge size={14} />}
           </div>
           <div className={styles.profileSub}>@{user.username} · {user.role}</div>
           {user.bio && <div className={styles.profileBio}>{user.bio}</div>}
@@ -111,9 +112,22 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
       <div className={styles.actionsCard}>
         <div className={styles.cardTitle}>Admin Actions</div>
         <div className={styles.userSub} style={{ marginBottom: 10 }}>
-          KYC status is auto-synced from Pi verification on user sign-in.
+          KYC status is auto-synced from Pi on sign-in. You can manually set it if the user has verified but Pi didn&apos;t return it.
         </div>
-        <div className={styles.actionGrid}>
+        <div className={styles.actionGrid} style={{ flexWrap: "wrap", gap: 10 }}>
+          <div className={styles.kycSelectRow}>
+            <label className={styles.kycLabel}>KYC Status</label>
+            <select
+              className={styles.kycSelect}
+              value={user.kyc_status}
+              onChange={(e) => patch({ kyc_status: e.target.value }, "KYC status updated")}
+              disabled={saving}
+            >
+              <option value="unverified">Unverified</option>
+              <option value="pending">Pending</option>
+              <option value="verified">Verified</option>
+            </select>
+          </div>
           {!isBanned
             ? <button className={styles.dangerBtn} onClick={() => setShowBan(true)}>🚫 Ban User</button>
             : <button className={styles.okBtn} disabled={saving} onClick={() => patch({ is_banned: false }, "✅ User unbanned!")}>✅ Unban User</button>

@@ -5,6 +5,7 @@ import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
+import KycBadge from "@/components/ui/KycBadge";
 import { CONDITIONS, BUYING_METHODS } from "@/lib/market/categories";
 import { ensurePaymentReady, createPiPayment, isPiBrowser, getApiBase } from "@/lib/pi/sdk";
 import styles from "./page.module.css";
@@ -398,7 +399,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
               <div className={styles.sellerInfo}>
                 <div className={styles.sellerName}>
                   {listing.seller.display_name ?? listing.seller.username}
-                  {listing.seller.kyc_status === "verified" && <span className={styles.kycBadge}> ✅</span>}
+                  {listing.seller.kyc_status === "verified" && <span className={styles.kycBadge}><KycBadge size={14} /></span>}
                 </div>
                 <div className={styles.sellerMeta}>
                   ★ {(listing.seller.rating_avg ?? 0) > 0 ? (listing.seller.rating_avg ?? 0).toFixed(1) : "—"}

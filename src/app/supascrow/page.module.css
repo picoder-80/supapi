@@ -591,6 +591,18 @@
   color: var(--color-text-light);
 }
 
+.piWarning {
+  font-size: 13px;
+  color: #b45309;
+  background: rgba(245, 166, 35, 0.12);
+  border: 1px solid rgba(245, 166, 35, 0.35);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.piWarning strong { color: #92400e; }
+
 .feeNote {
   font-size: 11px;
   color: var(--color-text-muted);

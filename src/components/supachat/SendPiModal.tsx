@@ -17,6 +17,8 @@ type SendPiModalProps = {
   senderId?: string;
   defaultNote?: string;
   redirectToDm?: boolean;
+  /** If false, recipient cannot receive Pi (no pi_uid). Show warning and disable send. */
+  canReceivePi?: boolean;
 };
 
 export default function SendPiModal({
@@ -31,6 +33,7 @@ export default function SendPiModal({
   senderId,
   defaultNote = "Tip sent in DM",
   redirectToDm = false,
+  canReceivePi = true,
 }: SendPiModalProps) {
   const router = useRouter();
   const [amount, setAmount] = useState("");
@@ -149,6 +152,11 @@ export default function SendPiModal({
               rows={3}
             />
           </div>
+          {!canReceivePi && (
+            <div className={styles.piWarning} role="alert">
+              <strong>Recipient cannot receive Pi.</strong> They must sign in with Pi and activate their wallet to receive payments.
+            </div>
+          )}
           {commissionPct != null && (
             <p className={styles.feeNote}>* Note: Admin fees ({commissionPct}%) are deducted from this transfer.</p>
           )}
@@ -160,7 +168,7 @@ export default function SendPiModal({
           <button
             className={styles.btnPrimary}
             onClick={handleSend}
-            disabled={sending || !amount.trim() || Number(amount) <= 0 || dmLoading}
+            disabled={sending || !amount.trim() || Number(amount) <= 0 || dmLoading || !canReceivePi}
           >
             {dmLoading ? "Loading..." : sending ? "Opening..." : "Send π"}
           </button>
