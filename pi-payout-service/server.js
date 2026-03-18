@@ -10,7 +10,9 @@
 
 import "dotenv/config";
 import express from "express";
-import PiNetwork from "pi-backend";
+// pi-backend is CJS; ESM interop gives { default: { default: PiNetwork } } in Node — use .default.default
+import PiBackend from "pi-backend";
+const PiNetwork = PiBackend?.default?.default ?? PiBackend?.default ?? PiBackend;
 
 const app = express();
 app.use(express.json());

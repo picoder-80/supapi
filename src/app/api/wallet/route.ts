@@ -103,20 +103,12 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Pi tab — return just overview
-    const { data: recentPiActivity } = await supabase
-      .from("earnings_transactions")
-      .select("id, type, source, amount_pi, status, created_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(10);
-
+    // Default / unknown tab
     return NextResponse.json({
       success: true,
       data: {
-        scWallet: scWallet ?? { balance: 0, total_earned: 0, total_spent: 0, checkin_streak: 0 },
+        scWallet: scWallet ?? { balance: 0, total_earned: 0, total_spent: 0, checkin_streak: 0, last_checkin: null },
         earningsWallet: earningsWallet ?? { pending_pi: 0, available_pi: 0, total_earned: 0, total_withdrawn: 0 },
-        recentPiActivity: recentPiActivity ?? [],
       }
     });
 

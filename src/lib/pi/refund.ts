@@ -1,3 +1,5 @@
+import { executeOwnerTransfer, isOwnerTransferConfigured } from "./payout";
+
 type RefundResult = {
   success: true;
   paymentId: string;
@@ -30,19 +32,51 @@ export async function issueA2URefund(
   disputeId: string,
   orderId: string
 ): Promise<RefundResult> {
-  const apiKey = process.env.PI_API_KEY;
-  if (!apiKey) throw new Error("PI_API_KEY is not configured");
-  if (!process.env.PI_TREASURY_UID) {
-    throw new Error("PI_TREASURY_UID is not configured");
-  }
   if (!buyerUid?.trim()) throw new Error("Buyer Pi UID is required");
   if (!Number.isFinite(amount) || amount <= 0) throw new Error("Invalid refund amount");
 
+  const amountRounded = Number(amount.toFixed(7));
+  const note = `Supapi dispute refund #${disputeId.slice(0, 8)}`;
+
+  const payoutConfigured = isOwnerTransferConfigured();
+  // #region agent log
+  fetch('http://127.0.0.1:7583/ingest/85ab3f18-cb22-483f-9206-fdd2fd446d94',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9e0db8'},body:JSON.stringify({sessionId:'9e0db8',location:'refund.ts:config-check',message:'Payout config',data:{payoutConfigured,hasPiApiKey:!!process.env.PI_API_KEY,hasTreasuryUid:!!process.env.PI_TREASURY_UID},hypothesisId:'D',timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
+
+  // Prefer payout service (same as SupaChat, SupaScrow) — no PI_TREASURY_UID needed
+  if (payoutConfigured) {
+    const tx = await executeOwnerTransfer({
+      amountPi: amountRounded,
+      recipientUid: buyerUid.trim(),
+      note,
+    });
+    // #region agent log
+    fetch('http://127.0.0.1:7583/ingest/85ab3f18-cb22-483f-9206-fdd2fd446d94',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9e0db8'},body:JSON.stringify({sessionId:'9e0db8',location:'refund.ts:executeOwnerTransfer-result',message:'Transfer result',data:{ok:tx.ok,message:tx.message,txid:tx.txid},hypothesisId:'E',timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    if (!tx.ok) {
+      throw new Error(tx.message ?? "Payout service refund failed");
+    }
+    return {
+      success: true,
+      paymentId: tx.txid ?? `refund-${disputeId}-${Date.now()}`,
+      txid: tx.txid ?? null,
+    };
+  }
+
+  // Fallback: direct Pi API (requires PI_API_KEY + PI_TREASURY_UID)
+  const apiKey = process.env.PI_API_KEY;
+  if (!apiKey) throw new Error("PI_API_KEY is not configured");
+  if (!process.env.PI_TREASURY_UID) {
+    throw new Error(
+      "Pi payout not configured. Set PI_PAYOUT_API_URL and PI_PAYOUT_API_KEY (recommended), or PI_TREASURY_UID for direct Pi API refunds."
+    );
+  }
+
   const body = {
     payment: {
-      amount: Number(amount.toFixed(7)),
+      amount: amountRounded,
       uid: buyerUid.trim(),
-      memo: `Supapi dispute refund #${disputeId.slice(0, 8)}`,
+      memo: note,
       metadata: {
         platform: "supamarket",
         dispute_id: disputeId,

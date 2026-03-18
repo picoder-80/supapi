@@ -55,42 +55,13 @@ function normalizeSentence(text: string): string {
   return clean.endsWith(".") || clean.endsWith("!") || clean.endsWith("?") ? clean : `${clean}.`;
 }
 
-function summarizeEvidence(evidence?: string[]): string {
-  const items = (evidence ?? [])
-    .map((item) => String(item ?? "").trim())
-    .filter(Boolean)
-    .slice(0, 2);
-  if (!items.length) return "No additional evidence was attached at submission time.";
-  return `Submitted evidence highlights: ${items.join(" | ")}.`;
-}
-
-function buildContextSentence(input: DisputeAnalysisInput): string {
-  const status = String(input.order_status ?? "unknown");
-  const method = String(input.buying_method ?? "not specified");
-  const amount = Number(input.amount_pi ?? 0);
-  const amountText = Number.isFinite(amount) && amount > 0 ? `${amount.toFixed(2)} Pi` : "amount not stated";
-  return `Case context: order status is ${status}, delivery method is ${method}, and transaction value is ${amountText}.`;
-}
-
 function enrichDisputeReasoning(params: {
   baseReasoning: string;
   decision: DisputeDecision;
   input: DisputeAnalysisInput;
   conditions?: string;
 }): string {
-  const base = normalizeSentence(params.baseReasoning);
-  const context = buildContextSentence(params.input);
-  const evidence = summarizeEvidence(params.input.evidence);
-  const recommendation =
-    params.decision === "refund"
-      ? "Recommended outcome is refund because current signals lean toward buyer harm or non-fulfillment risk."
-      : params.decision === "release"
-        ? "Recommended outcome is release because available facts currently support fulfillment of seller obligations."
-        : "Recommended outcome is manual review because available facts are mixed and require direct human verification.";
-  const conditionText = params.conditions
-    ? `Reviewer note: ${normalizeSentence(params.conditions)}`
-    : "Reviewer note: collect any missing screenshots, delivery proof, and order chat excerpts before final closure.";
-  return [base, context, evidence, recommendation, conditionText].join(" ");
+  return normalizeSentence(params.baseReasoning);
 }
 
 const AGGRESSIVE_AUTO_MODE = process.env.MARKET_AI_AGGRESSIVE_AUTO !== "false";
@@ -149,8 +120,7 @@ function analyzeDisputeHeuristic(input: DisputeAnalysisInput): DisputeAnalysisRe
     return {
       decision: "refund",
       confidence: 0.84,
-      reasoning:
-        "The dispute signals likely non-delivery, damaged condition, or mismatch against listing expectations. These issue types create a higher risk of buyer loss when proof remains incomplete.",
+      reasoning: "Signals suggest non-delivery or item mismatch. Refund recommended until seller provides proof.",
       conditions: "If seller can provide verified proof of delivery and condition, escalate to manual review.",
       source: "heuristic",
     };
@@ -160,8 +130,7 @@ function analyzeDisputeHeuristic(input: DisputeAnalysisInput): DisputeAnalysisRe
     return {
       decision: "release",
       confidence: 0.74,
-      reasoning:
-        "The reported reason appears closer to post-delivery buyer preference change than delivery failure. In that pattern, forced refund is usually weaker unless there is clear defect evidence.",
+      reasoning: "Looks like buyer preference change after delivery. Release to seller unless defect is shown.",
       conditions: "Allow goodwill partial refund if seller agrees.",
       source: "heuristic",
     };
@@ -171,8 +140,7 @@ function analyzeDisputeHeuristic(input: DisputeAnalysisInput): DisputeAnalysisRe
     return {
       decision: "release",
       confidence: 0.72,
-      reasoning:
-        "The case includes delivery-trace signals and an order stage that indicates item handoff is likely complete. With no strong contradiction in current evidence, release is the lower-risk default.",
+      reasoning: "Delivery proof and order status support release. No strong contradiction in evidence.",
       conditions: "Keep manual appeal open for 24h if new evidence appears.",
       source: "heuristic",
     };
@@ -181,8 +149,7 @@ function analyzeDisputeHeuristic(input: DisputeAnalysisInput): DisputeAnalysisRe
   return {
     decision: "manual_review",
     confidence: 0.52,
-    reasoning:
-      "Current details do not establish a clear winner between buyer and seller claims. The dispute needs a full evidence pass before settlement direction can be trusted.",
+    reasoning: "Evidence is mixed. Manual review needed before deciding.",
     conditions: "Collect screenshots, tracking details, and listing snapshots before final decision.",
     source: "heuristic",
   };
@@ -201,7 +168,7 @@ async function callAnthropic(prompt: string): Promise<string | null> {
     },
     body: JSON.stringify({
       model: process.env.ANTHROPIC_MODEL ?? "claude-3-5-sonnet-20241022",
-      max_tokens: 500,
+      max_tokens: 200,
       temperature: 0.2,
       messages: [{ role: "user", content: prompt }],
     }),
@@ -286,7 +253,7 @@ async function runPromptWithFallback(prompt: string): Promise<{ text: string | n
 export async function analyzeDispute(input: DisputeAnalysisInput): Promise<DisputeAnalysisResult> {
   const heuristic = analyzeDisputeHeuristic(input);
 
-  const prompt = `You are a marketplace dispute reviewer.\nReturn STRICT JSON only.\n\nInput:\n${JSON.stringify(input, null, 2)}\n\nSchema:\n{"decision":"refund"|"release"|"manual_review","confidence":0.0,"reasoning":"...","conditions":"..."}\n\nRules:\n- If evidence is weak, choose "manual_review".\n- confidence must be 0..1.\n- reasoning must be 4-6 concise sentences with case-specific detail.\n- Reference order status, delivery method, and available evidence in reasoning.\n- Use neutral reviewer language; do NOT mention AI, model, provider, or prompt.\n- conditions must contain practical follow-up checks for the next reviewer.`;
+  const prompt = `You are a marketplace dispute reviewer. Return STRICT JSON only.\n\nInput:\n${JSON.stringify(input, null, 2)}\n\nSchema:\n{"decision":"refund"|"release"|"manual_review","confidence":0.0,"reasoning":"..."}\n\nRules:\n- If evidence is weak, choose "manual_review".\n- confidence must be 0..1.\n- reasoning: 1–2 short, friendly sentences. Be simple and clear. Example: "Buyer reports item not received; no delivery proof yet. Refund recommended."\n- Do NOT mention AI, model, or provider.`;
 
   try {
     const { text } = await runPromptWithFallback(prompt);

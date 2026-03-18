@@ -292,7 +292,11 @@ function SupaScrowPageInner() {
         </div>
       </div>
 
-      {!!msg && <div className={styles.msg}>{msg}</div>}
+      {!!msg && !selectedDeal && (
+        <div className={`${styles.msg} ${msg.startsWith("✅") ? styles.msgSuccess : styles.msgError}`}>
+          {msg}
+        </div>
+      )}
 
       <section className={styles.section}>
         <div className={styles.filterRow}>
@@ -369,6 +373,11 @@ function SupaScrowPageInner() {
         <div className={styles.modalOverlay} onClick={() => setSelectedDeal(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalTitle}>{selectedDeal.title}</div>
+            {!!msg && (
+              <div className={`${styles.modalMsg} ${msg.startsWith("✅") ? styles.modalMsgSuccess : styles.modalMsgError}`}>
+                {msg}
+              </div>
+            )}
             <div className={styles.detailMeta}>
               {selectedDeal.currency === "sc" ? "💎" : "π"} {Number(selectedDeal.amount_pi).toLocaleString()} · {STATUS_LABELS[selectedDeal.status] ?? selectedDeal.status}
             </div>
@@ -378,28 +387,38 @@ function SupaScrowPageInner() {
 
             {/* Chat */}
             <div className={styles.chatBox}>
+              <div className={styles.chatHeader}>
+                <span className={styles.chatHeaderTitle}>💬 Messages</span>
+                <span className={styles.chatHeaderHint}>Agree on terms before funding</span>
+              </div>
               <div className={styles.chatMessages}>
-                {messages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`${styles.chatMsg} ${m.sender_id === user?.id ? styles.chatMsgMe : ""}`}
-                  >
-                    <span className={styles.chatSender}>@{(m.sender as { username?: string })?.username ?? "?"}</span>
-                    <span className={styles.chatBody}>{m.body}</span>
-                    <span className={styles.chatTime}>{timeAgo(m.created_at)}</span>
+                {messages.length === 0 ? (
+                  <div className={styles.chatEmpty}>
+                    No messages yet. Start the conversation to agree on deal terms.
                   </div>
-                ))}
+                ) : (
+                  messages.map((m) => (
+                    <div
+                      key={m.id}
+                      className={`${styles.chatMsg} ${m.sender_id === user?.id ? styles.chatMsgMe : ""}`}
+                    >
+                      <span className={styles.chatSender}>@{(m.sender as { username?: string })?.username ?? "?"}</span>
+                      <span className={styles.chatBody}>{m.body}</span>
+                      <span className={styles.chatTime}>{timeAgo(m.created_at)}</span>
+                    </div>
+                  ))
+                )}
               </div>
               <div className={styles.chatInputRow}>
                 <input
                   className={styles.chatInput}
-                  placeholder="Type message..."
+                  placeholder="Type a message..."
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
                 />
-                <button className={styles.btnPrimary} onClick={sendMessage} disabled={busy || !chatInput.trim()}>
-                  Send
+                <button className={styles.chatSendBtn} onClick={sendMessage} disabled={busy || !chatInput.trim()} title="Send">
+                  {busy ? "…" : "Send"}
                 </button>
               </div>
             </div>

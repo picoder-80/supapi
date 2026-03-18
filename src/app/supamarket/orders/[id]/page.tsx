@@ -23,13 +23,6 @@ interface Order {
   disputes: { id: string; reason: string; evidence?: string[]; status: string; ai_decision: string; ai_reasoning: string; ai_confidence: number; created_at: string }[];
 }
 
-interface SupportTriageResult {
-  category: "payment" | "delivery" | "refund" | "account" | "dispute" | "general";
-  priority: "low" | "medium" | "high" | "urgent";
-  suggested_reply: string;
-  recommended_actions: string[];
-}
-
 const STATUS_STEPS = ["pending","paid","shipped","delivered","completed"];
 const STATUS_LABELS: Record<string,string> = {
   pending:"Pending Payment", escrow:"Payment Confirmed", paid:"Payment Confirmed", shipped:"Shipped",
@@ -68,9 +61,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   });
   const [disputing, setDisputing] = useState(false);
   const [disputeResult, setDisputeResult] = useState<any>(null);
-  const [supportText, setSupportText] = useState("");
-  const [supportLoading, setSupportLoading] = useState(false);
-  const [supportResult, setSupportResult] = useState<SupportTriageResult | null>(null);
   const [msg, setMsg]             = useState("");
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
@@ -193,27 +183,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     e.preventDefault();
     setDragOverEvidence(false);
     await uploadEvidenceFiles(e.dataTransfer?.files ?? null);
-  };
-
-  const handleSupportTriage = async () => {
-    if (!supportText.trim()) return;
-    const token = localStorage.getItem("supapi_token");
-    if (!token) return;
-    setSupportLoading(true);
-    setSupportResult(null);
-    try {
-      const r = await fetch("/api/supamarket/ai/support/triage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ message: supportText, order_status: order?.status, order_id: id }),
-      });
-      const d = await r.json();
-      if (d.success) setSupportResult(d.data);
-      else setMsg(d.error ?? "Support triage failed");
-    } catch {
-      setMsg("Something went wrong");
-    }
-    setSupportLoading(false);
   };
 
   const handleShare = async () => {
@@ -371,7 +340,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 <div className={styles.trackingInputWrap}>
                   <input
                     className={styles.input}
-                    placeholder="Courier company (e.g. Pos Laju, DHL, FedEx, J&T)"
+                    placeholder="Courier company (e.g. DHL, FedEx, J&T Express, Ninja Van)"
                     value={courierInput}
                     onChange={e => setCourierInput(e.target.value)}
                   />
@@ -382,17 +351,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     onChange={e => setTrackingInput(e.target.value)}
                   />
                   <div className={styles.trackingHint}>Enter courier manually for country-specific carriers; link will still be auto-generated when possible.</div>
-                  {trackingInput.trim() && (() => {
-                    const detected = detectTracking(trackingInput);
-                    return detected ? (
-                      <div className={styles.trackingDetected}>
-                        <span className={styles.trackingBadge}>{detected.carrier}</span>
-                        {detected.trackingUrl && <span className={styles.trackingHint}>→ Track link ready</span>}
-                      </div>
-                    ) : (
-                      <div className={styles.trackingDetected}><span className={styles.trackingHint}>Will save as-is</span></div>
-                    );
-                  })()}
                 </div>
                 <button className={styles.actionBtn} disabled={updating}
                   onClick={async () => {
@@ -685,32 +643,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
         )}
-
-        {/* AI support triage */}
-        <div className={styles.section}>
-          <div className={styles.sectionTitle}>Support Assistant</div>
-          <div className={styles.disputeNote}>Need help quickly? Describe your issue and get instant support routing.</div>
-          <textarea
-            className={styles.input}
-            rows={3}
-            placeholder="Example: I already paid but seller has not shipped for 3 days..."
-            value={supportText}
-            onChange={(e) => setSupportText(e.target.value)}
-          />
-          <button className={styles.actionBtn} disabled={supportLoading || !supportText.trim()} onClick={handleSupportTriage}>
-            {supportLoading ? "Checking..." : "Get support routing"}
-          </button>
-          {supportResult && (
-            <div className={styles.supportResult}>
-              <div><strong>Category:</strong> {supportResult.category}</div>
-              <div><strong>Priority:</strong> {supportResult.priority}</div>
-              <div><strong>Suggested Reply:</strong> {supportResult.suggested_reply}</div>
-              {supportResult.recommended_actions?.length > 0 && (
-                <div><strong>Actions:</strong> {supportResult.recommended_actions.join(", ")}</div>
-              )}
-            </div>
-          )}
-        </div>
 
         {/* Order metadata */}
         <div className={styles.section}>

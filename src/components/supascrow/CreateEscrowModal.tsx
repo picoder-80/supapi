@@ -74,12 +74,12 @@ export default function CreateEscrowModal({
   const handleSubmit = async () => {
     const sellerUsername = createSeller.trim().replace(/^@/, "");
     if (!sellerUsername || !createTitle.trim() || !createAmount.trim()) {
-      setMsg("Fill seller username, title, and amount");
+      setMsg("Please enter seller username, deal title, and amount.");
       return;
     }
     const amount = parseFloat(createAmount);
     if (isNaN(amount) || amount <= 0) {
-      setMsg("Invalid amount");
+      setMsg("Please enter a valid amount (e.g. 10.50).");
       return;
     }
     setBusy(true);
@@ -87,7 +87,7 @@ export default function CreateEscrowModal({
     try {
       const sellerId = await resolveSeller(sellerUsername);
       if (!sellerId) {
-        setMsg("Seller username not found");
+        setMsg(`User @${sellerUsername} not found. Check spelling or ask them to join Supapi.`);
         setBusy(false);
         return;
       }
@@ -108,10 +108,10 @@ export default function CreateEscrowModal({
         onClose();
         onSuccess?.(d.data.deal.id);
       } else {
-        setMsg(d?.error ?? "Failed to create deal");
+        setMsg(d?.error ?? "Could not create deal. Please try again.");
       }
     } catch {
-      setMsg("Create failed");
+      setMsg("Something went wrong. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -186,7 +186,11 @@ export default function CreateEscrowModal({
           {commissionPct != null && (
             <p className={styles.feeNote}>* Note: Admin fees ({commissionPct}%) are deducted from seller payout on Pi release.</p>
           )}
-          {msg && <div className={styles.msg} style={{ marginTop: 8 }}>{msg}</div>}
+          {msg && (
+            <div className={`${styles.modalMsg} ${styles.modalMsgError}`}>
+              {msg}
+            </div>
+          )}
         </div>
         <div className={styles.createModalFooter}>
           <button className={styles.btnSecondary} onClick={onClose} disabled={busy}>

@@ -146,13 +146,11 @@ export default function WalletPage() {
   const { user } = useAuth();
   const router   = useRouter();
 
-  const [activeTab, setActiveTab]       = useState<"pi" | "sc" | "earnings">("pi");
+  const [activeTab, setActiveTab]       = useState<"sc" | "earnings">("earnings");
   const [data, setData]                 = useState<any>(null);
   const [loading, setLoading]           = useState(true);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawLoading, setWithdrawLoading] = useState(false);
-  const [piBalance, setPiBalance]       = useState<number | null>(null);
-  const [piLoading, setPiLoading]       = useState(false);
   const [toast, setToast]               = useState<{ msg: string; type: "success" | "error" } | null>(null);
   const [scPage, setScPage]             = useState(1);
   const [earnPage, setEarnPage]         = useState(1);
@@ -163,22 +161,6 @@ export default function WalletPage() {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
   };
-
-  // Try to get Pi balance from SDK
-  useEffect(() => {
-    const tryGetPiBalance = async () => {
-      try {
-        const w = (window as any);
-        if (w.Pi) {
-          setPiLoading(true);
-          // Pi SDK doesn't expose wallet balance directly; show placeholder
-          setPiBalance(null);
-          setPiLoading(false);
-        }
-      } catch {}
-    };
-    tryGetPiBalance();
-  }, []);
 
   const fetchData = useCallback(async (tab: string) => {
     if (!user) return;
@@ -252,19 +234,6 @@ export default function WalletPage() {
 
           {/* Wallet Summary Cards */}
           <div className={styles.walletCards}>
-            {/* Pi Wallet Card */}
-            <button
-              className={`${styles.walletCard} ${activeTab === "pi" ? styles.walletCardActive : ""}`}
-              onClick={() => setActiveTab("pi")}
-            >
-              <div className={styles.walletCardIcon}>🥧</div>
-              <div className={styles.walletCardLabel}>Pi Wallet</div>
-              <div className={styles.walletCardValue}>
-                {piLoading ? "—" : piBalance !== null ? `π ${formatPi(piBalance)}` : "Pi Browser"}
-              </div>
-              <div className={styles.walletCardSub}>Native Pi</div>
-            </button>
-
             {/* SC Wallet Card */}
             <button
               className={`${styles.walletCard} ${styles.walletCardSc} ${activeTab === "sc" ? styles.walletCardActive : ""}`}
@@ -294,79 +263,6 @@ export default function WalletPage() {
 
       {/* ── Body ── */}
       <div className={styles.body}>
-
-        {/* ════════════════════════════════════════
-            PI WALLET TAB
-        ════════════════════════════════════════ */}
-        {activeTab === "pi" && (
-          <div className={styles.tabContent}>
-            {/* Pi balance card */}
-            <div className={styles.piCard}>
-              <div className={styles.piCardGlow} />
-              <div className={styles.piCardTop}>
-                <div className={styles.piCardIconWrap}>🥧</div>
-                <div className={styles.piCardInfo}>
-                  <div className={styles.piCardTitle}>Pi Network Wallet</div>
-                  <div className={styles.piCardSub}>Connected via Pi Browser</div>
-                </div>
-              </div>
-              <div className={styles.piCardBalance}>
-                <span className={styles.piCardBalanceLabel}>Balance</span>
-                <span className={styles.piCardBalanceValue}>
-                  {piBalance !== null ? `π ${formatPi(piBalance)}` : "Open in Your Pi Browser to view"}
-                </span>
-              </div>
-              <div className={styles.piCardNote}>
-                💡 Pi balance is managed by the Pi Network app. Supapi uses your Pi wallet for payments across all platforms.
-              </div>
-            </div>
-
-            {/* Quick actions */}
-            <div className={styles.sectionTitle}>Quick Actions</div>
-            <div className={styles.quickActions}>
-              {[
-                { href: "/supamarket",          icon: "🛍️", label: "SupaMarket"    },
-                { href: "/supaendoro",          icon: "🛞", label: "Rent a Car"    },
-                { href: "/supadomus",           icon: "🏠", label: "Property"      },
-{ href: "/supabulk",         icon: "📦", label: "SupaBulk"      },
-  { href: "/supaauto",  icon: "🚗", label: "SupaAuto"     },
-                { href: "/rewards",         icon: "💎", label: "SC Rewards"    },
-              ].map(a => (
-                <Link key={a.href} href={a.href} className={styles.quickAction}>
-                  <span className={styles.quickActionIcon}>{a.icon}</span>
-                  <span className={styles.quickActionLabel}>{a.label}</span>
-                </Link>
-              ))}
-            </div>
-
-            {/* Recent Pi activity */}
-            {(data?.recentPiActivity ?? []).length > 0 && (
-              <>
-                <div className={styles.sectionTitle}>Recent Pi Activity</div>
-                <div className={styles.txnList}>
-                  {(data.recentPiActivity ?? []).map((txn: EarnTxn) => {
-                    const meta = EARN_TYPE_META[txn.type] ?? EARN_TYPE_META.default;
-                    const isWithdrawal = txn.type === "withdrawal";
-                    return (
-                      <div key={txn.id} className={styles.txnRow}>
-                        <div className={styles.txnIcon} style={{ background: meta.color + "18" }}>
-                          <span>{meta.icon}</span>
-                        </div>
-                        <div className={styles.txnInfo}>
-                          <div className={styles.txnSource}>{txn.source}</div>
-                          <div className={styles.txnTime}>{timeAgo(txn.created_at)}</div>
-                        </div>
-                        <div className={`${styles.txnAmount} ${isWithdrawal ? styles.txnAmountNeg : styles.txnAmountPos}`}>
-                          {isWithdrawal ? "-" : "+"}π {formatPi(Math.abs(txn.amount_pi))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        )}
 
         {/* ════════════════════════════════════════
             SC WALLET TAB
@@ -551,6 +447,24 @@ export default function WalletPage() {
                   💡 Minimum withdrawal is π 1.000. Keep earning!
                 </div>
               )}
+            </div>
+
+            {/* Quick actions */}
+            <div className={styles.sectionTitle}>Quick Actions</div>
+            <div className={styles.quickActions}>
+              {[
+                { href: "/supamarket", icon: "🛍️", label: "SupaMarket" },
+                { href: "/supaendoro", icon: "🛞", label: "Rent a Car" },
+                { href: "/supadomus", icon: "🏠", label: "Property" },
+                { href: "/supabulk", icon: "📦", label: "SupaBulk" },
+                { href: "/supaauto", icon: "🚗", label: "SupaAuto" },
+                { href: "/rewards", icon: "💎", label: "SC Rewards" },
+              ].map(a => (
+                <Link key={a.href} href={a.href} className={styles.quickAction}>
+                  <span className={styles.quickActionIcon}>{a.icon}</span>
+                  <span className={styles.quickActionLabel}>{a.label}</span>
+                </Link>
+              ))}
             </div>
 
             {/* Earning sources breakdown */}

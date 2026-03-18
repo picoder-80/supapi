@@ -47,6 +47,7 @@ export async function executeOwnerTransfer(input: OwnerTransferInput): Promise<O
     if (uid) body.recipient_uid = uid;
     if (wallet) body.destination_wallet = wallet;
 
+    console.error("[Payout] Request:", { endpoint, amount_pi: body.amount_pi, has_recipient_uid: !!uid, has_destination_wallet: !!wallet });
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
@@ -58,10 +59,16 @@ export async function executeOwnerTransfer(input: OwnerTransferInput): Promise<O
 
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
+      const apiMsg = String((payload as any)?.error ?? (payload as any)?.message ?? (payload as any)?.detail ?? "").trim();
+      const msg = apiMsg
+        ? `Transfer API failed (${response.status}): ${apiMsg}`
+        : `Transfer API failed (${response.status})`;
+      console.error("[Payout] Transfer API error:", { status: response.status, payload, endpoint });
+      console.error("[Payout] Response body:", JSON.stringify(payload));
       return {
         ok: false,
         provider: "custom_api",
-        message: `Transfer API failed (${response.status})`,
+        message: msg,
         raw: payload,
       };
     }
