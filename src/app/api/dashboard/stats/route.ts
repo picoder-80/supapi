@@ -28,8 +28,8 @@ export async function GET(req: NextRequest) {
         .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`),
       supabase.from("referrals").select("id", { count: "exact", head: true })
         .eq("referrer_id", uid),
-      supabase.from("transactions").select("amount_pi")
-        .eq("user_id", uid).eq("type", "sale").eq("status", "completed"),
+      // Earnings for the user are tracked in earnings_wallet/earnings_transactions (seller + platform payouts).
+      supabase.from("earnings_wallet").select("total_earned").maybeSingle(),
       supabase.from("transactions").select("id, type, amount_pi, memo, status, created_at")
         .eq("user_id", uid).order("created_at", { ascending: false }).limit(5),
       supabase.from("supapi_credits").select("balance").eq("user_id", uid).maybeSingle(),
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
       supabase.from("supapets_pets").select("id", { count: "exact", head: true }).eq("user_id", uid),
     ]);
 
-    const earned = (earningsRes.data ?? []).reduce((s: number, t: any) => s + Number(t.amount_pi), 0);
+    const earned = Number(earningsRes.data?.total_earned ?? 0);
     const scBalance = creditsRes.data?.balance ?? 0;
 
     return NextResponse.json({

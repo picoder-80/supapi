@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ensurePaymentReady, createPiPayment, isPiBrowser } from "@/lib/pi/sdk";
 import styles from "./ReferralWithdraw.module.css";
 
 interface WithdrawData {
@@ -76,79 +75,25 @@ export default function ReferralWithdraw() {
 
   const handleWithdraw = async () => {
     if (!data || data.claimable_pi <= 0) return;
-    if (!isPiBrowser()) {
-      setErrorMsg("Pi Browser not detected. Please open this app inside Pi Browser.");
-      setStep("error");
-      return;
-    }
-
     setStep("processing");
-
     const amount = Math.floor(data.claimable_pi * 1000) / 1000; // round down to 3dp
-    const memo   = `Supapi referral commission withdrawal`;
-
-    try {
-      await ensurePaymentReady();
-    } catch (e) {
-      setErrorMsg("Please sign in with Pi (payments scope) to withdraw.");
-      setStep("error");
+    const r = await fetch("/api/referral/withdraw", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token()}`,
+      },
+      body: JSON.stringify({ amount }),
+    });
+    const d = await r.json();
+    if (d?.success) {
+      setTxid(String(d?.data?.pi_txid ?? ""));
+      setStep("success");
+      load();
       return;
     }
-
-    createPiPayment(
-      { amount, memo, metadata: { type: "referral_withdrawal" } },
-      {
-        onReadyForServerApproval: async (paymentId: string) => {
-          // Register with our server
-          const r = await fetch("/api/referral/withdraw", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token()}`,
-            },
-            body: JSON.stringify({ amount, pi_payment_id: paymentId }),
-          });
-          const d = await r.json();
-          if (!d.success) {
-            setErrorMsg(d.error ?? "Server approval failed");
-            setStep("error");
-          }
-        },
-
-        onReadyForServerCompletion: async (paymentId: string, txId: string) => {
-          // Complete on server
-          const r = await fetch("/api/referral/withdraw", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pi_payment_id: paymentId, action: "complete", pi_txid: txId }),
-          });
-          const d = await r.json();
-          if (d.success) {
-            setTxid(txId);
-            setStep("success");
-            load(); // refresh data
-          } else {
-            setErrorMsg(d.error ?? "Completion failed");
-            setStep("error");
-          }
-        },
-
-        onCancel: async (paymentId: string) => {
-          await fetch("/api/referral/withdraw", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pi_payment_id: paymentId, action: "cancel" }),
-          });
-          setStep("confirm");
-          setShowModal(false);
-        },
-
-        onError: (error: Error) => {
-          setErrorMsg(error.message ?? "Pi payment error");
-          setStep("error");
-        },
-      }
-    );
+    setErrorMsg(d?.error ?? "Withdrawal failed");
+    setStep("error");
   };
 
   const openModal = () => {
@@ -257,8 +202,7 @@ export default function ReferralWithdraw() {
                     </div>
                   </div>
                   <p className={styles.modalNote}>
-                    Pi Browser will open for you to approve this payment.
-                    Do not close the app during this process.
+                    This withdrawal will be sent automatically via A2U to your linked Pi wallet.
                   </p>
                 </div>
                 <div className={styles.modalBtns}>
@@ -276,8 +220,8 @@ export default function ReferralWithdraw() {
                 <div className={styles.modalBody}>
                   <div className={styles.spinner} />
                   <div className={styles.processingText}>
-                    Waiting for Pi Browser approval.<br />
-                    Please approve the payment in Pi Browser.
+                    Sending withdrawal via A2U.<br />
+                    Please wait a few seconds.
                   </div>
                 </div>
               </>

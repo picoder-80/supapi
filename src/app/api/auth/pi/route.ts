@@ -28,6 +28,16 @@ function mapKycStatus(piKyc: string | undefined): "unverified" | "pending" | "ve
   return "unverified";
 }
 
+function parseBooleanLike(value: unknown): boolean | null {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const v = value.toLowerCase().trim();
+    if (["true", "1", "yes", "verified", "approved", "passed", "complete", "completed"].includes(v)) return true;
+    if (["false", "0", "no", "unverified", "rejected", "failed"].includes(v)) return false;
+  }
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body   = await req.json();
@@ -68,6 +78,14 @@ export async function POST(req: NextRequest) {
       meData?.user?.kyc_verified ?? meData?.user?.kyc ?? meData?.user?.credentials?.kyc ??
       null;
 
+    const kycBooleanRaw =
+      authUser.kycVerified ??
+      authResultAny.user?.kycVerified ??
+      authResultAny.kycVerified ??
+      meData?.kycVerified ??
+      meData?.user?.kycVerified ??
+      null;
+
     // Deep search for wallet_address — Pi may nest it differently
     const walletAddress =
       authUser.wallet_address ?? authUser.walletAddress ?? authUser.credentials?.wallet_address ??
@@ -80,11 +98,13 @@ export async function POST(req: NextRequest) {
     const kycStatus = typeof kycRaw === "boolean"
       ? (kycRaw ? "verified" : "unverified")
       : mapKycStatus(kycRaw as string | undefined);
+    const kycBoolean = parseBooleanLike(kycBooleanRaw);
+    const effectiveIncomingKyc = kycBoolean === true ? "verified" : (kycBoolean === false ? "unverified" : kycStatus);
 
     // Log for debugging — Pi API structure can change
     console.log("[Auth] Pi response — authResult.user:", JSON.stringify(authUser));
     console.log("[Auth] Pi response — meData:", JSON.stringify(meData));
-    console.log("[Auth] Extracted — kyc:", kycStatus, "wallet:", walletAddress ? `${walletAddress.slice(0, 12)}...` : "empty");
+    console.log("[Auth] Extracted — kyc:", effectiveIncomingKyc, "wallet:", walletAddress ? `${walletAddress.slice(0, 12)}...` : "empty");
 
     const supabase = await createAdminClient();
 
@@ -120,8 +140,10 @@ export async function POST(req: NextRequest) {
           display_name:   piUser.username,
           referral_code:  newReferralCode,
           referred_by:    referrerId,
-          kyc_status:     kycStatus,
+          kyc_status:     effectiveIncomingKyc,
           wallet_address: walletAddress,
+          wallet_verified: !!walletAddress,
+          wallet_verified_at: walletAddress ? new Date().toISOString() : null,
         })
         .select()
         .single();
@@ -149,13 +171,13 @@ export async function POST(req: NextRequest) {
       // ── Existing user — always persist KYC + wallet every login ──
       const kycRank: Record<string, number> = { unverified: 0, pending: 1, verified: 2 };
       const currentRank = kycRank[user.kyc_status] ?? 0;
-      const newRank     = kycRank[kycStatus] ?? 0;
+      const newRank     = kycRank[effectiveIncomingKyc] ?? 0;
       // Only upgrade KYC — never downgrade (Pi API may return null even if verified)
-      const effectiveKyc = newRank > currentRank ? kycStatus : (user.kyc_status ?? "unverified");
+      const effectiveKyc = newRank > currentRank ? effectiveIncomingKyc : (user.kyc_status ?? "unverified");
       if (newRank > currentRank) {
-        console.log(`[Auth] KYC upgraded: ${user.kyc_status} → ${kycStatus}`);
+        console.log(`[Auth] KYC upgraded: ${user.kyc_status} → ${effectiveIncomingKyc}`);
       } else {
-        console.log(`[Auth] KYC kept: ${user.kyc_status} (Pi returned: ${kycStatus})`);
+        console.log(`[Auth] KYC kept: ${user.kyc_status} (Pi returned: ${effectiveIncomingKyc})`);
       }
 
       const updates: Record<string, unknown> = {
@@ -165,7 +187,13 @@ export async function POST(req: NextRequest) {
       // Update wallet when Pi returns a value (never overwrite with null)
       if (walletAddress != null && walletAddress !== user.wallet_address) {
         updates.wallet_address = walletAddress;
+        updates.wallet_verified = true;
+        updates.wallet_verified_at = new Date().toISOString();
         console.log(`[Auth] Wallet updated: ${walletAddress}`);
+      } else if (walletAddress && !user.wallet_verified) {
+        updates.wallet_verified = true;
+        updates.wallet_verified_at = new Date().toISOString();
+        console.log("[Auth] Wallet verification auto-enabled from Pi auth data");
       }
 
       const { data: updated, error: updateError } = await supabase

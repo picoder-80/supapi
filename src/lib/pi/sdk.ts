@@ -37,10 +37,18 @@ export async function authenticateWithPi() {
     throw new Error("Please open in Pi Browser to sign in.");
   }
 
-  return window.Pi.authenticate(
-    ["username", "payments", "wallet_address"],
-    onIncompletePaymentFound
-  );
+  // Request KYC data when available. Some Pi environments may not support
+  // the explicit "kyc" scope; fallback keeps login functional.
+  const primaryScopes = ["username", "payments", "wallet_address", "kyc"];
+  try {
+    return await window.Pi.authenticate(primaryScopes, onIncompletePaymentFound);
+  } catch (err) {
+    console.warn("[Supapi] Pi auth with KYC scope failed, retrying without kyc:", err);
+    return window.Pi.authenticate(
+      ["username", "payments", "wallet_address"],
+      onIncompletePaymentFound
+    );
+  }
 }
 
 // Called every time user authenticates if incomplete payment exists

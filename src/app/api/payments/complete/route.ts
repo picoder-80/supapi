@@ -15,6 +15,7 @@ import { getTokenFromRequest } from "@/lib/auth/session";
 import { completePayment, getPayment } from "@/lib/pi/payments";
 import { createAdminClient } from "@/lib/supabase/server";
 import { processReferralReward } from "@/lib/referral";
+import { applyReferralCommissionForSettlement } from "@/lib/referral/commission";
 import { creditPlatformEarning } from "@/lib/wallet/earnings";
 import * as R from "@/lib/api";
 
@@ -438,6 +439,16 @@ export async function POST(req: NextRequest) {
     });
     if (!paidSynced) {
       console.error("[Complete] Unable to mark order as paid after fallback attempts:", { orderId, paymentId });
+    }
+
+    // Referral commission is based on platform fee and should be tracked once per completed payment transaction.
+    if (commissionPi > 0) {
+      await applyReferralCommissionForSettlement({
+        buyerUserId: payload.userId,
+        platform: String(platform),
+        platformFeePi: commissionPi,
+        settlementId: transaction.id,
+      });
     }
   }
 

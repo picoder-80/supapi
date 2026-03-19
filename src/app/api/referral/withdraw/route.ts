@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
+import { executeOwnerTransfer, isOwnerTransferConfigured } from "@/lib/pi/payout";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -77,14 +78,16 @@ export async function GET(req: Request) {
   });
 }
 
-// POST /api/referral/withdraw — initiate withdrawal, create Pi payment
+// POST /api/referral/withdraw — execute A2U withdrawal and mark as paid
 export async function POST(req: Request) {
   const user = getUser(req);
   if (!user) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
-  const { amount, pi_payment_id } = await req.json();
+  const { amount } = await req.json();
   if (!amount || amount <= 0) return NextResponse.json({ success: false, error: "Invalid amount" }, { status: 400 });
-  if (!pi_payment_id) return NextResponse.json({ success: false, error: "Pi payment ID required" }, { status: 400 });
+  if (!isOwnerTransferConfigured()) {
+    return NextResponse.json({ success: false, error: "Pi payout not configured. Contact admin." }, { status: 503 });
+  }
 
   const holdDays = await getConfig("referral_hold_days");
   const holdDate = new Date();
@@ -103,17 +106,41 @@ export async function POST(req: Request) {
   if (claimableTotal < amount - 0.0001) {
     return NextResponse.json({ success: false, error: "Insufficient claimable balance" }, { status: 400 });
   }
+  // Keep payout accounting exact and avoid partial lock mismatch.
+  if (Math.abs(claimableTotal - Number(amount)) > 0.0001) {
+    return NextResponse.json({
+      success: false,
+      error: `Please withdraw full claimable amount (${claimableTotal.toFixed(4)}π).`,
+    }, { status: 400 });
+  }
+
+  const { data: userRow } = await supabase
+    .from("users")
+    .select("pi_uid, wallet_address, wallet_verified")
+    .eq("id", user.userId)
+    .single();
+  const u = userRow as { pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | null;
+  const recipientUid = u?.pi_uid?.trim();
+  const destinationWallet = u?.wallet_address?.trim();
+  const hasActivatedWallet = !!destinationWallet || !!u?.wallet_verified;
+  if (!recipientUid || !hasActivatedWallet) {
+    return NextResponse.json({
+      success: false,
+      error: "You must sign in with Pi and activate your wallet before withdrawing.",
+    }, { status: 400 });
+  }
 
   // Create withdrawal record
+  const syntheticPaymentId = `a2u_ref_${Date.now()}_${user.userId.slice(0, 8)}`;
   const { data: withdrawal, error: wErr } = await supabase
     .from("referral_withdrawals")
     .insert({
       user_id:       user.userId,
       amount_pi:     amount,
-      pi_payment_id: pi_payment_id,
+      pi_payment_id: syntheticPaymentId,
       status:        "pending",
     })
-    .select("id")
+    .select("id, amount_pi")
     .single();
 
   if (wErr || !withdrawal) return NextResponse.json({ success: false, error: "Failed to create withdrawal" }, { status: 500 });
@@ -125,83 +152,58 @@ export async function POST(req: Request) {
     .update({ status: "processing", withdrawal_id: withdrawal.id })
     .in("id", earningIds);
 
-  return NextResponse.json({ success: true, data: { withdrawal_id: withdrawal.id } });
-}
-
-// PATCH /api/referral/withdraw — Pi SDK callbacks: complete or cancel
-export async function PATCH(req: Request) {
-  const { pi_payment_id, action, pi_txid } = await req.json();
-  if (!pi_payment_id || !action) return NextResponse.json({ success: false, error: "Missing fields" }, { status: 400 });
-
-  // Verify Pi payment server-side
-  const piRes = await fetch(`https://api.minepi.com/v2/payments/${pi_payment_id}`, {
-    headers: { Authorization: `Key ${process.env.PI_API_KEY}` },
+  const transfer = await executeOwnerTransfer({
+    amountPi: Number(withdrawal.amount_pi),
+    recipientUid: recipientUid || undefined,
+    destinationWallet: destinationWallet || undefined,
+    note: `Referral withdrawal ${withdrawal.id}`,
   });
 
-  if (!piRes.ok) return NextResponse.json({ success: false, error: "Pi payment verification failed" }, { status: 400 });
-
-  const piPayment = await piRes.json();
-
-  // Find withdrawal
-  const { data: withdrawal } = await supabase
-    .from("referral_withdrawals")
-    .select("id, user_id, amount_pi")
-    .eq("pi_payment_id", pi_payment_id)
-    .single();
-
-  if (!withdrawal) return NextResponse.json({ success: false, error: "Withdrawal not found" }, { status: 404 });
-
-  if (action === "complete") {
-    // Verify amount matches
-    if (Math.abs(piPayment.amount - parseFloat(String(withdrawal.amount_pi))) > 0.0001) {
-      return NextResponse.json({ success: false, error: "Amount mismatch" }, { status: 400 });
-    }
-
-    // Complete the Pi payment via Pi API
-    await fetch(`https://api.minepi.com/v2/payments/${pi_payment_id}/complete`, {
-      method: "POST",
-      headers: { Authorization: `Key ${process.env.PI_API_KEY}` },
-    });
-
-    // Update withdrawal
-    await supabase.from("referral_withdrawals").update({
-      status:     "completed",
-      pi_txid:    pi_txid ?? piPayment.transaction?.txid,
-      updated_at: new Date().toISOString(),
-    }).eq("id", withdrawal.id);
-
-    // Mark earnings as paid
-    await supabase.from("referral_earnings")
-      .update({ status: "paid" })
-      .eq("withdrawal_id", withdrawal.id);
-
-    // Update stats
-    const { data: stats } = await supabase
-      .from("referral_stats").select("paid_pi, pending_pi").eq("user_id", withdrawal.user_id).single();
-    if (stats) {
-      await supabase.from("referral_stats").update({
-        paid_pi:    parseFloat(String(stats.paid_pi)) + parseFloat(String(withdrawal.amount_pi)),
-        pending_pi: Math.max(0, parseFloat(String(stats.pending_pi)) - parseFloat(String(withdrawal.amount_pi))),
-        updated_at: new Date().toISOString(),
-      }).eq("user_id", withdrawal.user_id);
-    }
-
-    return NextResponse.json({ success: true, data: { status: "completed" } });
-  }
-
-  if (action === "cancel") {
-    // Unlock earnings back to pending
-    await supabase.from("referral_earnings")
+  if (!transfer.ok || !transfer.txid) {
+    await supabase
+      .from("referral_earnings")
       .update({ status: "pending", withdrawal_id: null })
       .eq("withdrawal_id", withdrawal.id);
-
-    await supabase.from("referral_withdrawals").update({
-      status:     "cancelled",
-      updated_at: new Date().toISOString(),
-    }).eq("id", withdrawal.id);
-
-    return NextResponse.json({ success: true, data: { status: "cancelled" } });
+    await supabase
+      .from("referral_withdrawals")
+      .update({ status: "failed", note: transfer.message ?? "A2U payout failed", updated_at: new Date().toISOString() })
+      .eq("id", withdrawal.id);
+    return NextResponse.json({ success: false, error: transfer.message ?? "A2U payout failed" }, { status: 502 });
   }
 
-  return NextResponse.json({ success: false, error: "Unknown action" }, { status: 400 });
+  await supabase.from("referral_withdrawals").update({
+    status: "completed",
+    pi_txid: transfer.txid,
+    note: "A2U payout",
+    updated_at: new Date().toISOString(),
+  }).eq("id", withdrawal.id);
+
+  await supabase.from("referral_earnings")
+    .update({ status: "paid" })
+    .eq("withdrawal_id", withdrawal.id);
+
+  // Update stats
+  const { data: stats } = await supabase
+    .from("referral_stats").select("paid_pi, pending_pi").eq("user_id", user.userId).single();
+  if (stats) {
+    await supabase.from("referral_stats").update({
+      paid_pi: parseFloat(String(stats.paid_pi)) + Number(withdrawal.amount_pi),
+      pending_pi: Math.max(0, parseFloat(String(stats.pending_pi)) - Number(withdrawal.amount_pi)),
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", user.userId);
+  }
+
+  return NextResponse.json({
+    success: true,
+    data: { withdrawal_id: withdrawal.id, status: "completed", pi_txid: transfer.txid },
+  });
+}
+
+// PATCH /api/referral/withdraw — legacy callback endpoint (deprecated)
+export async function PATCH(req: Request) {
+  await req.json().catch(() => ({}));
+  return NextResponse.json({
+    success: false,
+    error: "Deprecated endpoint. Referral withdrawal now uses direct A2U payout via POST.",
+  }, { status: 410 });
 }

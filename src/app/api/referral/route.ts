@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
-import { creditPlatformEarning } from "@/lib/wallet/earnings";
+import { applyReferralCommissionForSettlement } from "@/lib/referral/commission";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +18,7 @@ function getUser(req: Request) {
 
 async function getConfig() {
   const { data } = await supabase.from("platform_config").select("key,value")
-    .in("key", ["referral_l1_pct","referral_l2_pct","referral_l3_pct","referral_join_bonus","referral_kyc_bonus","referral_monthly_cap","referral_hold_days"]);
+    .in("key", ["referral_l1_pct","referral_l2_pct","referral_l3_pct","referral_monthly_cap","referral_hold_days"]);
   const cfg: Record<string, number> = {};
   data?.forEach(r => { cfg[r.key] = parseFloat(r.value); });
   return cfg;
@@ -105,31 +105,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // Give join bonus to L1 referrer
   const cfg = await getConfig();
-  if (cfg.referral_join_bonus > 0) {
-    const joinRow = {
-      earner_id: referrer.id,
-      source_user_id: referred_id,
-      platform: "join_bonus",
-      level: 1,
-      rate_pct: 0,
-      base_amount_pi: 0,
-      earned_pi: cfg.referral_join_bonus,
-      status: "paid",
-    };
-    await supabase.from("referral_earnings").insert(joinRow);
-    await creditPlatformEarning({
-      userId: referrer.id,
-      platform: "referral",
-      event: "join_bonus",
-      amountPi: Number(cfg.referral_join_bonus),
-      status: "available",
-      refId: `referral_join_${referred_id}`,
-      note: "Referral join bonus",
-    });
-    await updateStats(referrer.id);
-  }
 
   return NextResponse.json({ success: true });
 }
@@ -164,62 +140,10 @@ async function updateStats(userId: string) {
 export async function processReferralCommission({
   buyer_id, platform, platform_fee_pi, transaction_id,
 }: { buyer_id: string; platform: string; platform_fee_pi: number; transaction_id?: string }) {
-  const cfg = await getConfig();
-  const rates: Record<number, number> = {
-    1: cfg.referral_l1_pct ?? 5,
-    2: cfg.referral_l2_pct ?? 2,
-    3: cfg.referral_l3_pct ?? 1,
-  };
-
-  // Get all referrers of this buyer
-  const { data: refs } = await supabase
-    .from("referrals")
-    .select("referrer_id, level")
-    .eq("referred_id", buyer_id);
-
-  if (!refs?.length) return;
-
-  // Check monthly cap per earner
-  const monthStart = new Date();
-  monthStart.setDate(1); monthStart.setHours(0,0,0,0);
-
-  for (const ref of refs) {
-    const rate    = rates[ref.level] ?? 0;
-    const earned  = (platform_fee_pi * rate) / 100;
-    if (earned <= 0) continue;
-
-    // Check monthly cap
-    const { data: monthEarnings } = await supabase
-      .from("referral_earnings")
-      .select("earned_pi")
-      .eq("earner_id", ref.referrer_id)
-      .gte("created_at", monthStart.toISOString());
-
-    const monthTotal = monthEarnings?.reduce((s, e) => s + parseFloat(String(e.earned_pi)), 0) ?? 0;
-    if (monthTotal >= (cfg.referral_monthly_cap ?? 50)) continue;
-
-    const earnedAmount = Math.min(earned, (cfg.referral_monthly_cap ?? 50) - monthTotal);
-    await supabase.from("referral_earnings").insert({
-      earner_id:      ref.referrer_id,
-      source_user_id: buyer_id,
-      transaction_id: transaction_id ?? null,
-      platform,
-      level:          ref.level,
-      rate_pct:       rate,
-      base_amount_pi: platform_fee_pi,
-      earned_pi:      earnedAmount,
-      status:         "pending",
-    });
-    await creditPlatformEarning({
-      userId: ref.referrer_id,
-      platform: "referral",
-      event: "commission",
-      amountPi: earnedAmount,
-      status: "pending",
-      refId: `${platform}_${transaction_id ?? buyer_id}_${ref.level}`,
-      note: `Level ${ref.level} referral commission (${platform})`,
-    });
-
-    await updateStats(ref.referrer_id);
-  }
+  await applyReferralCommissionForSettlement({
+    buyerUserId: buyer_id,
+    platform,
+    platformFeePi: platform_fee_pi,
+    settlementId: transaction_id,
+  });
 }

@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
+import { executeOwnerTransfer, isOwnerTransferConfigured } from "@/lib/pi/payout";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -101,7 +102,7 @@ export async function GET(req: NextRequest) {
   });
 }
 
-// POST /api/seller/earnings — request withdrawal
+// POST /api/seller/earnings — execute A2U withdrawal and mark records paid
 export async function POST(req: NextRequest) {
   const user = getUser(req);
   if (!user) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
@@ -109,6 +110,9 @@ export async function POST(req: NextRequest) {
   const { amount } = await req.json();
   if (!amount || amount <= 0)
     return NextResponse.json({ success: false, error: "Invalid amount" }, { status: 400 });
+  if (!isOwnerTransferConfigured()) {
+    return NextResponse.json({ success: false, error: "Pi payout not configured. Contact admin." }, { status: 503 });
+  }
 
   const holdDays = await getHoldDays();
   const holdDate = new Date();
@@ -126,45 +130,92 @@ export async function POST(req: NextRequest) {
 
   if (claimableTotal < amount - 0.0001)
     return NextResponse.json({ success: false, error: "Insufficient claimable balance" }, { status: 400 });
+  // Keep accounting exact. Existing flow already withdraws total claimable amount.
+  if (Math.abs(claimableTotal - Number(amount)) > 0.0001) {
+    return NextResponse.json({
+      success: false,
+      error: `Please withdraw full claimable amount (${claimableTotal.toFixed(4)}π).`,
+    }, { status: 400 });
+  }
 
   // Get seller wallet address
   const { data: sellerUser } = await supabase
     .from("users")
-    .select("wallet_address")
+    .select("wallet_address, wallet_verified, pi_uid")
     .eq("id", user.userId)
     .single();
+  const recipientUid = String((sellerUser as { pi_uid?: string } | null)?.pi_uid ?? "").trim();
+  const destinationWallet = String((sellerUser as { wallet_address?: string } | null)?.wallet_address ?? "").trim();
+  const hasActivatedWallet = !!destinationWallet || !!(sellerUser as { wallet_verified?: boolean } | null)?.wallet_verified;
+  if (!recipientUid || !hasActivatedWallet) {
+    return NextResponse.json({
+      success: false,
+      error: "You must sign in with Pi and activate your wallet before withdrawing.",
+    }, { status: 400 });
+  }
 
-  // Create withdrawal request
+  // Create withdrawal record
   const { data: withdrawal, error } = await supabase
     .from("seller_withdrawals")
     .insert({
       seller_id:      user.userId,
       amount_pi:      amount,
-      wallet_address: sellerUser?.wallet_address ?? null,
+      wallet_address: destinationWallet || null,
       status:         "pending",
     })
-    .select("id")
+    .select("id, amount_pi")
     .single();
 
   if (error || !withdrawal)
-    return NextResponse.json({ success: false, error: "Failed to create withdrawal request" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Failed to create withdrawal" }, { status: 500 });
 
-  // Lock earnings
+  // Lock earnings before transfer
   const earningIds = (claimable ?? []).map(e => e.id);
   await supabase
     .from("seller_earnings")
     .update({ status: "processing", withdrawal_id: withdrawal.id })
     .in("id", earningIds);
 
-  console.log(`[Seller Withdrawal] userId=${user.userId} amount=${amount}π withdrawal=${withdrawal.id}`);
+  const transfer = await executeOwnerTransfer({
+    amountPi: Number(withdrawal.amount_pi),
+    recipientUid: recipientUid || undefined,
+    destinationWallet: destinationWallet || undefined,
+    note: `Seller withdrawal ${withdrawal.id}`,
+  });
+  if (!transfer.ok || !transfer.txid) {
+    await supabase
+      .from("seller_earnings")
+      .update({ status: "pending", withdrawal_id: null })
+      .eq("withdrawal_id", withdrawal.id);
+    await supabase
+      .from("seller_withdrawals")
+      .update({ status: "rejected", admin_note: transfer.message ?? "A2U payout failed", processed_at: new Date().toISOString() })
+      .eq("id", withdrawal.id);
+    return NextResponse.json({ success: false, error: transfer.message ?? "A2U payout failed" }, { status: 502 });
+  }
+
+  await supabase.from("seller_withdrawals").update({
+    status: "paid",
+    pi_txid: transfer.txid,
+    admin_note: "A2U payout",
+    processed_at: new Date().toISOString(),
+  }).eq("id", withdrawal.id);
+  await supabase
+    .from("seller_earnings")
+    .update({ status: "paid", pi_txid: transfer.txid })
+    .eq("withdrawal_id", withdrawal.id);
+
+  console.log(`[Seller Withdrawal A2U] userId=${user.userId} amount=${amount}π withdrawal=${withdrawal.id} txid=${transfer.txid}`);
 
   return NextResponse.json({
     success: true,
     data: {
       withdrawal_id: withdrawal.id,
-      amount_pi:     amount,
-      wallet_address: sellerUser?.wallet_address,
-      message: "Withdrawal request submitted. Admin will process within 1-3 business days.",
+      amount_pi: Number(withdrawal.amount_pi),
+      wallet_address: destinationWallet || null,
+      pi_txid: transfer.txid,
+      status: "paid",
+      message: "Withdrawal sent successfully via A2U.",
     },
   });
 }

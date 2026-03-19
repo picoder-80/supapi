@@ -13,7 +13,7 @@ interface ReferralStats {
 }
 interface Config {
   referral_l1_pct: number; referral_l2_pct: number; referral_l3_pct: number;
-  referral_join_bonus: number; referral_monthly_cap: number; referral_hold_days: number;
+  referral_monthly_cap: number; referral_hold_days: number;
 }
 interface Earning {
   id: string; level: number; platform: string; earned_pi: number;
@@ -38,7 +38,7 @@ const RANKS = [
 
 const PLATFORMS: Record<string, string> = {
   marketplace: "🛍️", academy: "📚", stay: "🏡", gigs: "💼",
-  arcade: "🎮", join_bonus: "🎁", kyc_bonus: "✅", wallet: "💰",
+  arcade: "🎮", wallet: "💰",
 };
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }

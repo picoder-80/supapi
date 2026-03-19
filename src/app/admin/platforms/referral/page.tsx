@@ -19,8 +19,6 @@ const RATE_KEYS = [
   { key: "referral_l1_pct",      label: "Level 1 Commission %",     suffix: "%",  min: 0, max: 20,  step: 0.5, desc: "Direct referral commission from platform fee" },
   { key: "referral_l2_pct",      label: "Level 2 Commission %",     suffix: "%",  min: 0, max: 10,  step: 0.5, desc: "Downline L2 commission" },
   { key: "referral_l3_pct",      label: "Level 3 Commission %",     suffix: "%",  min: 0, max: 5,   step: 0.5, desc: "Downline L3 commission" },
-  { key: "referral_join_bonus",  label: "Join Bonus",               suffix: "π",  min: 0, max: 5,   step: 0.1, desc: "Bonus when referee joins" },
-  { key: "referral_kyc_bonus",   label: "KYC Bonus",                suffix: "π",  min: 0, max: 5,   step: 0.1, desc: "Bonus bila referee complete KYC" },
   { key: "referral_monthly_cap", label: "Monthly Cap per User",     suffix: "π",  min: 1, max: 500, step: 1,   desc: "Max commission earnable per month" },
   { key: "referral_hold_days",   label: "Commission Hold (days)",   suffix: "d",  min: 0, max: 90,  step: 1,   desc: "Holding period before withdrawal" },
 ];

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeOwnerTransfer, isOwnerTransferConfigured } from "@/lib/pi/payout";
 import { getSupaChatAdminClient, getUserIdFromRequest } from "@/lib/supachat/server";
+import { applyReferralCommissionForSettlement } from "@/lib/referral/commission";
 
 export async function POST(req: NextRequest) {
   const userId = getUserIdFromRequest(req);
@@ -137,6 +138,14 @@ export async function POST(req: NextRequest) {
     source_id: transfer.id,
     amount_pi: commissionPi,
   });
+  if (commissionPi > 0) {
+    await applyReferralCommissionForSettlement({
+      buyerUserId: userId,
+      platform: "supachat_transfer",
+      platformFeePi: commissionPi,
+      settlementId: transfer.id,
+    });
+  }
 
   const { data: sender } = await supabase
     .from("users")

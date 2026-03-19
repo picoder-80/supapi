@@ -44,7 +44,6 @@ const PLATFORM_EARNING_META: Record<string, { typePrefix: string; sourcePrefix: 
 export const EARNING_EVENT_PRESETS = {
   market_order_complete: { platform: "market", event: "order_complete", sourceLabel: "SupaMarket Order Complete" },
   supascrow_release: { platform: "supascrow", event: "release", sourceLabel: "SupaScrow Deal Release" },
-  referral_join_bonus: { platform: "referral", event: "join_bonus", sourceLabel: "Referral Join Bonus" },
   referral_commission: { platform: "referral", event: "commission", sourceLabel: "Referral Commission" },
   referral_first_purchase_reward: { platform: "referral", event: "first_purchase_reward", sourceLabel: "Referral First Purchase Reward" },
   supapod_tip: { platform: "supapod", event: "tip", sourceLabel: "SupaPod Tip" },

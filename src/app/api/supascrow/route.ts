@@ -5,6 +5,7 @@ import { analyzeDispute, shouldAutoResolveDispute } from "@/lib/market/ai";
 import { logDisputeEvent } from "@/lib/security/dispute-audit";
 import { executeOwnerTransfer, isOwnerTransferConfigured } from "@/lib/pi/payout";
 import { creditPlatformEarning } from "@/lib/wallet/earnings";
+import { applyReferralCommissionForSettlement } from "@/lib/referral/commission";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -389,6 +390,14 @@ export async function POST(req: NextRequest) {
           refId: dealId,
           note: `SupaScrow release ${dealId}`,
         });
+        if (commissionPi > 0) {
+          await applyReferralCommissionForSettlement({
+            buyerUserId: deal.buyer_id,
+            platform: "supascrow",
+            platformFeePi: commissionPi,
+            settlementId: dealId,
+          });
+        }
       }
 
       const { error: upErr } = await supabase.from("supascrow_deals").update({ status: "released", released_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", dealId);
@@ -524,6 +533,14 @@ export async function POST(req: NextRequest) {
                 refId: dealId,
                 note: `SupaScrow auto release ${dealId}`,
               });
+              if (commissionPi > 0) {
+                await applyReferralCommissionForSettlement({
+                  buyerUserId: deal.buyer_id,
+                  platform: "supascrow",
+                  platformFeePi: commissionPi,
+                  settlementId: dealId,
+                });
+              }
             }
           }
         }

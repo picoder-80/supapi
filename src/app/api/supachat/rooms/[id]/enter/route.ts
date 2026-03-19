@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupaChatAdminClient, getUserIdFromRequest } from "@/lib/supachat/server";
+import { applyReferralCommissionForSettlement } from "@/lib/referral/commission";
 
 const ROOM_ENTRY_COMMISSION_KEY = "supachat_room_entry_commission_pct";
 
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const commissionPi = Number((fee * (commissionPct / 100)).toFixed(7));
   const hostPi = Number((fee - commissionPi).toFixed(7));
 
-  const { error } = await supabase.from("supachat_room_entries").insert({
+  const { data: roomEntry, error } = await supabase.from("supachat_room_entries").insert({
     room_id: id,
     user_id: userId,
     entry_fee_pi: fee,
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     host_pi: hostPi,
     pi_payment_id: piPaymentId || null,
     txid: txid || null,
-  });
+  }).select("id").single();
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
 
   await supabase
@@ -69,6 +70,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     source_id: id,
     amount_pi: commissionPi,
   });
+  if (commissionPi > 0) {
+    await applyReferralCommissionForSettlement({
+      buyerUserId: userId,
+      platform: "supachat_room_entry",
+      platformFeePi: commissionPi,
+      settlementId: String(roomEntry?.id ?? id),
+    });
+  }
   await supabase.from("supachat_room_messages").insert({
     room_id: id,
     sender_id: userId,

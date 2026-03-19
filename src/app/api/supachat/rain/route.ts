@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupaChatAdminClient, getUserIdFromRequest } from "@/lib/supachat/server";
+import { applyReferralCommissionForSettlement } from "@/lib/referral/commission";
 
 export async function POST(req: NextRequest) {
   const userId = getUserIdFromRequest(req);
@@ -91,6 +92,14 @@ export async function POST(req: NextRequest) {
     source_id: rain.id,
     amount_pi: serviceFee,
   });
+  if (serviceFee > 0) {
+    await applyReferralCommissionForSettlement({
+      buyerUserId: userId,
+      platform: "supachat_rain",
+      platformFeePi: serviceFee,
+      settlementId: rain.id,
+    });
+  }
 
   if (recipients.length > 0) {
     const notifRows = recipients.map((uid) => ({

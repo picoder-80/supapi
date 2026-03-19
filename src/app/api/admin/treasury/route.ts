@@ -410,7 +410,7 @@ export async function POST(req: NextRequest) {
 
   const { data: withdrawal } = await supabase
     .from("seller_withdrawals")
-    .select("id, seller_id, amount_pi, status")
+    .select("id, seller_id, amount_pi, status, wallet_address")
     .eq("id", withdrawal_id)
     .single();
 
@@ -421,20 +421,49 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: `Already ${withdrawal.status}` }, { status: 400 });
 
   if (action === "pay") {
-    if (!pi_txid)
-      return NextResponse.json({ success: false, error: "pi_txid required for pay action" }, { status: 400 });
+    let resolvedTxid = String(pi_txid ?? "").trim();
+    if (!resolvedTxid) {
+      if (!isOwnerTransferConfigured()) {
+        return NextResponse.json({ success: false, error: "Pi payout not configured for automatic transfer" }, { status: 503 });
+      }
+      const { data: seller } = await supabase
+        .from("users")
+        .select("pi_uid, wallet_address, wallet_verified")
+        .eq("id", withdrawal.seller_id)
+        .single();
+      const s = seller as { pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | null;
+      const recipientUid = s?.pi_uid?.trim();
+      const destinationWallet = (String(withdrawal.wallet_address ?? "").trim() || s?.wallet_address?.trim() || "");
+      const hasActivatedWallet = !!destinationWallet || !!s?.wallet_verified;
+      if (!recipientUid || !hasActivatedWallet) {
+        return NextResponse.json({
+          success: false,
+          error: "Seller must sign in with Pi and activate wallet before payout",
+        }, { status: 400 });
+      }
+      const transfer = await executeOwnerTransfer({
+        amountPi: Number(withdrawal.amount_pi),
+        recipientUid: recipientUid || undefined,
+        destinationWallet: destinationWallet || undefined,
+        note: `Seller withdrawal ${withdrawal.id}`,
+      });
+      if (!transfer.ok || !transfer.txid) {
+        return NextResponse.json({ success: false, error: transfer.message ?? "A2U payout failed" }, { status: 502 });
+      }
+      resolvedTxid = transfer.txid;
+    }
 
     // Mark withdrawal as paid
     await supabase.from("seller_withdrawals").update({
       status:       "paid",
-      pi_txid:      pi_txid,
+      pi_txid:      resolvedTxid,
       admin_note:   admin_note ?? null,
       processed_at: new Date().toISOString(),
     }).eq("id", withdrawal_id);
 
     // Mark linked earnings as paid
     await supabase.from("seller_earnings")
-      .update({ status: "paid", pi_txid: pi_txid })
+      .update({ status: "paid", pi_txid: resolvedTxid })
       .eq("withdrawal_id", withdrawal_id);
 
     if (auth.userId) {
@@ -443,15 +472,15 @@ export async function POST(req: NextRequest) {
         action: "treasury_seller_withdrawal_pay",
         targetType: "withdrawal",
         targetId: String(withdrawal_id),
-        detail: { amount_pi: withdrawal.amount_pi, pi_txid: String(pi_txid) },
+        detail: { amount_pi: withdrawal.amount_pi, pi_txid: String(resolvedTxid) },
       });
     }
 
-    console.log(`[Treasury] Withdrawal PAID: ${withdrawal_id} amount=${withdrawal.amount_pi}π txid=${pi_txid}`);
+    console.log(`[Treasury] Withdrawal PAID: ${withdrawal_id} amount=${withdrawal.amount_pi}π txid=${resolvedTxid}`);
 
     return NextResponse.json({
       success: true,
-      data: { status: "paid", withdrawal_id, pi_txid },
+      data: { status: "paid", withdrawal_id, pi_txid: resolvedTxid },
       message: `π${withdrawal.amount_pi} marked as paid to seller`,
     });
   }
