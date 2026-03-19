@@ -54,7 +54,7 @@ interface PiSDK {
   init(config: { version: string; sandbox?: boolean }): void;
 
   authenticate(
-    scopes: Array<"username" | "payments" | "wallet_address">,
+    scopes: Array<"username" | "payments" | "wallet_address" | "kyc">,
     onIncompletePaymentFound: (payment: PaymentDTO) => void
   ): Promise<AuthResult>;
 

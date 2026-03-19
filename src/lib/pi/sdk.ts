@@ -39,7 +39,12 @@ export async function authenticateWithPi() {
 
   // Request KYC data when available. Some Pi environments may not support
   // the explicit "kyc" scope; fallback keeps login functional.
-  const primaryScopes = ["username", "payments", "wallet_address", "kyc"];
+  const primaryScopes: Array<"username" | "payments" | "wallet_address" | "kyc"> = [
+    "username",
+    "payments",
+    "wallet_address",
+    "kyc",
+  ];
   try {
     return await window.Pi.authenticate(primaryScopes, onIncompletePaymentFound);
   } catch (err) {
