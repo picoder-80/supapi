@@ -38,6 +38,59 @@ function parseBooleanLike(value: unknown): boolean | null {
   return null;
 }
 
+/** Pi/Stellar-style public key (56 chars, G + 55 base32). */
+function findStellarLikeAddressDeep(obj: unknown, depth = 0, maxDepth = 8): string | null {
+  if (depth > maxDepth || obj == null) return null;
+  if (typeof obj === "string") {
+    const s = obj.trim();
+    if (/^G[A-Z0-9]{55}$/.test(s)) return s;
+    return null;
+  }
+  if (Array.isArray(obj)) {
+    for (const x of obj) {
+      const w = findStellarLikeAddressDeep(x, depth + 1, maxDepth);
+      if (w) return w;
+    }
+    return null;
+  }
+  if (typeof obj === "object") {
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      if (k === "accessToken") continue;
+      const w = findStellarLikeAddressDeep(v, depth + 1, maxDepth);
+      if (w) return w;
+    }
+  }
+  return null;
+}
+
+/** Walk JSON for KYC flags Pi may nest under varying keys (SDK payload; /me is often minimal). */
+function findKycVerifiedDeep(obj: unknown, depth = 0, maxDepth = 8): boolean | null {
+  if (depth > maxDepth || obj == null) return null;
+  if (typeof obj === "object" && !Array.isArray(obj)) {
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      if (k === "accessToken") continue;
+      const kl = k.toLowerCase();
+      if (kl === "kycverified" || kl === "kyc_verified") {
+        const b = parseBooleanLike(v);
+        if (b !== null) return b;
+      }
+      if (kl === "kyc" && typeof v === "string") {
+        const mapped = mapKycStatus(v);
+        if (mapped === "verified") return true;
+        if (mapped === "unverified") return false;
+      }
+      const inner = findKycVerifiedDeep(v, depth + 1, maxDepth);
+      if (inner !== null) return inner;
+    }
+  } else if (Array.isArray(obj)) {
+    for (const x of obj) {
+      const inner = findKycVerifiedDeep(x, depth + 1, maxDepth);
+      if (inner !== null) return inner;
+    }
+  }
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body   = await req.json();
@@ -69,6 +122,10 @@ export async function POST(req: NextRequest) {
     const authUser: any = parsed.data.authResult?.user ?? {};
     const authResultAny: any = authResult;
 
+    const authTree: Record<string, unknown> = { ...(authResultAny as object as Record<string, unknown>) };
+    delete authTree.accessToken;
+    const combinedPiPayload = { authResult: authTree, me: meData };
+
     // Deep search for KYC — check common paths
     const kycRaw =
       authUser.kyc_verified ?? authUser.kyc ?? authUser.kyc_status ?? authUser.credentials?.kyc ??
@@ -87,24 +144,44 @@ export async function POST(req: NextRequest) {
       null;
 
     // Deep search for wallet_address — Pi may nest it differently
-    const walletAddress =
+    const walletExplicit =
       authUser.wallet_address ?? authUser.walletAddress ?? authUser.credentials?.wallet_address ??
+      authUser.credentials?.walletAddress ??
       authResultAny.user?.wallet_address ?? authResultAny.user?.walletAddress ??
+      authResultAny.user?.credentials?.wallet_address ?? authResultAny.user?.credentials?.walletAddress ??
       authResultAny.wallet_address ?? authResultAny.walletAddress ?? authResultAny.credentials?.wallet_address ??
+      authResultAny.credentials?.walletAddress ??
       meData?.wallet_address ?? meData?.walletAddress ?? meData?.credentials?.wallet_address ??
-      meData?.user?.wallet_address ?? meData?.user?.credentials?.wallet_address ??
+      meData?.credentials?.walletAddress ??
+      meData?.user?.wallet_address ?? meData?.user?.walletAddress ?? meData?.user?.credentials?.wallet_address ??
+      meData?.user?.credentials?.walletAddress ??
       null;
+
+    const walletFromDeep = findStellarLikeAddressDeep(combinedPiPayload);
+    const walletTrim = typeof walletExplicit === "string" ? walletExplicit.trim() : "";
+    const walletAddress = walletTrim || walletFromDeep || null;
+    const walletSource: "explicit" | "deep" | "none" = walletTrim
+      ? "explicit"
+      : walletFromDeep
+        ? "deep"
+        : "none";
 
     const kycStatus = typeof kycRaw === "boolean"
       ? (kycRaw ? "verified" : "unverified")
       : mapKycStatus(kycRaw as string | undefined);
-    const kycBoolean = parseBooleanLike(kycBooleanRaw);
+    const kycFromDeep = findKycVerifiedDeep(combinedPiPayload);
+    const kycBoolean = parseBooleanLike(kycBooleanRaw) ?? kycFromDeep;
     const effectiveIncomingKyc = kycBoolean === true ? "verified" : (kycBoolean === false ? "unverified" : kycStatus);
 
     // Log for debugging — Pi API structure can change
     console.log("[Auth] Pi response — authResult.user:", JSON.stringify(authUser));
     console.log("[Auth] Pi response — meData:", JSON.stringify(meData));
     console.log("[Auth] Extracted — kyc:", effectiveIncomingKyc, "wallet:", walletAddress ? `${walletAddress.slice(0, 12)}...` : "empty");
+
+    const credKeysForDebug =
+      meData?.credentials && typeof meData.credentials === "object" && !Array.isArray(meData.credentials)
+        ? Object.keys(meData.credentials as Record<string, unknown>)
+        : [];
 
     const supabase = await createAdminClient();
 
@@ -113,6 +190,35 @@ export async function POST(req: NextRequest) {
       .select("*")
       .eq("pi_uid", piUser.uid)
       .single();
+
+    // #region agent log
+    fetch("http://127.0.0.1:7583/ingest/85ab3f18-cb22-483f-9206-fdd2fd446d94", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "2cdd1d" },
+      body:    JSON.stringify({
+        sessionId:    "2cdd1d",
+        runId:        "pi-auth-1",
+        hypothesisId: "A,B,C",
+        location:     "api/auth/pi/route.ts:afterExistingLookup",
+        message:      "Pi /me + authResult shape and extraction",
+        data:         {
+          meKeys:            Object.keys(meData || {}),
+          credKeys:          credKeysForDebug,
+          authUserKeys:      Object.keys(authUser || {}),
+          authTopKeys:       Object.keys(authResultAny || {}).filter((k) => k !== "accessToken"),
+          walletSource,
+          walletLen:         walletAddress ? String(walletAddress).length : 0,
+          effectiveIncomingKyc,
+          kycRawKind:        kycRaw === null || kycRaw === undefined ? "nullish" : typeof kycRaw,
+          kycBooleanRawKind: kycBooleanRaw === null || kycBooleanRaw === undefined ? "nullish" : typeof kycBooleanRaw,
+          kycFromDeepVal:    kycFromDeep,
+          isNewUser:         !existingUser,
+          dbHadWallet:       !!(existingUser as { wallet_address?: string } | null)?.wallet_address,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
 
     let user = existingUser;
     let isNewUser = false;
@@ -222,6 +328,45 @@ export async function POST(req: NextRequest) {
       .single();
     if (freshUser) user = freshUser;
 
+    const authDebug =
+      process.env.DEBUG_PI_AUTH === "true"
+        ? {
+            sessionId:            "2cdd1d",
+            meKeys:               Object.keys(meData || {}),
+            credKeys:             credKeysForDebug,
+            authUserKeys:         Object.keys(authUser || {}),
+            authTopKeys:          Object.keys(authResultAny || {}).filter((k) => k !== "accessToken"),
+            walletSource,
+            walletLen:            walletAddress ? String(walletAddress).length : 0,
+            effectiveIncomingKyc,
+            kycFromDeep,
+            dbWalletLen:          user.wallet_address ? String(user.wallet_address).length : 0,
+            dbKyc:                user.kyc_status,
+            dbWalletVerified:     !!user.wallet_verified,
+          }
+        : undefined;
+
+    // #region agent log
+    fetch("http://127.0.0.1:7583/ingest/85ab3f18-cb22-483f-9206-fdd2fd446d94", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "2cdd1d" },
+      body:    JSON.stringify({
+        sessionId:    "2cdd1d",
+        runId:        "pi-auth-2",
+        hypothesisId: "D,E",
+        location:     "api/auth/pi/route.ts:beforeResponse",
+        message:      "Post-DB user profile snapshot",
+        data:         {
+          dbWalletLen:      user.wallet_address ? String(user.wallet_address).length : 0,
+          dbKyc:            user.kyc_status,
+          dbWalletVerified: !!user.wallet_verified,
+          isNewUser,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+
     const token = signToken({
       userId:   user.id,
       piUid:    user.pi_uid,
@@ -231,7 +376,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data:    { user, token, isNewUser },
+      data:    { user, token, isNewUser, ...(authDebug ? { _authDebug: authDebug } : {}) },
       message: isNewUser ? "Account created successfully" : "Signed in successfully",
     });
 
