@@ -1,6 +1,7 @@
 // lib/referral.ts
 
 import { createAdminClient } from "@/lib/supabase/server";
+import { creditPlatformEarning } from "@/lib/wallet/earnings";
 
 const REFERRAL_REWARD_PI = 0.5;
 
@@ -35,6 +36,15 @@ export async function processReferralReward(referredUserId: string): Promise<voi
     reference_type: "referral",
     status: "completed",
     memo: "Referral reward — your friend made their first transaction",
+  });
+  await creditPlatformEarning({
+    userId: referral.referrer_id,
+    platform: "referral",
+    event: "first_purchase_reward",
+    amountPi: REFERRAL_REWARD_PI,
+    status: "available",
+    refId: `referral_reward_${referral.id}`,
+    note: "Referral reward from first completed purchase",
   });
 
   console.log(`[Referral] Rewarded ${REFERRAL_REWARD_PI} Pi to user ${referral.referrer_id}`);

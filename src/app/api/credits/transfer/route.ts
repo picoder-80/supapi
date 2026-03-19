@@ -25,9 +25,10 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
   const { toUsername, amount } = await req.json();
+  const normalizedToUsername = String(toUsername ?? "").trim().toLowerCase();
   const sc = parseInt(amount);
 
-  if (!toUsername || !sc || sc < 1) {
+  if (!normalizedToUsername || !sc || sc < 1) {
     return NextResponse.json({ success: false, error: "Invalid request" }, { status: 400 });
   }
 
@@ -39,18 +40,21 @@ export async function POST(req: NextRequest) {
   const { data: recipient } = await supabase
     .from("users")
     .select("id, username")
-    .eq("username", toUsername.toLowerCase())
+    .eq("username", normalizedToUsername)
     .single();
 
   if (!recipient) return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
   if (recipient.id === userId) return NextResponse.json({ success: false, error: "Cannot transfer to yourself" }, { status: 400 });
 
-  // Check sender balance
-  const { data: senderWallet } = await supabase
+  // Check sender balance + identity
+  const [{ data: senderUser }, { data: senderWallet }] = await Promise.all([
+    supabase.from("users").select("username").eq("id", userId).single(),
+    supabase
     .from("supapi_credits")
     .select("balance, total_spent")
     .eq("user_id", userId)
-    .single();
+    .single(),
+  ]);
 
   if (!senderWallet || senderWallet.balance < sc) {
     return NextResponse.json({ success: false, error: "Insufficient SC balance" }, { status: 400 });
@@ -65,26 +69,52 @@ export async function POST(req: NextRequest) {
     .eq("user_id", recipient.id)
     .single();
 
-  const senderNewBalance = senderWallet.balance - sc;
-  const recipientNewBalance = (recipientWallet?.balance ?? 0) + sc;
+  const senderOldBalance = Number(senderWallet.balance ?? 0);
+  const senderOldSpent = Number(senderWallet.total_spent ?? 0);
+  const senderNewBalance = senderOldBalance - sc;
 
-  // Deduct from sender
-  await supabase.from("supapi_credits")
+  // Optimistic debit guard to reduce race-condition double-spend.
+  const { data: senderUpdated } = await supabase.from("supapi_credits")
     .update({
       balance: senderNewBalance,
-      total_spent: senderWallet.total_spent + sc,
+      total_spent: senderOldSpent + sc,
       updated_at: new Date().toISOString(),
     })
-    .eq("user_id", userId);
+    .eq("balance", senderOldBalance)
+    .gte("balance", sc)
+    .eq("user_id", userId)
+    .select("user_id")
+    .maybeSingle();
+  if (!senderUpdated?.user_id) {
+    return NextResponse.json({ success: false, error: "Transfer conflict. Please try again." }, { status: 409 });
+  }
+
+  const recipientOldBalance = Number(recipientWallet?.balance ?? 0);
+  const recipientOldEarned = Number(recipientWallet?.total_earned ?? 0);
+  const recipientNewBalance = recipientOldBalance + sc;
 
   // Credit to recipient (100% — 0% fee)
-  await supabase.from("supapi_credits")
+  const { data: recipientUpdated } = await supabase.from("supapi_credits")
     .update({
       balance: recipientNewBalance,
-      total_earned: (recipientWallet?.total_earned ?? 0) + sc,
+      total_earned: recipientOldEarned + sc,
       updated_at: new Date().toISOString(),
     })
-    .eq("user_id", recipient.id);
+    .eq("balance", recipientOldBalance)
+    .eq("user_id", recipient.id)
+    .select("user_id")
+    .maybeSingle();
+  if (!recipientUpdated?.user_id) {
+    // Best-effort compensation to avoid stuck debit if receiver update failed.
+    await supabase.from("supapi_credits")
+      .update({
+        balance: senderOldBalance,
+        total_spent: senderOldSpent,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", userId);
+    return NextResponse.json({ success: false, error: "Transfer failed. Please retry." }, { status: 500 });
+  }
 
   // Log sender
   await supabase.from("credit_transactions").insert({
@@ -94,7 +124,7 @@ export async function POST(req: NextRequest) {
     amount: -sc,
     balance_after: senderNewBalance,
     ref_user_id: recipient.id,
-    note: `Transfer to @${toUsername}`,
+    note: `Transfer to @${recipient.username}`,
   });
 
   // Log recipient
@@ -105,7 +135,7 @@ export async function POST(req: NextRequest) {
     amount: sc,
     balance_after: recipientNewBalance,
     ref_user_id: userId,
-    note: `Transfer from @${toUsername}`,
+    note: `Transfer from @${senderUser?.username ?? "user"}`,
   });
 
   return NextResponse.json({

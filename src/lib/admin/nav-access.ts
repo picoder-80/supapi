@@ -2,7 +2,7 @@ import { hasAdminPermission, type AdminPermission } from "@/lib/admin/permission
 
 const NAV_PERMISSION_RULES: Array<{ prefix: string; permission: AdminPermission }> = [
   { prefix: "/admin/settings", permission: "admin.settings.read" },
-  { prefix: "/admin/platforms/wallet", permission: "admin.treasury.read" },
+  { prefix: "/admin/treasury", permission: "admin.treasury.read" },
   { prefix: "/admin/sc-wallet", permission: "admin.sc_wallet.read" },
   { prefix: "/admin/email-list", permission: "admin.email_list.read" },
   { prefix: "/admin/users", permission: "admin.users.read" },

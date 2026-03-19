@@ -46,7 +46,17 @@ export async function GET(req: NextRequest) {
   const userMap = new Map((users ?? []).map((u: { id: string }) => [u.id, u]));
   const listingsWithSeller = listings.map((r: Record<string, unknown>) => {
     const { seller_id, ...rest } = r;
-    return { ...rest, seller: userMap.get(seller_id as string) ?? null };
+    const fallbackSeller = {
+      id: String(seller_id ?? ""),
+      username: "unknown",
+      display_name: null,
+      avatar_url: null,
+      kyc_status: "unverified",
+      is_banned: false,
+    };
+    const seller = userMap.get(seller_id as string) ?? fallbackSeller;
+    const safeUsername = String((seller as { username?: string }).username ?? "").trim() || "unknown";
+    return { ...rest, seller: { ...seller, username: safeUsername } };
   });
 
   return NextResponse.json({ success: true, data: { listings: listingsWithSeller, total: count ?? 0, page, limit } });

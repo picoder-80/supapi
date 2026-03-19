@@ -25,8 +25,10 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
   const { toUsername, giftId, sc, emoji, name } = await req.json();
+  const normalizedToUsername = String(toUsername ?? "").trim().toLowerCase();
+  const giftAmount = Number(sc);
 
-  if (!toUsername || !sc || sc < 1) {
+  if (!normalizedToUsername || !Number.isFinite(giftAmount) || giftAmount < 1) {
     return NextResponse.json({ success: false, error: "Invalid request" }, { status: 400 });
   }
 
@@ -34,26 +36,31 @@ export async function POST(req: NextRequest) {
   const { data: recipient } = await supabase
     .from("users")
     .select("id, username")
-    .eq("username", toUsername.toLowerCase())
+    .eq("username", normalizedToUsername)
     .single();
 
   if (!recipient) return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
   if (recipient.id === userId) return NextResponse.json({ success: false, error: "Cannot gift yourself" }, { status: 400 });
 
   // Check sender balance
-  const { data: senderWallet } = await supabase
+  const [{ data: senderUser }, { data: senderWallet }] = await Promise.all([
+    supabase.from("users").select("username").eq("id", userId).single(),
+    supabase
     .from("supapi_credits")
     .select("balance, total_spent")
     .eq("user_id", userId)
-    .single();
+    .single(),
+  ]);
 
-  if (!senderWallet || senderWallet.balance < sc) {
+  if (!senderWallet || senderWallet.balance < giftAmount) {
     return NextResponse.json({ success: false, error: "Insufficient SC balance" }, { status: 400 });
   }
 
   // Calculate split: 70% creator, 30% platform (platform = just deducted, not credited)
-  const creatorSc = Math.floor(sc * 0.7);
-  const senderNewBalance = senderWallet.balance - sc;
+  const creatorSc = Math.floor(giftAmount * 0.7);
+  const senderOldBalance = Number(senderWallet.balance ?? 0);
+  const senderOldSpent = Number(senderWallet.total_spent ?? 0);
+  const senderNewBalance = senderOldBalance - giftAmount;
 
   // Ensure recipient wallet exists
   await supabase.from("supapi_credits").upsert({ user_id: recipient.id }, { onConflict: "user_id", ignoreDuplicates: true });
@@ -66,23 +73,48 @@ export async function POST(req: NextRequest) {
 
   const recipientNewBalance = (recipientWallet?.balance ?? 0) + creatorSc;
 
-  // Deduct from sender
-  await supabase.from("supapi_credits")
+  // Optimistic debit guard to reduce race-condition double-spend.
+  const { data: senderUpdated } = await supabase.from("supapi_credits")
     .update({
       balance: senderNewBalance,
-      total_spent: senderWallet.total_spent + sc,
+      total_spent: senderOldSpent + giftAmount,
       updated_at: new Date().toISOString(),
     })
-    .eq("user_id", userId);
+    .eq("balance", senderOldBalance)
+    .gte("balance", giftAmount)
+    .eq("user_id", userId)
+    .select("user_id")
+    .maybeSingle();
+  if (!senderUpdated?.user_id) {
+    return NextResponse.json({ success: false, error: "Gift conflict. Please try again." }, { status: 409 });
+  }
+
+  const recipientOldBalance = Number(recipientWallet?.balance ?? 0);
+  const recipientOldEarned = Number(recipientWallet?.total_earned ?? 0);
 
   // Credit to recipient (70%)
-  await supabase.from("supapi_credits")
+  const { data: recipientUpdated } = await supabase.from("supapi_credits")
     .update({
-      balance: recipientNewBalance,
-      total_earned: (recipientWallet?.total_earned ?? 0) + creatorSc,
+      balance: recipientOldBalance + creatorSc,
+      total_earned: recipientOldEarned + creatorSc,
       updated_at: new Date().toISOString(),
     })
-    .eq("user_id", recipient.id);
+    .eq("balance", recipientOldBalance)
+    .eq("user_id", recipient.id)
+    .select("user_id")
+    .maybeSingle();
+  if (!recipientUpdated?.user_id) {
+    await supabase.from("supapi_credits")
+      .update({
+        balance: senderOldBalance,
+        total_spent: senderOldSpent,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", userId);
+    return NextResponse.json({ success: false, error: "Gift failed. Please retry." }, { status: 500 });
+  }
+
+  const recipientNewBalance = recipientOldBalance + creatorSc;
 
   // Log sender transaction
   await supabase.from("credit_transactions").insert({
@@ -92,7 +124,7 @@ export async function POST(req: NextRequest) {
     amount: -sc,
     balance_after: senderNewBalance,
     ref_user_id: recipient.id,
-    note: `${emoji} Gift ${name} to @${toUsername}`,
+    note: `${emoji} Gift ${name} to @${recipient.username}`,
   });
 
   // Log recipient transaction
@@ -103,13 +135,13 @@ export async function POST(req: NextRequest) {
     amount: creatorSc,
     balance_after: recipientNewBalance,
     ref_user_id: userId,
-    note: `${emoji} Received ${name} gift (70%)`,
+    note: `${emoji} Received ${name} gift (70%) from @${senderUser?.username ?? "user"}`,
   });
 
   return NextResponse.json({
     success: true,
     data: {
-      sent: sc,
+      sent: giftAmount,
       creatorReceives: creatorSc,
       senderBalance: senderNewBalance,
     }

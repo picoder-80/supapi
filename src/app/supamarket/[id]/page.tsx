@@ -170,6 +170,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                   referenceId: orderId,
                   amountPi: Number(listing!.price_pi),
                   memo: `Supapi Market: ${listing!.title}`,
+                  metadata: { platform: "market", order_id: orderId, listing_id: listing!.id },
                 }),
               })
                 .then(async (r) => {

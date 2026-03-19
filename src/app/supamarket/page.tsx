@@ -205,7 +205,7 @@ function MarketPageContent() {
           <div className={styles.heroStatDiv} />
           <div className={styles.heroStat}>
             <span className={styles.heroStatNum}>{deliveredCount !== null ? deliveredCount.toLocaleString() : "—"}</span>
-            <span className={styles.heroStatLabel}>Delivered</span>
+            <span className={styles.heroStatLabel}>Completed Escrow</span>
           </div>
         </div>
 

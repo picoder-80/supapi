@@ -18,6 +18,7 @@ const schema = z.object({
   referenceId: z.string().min(1),
   amountPi:    z.number().positive(),
   memo:        z.string(),
+  metadata:    z.record(z.unknown()).optional(),
 });
 
 const cors = (req: NextRequest) => req.headers.get("origin");
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return R.withCors(R.badRequest("Missing required fields"), cors(req));
 
-  const { paymentId, type, referenceId, amountPi, memo } = parsed.data;
+  const { paymentId, type, referenceId, amountPi, memo, metadata } = parsed.data;
   const supabase = await createAdminClient();
   console.log("[Approve] Start:", { paymentId, userId: payload.userId, type, referenceId, amountPi });
 
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
     // Already approved before — just re-call Pi API (also idempotent)
     console.log("[Approve] Already exists, re-approving:", paymentId);
   } else {
-    // First time — create the transaction record
+    // First time — create the transaction record (metadata for commission platform lookup)
     const { error } = await supabase.from("transactions").insert({
       user_id:        payload.userId,
       type:           "purchase",
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
       reference_type: type,
       status:         "pending",
       memo,
+      metadata:       metadata ?? {},
     });
 
     if (error) {

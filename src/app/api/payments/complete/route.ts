@@ -15,6 +15,7 @@ import { getTokenFromRequest } from "@/lib/auth/session";
 import { completePayment, getPayment } from "@/lib/pi/payments";
 import { createAdminClient } from "@/lib/supabase/server";
 import { processReferralReward } from "@/lib/referral";
+import { creditPlatformEarning } from "@/lib/wallet/earnings";
 import * as R from "@/lib/api";
 
 const schema = z.object({
@@ -315,10 +316,42 @@ export async function POST(req: NextRequest) {
   if (transaction.reference_type === "supapod_tip") {
     const tipId = transaction.reference_id;
     if (tipId) {
+      const { data: tip } = await supabase
+        .from("supapod_tips")
+        .select("id, amount_pi, episode_id")
+        .eq("id", tipId)
+        .maybeSingle();
+
       await supabase
         .from("supapod_tips")
         .update({ status: "completed", pi_payment_id: paymentId })
         .eq("id", tipId);
+
+      if (tip?.episode_id) {
+        const { data: episode } = await supabase
+          .from("supapod_episodes")
+          .select("supapod_id")
+          .eq("id", tip.episode_id)
+          .maybeSingle();
+        if (episode?.supapod_id) {
+          const { data: pod } = await supabase
+            .from("supapods")
+            .select("creator_id")
+            .eq("id", episode.supapod_id)
+            .maybeSingle();
+          if (pod?.creator_id && Number(tip.amount_pi ?? 0) > 0) {
+            await creditPlatformEarning({
+              userId: String(pod.creator_id),
+              platform: "supapod",
+              event: "tip",
+              amountPi: Number(tip.amount_pi),
+              status: "available",
+              refId: String(tip.id),
+              note: `Tip received for podcast episode`,
+            });
+          }
+        }
+      }
       console.log("[Complete] Podcast tip completed:", tipId);
     }
   }
@@ -349,24 +382,22 @@ export async function POST(req: NextRequest) {
   const refOrderId =
     typeof transaction.reference_id === "string" ? transaction.reference_id.trim() : transaction.reference_id;
   const orderId = metaOrderId ?? (transaction.reference_type === "listing" ? refOrderId : null);
-  const platform = meta.platform ?? "market";
+  // platform for commission lookup: from metadata or derive from reference_type
+  const platform = meta.platform ?? (transaction.reference_type === "listing" ? "market" : "market");
   const grossPi  = parseFloat(String(transaction.amount_pi ?? 0));
 
   if (orderId && grossPi > 0) {
-    // Get commission % for this platform
-    const { data: configData } = await supabase
+    // Get commission % from platform_config (never hardcode — use configured rate)
+    const { data: cfg1 } = await supabase
       .from("platform_config")
       .select("value")
       .eq("key", `commission_${platform}`)
       .maybeSingle();
-
-    const { data: fallback } = !configData ? await supabase
-      .from("platform_config")
-      .select("value")
-      .eq("key", "market_commission_pct")
-      .single() : { data: null };
-
-    const commissionPct = parseFloat(configData?.value ?? fallback?.value ?? "5");
+    const { data: cfg2 } = !cfg1?.value
+      ? await supabase.from("platform_config").select("value").eq("key", "market_commission_pct").maybeSingle()
+      : { data: null };
+    const rawPct = String(cfg1?.value ?? cfg2?.value ?? "").trim();
+    const commissionPct = Number.isFinite(parseFloat(rawPct)) ? parseFloat(rawPct) : 5;
     const commissionPi  = Math.round(grossPi * (commissionPct / 100) * 1000000) / 1000000;
     const netPi         = Math.round((grossPi - commissionPi) * 1000000) / 1000000;
 

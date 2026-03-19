@@ -12,6 +12,8 @@ interface TreasuryData {
     total_commission_pi: number;
     pending_payouts_pi: number;
     available_balance_pi: number;
+    owner_withdrawn_pi?: number;
+    available_after_owner_pi?: number;
   };
   pending_withdrawals: Array<{
     id: string;
@@ -192,7 +194,9 @@ export default function AdminDashboardPage() {
             <button className={`${styles.periodBtn} ${period==="month" ? styles.periodBtnActive : ""}`} onClick={() => setPeriod("month")}>Month</button>
             <button className={`${styles.periodBtn} ${period==="all" ? styles.periodBtnActive : ""}`} onClick={() => setPeriod("all")}>All</button>
             </div>
-            <Link href="/admin/platforms/wallet" className={styles.sectionLink}>Treasury Admin →</Link>
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <Link href="/admin/treasury" className={styles.sectionLink}>Treasury →</Link>
+            </div>
           </div>
         </div>
         {loading && <div className={styles.loading}>Loading treasury data...</div>}
@@ -200,20 +204,25 @@ export default function AdminDashboardPage() {
         {treasury ? (
           <>
             <div className={styles.treasuryGrid}>
-              <div className={`${styles.treasuryCard} ${styles.treasuryCardPrimary}`}>
-                <div className={styles.treasuryLabel}>Available Balance</div>
-                <div className={styles.treasuryValue}>{Number(treasury.summary.available_balance_pi).toFixed(4)} π</div>
-                <div className={styles.treasurySub}>Estimated after pending payouts</div>
+              <div className={styles.treasuryCard}>
+                <div className={styles.treasuryLabel}>Total Revenue</div>
+                <div className={styles.treasuryValue}>{Number(treasury.summary.total_gross_pi).toFixed(4)} π</div>
+                <div className={styles.treasurySub}>gross from all platforms</div>
+              </div>
+              <div className={styles.treasuryCard}>
+                <div className={styles.treasuryLabel}>Supapi Commission</div>
+                <div className={styles.treasuryValue}>{Number(treasury.summary.total_commission_pi).toFixed(4)} π</div>
+                <div className={styles.treasurySub}>your earnings</div>
               </div>
               <div className={styles.treasuryCard}>
                 <div className={styles.treasuryLabel}>Pending Payouts</div>
                 <div className={styles.treasuryValueWarn}>{Number(treasury.summary.pending_payouts_pi).toFixed(4)} π</div>
-                <div className={styles.treasurySub}>{treasury.pending_withdrawals.length} withdrawal request(s)</div>
+                <div className={styles.treasurySub}>owed to sellers · {treasury.pending_withdrawals.length} request(s)</div>
               </div>
-              <div className={styles.treasuryCard}>
-                <div className={styles.treasuryLabel}>Total Commission</div>
-                <div className={styles.treasuryValue}>{Number(treasury.summary.total_commission_pi).toFixed(4)} π</div>
-                <div className={styles.treasurySub}>From completed escrow releases</div>
+              <div className={`${styles.treasuryCard} ${styles.treasuryCardPrimary}`}>
+                <div className={styles.treasuryLabel}>Available Balance</div>
+                <div className={styles.treasuryValue}>{Number(treasury.summary.available_after_owner_pi ?? treasury.summary.available_balance_pi).toFixed(4)} π</div>
+                <div className={styles.treasurySub}>commission − payouts − withdrawn</div>
               </div>
             </div>
             <div className={styles.splitGrid}>

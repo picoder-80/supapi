@@ -19,6 +19,7 @@ interface PaymentOptions {
 export function usePiPayment() {
   const [isPaying, setIsPaying] = useState(false);
   const [error,    setError]    = useState<string | null>(null);
+  const token = () => (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "");
 
   const pay = (opts: PaymentOptions) => {
     setIsPaying(true);
@@ -41,7 +42,11 @@ export function usePiPayment() {
           const base = getApiBase();
           fetch(`${base || ""}/api/payments/approve`, {
             method:  "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token()}`,
+            },
+            credentials: "include",
             body: JSON.stringify({
               paymentId,
               type:        opts.type,
@@ -59,7 +64,11 @@ export function usePiPayment() {
             const base = getApiBase();
             const res = await fetch(`${base || ""}/api/payments/complete`, {
               method:  "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token()}`,
+              },
+              credentials: "include",
               body:    JSON.stringify({ paymentId, txid }),
             });
 

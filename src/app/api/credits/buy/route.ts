@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const userId = getUserId(req);
   if (!userId) return withCors(NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 }), req);
 
-  const { paymentId, txid, action, pkg, sc } = await req.json();
+  const { paymentId, txid, action, pkg } = await req.json();
 
   // ── APPROVE ──────────────────────────────────────────────────────────────
   if (action === "approve") {
@@ -90,9 +90,10 @@ export async function POST(req: NextRequest) {
       return withCors(NextResponse.json({ success: false, error: e.message }, { status: 500 }), req);
     }
 
-    // Credit SC to wallet
-    const scAmount = sc ?? PACKAGES[pkg] ?? 0;
-    if (!scAmount) return NextResponse.json({ success: false, error: "Invalid package" }, { status: 400 });
+    // Credit SC to wallet (server-authoritative package mapping)
+    const pkgKey = String(pkg ?? "").trim();
+    const scAmount = PACKAGES[pkgKey] ?? 0;
+    if (!scAmount) return withCors(NextResponse.json({ success: false, error: "Invalid package" }, { status: 400 }), req);
 
     await supabase.from("supapi_credits")
       .upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });

@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
       buyer:buyer_id(id, username, display_name, avatar_url),
       seller:seller_id(id, username, display_name, avatar_url)`,
       { count: "exact" })
+    .not("listing_id", "is", null)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 

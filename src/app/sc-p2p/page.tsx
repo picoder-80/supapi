@@ -204,55 +204,72 @@ export default function ScP2PPage() {
       {showTransferModal && (
         <div className={styles.transferModal}>
           <div className={styles.transferModalBackdrop} onClick={() => !transferring && setShowTransferModal(false)} />
-          <div className={styles.transferModalSheet}>
-            <div className={styles.transferModalHandle} />
-            <div className={styles.transferModalEmoji}>💸</div>
-            <div className={styles.transferModalTitle}>Send SupaCredit</div>
-            <div className={styles.transferModalSub}>P2P transfer with zero fee</div>
-
-            <input
-              className={styles.transferInput}
-              placeholder="Enter @username"
-              list="sc-p2p-user-suggestions"
-              value={transferUsername}
-              onChange={(e) => setTransferUsername(e.target.value.replace("@", ""))}
-            />
-            <input
-              className={styles.transferInput}
-              placeholder="Amount (SC)"
-              type="number"
-              min="1"
-              value={transferAmount}
-              onChange={(e) => setTransferAmount(e.target.value)}
-            />
-
-            <div className={styles.transferModalInfo}>
-              <div className={styles.transferModalRow}>
-                <span className={styles.transferModalLabel}>Your Balance</span>
-                <span className={styles.transferModalVal}>💎 {(wallet?.balance ?? 0).toLocaleString()} SC</span>
+          <div className={styles.transferModalCard} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.transferModalHeader}>
+              <div className={styles.transferModalIcon}>💸</div>
+              <div className={styles.transferModalBadge}>P2P Transfer</div>
+              <h2 className={styles.transferModalTitle}>Send SupaCredit</h2>
+              <p className={styles.transferModalSub}>P2P transfer with zero fee</p>
+            </div>
+            <div className={styles.transferModalBody}>
+              <div className={styles.transferFormGroup}>
+                <label className={styles.transferFormLabel}>Receiver</label>
+                <input
+                  className={styles.transferInput}
+                  placeholder="Username (e.g. johndoe)"
+                  list="sc-p2p-user-suggestions"
+                  value={transferUsername}
+                  onChange={(e) => setTransferUsername(e.target.value.replace("@", ""))}
+                />
               </div>
-              <div className={styles.transferModalRow}>
-                <span className={styles.transferModalLabel}>Fee</span>
-                <span className={styles.transferModalVal}>0 SC</span>
+              <div className={styles.transferFormGroup}>
+                <label className={styles.transferFormLabel}>Amount</label>
+                <div className={styles.transferAmountRow}>
+                  <input
+                    className={styles.transferAmountInput}
+                    type="number"
+                    min="1"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={transferAmount}
+                    onChange={(e) => setTransferAmount(e.target.value)}
+                  />
+                  <select className={styles.transferCurrencySelect} disabled>
+                    <option value="sc">💎 SC</option>
+                  </select>
+                </div>
               </div>
-              <div className={styles.transferModalRow}>
-                <span className={styles.transferModalLabel}>Receiver Gets</span>
-                <span className={styles.transferModalValGold}>
-                  {transferAmount && Number(transferAmount) > 0 ? Number(transferAmount) : 0} SC
-                </span>
+              <div className={styles.transferFormGroup}>
+                <div className={styles.transferModalInfo}>
+                  <div className={styles.transferModalRow}>
+                    <span className={styles.transferModalLabel}>Your Balance</span>
+                    <span className={styles.transferModalVal}>💎 {(wallet?.balance ?? 0).toLocaleString()} SC</span>
+                  </div>
+                  <div className={styles.transferModalRow}>
+                    <span className={styles.transferModalLabel}>Fee</span>
+                    <span className={styles.transferModalVal}>0 SC</span>
+                  </div>
+                  <div className={styles.transferModalRow}>
+                    <span className={styles.transferModalLabel}>Receiver Gets</span>
+                    <span className={styles.transferModalValGold}>
+                      {transferAmount && Number(transferAmount) > 0 ? Number(transferAmount) : 0} SC
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-
-            <button
-              className={styles.transferModalConfirmBtn}
-              onClick={handleTransfer}
-              disabled={transferring || !transferUsername.trim() || !transferAmount}
-            >
-              {transferring ? "Sending..." : "Send Transfer"}
-            </button>
-            <button className={styles.transferModalCancelBtn} onClick={() => setShowTransferModal(false)} disabled={transferring}>
-              Cancel
-            </button>
+            <div className={styles.transferModalFooter}>
+              <button className={styles.transferModalCancelBtn} onClick={() => setShowTransferModal(false)} disabled={transferring}>
+                Cancel
+              </button>
+              <button
+                className={styles.transferModalConfirmBtn}
+                onClick={handleTransfer}
+                disabled={transferring || !transferUsername.trim() || !transferAmount}
+              >
+                {transferring ? "Sending..." : "Send Transfer"}
+              </button>
+            </div>
             <datalist id="sc-p2p-user-suggestions">
               {usernameSuggestions.map((u) => (
                 <option key={u.id} value={u.username} label={u.display_name ? `${u.display_name} (@${u.username})` : `@${u.username}`} />

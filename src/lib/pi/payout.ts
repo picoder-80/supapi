@@ -20,6 +20,8 @@ export function isOwnerTransferConfigured(): boolean {
 export async function executeOwnerTransfer(input: OwnerTransferInput): Promise<OwnerTransferResult> {
   const endpoint = process.env.PI_PAYOUT_API_URL;
   const apiKey = process.env.PI_PAYOUT_API_KEY;
+  const timeoutMsRaw = Number(process.env.PI_PAYOUT_TIMEOUT_MS ?? 20000);
+  const timeoutMs = Number.isFinite(timeoutMsRaw) ? Math.max(3000, timeoutMsRaw) : 20000;
 
   if (!endpoint || !apiKey) {
     return {
@@ -47,14 +49,23 @@ export async function executeOwnerTransfer(input: OwnerTransferInput): Promise<O
     if (uid) body.recipient_uid = uid;
     if (wallet) body.destination_wallet = wallet;
 
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    let response: Response;
+    try {
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
 
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -83,6 +94,13 @@ export async function executeOwnerTransfer(input: OwnerTransferInput): Promise<O
 
     return { ok: true, provider: "custom_api", txid, raw: payload };
   } catch (error: any) {
+    if (error?.name === "AbortError") {
+      return {
+        ok: false,
+        provider: "custom_api",
+        message: `Transfer API timed out after ${timeoutMs}ms`,
+      };
+    }
     return {
       ok: false,
       provider: "custom_api",

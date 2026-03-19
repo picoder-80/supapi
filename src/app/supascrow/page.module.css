@@ -972,10 +972,89 @@
   flex-direction: column;
   gap: 8px;
   width: 100%;
+  border: 1px solid rgba(245, 166, 35, 0.28);
+  background: rgba(245, 166, 35, 0.06);
+  border-radius: 12px;
+  padding: 10px;
 }
 
 .disputeBlock .textarea {
   margin-bottom: 0;
+}
+
+.disputeTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.disputeTitle {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.disputeHint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.disputePresetRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.disputePresetBtn {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.disputePresetBtnActive {
+  border-color: rgba(245, 166, 35, 0.6);
+  background: rgba(245, 166, 35, 0.18);
+  color: #92400e;
+}
+
+.disputeHelpRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.disputeHelpText {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.disputeCount {
+  font-size: 11px;
+  color: var(--color-text-light);
+  white-space: nowrap;
+}
+
+.disputeMinNote {
+  font-size: 11px;
+  color: #9a6700;
+}
+
+.disputeAvailabilityHint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background: rgba(245, 166, 35, 0.08);
+  border: 1px solid rgba(245, 166, 35, 0.25);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
 }
 
 .trackingInfo {

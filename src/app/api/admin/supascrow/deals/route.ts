@@ -28,7 +28,18 @@ export async function GET(req: NextRequest) {
 
   if (status) query = query.eq("status", status);
 
-  const { data: deals, error, count } = await query;
+  const [
+    { data: deals, error, count },
+    { data: summaryRows },
+    { count: openDisputesCount },
+  ] = await Promise.all([
+    query,
+    supabase.from("supascrow_deals").select("status, amount_pi, currency"),
+    supabase
+      .from("supascrow_disputes")
+      .select("id", { count: "exact", head: true })
+      .or("resolution.is.null,resolution.eq.pending"),
+  ]);
 
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
 
@@ -42,8 +53,39 @@ export async function GET(req: NextRequest) {
     seller: userMap.get(d.seller_id) ?? { id: d.seller_id, username: "?", display_name: null },
   }));
 
+  const byStatus: Record<string, number> = {};
+  let totalEscrowPi = 0;
+  let fundedEscrowPi = 0;
+  let releasedEscrowPi = 0;
+  let refundedEscrowPi = 0;
+  for (const row of summaryRows ?? []) {
+    const statusKey = String((row as { status?: string }).status ?? "unknown");
+    byStatus[statusKey] = (byStatus[statusKey] ?? 0) + 1;
+
+    const amount = Number((row as { amount_pi?: number }).amount_pi ?? 0);
+    const currency = String((row as { currency?: string }).currency ?? "pi");
+    if (currency === "pi") {
+      totalEscrowPi += amount;
+      if (statusKey === "funded") fundedEscrowPi += amount;
+      if (statusKey === "released") releasedEscrowPi += amount;
+      if (statusKey === "refunded") refundedEscrowPi += amount;
+    }
+  }
+
   return NextResponse.json({
     success: true,
-    data: { deals: enriched, total: count ?? 0 },
+    data: {
+      deals: enriched,
+      total: count ?? 0,
+      summary: {
+        total_deals: count ?? 0,
+        open_disputes: openDisputesCount ?? 0,
+        status_counts: byStatus,
+        total_escrow_pi: Number(totalEscrowPi.toFixed(4)),
+        funded_escrow_pi: Number(fundedEscrowPi.toFixed(4)),
+        released_escrow_pi: Number(releasedEscrowPi.toFixed(4)),
+        refunded_escrow_pi: Number(refundedEscrowPi.toFixed(4)),
+      },
+    },
   });
 }

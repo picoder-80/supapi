@@ -18,20 +18,6 @@ interface Listing { id:string; title:string; price_pi:number; category:string; s
 interface Order   { id:string; status:string; amount_pi:number; buying_method:string; created_at:string; pi_payment_id:string; listing:{id:string;title:string;images:string[]}|null; buyer:{id:string;username:string;display_name:string|null}; seller:{id:string;username:string;display_name:string|null}; }
 interface Dispute { id:string; reason:string; evidence?: string[]; status:string; ai_decision:string; ai_reasoning:string; ai_confidence:number; created_at:string; resolved_at:string | null; refund_status?: string | null; refund_txid?: string | null; refund_amount_pi?: number | null; opened_by_user:{id:string;username:string;display_name:string|null}; order:{id:string;amount_pi:number;status:string;buyer:{username:string};seller:{username:string};listing:{title:string}}|null; }
 interface User    { id:string; username:string; display_name:string|null; avatar_url:string|null; kyc_status:string; role:string; is_banned:boolean; ban_reason:string|null; seller_verified:boolean; created_at:string; last_seen:string|null; }
-interface SupportTicket {
-  id: string;
-  user_id: string;
-  order_id: string | null;
-  message: string;
-  category: string;
-  priority: string;
-  ai_reply: string | null;
-  ai_actions: string[] | null;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
-
 const STATUS_COLOR: Record<string,string> = {
   active:"#27ae60", paused:"#f39c12", sold:"#7f8c8d", removed:"#e74c3c",
   pending:"#f39c12", paid:"#27ae60", shipped:"#2980b9", meetup_set:"#8e44ad",
@@ -59,11 +45,10 @@ const TABS = [
   { id:"listings",   label:"🛍️ Listings"   },
   { id:"orders",     label:"📦 Orders"     },
   { id:"disputes",   label:"⚖️ Disputes"   },
-  { id:"support",    label:"🎧 Support"    },
   { id:"users",      label:"👥 Users"      },
   { id:"commission", label:"💰 Commission" },
 ];
-type TabId = "overview"|"listings"|"orders"|"disputes"|"support"|"users"|"commission";
+type TabId = "overview"|"listings"|"orders"|"disputes"|"users"|"commission";
 const TAB_IDS = new Set(TABS.map((t) => t.id));
 function getTabFromHash(): TabId | null {
   if (typeof window === "undefined") return null;
@@ -83,8 +68,6 @@ export default function AdminMarketPage() {
   const [orderTotal, setOrderTotal] = useState(0);
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [disputeQueue, setDisputeQueue] = useState<{ open: number; needs_review: number }>({ open: 0, needs_review: 0 });
-  const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
-  const [supportTotal, setSupportTotal] = useState(0);
   const [users, setUsers] = useState<User[]>([]);
   const [userTotal, setUserTotal] = useState(0);
   const [commConfig, setCommConfig] = useState<any>(null);
@@ -92,7 +75,6 @@ export default function AdminMarketPage() {
   const [orderStatus, setOrderStatus] = useState("");
   const [disputeStatus, setDisputeStatus] = useState("");
   const [needsReviewOnly, setNeedsReviewOnly] = useState(false);
-  const [supportStatus, setSupportStatus] = useState("");
   const [userQ, setUserQ] = useState(""); const [userFilter, setUserFilter] = useState("");
   const [commPct, setCommPct] = useState(""); const [savingComm, setSavingComm] = useState(false); const [commMsg, setCommMsg] = useState("");
   const [overrideId, setOverrideId] = useState<string|null>(null);
@@ -107,7 +89,6 @@ export default function AdminMarketPage() {
   const [recentOrdersPage, setRecentOrdersPage] = useState(1);
   const [ordersListPage, setOrdersListPage] = useState(1);
   const [disputesPage, setDisputesPage] = useState(1);
-  const [supportPage, setSupportPage] = useState(1);
   const [usersPage, setUsersPage] = useState(1);
   const ADMIN_PAGE_SIZE = 10;
   const [banUserId, setBanUserId] = useState<string|null>(null); const [banReason, setBanReason] = useState("");
@@ -156,20 +137,6 @@ export default function AdminMarketPage() {
       })
       .finally(()=>setLoading(false));
   }, [token,tab,disputeStatus,needsReviewOnly,adminFetch]);
-  useEffect(() => {
-    if (!token || tab !== "support") return;
-    setLoading(true);
-    const params = new URLSearchParams({ status: supportStatus });
-    adminFetch(`/api/admin/supamarket/support/tickets?${params}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success) {
-          setSupportTickets(d.data.tickets ?? []);
-          setSupportTotal(d.data.total ?? 0);
-        }
-      })
-      .finally(() => setLoading(false));
-  }, [token, tab, supportStatus, adminFetch]);
   useEffect(() => { if (!token || tab !== "users") return; setLoading(true); adminFetch(`/api/admin/users?q=${userQ}&filter=${userFilter}`).then(r=>r.json()).then(d=>{if(d.success){setUsers(d.data.users??[]);setUserTotal(d.data.total??0);}}).finally(()=>setLoading(false)); }, [token,tab,userQ,userFilter,adminFetch]);
   useEffect(() => { if (!token || tab !== "commission") return; setLoading(true); adminFetch("/api/admin/supamarket/commission").then(r=>r.json()).then(d=>{if(d.success){setCommConfig(d.data);setCommPct(String(d.data.commission_pct));}}).finally(()=>setLoading(false)); }, [token,tab,adminFetch]);
 
@@ -308,13 +275,6 @@ export default function AdminMarketPage() {
     } catch {}
     setExporting(null);
   };
-  const updateSupportTicket = async (id: string, status: "in_progress" | "resolved" | "closed") => {
-    const r = await adminFetch(`/api/admin/supamarket/support/tickets/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
-    const d = await r.json();
-    if (d.success) {
-      setSupportTickets((prev) => prev.map((t) => (t.id === id ? { ...t, status: d.data.status, updated_at: d.data.updated_at } : t)));
-    }
-  };
   const simulateOrderAutoCredit = async (orderId: string, execute: boolean) => {
     const loadingKey = `${orderId}:${execute ? "execute" : "dry"}`;
     setOrderActionLoading((prev) => ({ ...prev, [loadingKey]: true }));
@@ -356,7 +316,7 @@ export default function AdminMarketPage() {
       <AdminPageHero
         icon="🛍️"
         title="SupaMarket Admin"
-        subtitle="Manage listings, orders, disputes, support, and commission settings"
+        subtitle="Manage listings, orders, disputes, and commission settings"
         showBadge
       />
 
@@ -373,7 +333,7 @@ export default function AdminMarketPage() {
               <Stat label="Completed Sales" value={stats.orders.completed} color="#27ae60"/>
               <Stat label="Open Disputes"   value={stats.orders.disputed}  color={stats.orders.disputed>0?"#e74c3c":undefined}/>
               <Stat label="Total GMV"       value={`${stats.revenue.total_pi.toFixed(2)} π`} sub="Gross merchandise value" color="#F5A623"/>
-              <Stat label="Est. Commission" value={`${stats.revenue.estimated_commission.toFixed(4)} π`} sub={`@ ${stats.revenue.commission_pct}%`} color="#2980b9"/>
+              <Stat label="Total Commission" value={`${stats.revenue.commission_pi.toFixed(4)} π`} sub={`@ ${stats.revenue.commission_pct}% · Est from GMV: ${stats.revenue.estimated_commission.toFixed(4)} π`} color="#2980b9"/>
             </div>
             <div className={styles.section}>
               <div className={styles.sectionTitle}>Recent Orders</div>
@@ -418,7 +378,7 @@ export default function AdminMarketPage() {
                 <tr key={l.id}>
                   <td><div className={styles.thumbCell}>{l.images?.[0]?<img src={l.images[0]} alt="" className={styles.tableThumb}/>:"🛍️"}</div></td>
                   <td><Link href={`/supamarket/${l.id}`} className={styles.link}>{l.title}</Link></td>
-                  <td><span className={styles.userCell}>@{l.seller?.username}{l.seller?.kyc_status==="verified"&&<KycBadge size={14} />}{l.seller?.is_banned&&<span className={styles.bannedTag}>BANNED</span>}</span></td>
+                  <td><span className={styles.userCell}>@{(l.seller?.username ?? "").trim() || "unknown"}{l.seller?.kyc_status==="verified"&&<KycBadge size={14} />}{l.seller?.is_banned&&<span className={styles.bannedTag}>BANNED</span>}</span></td>
                   <td className={styles.piAmt}>{Number(l.price_pi).toFixed(2)} π</td><td>{l.category}</td><td>{l.stock}</td><td>{l.views}</td>
                   <td><Badge status={l.status}/></td>
                   <td><div className={styles.actionBtns}>
@@ -589,56 +549,6 @@ export default function AdminMarketPage() {
           </div>
         )}
 
-        {tab === "support" && (
-          <div className={styles.section}>
-            <div className={styles.filterRow}>
-              <select className={styles.select} value={supportStatus} onChange={(e)=>setSupportStatus(e.target.value)}>
-                <option value="">All Status</option>
-                {["open","in_progress","resolved","closed"].map((s)=><option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-            <div className={styles.countRow}>{supportTotal} tickets</div>
-            {supportTickets.length===0 && <div className={styles.empty}>No support tickets yet.</div>}
-            {(()=>{
-              const totalPages = Math.max(1, Math.ceil(supportTickets.length / ADMIN_PAGE_SIZE));
-              const pageSafe = Math.min(supportPage, totalPages);
-              const pageList = supportTickets.slice((pageSafe - 1) * ADMIN_PAGE_SIZE, pageSafe * ADMIN_PAGE_SIZE);
-              return (
-            <>
-            {pageList.map((t) => (
-              <div key={t.id} className={styles.ticketCard}>
-                <div className={styles.ticketTop}>
-                  <div className={styles.ticketMeta}>
-                    <span className={styles.mono}>{t.id.slice(0,8)}…</span>
-                    <Badge status={t.status} />
-                    <Badge status={t.priority} />
-                    <Badge status={t.category} />
-                  </div>
-                  <div className={styles.ticketDate}>{fmt(t.created_at)}</div>
-                </div>
-                <div className={styles.ticketMsg}>{t.message}</div>
-                {t.ai_reply && <div className={styles.ticketAi}><strong>Suggested reply:</strong> {t.ai_reply}</div>}
-                {t.ai_actions?.length ? <div className={styles.ticketAi}><strong>Actions:</strong> {t.ai_actions.join(", ")}</div> : null}
-                <div className={styles.actionBtns}>
-                  {t.status === "open" && <button className={styles.warnBtn} onClick={()=>updateSupportTicket(t.id, "in_progress")}>Take</button>}
-                  {t.status !== "resolved" && <button className={styles.okBtn} onClick={()=>updateSupportTicket(t.id, "resolved")}>Resolve</button>}
-                  {t.status !== "closed" && <button className={styles.dangerBtn} onClick={()=>updateSupportTicket(t.id, "closed")}>Close</button>}
-                </div>
-              </div>
-            ))}
-            {totalPages > 1 && (
-              <div className={styles.pager}>
-                <button type="button" className={styles.pagerBtn} disabled={pageSafe===1} onClick={()=>setSupportPage(p=>Math.max(1,p-1))}>← Prev</button>
-                <span className={styles.pagerInfo}>Page {pageSafe} of {totalPages}</span>
-                <button type="button" className={styles.pagerBtn} disabled={pageSafe===totalPages} onClick={()=>setSupportPage(p=>Math.min(totalPages,p+1))}>Next →</button>
-              </div>
-            )}
-            </>
-              );
-            })()}
-          </div>
-        )}
-
         {tab === "users" && (
           <div className={styles.section}>
             <div className={styles.filterRow}>
@@ -736,73 +646,84 @@ export default function AdminMarketPage() {
       </div>
 
       {overrideId&&(
-        <div className={styles.modalOverlay} onClick={()=>!overriding&&setOverrideId(null)}>
-          <div className={styles.modal} onClick={e=>e.stopPropagation()}>
-            <div className={styles.modalTitle}>⚖️ Admin Override</div>
-            <div className={styles.modalField}>
-              <label className={styles.modalLabel}>Decision</label>
-              <div className={styles.decisionBtns}>
-                <button className={`${styles.decisionBtn} ${overrideDecision==="refund"?styles.decisionRefund:""}`} onClick={()=>setOverrideDecision("refund")}>↩️ Refund Buyer</button>
-                <button className={`${styles.decisionBtn} ${overrideDecision==="release"?styles.decisionRelease:""}`} onClick={()=>setOverrideDecision("release")}>✅ Release to Seller</button>
-              </div>
+        <div className="adminModalOverlay" onClick={()=>!overriding&&setOverrideId(null)}>
+          <div className="adminModalSheet" onClick={e=>e.stopPropagation()}>
+            <div className="adminModalHandle" />
+            <div className="adminModalEmoji">⚖️</div>
+            <div className="adminModalTitle">Admin Override</div>
+            <div className="adminModalSub">Override dispute resolution</div>
+            <label className="adminModalLabel">Decision</label>
+            <div className="adminModalChoiceBtns">
+              <button className={`adminModalChoiceBtn ${overrideDecision==="refund"?"adminModalChoiceBtnRefund":""}`} onClick={()=>setOverrideDecision("refund")}>↩️ Refund Buyer</button>
+              <button className={`adminModalChoiceBtn ${overrideDecision==="release"?"adminModalChoiceBtnRelease":""}`} onClick={()=>setOverrideDecision("release")}>✅ Release to Seller</button>
             </div>
-            <div className={styles.modalField}>
-              <label className={styles.modalLabel}>Reasoning</label>
-              <textarea className={styles.modalTextarea} rows={3} placeholder="Explain your decision..." value={overrideReason} onChange={e=>setOverrideReason(e.target.value)}/>
-            </div>
-            <div className={styles.modalBtns}>
-              <button className={styles.modalCancel} onClick={()=>setOverrideId(null)}>Cancel</button>
-              <button className={styles.modalConfirm} disabled={overriding||!overrideReason.trim()} onClick={overrideDispute}>{overriding?"Processing...":"Confirm Override"}</button>
+            <label className="adminModalLabel">Reasoning</label>
+            <textarea className="adminModalTextarea" rows={3} placeholder="Explain your decision..." value={overrideReason} onChange={e=>setOverrideReason(e.target.value)}/>
+            <div className="adminModalBtns">
+              <button className="adminModalCancelBtn" onClick={()=>setOverrideId(null)}>Cancel</button>
+              <button className="adminModalConfirmBtn" disabled={overriding||!overrideReason.trim()} onClick={overrideDispute}>{overriding?"Processing...":"Confirm Override"}</button>
             </div>
           </div>
         </div>
       )}
 
       {banUserId&&(
-        <div className={styles.modalOverlay} onClick={()=>setBanUserId(null)}>
-          <div className={styles.modal} onClick={e=>e.stopPropagation()}>
-            <div className={styles.modalTitle}>🚫 Ban User</div>
-            <div className={styles.modalField}>
-              <label className={styles.modalLabel}>Reason</label>
-              <textarea className={styles.modalTextarea} rows={3} placeholder="Reason for ban..." value={banReason} onChange={e=>setBanReason(e.target.value)}/>
-            </div>
-            <div className={styles.modalBtns}>
-              <button className={styles.modalCancel} onClick={()=>setBanUserId(null)}>Cancel</button>
-              <button className={styles.modalDanger} disabled={!banReason.trim()} onClick={()=>updateUser(banUserId,{is_banned:true,ban_reason:banReason},"🚫 Banned")}>Ban User</button>
+        <div className="adminModalOverlay" onClick={()=>setBanUserId(null)}>
+          <div className="adminModalSheet" onClick={e=>e.stopPropagation()}>
+            <div className="adminModalHandle" />
+            <div className="adminModalEmoji">🚫</div>
+            <div className="adminModalTitle">Ban User</div>
+            <div className="adminModalSub">User will be restricted from platform access</div>
+            <label className="adminModalLabel">Reason</label>
+            <textarea className="adminModalTextarea" rows={3} placeholder="Reason for ban..." value={banReason} onChange={e=>setBanReason(e.target.value)}/>
+            <div className="adminModalBtns">
+              <button className="adminModalCancelBtn" onClick={()=>setBanUserId(null)}>Cancel</button>
+              <button className="adminModalDangerBtn" disabled={!banReason.trim()} onClick={()=>updateUser(banUserId,{is_banned:true,ban_reason:banReason},"🚫 Banned")}>Ban User</button>
             </div>
           </div>
         </div>
       )}
 
       {refundTarget && (
-        <div className={styles.modalOverlay} onClick={() => !refunding && setRefundTarget(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalTitle}>Rule in Buyer's Favour</div>
+        <div className="adminModalOverlay" onClick={() => !refunding && setRefundTarget(null)}>
+          <div className="adminModalSheet" onClick={(e) => e.stopPropagation()}>
+            <div className="adminModalHandle" />
+            <div className="adminModalEmoji">↩️</div>
+            <div className="adminModalTitle">Rule in Buyer's Favour</div>
+            <div className="adminModalSub">Send A2U refund to buyer wallet</div>
             {refundSuccess ? (
-              <div className={styles.refundSuccessState}>
-                <div className={styles.refundSuccessIcon}>✅</div>
-                <div className={styles.refundSuccessTitle}>Refund issued successfully</div>
-                <div className={styles.refundSuccessMeta}>
-                  {refundSuccess.amount.toFixed(2)}π sent · tx: {refundSuccess.txid}
+              <div className="adminModalInfo">
+                <div className="adminModalRow">
+                  <span className="adminModalRowLabel">Status</span>
+                  <span className="adminModalRowValGold">✅ Refund issued</span>
+                </div>
+                <div className="adminModalRow">
+                  <span className="adminModalRowLabel">Amount</span>
+                  <span className="adminModalRowVal">{refundSuccess.amount.toFixed(2)} π</span>
+                </div>
+                <div className="adminModalRow">
+                  <span className="adminModalRowLabel">Tx ID</span>
+                  <span className="adminModalRowVal" style={{ fontFamily: "monospace", fontSize: 11, wordBreak: "break-all" }}>{refundSuccess.txid}</span>
                 </div>
               </div>
             ) : (
-              <>
-                <div className={styles.modalHint}>
-                  This will send an automatic A2U refund to buyer wallet for
-                  <strong> {Number(refundTarget.order?.amount_pi ?? 0).toFixed(2)}π</strong>.
+              <div className="adminModalInfo">
+                <div className="adminModalRow">
+                  <span className="adminModalRowLabel">Refund amount</span>
+                  <span className="adminModalRowValGold">{Number(refundTarget.order?.amount_pi ?? 0).toFixed(2)} π</span>
                 </div>
-                <div className={styles.modalHintMuted}>
-                  Action is idempotent. If already refunded, system will return existing refund info.
+                <div className="adminModalRow">
+                  <span className="adminModalRowLabel">Note</span>
+                  <span className="adminModalRowVal" style={{ fontSize: 12 }}>Action is idempotent. If already refunded, system returns existing info.</span>
                 </div>
-              </>
+              </div>
             )}
-            <div className={styles.modalBtns}>
-              <button className={styles.modalCancel} onClick={() => setRefundTarget(null)} disabled={refunding}>
+            <div className="adminModalBtns">
+              <button className="adminModalCancelBtn" onClick={() => setRefundTarget(null)} disabled={refunding}>
                 {refundSuccess ? "Close" : "Cancel"}
               </button>
               {!refundSuccess && (
-                <button className={styles.refundConfirmBtn} onClick={issueBuyerRefund} disabled={refunding}>
+                <button className="adminModalConfirmBtn" onClick={issueBuyerRefund} disabled={refunding}>
                   {refunding ? "Issuing refund..." : "Confirm & Issue Refund"}
                 </button>
               )}

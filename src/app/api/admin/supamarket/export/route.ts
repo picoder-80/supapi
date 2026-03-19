@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
     const { data } = await supabase
       .from("orders")
       .select("id, status, amount_pi, buying_method, created_at, pi_payment_id, tracking_number, shipping_city, shipping_country, listing:listing_id(title), buyer:buyer_id(username), seller:seller_id(username)")
+      .not("listing_id", "is", null)
       .order("created_at", { ascending: false });
     const flat = (data ?? []).map((o: any) => ({
       id: o.id, status: o.status, amount_pi: o.amount_pi,
@@ -56,11 +57,20 @@ export async function GET(req: NextRequest) {
 
   if (type === "commissions") {
     const { data } = await supabase
-      .from("commissions")
-      .select("id, order_amount, commission_pct, commission_pi, seller_net_pi, status, created_at, seller:seller_id(username), buyer:buyer_id(username)")
+      .from("admin_revenue")
+      .select("id, order_id, gross_pi, commission_pct, commission_pi, created_at")
+      .eq("platform", "market")
       .order("created_at", { ascending: false });
-    const flat = (data ?? []).map((c: any) => ({ ...c, seller: c.seller?.username ?? "", buyer: c.buyer?.username ?? "" }));
-    csv = toCSV(flat, ["id","order_amount","commission_pct","commission_pi","seller_net_pi","status","seller","buyer","created_at"]);
+    const flat = (data ?? []).map((c: any) => ({
+      id: c.id,
+      order_id: c.order_id ?? "",
+      gross_pi: c.gross_pi ?? "",
+      commission_pct: c.commission_pct ?? "",
+      commission_pi: c.commission_pi ?? "",
+      status: "collected",
+      created_at: c.created_at,
+    }));
+    csv = toCSV(flat, ["id","order_id","gross_pi","commission_pct","commission_pi","status","created_at"]);
     filename = `supapi_commissions_${Date.now()}.csv`;
   }
 

@@ -36,6 +36,16 @@ type Dispute = {
   initiator?: { id: string; username: string; display_name: string | null };
 };
 
+type SupaScrowSummary = {
+  total_deals: number;
+  open_disputes: number;
+  status_counts: Record<string, number>;
+  total_escrow_pi: number;
+  funded_escrow_pi: number;
+  released_escrow_pi: number;
+  refunded_escrow_pi: number;
+};
+
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" });
 }
@@ -63,8 +73,18 @@ export default function AdminSupaScrowPage() {
   const [msg, setMsg] = useState("");
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"deals" | "disputes" | null>(null);
+  const [openDisputesTotal, setOpenDisputesTotal] = useState(0);
   const [commPct, setCommPct] = useState("");
   const [commTotal, setCommTotal] = useState(0);
+  const [summary, setSummary] = useState<SupaScrowSummary>({
+    total_deals: 0,
+    open_disputes: 0,
+    status_counts: {},
+    total_escrow_pi: 0,
+    funded_escrow_pi: 0,
+    released_escrow_pi: 0,
+    refunded_escrow_pi: 0,
+  });
   const [savingComm, setSavingComm] = useState(false);
   const [commMsg, setCommMsg] = useState("");
 
@@ -85,6 +105,7 @@ export default function AdminSupaScrowPage() {
       if (d.success) {
         setDeals(d.data.deals ?? []);
         setTotalDeals(d.data.total ?? 0);
+        if (d.data.summary) setSummary(d.data.summary);
       } else setMsg(d.error ?? "Failed to load deals");
     } catch {
       setMsg("Failed to load deals");
@@ -97,12 +118,21 @@ export default function AdminSupaScrowPage() {
     if (!token) return;
     setLoadingDisputes(true);
     try {
-      const r = await fetch("/api/admin/supascrow/disputes", {
+      const r = await fetch("/api/admin/supascrow/disputes?status=open", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const d = await r.json();
-      if (d.success) setDisputes(d.data.disputes ?? []);
+      if (d.success) {
+        setDisputes(d.data.disputes ?? []);
+        setOpenDisputesTotal(Number(d.data.total ?? (d.data.disputes ?? []).length));
+      } else {
+        setDisputes([]);
+        setOpenDisputesTotal(0);
+        setMsg(d.error ?? "Failed to load disputes");
+      }
     } catch {
+      setDisputes([]);
+      setOpenDisputesTotal(0);
       setMsg("Failed to load disputes");
     } finally {
       setLoadingDisputes(false);
@@ -177,7 +207,7 @@ export default function AdminSupaScrowPage() {
     }
   };
 
-  const openDisputes = disputes.filter((d) => !d.resolution || d.resolution === "pending");
+  const openDisputes = disputes;
 
   const exportCSV = async (type: "deals" | "disputes") => {
     if (!token || exporting) return;
@@ -209,6 +239,54 @@ export default function AdminSupaScrowPage() {
       />
 
       {!!msg && <div className={styles.msg}>{msg}</div>}
+
+      <section className="adminSection">
+        <h2 className={styles.sectionTitle}>Escrow Stats</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 6 }}>
+          <div className="adminCard">
+            <div className="adminCardLabel">Commission Rate</div>
+            <div className="adminCardValue">{commPct || "0"}%</div>
+            <div className="adminCardSub">Pi deals only</div>
+          </div>
+          <div className="adminCard">
+            <div className="adminCardLabel">Commission Collected</div>
+            <div className="adminCardValue">π {Number(commTotal).toFixed(4)}</div>
+            <div className="adminCardSub">from released Pi deals</div>
+          </div>
+          <div className="adminCard">
+            <div className="adminCardLabel">Total Deals</div>
+            <div className="adminCardValue">{Number(summary.total_deals).toFixed(0)}</div>
+            <div className="adminCardSub">
+              {Number(summary.status_counts.created ?? 0).toFixed(0)} created · {Number(summary.status_counts.accepted ?? 0).toFixed(0)} accepted
+            </div>
+          </div>
+          <div className="adminCard">
+            <div className="adminCardLabel">Funded Deals</div>
+            <div className="adminCardValue">{Number(summary.status_counts.funded ?? 0).toFixed(0)}</div>
+            <div className="adminCardSub">π {Number(summary.funded_escrow_pi ?? 0).toFixed(4)} funded escrow</div>
+          </div>
+          <div className="adminCard">
+            <div className="adminCardLabel">Open Disputes</div>
+            <div className="adminCardValue">{Number(summary.open_disputes).toFixed(0)}</div>
+            <div className="adminCardSub">{Number(summary.status_counts.disputed ?? 0).toFixed(0)} deals currently disputed</div>
+          </div>
+          <div className="adminCard">
+            <div className="adminCardLabel">Total Escrow (Pi)</div>
+            <div className="adminCardValue">π {Number(summary.total_escrow_pi ?? 0).toFixed(4)}</div>
+            <div className="adminCardSub">all Pi deals value</div>
+          </div>
+          <div className="adminCard">
+            <div className="adminCardLabel">Released (Pi)</div>
+            <div className="adminCardValue">π {Number(summary.released_escrow_pi ?? 0).toFixed(4)}</div>
+            <div className="adminCardSub">{Number(summary.status_counts.released ?? 0).toFixed(0)} deals released</div>
+          </div>
+          <div className="adminCard">
+            <div className="adminCardLabel">Refunded (Pi)</div>
+            <div className="adminCardValue">π {Number(summary.refunded_escrow_pi ?? 0).toFixed(4)}</div>
+            <div className="adminCardSub">{Number(summary.status_counts.refunded ?? 0).toFixed(0)} deals refunded</div>
+          </div>
+        </div>
+      </section>
 
       <section className="adminSection">
         <h2 className={styles.sectionTitle}>Commission (Pi deals only)</h2>
@@ -243,7 +321,10 @@ export default function AdminSupaScrowPage() {
       </section>
 
       <section className="adminSection">
-        <h2 className={styles.sectionTitle}>Open Disputes</h2>
+        <div className={styles.disputeHeaderRow}>
+          <h2 className={styles.sectionTitle}>Open Disputes</h2>
+          <span className={styles.disputeCountBadge}>{openDisputesTotal} open</span>
+        </div>
         {loadingDisputes ? (
           <div className={styles.empty}>Loading…</div>
         ) : openDisputes.length === 0 ? (

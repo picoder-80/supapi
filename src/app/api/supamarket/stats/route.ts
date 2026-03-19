@@ -12,13 +12,13 @@ const supabase = createClient(
 export async function GET() {
   try {
     const [
-      { count: deliveredCount },
+      { count: completedEscrowCount },
       { data: completedRows },
     ] = await Promise.all([
       supabase
         .from("orders")
         .select("id", { count: "exact", head: true })
-        .in("status", ["delivered", "completed"]),
+        .eq("status", "completed"),
       supabase
         .from("orders")
         .select("amount_pi, price_pi")
@@ -35,7 +35,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       data: {
-        delivered: deliveredCount ?? 0,
+        delivered: completedEscrowCount ?? 0,
         total_pi_transactions: totalPiTransactions,
       },
     }, {

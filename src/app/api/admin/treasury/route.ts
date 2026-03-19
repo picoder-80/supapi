@@ -10,6 +10,15 @@ import { logAdminAction } from "@/lib/security/audit";
 import { executeOwnerTransfer, isOwnerTransferConfigured } from "@/lib/pi/payout";
 
 async function getOwnerWithdrawnTotal(supabase: any): Promise<number> {
+  // Prefer sum from treasury_owner_withdrawals (transaction history)
+  const { data: rows } = await supabase
+    .from("treasury_owner_withdrawals")
+    .select("amount_pi");
+  if (rows?.length) {
+    const sum = (rows as { amount_pi: number }[]).reduce((s, r) => s + parseFloat(String(r.amount_pi ?? 0)), 0);
+    return Math.round(sum * 10000) / 10000;
+  }
+  // Fallback: platform_config
   const { data } = await supabase
     .from("platform_config")
     .select("value")
@@ -18,12 +27,18 @@ async function getOwnerWithdrawnTotal(supabase: any): Promise<number> {
   return Number.parseFloat(String(data?.value ?? "0")) || 0;
 }
 
-async function setOwnerWithdrawnTotal(supabase: any, total: number) {
-  await supabase.from("platform_config").upsert({
+async function setOwnerWithdrawnTotal(supabase: any, total: number): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.from("platform_config").upsert({
     key: "treasury_owner_withdrawn_total_pi",
     value: String(Math.max(0, total)),
     description: "Total owner treasury withdrawals (Pi)",
+    updated_at: new Date().toISOString(),
   }, { onConflict: "key" });
+  if (error) {
+    console.error("[Treasury] setOwnerWithdrawnTotal failed:", error);
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
 }
 
 // GET /api/admin/treasury
@@ -48,18 +63,44 @@ export async function GET(req: NextRequest) {
     fromDate = d.toISOString();
   }
 
+  // Admin user for auto-fill (owner withdrawing to self)
+  let admin_user: { username: string; pi_uid: string } | null = null;
+  if (auth.userId) {
+    const { data: adminRow } = await supabase
+      .from("users")
+      .select("username, pi_uid")
+      .eq("id", auth.userId)
+      .not("pi_uid", "is", null)
+      .single();
+    if (adminRow?.pi_uid) {
+      admin_user = { username: String(adminRow.username ?? ""), pi_uid: String(adminRow.pi_uid).trim() };
+    }
+  }
+
   const revenueQuery = supabase
     .from("admin_revenue")
-    .select("platform, gross_pi, commission_pi, created_at");
+    .select("platform, gross_pi, commission_pi, created_at, order_id");
   if (fromDate) revenueQuery.gte("created_at", fromDate);
+
+  // Also fetch completed orders (SupaMarket) — fallback when admin_revenue missing
+  const ordersQuery = supabase
+    .from("orders")
+    .select("id, amount_pi, price_pi, commission_pi, commission_pct, created_at")
+    .eq("status", "completed");
+  if (fromDate) ordersQuery.gte("created_at", fromDate);
 
   const [
     { data: revenue },
+    { data: completedOrders },
     { data: pendingWithdrawals },
     { data: recentWithdrawals },
+    { data: ownerWithdrawals },
     { data: configs },
+    { data: platformLabels },
+    { data: platformEmojis },
   ] = await Promise.all([
     revenueQuery,
+    ordersQuery,
 
     // Pending seller withdrawals — needs admin action
     supabase.from("seller_withdrawals")
@@ -80,14 +121,37 @@ export async function GET(req: NextRequest) {
       .order("processed_at", { ascending: false })
       .limit(20),
 
-    // Commission configs
+    // Owner withdrawal history (transaction history) — table may not exist before migration
+    supabase.from("treasury_owner_withdrawals")
+      .select("id, amount_pi, pi_txid, recipient_uid, admin_note, execute_transfer, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50)
+      .then((r) => (r.error ? { data: [] } : r)),
+
+    // Commission configs — commission_% keys (values from platform_config, dynamic)
     supabase.from("platform_config")
       .select("key, value")
       .like("key", "commission_%"),
+    supabase.from("platform_config")
+      .select("key, value")
+      .like("key", "platform_label_%"),
+    supabase.from("platform_config")
+      .select("key, value")
+      .like("key", "platform_emoji_%"),
   ]);
 
-  // Aggregate by platform
+  // Default commission % from config (market/supamarket)
+  const defaultCommissionPct = (() => {
+    const cfg = (configs ?? []).find((c: { key: string }) =>
+      c.key === "commission_market" || c.key === "market_commission_pct"
+    );
+    const v = parseFloat(String(cfg?.value ?? "5"));
+    return Number.isFinite(v) ? v : 5;
+  })();
+
+  // Aggregate by platform (admin_revenue)
   const platformBreakdown: Record<string, { gross: number; commission: number; count: number }> = {};
+  const revenueOrderIds = new Set<string>();
   (revenue ?? []).forEach(r => {
     if (!platformBreakdown[r.platform]) {
       platformBreakdown[r.platform] = { gross: 0, commission: 0, count: 0 };
@@ -95,6 +159,23 @@ export async function GET(req: NextRequest) {
     platformBreakdown[r.platform].gross      += parseFloat(String(r.gross_pi));
     platformBreakdown[r.platform].commission += parseFloat(String(r.commission_pi));
     platformBreakdown[r.platform].count      += 1;
+    if (r.order_id) revenueOrderIds.add(String(r.order_id));
+  });
+
+  // Fallback: include commission from completed orders NOT in admin_revenue (e.g. SupaMarket)
+  (completedOrders ?? []).forEach(o => {
+    if (revenueOrderIds.has(String(o.id))) return;
+    const gross = parseFloat(String(o.amount_pi ?? o.price_pi ?? 0));
+    if (gross <= 0) return;
+    const pct = parseFloat(String(o.commission_pct ?? defaultCommissionPct));
+    const comm = parseFloat(String(o.commission_pi ?? 0)) || gross * (pct / 100);
+    const platform = "market";
+    if (!platformBreakdown[platform]) {
+      platformBreakdown[platform] = { gross: 0, commission: 0, count: 0 };
+    }
+    platformBreakdown[platform].gross      += gross;
+    platformBreakdown[platform].commission += comm;
+    platformBreakdown[platform].count      += 1;
   });
 
   const totalGross      = Object.values(platformBreakdown).reduce((s, p) => s + p.gross, 0);
@@ -110,12 +191,43 @@ export async function GET(req: NextRequest) {
     const month = r.created_at.slice(0, 7); // YYYY-MM
     monthlyTrend[month] = (monthlyTrend[month] ?? 0) + parseFloat(String(r.commission_pi));
   });
+  (completedOrders ?? []).forEach(o => {
+    if (revenueOrderIds.has(String(o.id))) return;
+    const month = (o.created_at ?? "").slice(0, 7);
+    if (!month) return;
+    const gross = parseFloat(String(o.amount_pi ?? o.price_pi ?? 0));
+    const c = parseFloat(String(o.commission_pi ?? 0));
+    const comm = c > 0 ? c : gross * (parseFloat(String(o.commission_pct ?? defaultCommissionPct)) / 100);
+    monthlyTrend[month] = (monthlyTrend[month] ?? 0) + comm;
+  });
 
-  return NextResponse.json({
-    success: true,
-    data: {
-      period,
-      summary: {
+  // Build commission configs with dynamic label/emoji from platform_config
+  const labelMap = Object.fromEntries((platformLabels ?? []).map((r: { key: string; value: string }) => [r.key.replace("platform_label_", ""), r.value]));
+  const emojiMap = Object.fromEntries((platformEmojis ?? []).map((r: { key: string; value: string }) => [r.key.replace("platform_emoji_", ""), r.value]));
+  const commissionConfigs = (configs ?? []).map((c: { key: string; value: string }) => {
+    const platform = c.key.replace("commission_", "");
+    return {
+      key: c.key,
+      value: c.value,
+      platform,
+      label: labelMap[platform] ?? platform.replace(/^([a-z])/, (_, m) => m.toUpperCase()),
+      emoji: emojiMap[platform] ?? "🪐",
+    };
+  });
+
+  // platform_display for Revenue by Platform (label/emoji from config)
+  const platform_display: Record<string, { label: string; emoji: string }> = {};
+  Object.keys(labelMap).forEach(p => {
+    platform_display[p] = { label: labelMap[p], emoji: emojiMap[p] ?? "🪐" };
+  });
+
+  return NextResponse.json(
+    {
+      success: true,
+      data: {
+        period,
+        admin_user,
+        summary: {
         total_gross_pi:      Math.round(totalGross * 10000) / 10000,
         total_commission_pi: Math.round(totalCommission * 10000) / 10000,
         pending_payouts_pi:  Math.round(totalPendingPayout * 10000) / 10000,
@@ -124,12 +236,18 @@ export async function GET(req: NextRequest) {
         available_after_owner_pi: Math.round(availableAfterOwner * 10000) / 10000,
       },
       by_platform:        platformBreakdown,
+      platform_display,
       monthly_trend:      monthlyTrend,
       pending_withdrawals: pendingWithdrawals ?? [],
       recent_withdrawals:  recentWithdrawals ?? [],
-      commission_configs:  configs ?? [],
+      owner_withdrawals:   ownerWithdrawals ?? [],
+      commission_configs:  commissionConfigs,
     },
-  });
+  },
+  {
+    headers: { "Cache-Control": "no-store, max-age=0, must-revalidate" },
+  }
+);
 }
 
 // POST /api/admin/treasury — process a seller withdrawal
@@ -147,8 +265,6 @@ export async function POST(req: NextRequest) {
     pi_txid,
     admin_note,
     amount_pi,
-    execute_transfer,
-    destination_wallet,
   } = await req.json();
 
   if (!action)
@@ -156,20 +272,48 @@ export async function POST(req: NextRequest) {
 
   if (action === "owner_withdraw") {
     const amount = Number.parseFloat(String(amount_pi ?? 0));
-    const executeTransfer = Boolean(execute_transfer);
-    const destinationWallet = String(destination_wallet ?? "").trim();
     if (!Number.isFinite(amount) || amount <= 0) {
       return NextResponse.json({ success: false, error: "Invalid amount_pi" }, { status: 400 });
     }
-    if (executeTransfer && !destinationWallet) {
-      return NextResponse.json({ success: false, error: "destination_wallet required when execute_transfer=true" }, { status: 400 });
+
+    // Security: only allow owner withdrawals to a single whitelisted Pi user.
+    // Client-side restrictions are not sufficient; enforce here server-side.
+    const ALLOWED_RECIPIENT_USERNAME = "wandy80";
+    const { data: allowedRecipient, error: recipientErr } = await supabase
+      .from("users")
+      .select("pi_uid")
+      .eq("username", ALLOWED_RECIPIENT_USERNAME)
+      .not("pi_uid", "is", null)
+      .maybeSingle();
+
+    if (recipientErr) {
+      return NextResponse.json({ success: false, error: "Failed to resolve recipient" }, { status: 500 });
+    }
+    const destinationWallet = String(allowedRecipient?.pi_uid ?? "").trim();
+    if (!destinationWallet) {
+      return NextResponse.json({ success: false, error: "Whitelisted recipient not configured (missing users.pi_uid)" }, { status: 500 });
     }
 
-    const [{ data: revenue }, { data: pendingWithdrawals }] = await Promise.all([
-      supabase.from("admin_revenue").select("commission_pi"),
+    const [{ data: revenue }, { data: completedOrders }, { data: pendingWithdrawals }, { data: commissionConfig }] = await Promise.all([
+      supabase.from("admin_revenue").select("commission_pi, order_id"),
+      supabase.from("orders").select("id, commission_pi, amount_pi, price_pi, commission_pct").eq("status", "completed"),
       supabase.from("seller_withdrawals").select("amount_pi").eq("status", "pending"),
+      (async () => {
+        const { data: m } = await supabase.from("platform_config").select("value").eq("key", "market_commission_pct").maybeSingle();
+        if (m?.value) return { data: m };
+        const { data: c } = await supabase.from("platform_config").select("value").eq("key", "commission_market").maybeSingle();
+        return { data: c };
+      })(),
     ]);
-    const totalCommission = (revenue ?? []).reduce((s: number, r: any) => s + parseFloat(String(r.commission_pi ?? 0)), 0);
+    const ownerDefaultPct = parseFloat(String(commissionConfig?.value ?? "5")) || 5;
+    const revenueOrderIds = new Set((revenue ?? []).map((r: { order_id?: string }) => String(r.order_id ?? "")).filter(Boolean));
+    let totalCommission = (revenue ?? []).reduce((s: number, r: any) => s + parseFloat(String(r.commission_pi ?? 0)), 0);
+    (completedOrders ?? []).forEach((o: { id: string; commission_pi?: number; amount_pi?: number; price_pi?: number; commission_pct?: number }) => {
+      if (revenueOrderIds.has(String(o.id))) return;
+      const gross = parseFloat(String(o.amount_pi ?? o.price_pi ?? 0));
+      const c = parseFloat(String(o.commission_pi ?? 0));
+      totalCommission += c > 0 ? c : gross * (parseFloat(String(o.commission_pct ?? ownerDefaultPct)) / 100);
+    });
     const totalPendingPayout = (pendingWithdrawals ?? []).reduce((s: number, w: any) => s + parseFloat(String(w.amount_pi ?? 0)), 0);
     const ownerWithdrawnPi = await getOwnerWithdrawnTotal(supabase);
     const availableAfterOwner = totalCommission - totalPendingPayout - ownerWithdrawnPi;
@@ -181,36 +325,55 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    let finalTxid = String(pi_txid ?? "").trim();
+    let finalTxid = "";
     let transferMeta: Record<string, unknown> = {
-      mode: "record_only",
+      mode: "execute_transfer",
       configured: isOwnerTransferConfigured(),
     };
 
-    if (executeTransfer) {
-      const transfer = await executeOwnerTransfer({
-        amountPi: amount,
-        destinationWallet,
-        note: admin_note ?? null,
-      });
-      transferMeta = {
-        mode: "execute_transfer",
-        provider: transfer.provider,
-        configured: isOwnerTransferConfigured(),
-      };
-      if (!transfer.ok) {
-        return NextResponse.json({
-          success: false,
-          error: transfer.message ?? "Transfer execution failed",
-          data: { transfer: transferMeta, provider_response: transfer.raw ?? null },
-        }, { status: transfer.provider === "unconfigured" ? 501 : 502 });
-      }
-      finalTxid = String(transfer.txid ?? "").trim();
-    } else if (!finalTxid) {
-      return NextResponse.json({ success: false, error: "pi_txid required for record-only mode" }, { status: 400 });
+    // Pi A2U requires recipient_uid (Pi user ID), not wallet address
+    const transfer = await executeOwnerTransfer({
+      amountPi: amount,
+      recipientUid: destinationWallet,
+      note: admin_note ?? null,
+    });
+    transferMeta = {
+      mode: "execute_transfer",
+      provider: transfer.provider,
+      configured: isOwnerTransferConfigured(),
+    };
+    if (!transfer.ok) {
+      return NextResponse.json({
+        success: false,
+        error: transfer.message ?? "Transfer execution failed",
+        data: { transfer: transferMeta, provider_response: transfer.raw ?? null },
+      }, { status: transfer.provider === "unconfigured" ? 501 : 502 });
+    }
+    finalTxid = String(transfer.txid ?? "").trim();
+
+    // 1. Update balance FIRST (critical — must succeed for stats to deduct)
+    const updateResult = await setOwnerWithdrawnTotal(supabase, ownerWithdrawnPi + amount);
+    if (!updateResult.ok) {
+      return NextResponse.json({
+        success: false,
+        error: `Transfer succeeded but failed to update balance: ${updateResult.error}`,
+        data: { transfer: transferMeta },
+      }, { status: 500 });
     }
 
-    await setOwnerWithdrawnTotal(supabase, ownerWithdrawnPi + amount);
+    // 2. Record in treasury_owner_withdrawals (transaction history — optional, table may not exist yet)
+    const { error: insertErr } = await supabase.from("treasury_owner_withdrawals").insert({
+      amount_pi: amount,
+      pi_txid: finalTxid || null,
+      recipient_uid: destinationWallet || null,
+      admin_user_id: auth.userId || null,
+      admin_note: admin_note || null,
+      execute_transfer: true,
+    });
+    if (insertErr) {
+      console.error("[Treasury] Failed to record owner withdrawal in history (table may not exist):", insertErr);
+      // Don't fail — balance was already updated
+    }
 
     if (auth.userId) {
       await logAdminAction({
@@ -222,7 +385,7 @@ export async function POST(req: NextRequest) {
           amount_pi: amount,
           pi_txid: finalTxid,
           note: admin_note ?? null,
-          execute_transfer: executeTransfer,
+          execute_transfer: true,
           destination_wallet: destinationWallet || null,
           transfer: transferMeta,
         },
@@ -238,7 +401,7 @@ export async function POST(req: NextRequest) {
         owner_withdrawn_total_pi: Number((ownerWithdrawnPi + amount).toFixed(4)),
         transfer: transferMeta,
       },
-      message: executeTransfer ? "Owner withdrawal executed and recorded" : "Owner withdrawal recorded",
+      message: "Owner withdrawal executed and recorded",
     });
   }
 

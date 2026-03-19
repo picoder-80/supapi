@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
 import { isAdminRole } from "@/lib/admin/roles";
+import { creditEarningsBalance } from "@/lib/wallet/earnings";
+import { executeOwnerTransfer, isOwnerTransferConfigured } from "@/lib/pi/payout";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -139,30 +141,19 @@ export async function POST(req: NextRequest) {
     }
     if (!amount_pi || parseFloat(amount_pi) <= 0) return NextResponse.json({ success: false, error: "Invalid amount" }, { status: 400 });
 
-    await supabase.from("earnings_wallet").upsert({ user_id: recipientUserId }, { onConflict: "user_id", ignoreDuplicates: true });
-
-    const { data: wallet } = await supabase.from("earnings_wallet")
-      .select("pending_pi, available_pi, total_earned").eq("user_id", recipientUserId).single();
-
-    if (!wallet) return NextResponse.json({ success: false, error: "Wallet not found" }, { status: 404 });
-
-    const amt = parseFloat(amount_pi);
-    const isPending = (status ?? "pending") === "pending";
-
-    await supabase.from("earnings_wallet").update({
-      pending_pi:   isPending ? wallet.pending_pi + amt : wallet.pending_pi,
-      available_pi: isPending ? wallet.available_pi : wallet.available_pi + amt,
-      total_earned: wallet.total_earned + amt,
-      updated_at: new Date().toISOString(),
-    }).eq("user_id", recipientUserId);
-
-    await supabase.from("earnings_transactions").insert({
-      user_id: recipientUserId, type, source, amount_pi: amt,
-      status: status ?? "pending",
-      ref_id: ref_id ?? "", note: note ?? "",
+    const result = await creditEarningsBalance({
+      userId: recipientUserId,
+      type: String(type ?? "other"),
+      source: String(source ?? "Wallet Credit"),
+      amountPi: Number(amount_pi),
+      status: (status ?? "pending") === "pending" ? "pending" : "available",
+      refId: String(ref_id ?? ""),
+      note: String(note ?? ""),
     });
-
-    return NextResponse.json({ success: true });
+    if (!result.ok) {
+      return NextResponse.json({ success: false, error: "Failed to credit earnings" }, { status: 500 });
+    }
+    return NextResponse.json({ success: true, duplicate_skipped: result.reason === "duplicate_skipped" });
   }
 
   if (!auth) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
@@ -197,7 +188,7 @@ export async function POST(req: NextRequest) {
   // ── Withdraw to Pi wallet ──
   if (action === "withdraw") {
     const { amount_pi } = body;
-    const amt = parseFloat(amount_pi);
+    const amt = Math.round((parseFloat(amount_pi) || 0) * 1000000) / 1000000;
     if (!amt || amt <= 0) return NextResponse.json({ success: false, error: "Invalid amount" }, { status: 400 });
 
     const { data: wallet } = await supabase.from("earnings_wallet")
@@ -209,11 +200,59 @@ export async function POST(req: NextRequest) {
     // Minimum withdrawal: π 1.0
     if (amt < 1) return NextResponse.json({ success: false, error: "Minimum withdrawal is π 1.0" }, { status: 400 });
 
-    await supabase.from("earnings_wallet").update({
-      available_pi:    wallet.available_pi - amt,
-      total_withdrawn: wallet.total_withdrawn + amt,
-      updated_at: new Date().toISOString(),
-    }).eq("user_id", userId);
+    if (!isOwnerTransferConfigured()) {
+      return NextResponse.json({ success: false, error: "Pi payout not configured. Contact admin." }, { status: 503 });
+    }
+
+    const { data: userRow } = await supabase
+      .from("users")
+      .select("pi_uid, wallet_address, wallet_verified")
+      .eq("id", userId)
+      .single();
+    const userWallet = userRow as { pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | null;
+    const recipientUid = userWallet?.pi_uid?.trim();
+    const destinationWallet = userWallet?.wallet_address?.trim();
+    const hasActivatedWallet = !!destinationWallet || !!userWallet?.wallet_verified;
+    if (!recipientUid || !hasActivatedWallet) {
+      return NextResponse.json(
+        { success: false, error: "You must sign in with Pi and activate your wallet before withdrawing." },
+        { status: 400 }
+      );
+    }
+
+    const payout = await executeOwnerTransfer({
+      amountPi: amt,
+      recipientUid: recipientUid || undefined,
+      destinationWallet: destinationWallet || undefined,
+      note: `Wallet withdrawal ${userId.slice(0, 8)} ${new Date().toISOString().slice(0, 19)}`,
+    });
+    if (!payout.ok || !payout.txid) {
+      return NextResponse.json({ success: false, error: payout.message ?? "Withdrawal payout failed" }, { status: 502 });
+    }
+
+    const currentAvailable = Number(wallet.available_pi ?? 0);
+    const currentWithdrawn = Number(wallet.total_withdrawn ?? 0);
+    const nextAvailable = currentAvailable - amt;
+    const nextWithdrawn = currentWithdrawn + amt;
+
+    const { data: updatedWallet } = await supabase
+      .from("earnings_wallet")
+      .update({
+        available_pi: nextAvailable,
+        total_withdrawn: nextWithdrawn,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", userId)
+      .eq("available_pi", currentAvailable)
+      .select("user_id")
+      .maybeSingle();
+    if (!updatedWallet?.user_id) {
+      return NextResponse.json({
+        success: false,
+        error: "Withdrawal transfer sent, but wallet update conflicted. Contact support with payout txid.",
+        txid: payout.txid,
+      }, { status: 409 });
+    }
 
     await supabase.from("earnings_transactions").insert({
       user_id: userId,
@@ -221,10 +260,10 @@ export async function POST(req: NextRequest) {
       source: "Withdrawal to Pi Wallet",
       amount_pi: -amt,
       status: "withdrawn",
-      note: `Withdrew π ${amt} to Pi Wallet`,
+      note: `Withdrew π ${amt} to Pi Wallet · txid: ${payout.txid}`,
     });
 
-    return NextResponse.json({ success: true, withdrawn: amt });
+    return NextResponse.json({ success: true, withdrawn: amt, txid: payout.txid });
   }
 
   return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });

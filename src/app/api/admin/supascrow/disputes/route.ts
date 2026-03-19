@@ -15,10 +15,34 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
   }
 
-  const { data: disputes, error } = await supabase
-    .from("supascrow_disputes")
-    .select("id, deal_id, initiator_id, reason, resolution, resolved_at, ai_decision, ai_reasoning, ai_confidence, created_at")
-    .order("created_at", { ascending: false });
+  const { searchParams } = new URL(req.url);
+  const status = (searchParams.get("status") ?? "").trim().toLowerCase(); // open | resolved | all
+
+  const runDisputesQuery = async (withAiColumns: boolean) => {
+    const selectCols = withAiColumns
+      ? "id, deal_id, initiator_id, reason, resolution, resolved_at, ai_decision, ai_reasoning, ai_confidence, created_at"
+      : "id, deal_id, initiator_id, reason, resolution, resolved_at, created_at";
+    let q = supabase
+      .from("supascrow_disputes")
+      .select(selectCols)
+      .order("created_at", { ascending: false });
+    if (status === "open") q = q.or("resolution.is.null,resolution.eq.pending");
+    else if (status === "resolved") q = q.not("resolution", "is", null).neq("resolution", "pending");
+    return q;
+  };
+
+  let { data: disputes, error } = await runDisputesQuery(true);
+  // Backward compatibility: old DBs may not have ai_* columns yet.
+  if (error && /column .*ai_decision.* does not exist/i.test(error.message)) {
+    const fallback = await runDisputesQuery(false);
+    disputes = (fallback.data ?? []).map((d: Record<string, unknown>) => ({
+      ...d,
+      ai_decision: null,
+      ai_reasoning: null,
+      ai_confidence: null,
+    }));
+    error = fallback.error;
+  }
 
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
 
@@ -47,5 +71,5 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  return NextResponse.json({ success: true, data: { disputes: enriched } });
+  return NextResponse.json({ success: true, data: { disputes: enriched, total: enriched.length } });
 }

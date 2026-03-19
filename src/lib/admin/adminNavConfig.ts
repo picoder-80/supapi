@@ -9,7 +9,7 @@ export type AdminNavItem = {
 };
 
 const DASHBOARD: AdminNavItem = { href: "/admin/dashboard", icon: "🏠", label: "Dashboard", status: "live" };
-const TREASURY: AdminNavItem = { href: "/admin/platforms/wallet", icon: "🏦", label: "Treasury", status: "live" };
+const TREASURY: AdminNavItem = { href: "/admin/treasury", icon: "🏦", label: "Treasury", status: "live" };
 const SC_WALLET: AdminNavItem = { href: "/admin/sc-wallet", icon: "💎", label: "Supa Credits", status: "live" };
 const EMAIL_BROADCAST: AdminNavItem = { href: "/admin/email-list", icon: "📧", label: "Email Broadcast", status: "live" };
 const USERS: AdminNavItem = { href: "/admin/users", icon: "👥", label: "Users", status: "live" };
@@ -59,10 +59,9 @@ export const SIDEBAR_PLATFORM_NAV: AdminNavItem[] = [
 ];
 
 export const DASHBOARD_ADMIN_TOOLS: AdminNavItem[] = [
-  { href: "/admin/supamarket#orders", icon: "🛍️", label: "SupaMarket Ops", status: "live", sub: "Orders · Disputes · Support · Auto-credit" },
+  { href: "/admin/supamarket#orders", icon: "🛍️", label: "SupaMarket Ops", status: "live", sub: "Orders · Disputes · Auto-credit" },
   { ...TREASURY, sub: "Payout queue · Commission health" },
   { ...EMAIL_BROADCAST, sub: "Pioneer emails · export for campaigns" },
-  { href: "/admin/supamarket#support", icon: "🎧", label: "Support Queue", status: "live", sub: "AI triage tickets & status updates" },
   { ...USERS, sub: "Ban · Verify · Manage all users" },
   { ...SETTINGS, sub: "Password · Admin roles · Access setup" },
 ];

@@ -5,6 +5,7 @@ import { hasAdminPermission } from "@/lib/admin/permissions";
 import { logAdminAction } from "@/lib/security/audit";
 import { logDisputeEvent } from "@/lib/security/dispute-audit";
 import { executeOwnerTransfer, isOwnerTransferConfigured } from "@/lib/pi/payout";
+import { creditPlatformEarning } from "@/lib/wallet/earnings";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -105,6 +106,15 @@ export async function POST(
             commission_pct: commissionPct,
           });
         }
+        await creditPlatformEarning({
+          userId: deal.seller_id,
+          platform: "supascrow",
+          event: "release",
+          amountPi: sellerPayout,
+          status: "available",
+          refId: deal.id,
+          note: `SupaScrow admin release ${deal.id}`,
+        });
       } else {
         return NextResponse.json({ success: false, error: "Seller must sign in with Pi and activate their wallet to receive Pi." }, { status: 400 });
       }

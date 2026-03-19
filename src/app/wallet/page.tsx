@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
-import KycBadge from "@/components/ui/KycBadge";
+import { usePi } from "@/components/providers/PiProvider";
+import { getApiBase } from "@/lib/pi/sdk";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 
@@ -24,12 +25,24 @@ interface EarnTxn {
   id: string; type: string; source: string;
   amount_pi: number; status: string; note: string; created_at: string;
 }
-interface Referral {
-  id: string; referee_id: string; status: string;
-  bonus_paid_pi: number; created_at: string;
-  referee?: { username: string; avatar_url: string | null; kyc_status: string };
+interface UserSuggestion {
+  id: string;
+  username: string;
+  display_name: string | null;
 }
 
+const SC_PACKAGES = [
+  { id: "starter", sc: 100, usd: 1.0, label: "Starter" },
+  { id: "popular", sc: 500, usd: 5.0, label: "Popular" },
+  { id: "pro", sc: 1000, usd: 10.0, label: "Pro" },
+  { id: "whale", sc: 5000, usd: 50.0, label: "Whale" },
+] as const;
+const GIFT_ITEMS = [
+  { id: "rose", emoji: "🌹", name: "Rose", sc: 10 },
+  { id: "heart", emoji: "💖", name: "Heart", sc: 20 },
+  { id: "star", emoji: "⭐", name: "Star", sc: 50 },
+  { id: "crown", emoji: "👑", name: "Crown", sc: 100 },
+] as const;
 // ── Helpers ────────────────────────────────────────────────────────────────
 function formatPi(n: number)  {
   if (!n) return "0.000";
@@ -43,10 +56,11 @@ function timeAgo(iso: string) {
   if (s < 86400) return `${Math.floor(s/3600)}h ago`;
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
-function getInitial(s: string) { return (s ?? "?").charAt(0).toUpperCase(); }
 
 const EARN_TYPE_META: Record<string, { icon: string; color: string }> = {
   referral:         { icon: "👥", color: "#48BB78" },
+  market_order:     { icon: "🛍️", color: "#4299E1" },
+  supascrow_release:{ icon: "🛡️", color: "#14B8A6" },
   endoro_host:      { icon: "🚗", color: "#4299E1" },
   bulkhub_supplier: { icon: "📦", color: "#ED8936" },
   domus_rental:     { icon: "🏠", color: "#9F7AEA" },
@@ -71,12 +85,6 @@ const SC_TYPE_META: Record<string, { icon: string; color: string }> = {
   default:  { icon: "💎", color: "#F5A623" },
 };
 
-const REFERRAL_STATUS_META: Record<string, { label: string; color: string }> = {
-  signed_up:     { label: "Signed Up",     color: "#718096" },
-  kyc_done:      { label: "KYC Done",      color: "#4299E1" },
-  first_payment: { label: "First Payment", color: "#48BB78" },
-  active:        { label: "Active",        color: "#F5A623" },
-};
 
 // ── Withdraw Modal ─────────────────────────────────────────────────────────
 function WithdrawModal({
@@ -141,16 +149,226 @@ function WithdrawModal({
   );
 }
 
+function BuyScModal({
+  piRate, buying, selected, onClose, onSelect, onConfirm,
+}: {
+  piRate: number;
+  buying: boolean;
+  selected: (typeof SC_PACKAGES)[number] | null;
+  onClose: () => void;
+  onSelect: (pkg: (typeof SC_PACKAGES)[number]) => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className={styles.modal}>
+      <div className={styles.modalBackdrop} onClick={() => !buying && onClose()} />
+      <div className={styles.modalSheet}>
+        <div className={styles.modalHandle} />
+        <div className={styles.modalTitle}>🛒 Buy SC</div>
+        <div className={styles.modalSub}>Choose package and pay with Pi</div>
+
+        <div className={styles.buyPkgList}>
+          {SC_PACKAGES.map((pkg) => {
+            const piAmount = (pkg.usd / piRate).toFixed(4);
+            const active = selected?.id === pkg.id;
+            return (
+              <button
+                key={pkg.id}
+                type="button"
+                className={`${styles.buyPkgBtn} ${active ? styles.buyPkgBtnActive : ""}`}
+                onClick={() => onSelect(pkg)}
+              >
+                <span className={styles.buyPkgLabel}>{pkg.label}</span>
+                <span className={styles.buyPkgSc}>{pkg.sc} SC</span>
+                <span className={styles.buyPkgPi}>~ π {piAmount}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <button className={styles.withdrawConfirmBtn} onClick={onConfirm} disabled={!selected || buying}>
+          {buying ? "Processing..." : selected ? `Buy ${selected.sc} SC` : "Select package"}
+        </button>
+        <button className={styles.modalCancelBtn} onClick={onClose} disabled={buying}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+function SendScModal({
+  loading,
+  username,
+  amount,
+  balance,
+  suggestions,
+  onClose,
+  onChangeUsername,
+  onChangeAmount,
+  onPickSuggestion,
+  onConfirm,
+}: {
+  loading: boolean;
+  username: string;
+  amount: string;
+  balance: number;
+  suggestions: UserSuggestion[];
+  onClose: () => void;
+  onChangeUsername: (v: string) => void;
+  onChangeAmount: (v: string) => void;
+  onPickSuggestion: (username: string) => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className={styles.modal}>
+      <div className={styles.modalBackdrop} onClick={() => !loading && onClose()} />
+      <div className={styles.modalSheet}>
+        <div className={styles.modalHandle} />
+        <div className={styles.modalTitle}>↔️ Send SupaCredit</div>
+        <div className={styles.modalSub}>Instant transfer with zero fee</div>
+
+        <div className={styles.sendScField}>
+          <label className={styles.sendScLabel}>Recipient Username</label>
+          <input
+            className={styles.input}
+            placeholder="example: satoshi"
+            value={username}
+            onChange={(e) => onChangeUsername(e.target.value)}
+            autoComplete="off"
+          />
+          {suggestions.length > 0 && (
+            <div className={styles.sendScSuggestList}>
+              {suggestions.map((u) => (
+                <button
+                  key={u.id}
+                  type="button"
+                  className={styles.sendScSuggestItem}
+                  onClick={() => onPickSuggestion(u.username)}
+                >
+                  @{u.username}{u.display_name ? ` · ${u.display_name}` : ""}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className={styles.sendScField}>
+          <label className={styles.sendScLabel}>Amount (SC)</label>
+          <input
+            className={styles.input}
+            type="number"
+            min={1}
+            step={1}
+            placeholder="0"
+            value={amount}
+            onChange={(e) => onChangeAmount(e.target.value)}
+          />
+        </div>
+        <div className={styles.withdrawSummary}>
+          <div className={styles.withdrawSummaryRow}>
+            <span>Your Balance</span><span>💎 {balance.toLocaleString()} SC</span>
+          </div>
+          <div className={styles.withdrawSummaryRow}>
+            <span>Fee</span><span className={styles.withdrawFree}>0 SC</span>
+          </div>
+          <div className={`${styles.withdrawSummaryRow} ${styles.withdrawSummaryTotal}`}>
+            <span>Receiver Gets</span><span>{amount && Number(amount) > 0 ? Number(amount) : 0} SC</span>
+          </div>
+        </div>
+        <button className={styles.withdrawConfirmBtn} onClick={onConfirm} disabled={loading || !username.trim() || !amount.trim()}>
+          {loading ? "Sending..." : "Send Transfer"}
+        </button>
+        <button className={styles.modalCancelBtn} onClick={onClose} disabled={loading}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+function GiftScModal({
+  loading, username, selectedGift, suggestions, onClose, onChangeUsername, onPickSuggestion, onPickGift, onConfirm,
+}: {
+  loading: boolean;
+  username: string;
+  selectedGift: (typeof GIFT_ITEMS)[number] | null;
+  suggestions: UserSuggestion[];
+  onClose: () => void;
+  onChangeUsername: (v: string) => void;
+  onPickSuggestion: (username: string) => void;
+  onPickGift: (gift: (typeof GIFT_ITEMS)[number]) => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className={styles.modal}>
+      <div className={styles.modalBackdrop} onClick={() => !loading && onClose()} />
+      <div className={styles.modalSheet}>
+        <div className={styles.modalHandle} />
+        <div className={styles.modalTitle}>🎁 Gift SupaCredit</div>
+        <div className={styles.modalSub}>Send gift to another Pioneer (receiver gets 70%)</div>
+
+        <div className={styles.sendScField}>
+          <label className={styles.sendScLabel}>Recipient Username</label>
+          <input className={styles.input} placeholder="example: satoshi" value={username} onChange={(e) => onChangeUsername(e.target.value)} autoComplete="off" />
+          {suggestions.length > 0 && (
+            <div className={styles.sendScSuggestList}>
+              {suggestions.map((u) => (
+                <button key={u.id} type="button" className={styles.sendScSuggestItem} onClick={() => onPickSuggestion(u.username)}>
+                  @{u.username}{u.display_name ? ` · ${u.display_name}` : ""}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className={styles.sendScField}>
+          <label className={styles.sendScLabel}>Gift Item</label>
+          <div className={styles.buyPkgList}>
+            {GIFT_ITEMS.map((gift) => (
+              <button
+                key={gift.id}
+                type="button"
+                className={`${styles.buyPkgBtn} ${selectedGift?.id === gift.id ? styles.buyPkgBtnActive : ""}`}
+                onClick={() => onPickGift(gift)}
+              >
+                <span className={styles.buyPkgLabel}>{gift.emoji} {gift.name}</span>
+                <span className={styles.buyPkgSc}>{gift.sc} SC</span>
+                <span className={styles.buyPkgPi}>Receiver gets {Math.floor(gift.sc * 0.7)} SC</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button className={styles.withdrawConfirmBtn} onClick={onConfirm} disabled={loading || !username.trim() || !selectedGift}>
+          {loading ? "Sending..." : selectedGift ? `Send ${selectedGift.emoji} ${selectedGift.name}` : "Select gift"}
+        </button>
+        <button className={styles.modalCancelBtn} onClick={onClose} disabled={loading}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────
 export default function WalletPage() {
   const { user } = useAuth();
+  const { isReady: piReady } = usePi();
   const router   = useRouter();
 
   const [activeTab, setActiveTab]       = useState<"sc" | "earnings">("earnings");
   const [data, setData]                 = useState<any>(null);
   const [loading, setLoading]           = useState(true);
   const [showWithdraw, setShowWithdraw] = useState(false);
+  const [showBuySc, setShowBuySc] = useState(false);
+  const [showTransferSc, setShowTransferSc] = useState(false);
+  const [showGiftSc, setShowGiftSc] = useState(false);
   const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const [buyingSc, setBuyingSc] = useState(false);
+  const [sendingSc, setSendingSc] = useState(false);
+  const [giftingSc, setGiftingSc] = useState(false);
+  const [buyPkg, setBuyPkg] = useState<(typeof SC_PACKAGES)[number] | null>(null);
+  const [piRate, setPiRate] = useState(1.5);
+  const [transferUsername, setTransferUsername] = useState("");
+  const [transferAmount, setTransferAmount] = useState("");
+  const [transferSuggestions, setTransferSuggestions] = useState<UserSuggestion[]>([]);
+  const [giftUsername, setGiftUsername] = useState("");
+  const [giftSuggestions, setGiftSuggestions] = useState<UserSuggestion[]>([]);
+  const [giftItem, setGiftItem] = useState<(typeof GIFT_ITEMS)[number] | null>(null);
   const [toast, setToast]               = useState<{ msg: string; type: "success" | "error" } | null>(null);
   const [scPage, setScPage]             = useState(1);
   const [earnPage, setEarnPage]         = useState(1);
@@ -180,6 +398,49 @@ export default function WalletPage() {
     fetchData(activeTab);
   }, [user, activeTab, fetchData]);
 
+  useEffect(() => {
+    fetch("/api/pi-price")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.price) setPiRate(Number(d.price)); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const query = transferUsername.trim();
+    if (!user || query.length < 2 || !showTransferSc) {
+      setTransferSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`, {
+          headers: { Authorization: `Bearer ${token()}` },
+        });
+        const d = await r.json();
+        if (d.success) setTransferSuggestions(d.data?.users ?? []);
+      } catch {}
+    }, 220);
+    return () => clearTimeout(timer);
+  }, [transferUsername, user, showTransferSc]);
+
+  useEffect(() => {
+    const query = giftUsername.trim();
+    if (!user || query.length < 2 || !showGiftSc) {
+      setGiftSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`, {
+          headers: { Authorization: `Bearer ${token()}` },
+        });
+        const d = await r.json();
+        if (d.success) setGiftSuggestions(d.data?.users ?? []);
+      } catch {}
+    }, 220);
+    return () => clearTimeout(timer);
+  }, [giftUsername, user, showGiftSc]);
+
   const handleWithdraw = async (amount: number) => {
     setWithdrawLoading(true);
     try {
@@ -200,11 +461,144 @@ export default function WalletPage() {
     setWithdrawLoading(false);
   };
 
+  const handleBuySc = async () => {
+    if (!buyPkg || buyingSc) return;
+    if (!piReady) return showToast("Pi SDK not ready. Please wait...", "error");
+    const Pi = (window as any).Pi;
+    if (!Pi) return showToast("Please open in Pi Browser", "error");
+
+    setBuyingSc(true);
+    const currentPkg = buyPkg;
+    const piAmount = parseFloat((currentPkg.usd / piRate).toFixed(6));
+
+    try {
+      await Pi.authenticate(["username", "payments", "wallet_address"], async (incompletePayment: any) => {
+        const base = getApiBase();
+        await fetch(`${base || ""}/api/payments/incomplete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payment: incompletePayment }),
+        }).catch(() => {});
+      });
+
+      Pi.createPayment(
+        { amount: piAmount, memo: `Buy ${currentPkg.sc} Supapi Credits`, metadata: { pkg: currentPkg.id, sc: currentPkg.sc } },
+        {
+          onReadyForServerApproval: (paymentId: string) => {
+            const base = getApiBase();
+            fetch(`${base || ""}/api/credits/buy`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+              body: JSON.stringify({ paymentId, action: "approve" }),
+            }).catch(() => {});
+          },
+          onReadyForServerCompletion: async (paymentId: string, txid: string) => {
+            try {
+              const base = getApiBase();
+              const r = await fetch(`${base || ""}/api/credits/buy`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+                body: JSON.stringify({ paymentId, txid, action: "complete", pkg: currentPkg.id, sc: currentPkg.sc }),
+              });
+              const d = await r.json();
+              if (d.success) {
+                showToast(`🎉 +${currentPkg.sc} SC added!`);
+                fetchData("sc");
+              } else showToast(d.error ?? "SC credit failed", "error");
+            } catch {
+              showToast("Failed to credit SC", "error");
+            } finally {
+              setBuyingSc(false);
+              setShowBuySc(false);
+              setBuyPkg(null);
+            }
+          },
+          onCancel: () => { showToast("Payment cancelled", "error"); setBuyingSc(false); },
+          onError: (err: any) => { showToast(`Payment error: ${err?.message ?? ""}`, "error"); setBuyingSc(false); },
+        }
+      );
+    } catch (e: any) {
+      showToast(`Payment error: ${e?.message ?? "Unknown"}`, "error");
+      setBuyingSc(false);
+    }
+  };
+
+  const handleTransferSc = async () => {
+    const toUsername = transferUsername.trim();
+    const amt = parseInt(transferAmount, 10);
+    if (!toUsername || !amt || amt < 1 || sendingSc) return;
+    if ((scWallet.balance ?? 0) < amt) {
+      showToast("Insufficient SC balance", "error");
+      return;
+    }
+
+    setSendingSc(true);
+    try {
+      const r = await fetch("/api/credits/transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+        body: JSON.stringify({ toUsername, amount: amt }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        showToast(`💸 ${amt} SC sent to @${toUsername}`);
+        setShowTransferSc(false);
+        setTransferUsername("");
+        setTransferAmount("");
+        setTransferSuggestions([]);
+        fetchData("sc");
+      } else {
+        showToast(d.error ?? "Transfer failed", "error");
+      }
+    } catch {
+      showToast("Something went wrong", "error");
+    } finally {
+      setSendingSc(false);
+    }
+  };
+
+  const handleGiftSc = async () => {
+    const toUsername = giftUsername.trim();
+    if (!toUsername || !giftItem || giftingSc) return;
+    if ((scWallet.balance ?? 0) < giftItem.sc) {
+      showToast("Insufficient SC balance", "error");
+      return;
+    }
+    setGiftingSc(true);
+    try {
+      const r = await fetch("/api/credits/gift", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+        body: JSON.stringify({
+          toUsername,
+          giftId: giftItem.id,
+          sc: giftItem.sc,
+          emoji: giftItem.emoji,
+          name: giftItem.name,
+        }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        showToast(`${giftItem.emoji} Gift sent to @${toUsername}`);
+        setShowGiftSc(false);
+        setGiftUsername("");
+        setGiftItem(null);
+        setGiftSuggestions([]);
+        fetchData("sc");
+      } else {
+        showToast(d.error ?? "Gift failed", "error");
+      }
+    } catch {
+      showToast("Something went wrong", "error");
+    } finally {
+      setGiftingSc(false);
+    }
+  };
+
   const scWallet:       ScWallet       = data?.scWallet       ?? { balance: 0, total_earned: 0, total_spent: 0, checkin_streak: 0, last_checkin: null };
   const earningsWallet: EarningsWallet = data?.earningsWallet ?? { pending_pi: 0, available_pi: 0, total_earned: 0, total_withdrawn: 0 };
   const scTxns:         ScTxn[]        = data?.scTransactions ?? [];
   const earnTxns:       EarnTxn[]      = data?.earningsTransactions ?? [];
-  const referrals:      Referral[]     = data?.referrals ?? [];
 
   const SC_PAGE_SIZE = 10;
   const EARN_PAGE_SIZE = 10;
@@ -305,36 +699,15 @@ export default function WalletPage() {
               <Link href="/rewards" className={styles.scActionBtn}>
                 <span>🎯</span> Earn SC
               </Link>
-              <Link href="/rewards#buy" className={styles.scActionBtn}>
+              <button type="button" className={styles.scActionBtn} onClick={() => setShowBuySc(true)}>
                 <span>🛒</span> Buy SC
-              </Link>
-              <Link href="/rewards#gift" className={styles.scActionBtn}>
+              </button>
+              <button type="button" className={styles.scActionBtn} onClick={() => setShowGiftSc(true)}>
                 <span>🎁</span> Gift SC
-              </Link>
-              <Link href="/rewards#transfer" className={styles.scActionBtn}>
+              </button>
+              <button type="button" className={styles.scActionBtn} onClick={() => setShowTransferSc(true)}>
                 <span>↔️</span> Transfer
-              </Link>
-            </div>
-
-            {/* SC Earn ways */}
-            <div className={styles.sectionTitle}>Ways to Earn SC</div>
-            <div className={styles.earnWays}>
-              {[
-                { icon: "📅", label: "Daily Check-in",        sc: "+10 SC"  },
-                { icon: "🔥", label: "7-Day Streak Bonus",    sc: "+50 SC"  },
-{ icon: "🏠", label: "List on SupaDomus",   sc: "+150 SC" },
-    { icon: "🚗", label: "List on SupaAuto",  sc: "+150 SC" },
-    { icon: "📦", label: "SupaBulk Supplier", sc: "+100 SC" },
-    { icon: "🛞", label: "List on SupaEndoro", sc: "+150 SC" },
-                { icon: "📝", label: "Post on SupaLivvi",     sc: "+20 SC"  },
-                { icon: "🧵", label: "Post on SupaSaylo",     sc: "+15 SC"  },
-              ].map((w, i) => (
-                <div key={i} className={styles.earnWayRow}>
-                  <span className={styles.earnWayIcon}>{w.icon}</span>
-                  <span className={styles.earnWayLabel}>{w.label}</span>
-                  <span className={styles.earnWaySc}>{w.sc}</span>
-                </div>
-              ))}
+              </button>
             </div>
 
             {/* SC Transactions */}
@@ -449,87 +822,6 @@ export default function WalletPage() {
               )}
             </div>
 
-            {/* Quick actions */}
-            <div className={styles.sectionTitle}>Quick Actions</div>
-            <div className={styles.quickActions}>
-              {[
-                { href: "/supamarket", icon: "🛍️", label: "SupaMarket" },
-                { href: "/supaendoro", icon: "🛞", label: "Rent a Car" },
-                { href: "/supadomus", icon: "🏠", label: "Property" },
-                { href: "/supabulk", icon: "📦", label: "SupaBulk" },
-                { href: "/supaauto", icon: "🚗", label: "SupaAuto" },
-                { href: "/rewards", icon: "💎", label: "SC Rewards" },
-              ].map(a => (
-                <Link key={a.href} href={a.href} className={styles.quickAction}>
-                  <span className={styles.quickActionIcon}>{a.icon}</span>
-                  <span className={styles.quickActionLabel}>{a.label}</span>
-                </Link>
-              ))}
-            </div>
-
-            {/* Earning sources breakdown */}
-            <div className={styles.sectionTitle}>Earning Sources</div>
-            <div className={styles.sourcesList}>
-              {[
-                { type: "referral",         icon: "👥", label: "Referral Bonuses",        desc: "Earn Pi when your referrals join & use Supapi" },
-                { type: "endoro_host",      icon: "🛞", label: "SupaEndoro Host Payouts", desc: "Earn rental fees from your vehicles" },
-                { type: "gig_payout",       icon: "💼", label: "Gig Job Completions",      desc: "Pi released from escrow when job is done" },
-{ type: "domus_rental",     icon: "🏠", label: "SupaDomus Property Rentals", desc: "Pi rental payments from tenants" },
-    { type: "bulkhub_supplier", icon: "📦", label: "SupaBulk Order Payouts",   desc: "Pi from wholesale orders completed" },
-    { type: "machina_deal",     icon: "🚗", label: "SupaAuto Deals",          desc: "Pi from vehicle sale completions" },
-                { type: "gift_split",       icon: "🎁", label: "Gift Splits (70%)",        desc: "Your share of SC gifts received as Pi" },
-                { type: "tip",              icon: "💌", label: "Creator Tips",             desc: "Tips from SupaLivvi & SupaSaylo content" },
-              ].map(src => (
-                <div key={src.type} className={styles.sourceRow}>
-                  <div className={styles.sourceIcon}
-                    style={{ background: (EARN_TYPE_META[src.type]?.color ?? "#F5A623") + "18" }}>
-                    {src.icon}
-                  </div>
-                  <div className={styles.sourceInfo}>
-                    <div className={styles.sourceLabel}>{src.label}</div>
-                    <div className={styles.sourceDesc}>{src.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Referrals */}
-            {referrals.length > 0 && (
-              <>
-                <div className={styles.sectionTitle}>Your Referrals</div>
-                <div className={styles.referralList}>
-                  {referrals.map((ref: Referral) => {
-                    const statusMeta = REFERRAL_STATUS_META[ref.status] ?? REFERRAL_STATUS_META.signed_up;
-                    return (
-                      <div key={ref.id} className={styles.referralRow}>
-                        <div className={styles.referralAvatar}>
-                          {ref.referee?.avatar_url
-                            ? <img src={ref.referee.avatar_url} alt="" className={styles.referralAvatarImg} />
-                            : <span>{getInitial(ref.referee?.username ?? "?")}</span>
-                          }
-                        </div>
-                        <div className={styles.referralInfo}>
-                          <div className={styles.referralName}>
-                            @{ref.referee?.username ?? "Pioneer"}
-                            {ref.referee?.kyc_status === "verified" && <KycBadge size={14} />}
-                          </div>
-                          <div className={styles.referralTime}>{timeAgo(ref.created_at)}</div>
-                        </div>
-                        <div className={styles.referralRight}>
-                          <div className={styles.referralStatus} style={{ color: statusMeta.color }}>
-                            {statusMeta.label}
-                          </div>
-                          {ref.bonus_paid_pi > 0 && (
-                            <div className={styles.referralBonus}>+π {formatPi(ref.bonus_paid_pi)}</div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-
             {/* Earnings transactions */}
             <div className={styles.sectionTitle}>Earnings History</div>
             {loading ? (
@@ -540,14 +832,6 @@ export default function WalletPage() {
               <div className={styles.emptyEarnings}>
                 <div className={styles.emptyEarningsIcon}>🏦</div>
                 <div className={styles.emptyEarningsTitle}>No earnings yet</div>
-                <div className={styles.emptyEarningsDesc}>
-                  Start earning Pi by hosting on SupaEndoro, listing on SupaBulk, completing gigs, or referring friends!
-                </div>
-                <div className={styles.emptyEarningsCtas}>
-                  <Link href="/supaendoro/host"   className={styles.emptyEarningsBtn}>🚗 Host on SupaEndoro</Link>
-                  <Link href="/referral"      className={styles.emptyEarningsBtn}>👥 Refer Friends</Link>
-                  <Link href="/gigs"          className={styles.emptyEarningsBtn}>💼 Find SupaSkil</Link>
-                </div>
               </div>
             ) : (
               <div className={styles.txnList}>
@@ -610,6 +894,61 @@ export default function WalletPage() {
           onClose={() => setShowWithdraw(false)}
           onConfirm={handleWithdraw}
           loading={withdrawLoading}
+        />
+      )}
+      {showBuySc && (
+        <BuyScModal
+          piRate={piRate}
+          buying={buyingSc}
+          selected={buyPkg}
+          onClose={() => {
+            if (buyingSc) return;
+            setShowBuySc(false);
+            setBuyPkg(null);
+          }}
+          onSelect={setBuyPkg}
+          onConfirm={handleBuySc}
+        />
+      )}
+      {showTransferSc && (
+        <SendScModal
+          loading={sendingSc}
+          username={transferUsername}
+          amount={transferAmount}
+          balance={Number(scWallet.balance ?? 0)}
+          onClose={() => {
+            if (sendingSc) return;
+            setShowTransferSc(false);
+            setTransferSuggestions([]);
+          }}
+          onChangeUsername={setTransferUsername}
+          onChangeAmount={setTransferAmount}
+          suggestions={transferSuggestions}
+          onPickSuggestion={(u) => {
+            setTransferUsername(u);
+            setTransferSuggestions([]);
+          }}
+          onConfirm={handleTransferSc}
+        />
+      )}
+      {showGiftSc && (
+        <GiftScModal
+          loading={giftingSc}
+          username={giftUsername}
+          selectedGift={giftItem}
+          suggestions={giftSuggestions}
+          onClose={() => {
+            if (giftingSc) return;
+            setShowGiftSc(false);
+            setGiftSuggestions([]);
+          }}
+          onChangeUsername={setGiftUsername}
+          onPickSuggestion={(u) => {
+            setGiftUsername(u);
+            setGiftSuggestions([]);
+          }}
+          onPickGift={setGiftItem}
+          onConfirm={handleGiftSc}
         />
       )}
     </div>

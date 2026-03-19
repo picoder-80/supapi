@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
-import { analyzeDispute } from "@/lib/market/ai";
+import { analyzeDispute, shouldAutoResolveDispute } from "@/lib/market/ai";
 import { logDisputeEvent } from "@/lib/security/dispute-audit";
 import { executeOwnerTransfer, isOwnerTransferConfigured } from "@/lib/pi/payout";
+import { creditPlatformEarning } from "@/lib/wallet/earnings";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,6 +41,54 @@ function calcCommission(gross: number, pct: number): { commissionPi: number; net
   const commissionPi = Math.round((gross * (pct / 100)) * 1000000) / 1000000;
   const netPi = Math.round((gross - commissionPi) * 1000000) / 1000000;
   return { commissionPi, netPi };
+}
+
+function isNoResponseReason(reason: string): boolean {
+  const normalizedReason = (reason || "").toLowerCase();
+  const rawKeywords = process.env.SUPASCROW_AI_FORCE_MANUAL_KEYWORDS
+    ?? "no response,no reply,no update,tak respon,tak reply,tak balas,seller tak respon,seller tak reply,seller tak balas,ghosted,silent";
+  const keywords = rawKeywords
+    .split(",")
+    .map((k) => k.trim().toLowerCase())
+    .filter(Boolean);
+  return keywords.some((kw) => normalizedReason.includes(kw));
+}
+
+function getSupaScrowAutoPolicy(confidence: number, amount: number, currency: "pi" | "sc"): {
+  ok: boolean;
+  reason: "auto_disabled" | "confidence_too_low" | "amount_too_high" | "ok";
+  threshold: number;
+  max_auto_resolve: number;
+} {
+  const autoEnabled = (process.env.SUPASCROW_AI_AUTO_RESOLVE_ENABLED ?? "true").toLowerCase() !== "false";
+  const threshold = Math.min(
+    1,
+    Math.max(0, Number(process.env.SUPASCROW_AI_AUTO_THRESHOLD ?? process.env.MARKET_AI_AUTO_RESOLVE_THRESHOLD ?? "0.78"))
+  );
+
+  if (!autoEnabled) {
+    return { ok: false, reason: "auto_disabled", threshold, max_auto_resolve: 0 };
+  }
+
+  if (currency === "pi") {
+    const marketPolicy = shouldAutoResolveDispute(confidence, amount);
+    return {
+      ok: marketPolicy.ok,
+      reason: marketPolicy.reason,
+      threshold: marketPolicy.threshold,
+      max_auto_resolve: marketPolicy.max_auto_resolve_pi,
+    };
+  }
+
+  const maxAuto = Number(process.env.SUPASCROW_AI_MAX_AUTO_SC ?? 5000);
+  const safeMaxAuto = Number.isFinite(maxAuto) ? maxAuto : 5000;
+  if (confidence < threshold) {
+    return { ok: false, reason: "confidence_too_low", threshold, max_auto_resolve: safeMaxAuto };
+  }
+  if (amount > safeMaxAuto) {
+    return { ok: false, reason: "amount_too_high", threshold, max_auto_resolve: safeMaxAuto };
+  }
+  return { ok: true, reason: "ok", threshold, max_auto_resolve: safeMaxAuto };
 }
 
 export async function GET(req: NextRequest) {
@@ -331,6 +380,15 @@ export async function POST(req: NextRequest) {
             commission_pct: commissionPct,
           });
         }
+        await creditPlatformEarning({
+          userId: deal.seller_id,
+          platform: "supascrow",
+          event: "release",
+          amountPi: sellerPayout,
+          status: "available",
+          refId: dealId,
+          note: `SupaScrow release ${dealId}`,
+        });
       }
 
       const { error: upErr } = await supabase.from("supascrow_deals").update({ status: "released", released_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", dealId);
@@ -380,12 +438,15 @@ export async function POST(req: NextRequest) {
         amount_pi: amount,
         order_status: deal.status,
       });
-      const autoResolveEnabled = (process.env.SUPASCROW_AI_AUTO_RESOLVE_ENABLED ?? "true").toLowerCase() !== "false";
+      const noResponseReason = isNoResponseReason(reason);
+      const effectiveDecision = noResponseReason ? "manual_review" : analysis.decision;
+      const autoReleaseAllowed = (process.env.SUPASCROW_AI_ALLOW_AUTO_RELEASE ?? "false").toLowerCase() === "true";
+      const autoPolicy = getSupaScrowAutoPolicy(analysis.confidence, amount, deal.currency === "sc" ? "sc" : "pi");
 
       await supabase
         .from("supascrow_disputes")
         .update({
-          ai_decision: analysis.decision,
+          ai_decision: effectiveDecision,
           ai_reasoning: analysis.reasoning,
           ai_confidence: analysis.confidence,
           updated_at: new Date().toISOString(),
@@ -400,22 +461,27 @@ export async function POST(req: NextRequest) {
         eventType: "analysis_updated",
         fromStatus: "disputed",
         toStatus: "disputed",
-        decision: analysis.decision,
+        decision: effectiveDecision,
         confidence: analysis.confidence,
         reasonExcerpt: analysis.reasoning,
-        metadata: { auto_resolve_enabled: autoResolveEnabled },
+        metadata: {
+          no_response_reason: noResponseReason,
+          auto_release_allowed: autoReleaseAllowed,
+          auto_policy_reason: autoPolicy.reason,
+          auto_policy_threshold: autoPolicy.threshold,
+          auto_policy_max_amount: autoPolicy.max_auto_resolve,
+        },
       });
-
-      const threshold = Math.min(1, Math.max(0, Number(process.env.SUPASCROW_AI_AUTO_THRESHOLD ?? process.env.MARKET_AI_AUTO_RESOLVE_THRESHOLD ?? "0.78")));
-      const maxAuto = deal.currency === "sc" ? Number(process.env.SUPASCROW_AI_MAX_AUTO_SC ?? 5000) : Number(process.env.MARKET_AI_MAX_AUTO_RESOLVE_PI ?? 300);
       const autoResolve =
-        autoResolveEnabled &&
-        analysis.confidence >= threshold &&
-        amount <= maxAuto &&
-        (analysis.decision === "refund" || analysis.decision === "release");
+        autoPolicy.ok &&
+        !noResponseReason &&
+        (
+          effectiveDecision === "refund" ||
+          (autoReleaseAllowed && effectiveDecision === "release")
+        );
 
-      if (autoResolve && analysis.decision !== "manual_review") {
-        const resolution = analysis.decision === "refund" ? "refund_to_buyer" : "release_to_seller";
+      if (autoResolve && effectiveDecision !== "manual_review") {
+        const resolution = effectiveDecision === "refund" ? "refund_to_buyer" : "release_to_seller";
         const grossRounded = Math.round(amount * 1000000) / 1000000;
         const commissionPct = deal.currency === "pi" ? await getSupaScrowCommissionPct() : 0;
         const { commissionPi, netPi } = calcCommission(grossRounded, commissionPct);
@@ -449,6 +515,15 @@ export async function POST(req: NextRequest) {
                   commission_pct: commissionPct,
                 });
               }
+              await creditPlatformEarning({
+                userId: deal.seller_id,
+                platform: "supascrow",
+                event: "release",
+                amountPi: sellerPayout,
+                status: "available",
+                refId: dealId,
+                note: `SupaScrow auto release ${dealId}`,
+              });
             }
           }
         }
@@ -486,7 +561,7 @@ export async function POST(req: NextRequest) {
           eventType: "auto_resolved",
           fromStatus: "disputed",
           toStatus: resolution === "release_to_seller" ? "released" : "refunded",
-          decision: analysis.decision,
+          decision: effectiveDecision,
           confidence: analysis.confidence,
           reasonExcerpt: analysis.reasoning,
           metadata: { resolution },
@@ -496,7 +571,7 @@ export async function POST(req: NextRequest) {
           success: true,
           data: {
             message: `Dispute resolved. ${outcomeMsg}`,
-            ai_decision: analysis.decision,
+            ai_decision: effectiveDecision,
             ai_confidence: analysis.confidence,
             ai_reasoning: analysis.reasoning,
             auto_resolved: true,
@@ -508,7 +583,7 @@ export async function POST(req: NextRequest) {
         success: true,
         data: {
           message: "Dispute received. Our team will review it shortly.",
-          ai_decision: analysis.decision,
+          ai_decision: effectiveDecision,
           ai_confidence: analysis.confidence,
           ai_reasoning: analysis.reasoning,
           auto_resolved: false,
