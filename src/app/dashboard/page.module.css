@@ -57,60 +57,107 @@
   border: 3px solid rgba(255,255,255,0.15);
 }
 
-.statRow {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
+/* ── Profile completeness (in hero — replaces stats / My Profile row) ── */
+.heroCompleteness {
+  margin-top: 4px;
+  padding: 16px 16px 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-.statCard {
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 12px;
-  padding: 12px 8px;
-  text-align: center;
-  backdrop-filter: blur(8px);
-  text-decoration: none;
-  transition: var(--transition);
-}
-.statCard:hover {
-  background: rgba(255,255,255,0.1);
-  border-color: rgba(245,166,35,0.3);
+.heroCompletenessTitle {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin-bottom: 12px;
+  opacity: 0.95;
 }
 
-.statValue {
-  font-size: 22px;
+.heroCompletenessTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+
+.heroCompletenessLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.heroCompletenessPct {
+  font-size: 15px;
   font-weight: 800;
   color: var(--color-gold);
-  line-height: 1;
-  margin-bottom: 4px;
+  flex-shrink: 0;
 }
 
-.statLabel {
-  font-size: 9px;
-  color: rgba(255,255,255,0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.heroCompletenessPctDone {
+  color: #6ee7a8;
 }
 
-.refreshBtn {
+.heroCompletenessBar {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.heroCompletenessFill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.45s ease;
+  background: var(--color-gold);
+}
+
+.heroCompletenessFillDone {
+  background: #27ae60;
+}
+
+.heroCompletenessHint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 10px;
+  line-height: 1.45;
+}
+
+.heroCompletenessLink {
+  display: inline-flex;
+  align-items: center;
   margin-top: 12px;
-  width: 100%;
-  padding: 8px 12px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 10px;
-  color: rgba(255,255,255,0.8);
   font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
+  font-weight: 700;
+  color: var(--color-gold);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 166, 35, 0.4);
+  background: rgba(245, 166, 35, 0.12);
   transition: var(--transition);
 }
-.refreshBtn:hover:not(:disabled) {
-  background: rgba(255,255,255,0.12);
+.heroCompletenessLink:hover {
+  background: rgba(245, 166, 35, 0.2);
+  border-color: rgba(245, 166, 35, 0.55);
 }
-.refreshBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.heroCompletenessSkeleton {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  animation: heroCompletenessPulse 1.2s ease-in-out infinite;
+}
+@keyframes heroCompletenessPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
 
 /* ── What's Next ── */
 .whatsNextCard {
@@ -140,13 +187,12 @@
   cursor: pointer;
   font-family: inherit;
   transition: var(--transition);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .whatsNextBtn:hover { background: var(--color-gold-dark); }
-
-.activityArrow {
-  font-size: 18px;
-  color: var(--color-text-muted);
-}
 
 /* ── Body ── */
 .body {
@@ -214,99 +260,6 @@
   color: var(--color-text);
   text-align: center;
   letter-spacing: 0.2px;
-}
-
-/* ── Activity Feed ── */
-.activityList {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.activityItem {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 14px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  text-decoration: none;
-  color: inherit;
-  transition: var(--transition);
-}
-a.activityItem:hover {
-  border-color: var(--color-gold);
-  transform: translateY(-1px);
-}
-
-.activityIcon {
-  width: 38px; height: 38px;
-  border-radius: 10px;
-  background: var(--color-bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-}
-
-.activityInfo { flex: 1; }
-
-.activityTitle {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-text);
-  margin-bottom: 2px;
-}
-
-.activitySub {
-  font-size: 11px;
-  color: var(--color-text-muted);
-}
-
-.activityAmount {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-gold-dark);
-}
-
-.activityAmountNeg {
-  color: var(--color-error);
-}
-.pager {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 12px;
-  padding: 8px 0;
-}
-.pagerBtn {
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 8px;
-  border: 1.5px solid var(--color-border);
-  background: #fff;
-  color: var(--color-text);
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.2s, border-color 0.2s;
-}
-.pagerBtn:hover:not(:disabled) {
-  background: #F8F9FD;
-  border-color: var(--color-gold);
-  color: var(--color-gold-dark);
-}
-.pagerBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.pagerInfo {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-text-muted);
 }
 
 /* ── Platforms Grid ── */
@@ -518,15 +471,9 @@ a.activityItem:hover {
 }
 .guestBtn:hover { background: var(--color-gold-dark); transform: translateY(-2px); }
 
-@media (max-width: 480px) {
-  .statRow { grid-template-columns: repeat(2, 1fr); }
-}
-
 @media (max-width: 380px) {
   .quickGrid { grid-template-columns: repeat(2, 1fr); }
   .platformsGrid { grid-template-columns: repeat(3, 1fr); }
-  .statRow { gap: 8px; }
-  .statValue { font-size: 16px; }
 }
 
 /* ── Profile Progress ── */

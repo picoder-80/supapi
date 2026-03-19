@@ -36,23 +36,31 @@ export async function GET(
     const stayIds = (stayRows.data ?? []).map((r: { id: string }) => r.id);
 
     const reviewQueries = [
-      supabase.from("reviews").select("id, reviewer_id, rating, comment, created_at, target_type").eq("target_type", "user").eq("target_id", uid),
+      supabase.from("reviews").select("id, reviewer_id, rating, comment, images, created_at, target_type").eq("target_type", "user").eq("target_id", uid),
     ];
     if (listingIds.length > 0) {
-      reviewQueries.push(supabase.from("reviews").select("id, reviewer_id, rating, comment, created_at, target_type").eq("target_type", "listing").in("target_id", listingIds));
+      reviewQueries.push(supabase.from("reviews").select("id, reviewer_id, rating, comment, images, created_at, target_type").eq("target_type", "listing").in("target_id", listingIds));
     }
     if (gigIds.length > 0) {
-      reviewQueries.push(supabase.from("reviews").select("id, reviewer_id, rating, comment, created_at, target_type").eq("target_type", "gig").in("target_id", gigIds));
+      reviewQueries.push(supabase.from("reviews").select("id, reviewer_id, rating, comment, images, created_at, target_type").eq("target_type", "gig").in("target_id", gigIds));
     }
     if (courseIds.length > 0) {
-      reviewQueries.push(supabase.from("reviews").select("id, reviewer_id, rating, comment, created_at, target_type").eq("target_type", "course").in("target_id", courseIds));
+      reviewQueries.push(supabase.from("reviews").select("id, reviewer_id, rating, comment, images, created_at, target_type").eq("target_type", "course").in("target_id", courseIds));
     }
     if (stayIds.length > 0) {
-      reviewQueries.push(supabase.from("reviews").select("id, reviewer_id, rating, comment, created_at, target_type").eq("target_type", "stay").in("target_id", stayIds));
+      reviewQueries.push(supabase.from("reviews").select("id, reviewer_id, rating, comment, images, created_at, target_type").eq("target_type", "stay").in("target_id", stayIds));
     }
 
     const results = await Promise.all(reviewQueries);
-    const allRows: { id: string; reviewer_id: string; rating: number; comment: string | null; created_at: string; target_type: string }[] = [];
+    const allRows: {
+      id: string;
+      reviewer_id: string;
+      rating: number;
+      comment: string | null;
+      images?: string[] | null;
+      created_at: string;
+      target_type: string;
+    }[] = [];
     for (const res of results) {
       const rows = res.data ?? [];
       for (const r of rows) allRows.push(r as any);
@@ -75,6 +83,9 @@ export async function GET(
         id: r.id,
         rating: r.rating,
         comment: r.comment,
+        images: Array.isArray(r.images)
+          ? r.images.filter((u): u is string => typeof u === "string" && /^https?:\/\//i.test(u))
+          : [],
         created_at: r.created_at,
         target_type: r.target_type,
         platform: PLATFORM_LABEL[r.target_type] ?? r.target_type,

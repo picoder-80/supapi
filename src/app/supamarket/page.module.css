@@ -78,6 +78,28 @@
   line-height: 1.5;
 }
 
+.hubBtn {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+  font-weight: 700;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--supa-pill-radius);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: transform var(--supa-motion-fast) var(--supa-ease), border-color var(--supa-motion-fast) ease, background var(--supa-motion-fast) ease;
+  display: inline-block;
+}
+.hubBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--color-gold);
+  transform: translateY(-1px);
+}
+
 .sellBtn {
   background: var(--color-gold);
   color: var(--color-primary);

@@ -281,14 +281,6 @@
   padding: 2px 8px;
   border-radius: 999px;
 }
-.trackingLink {
-  font-size: 12px;
-  font-weight: 700;
-  color: #b7791f;
-  text-decoration: none;
-}
-.trackingLink:hover { text-decoration: underline; }
-
 .trackingInputWrap { margin-bottom: 8px; }
 .trackingHint { font-size: 11px; color: #718096; }
 .orderId {
@@ -369,6 +361,12 @@
   line-height: 1.6;
   margin-bottom: 12px;
 }
+.returnWarning {
+  display: block;
+  margin-top: 8px;
+  color: #9b2c2c;
+  font-weight: 700;
+}
 
 .reviewStars {
   display: flex;
@@ -388,6 +386,93 @@
   transition: transform 0.15s ease;
 }
 .reviewStarBtn:hover { transform: scale(1.1); }
+
+.reviewPhotosSection {
+  margin-top: 10px;
+  margin-bottom: 12px;
+}
+.reviewPhotosLabel {
+  font-size: 12px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+}
+.reviewPhotosHint {
+  font-size: 11px;
+  color: #718096;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.reviewPhotoPick {
+  display: inline-block;
+  cursor: pointer;
+}
+.reviewPhotoInput {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.reviewPhotoPickBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px dashed #cbd5e0;
+  background: #f8f9fd;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4a5568;
+}
+.reviewPhotoPick:hover .reviewPhotoPickBtn {
+  border-color: #f5a623;
+  background: #fff9ee;
+  color: #1a1a2e;
+}
+.reviewPhotoGrid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 420px) {
+  .reviewPhotoGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.reviewPhotoItem {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+.reviewPhotoImg {
+  width: 100%;
+  height: 72px;
+  object-fit: cover;
+  display: block;
+}
+.reviewPhotoRemove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(26, 26, 46, 0.75);
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.reviewPhotoRemove:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .confirmBtn {
   width: 100%;

@@ -180,7 +180,16 @@ function MarketPageContent() {
             <h1 className={styles.heroTitle}>🛍️ SupaMarket</h1>
             <p className={styles.heroSub}>Buy & sell anything with Pi. Secure escrow, completed transactions.</p>
           </div>
-          <Link href="/supamarket/create" className={styles.sellBtn}>+ Sell</Link>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flexShrink: 0, marginTop: 4 }}>
+            {user && (
+              <Link href="/supamarket/seller" className={styles.hubBtn}>
+                📊 Seller
+              </Link>
+            )}
+            <Link href="/supamarket/create" className={styles.sellBtn} style={{ marginLeft: 0 }}>
+              + Sell
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}

@@ -12,6 +12,7 @@ interface Review {
   id: string;
   rating: number;
   comment: string | null;
+  images?: string[];
   created_at: string;
   platform: string;
   reviewer: { id: string; username: string; display_name: string | null; avatar_url: string | null };
@@ -108,6 +109,21 @@ export default function ReviewsPage({ params }: { params: Promise<{ username: st
                   ))}
                 </div>
                 {r.comment && <div className={styles.reviewText}>{r.comment}</div>}
+                {r.images && r.images.length > 0 && (
+                  <div className={styles.reviewPhotoThumbs}>
+                    {r.images.map((url) => (
+                      <a
+                        key={url}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.reviewPhotoThumbLink}
+                      >
+                        <img src={url} alt="" className={styles.reviewPhotoThumb} />
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

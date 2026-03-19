@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     if (!payload) return NextResponse.json({ success: false }, { status: 401 });
 
     const body = await req.json();
-    const { order_id, reason, evidence } = body;
+    const { order_id, reason, evidence, return_request_id: returnRequestIdRaw } = body;
 
     if (!order_id || !reason)
       return NextResponse.json({ success: false, error: "Missing fields" }, { status: 400 });
@@ -42,6 +42,40 @@ export async function POST(req: NextRequest) {
     if (order.status !== "delivered" && order.status !== "disputed")
       return NextResponse.json({ success: false, error: "Order not eligible for dispute" }, { status: 400 });
 
+    /** Buyers must complete seller return flow before platform escalation (reduces refund abuse). */
+    let sourceReturnRequestId: string | null = null;
+    if (order.status === "delivered" && order.buyer_id === payload.userId) {
+      const rrId = typeof returnRequestIdRaw === "string" ? returnRequestIdRaw.trim() : "";
+      if (!rrId) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "Request a return from the seller first. If they decline, you can ask for platform review.",
+          },
+          { status: 400 }
+        );
+      }
+      const { data: rr } = await supabase
+        .from("market_return_requests")
+        .select("id, status, order_id, buyer_id")
+        .eq("id", rrId)
+        .single();
+      if (!rr || rr.order_id !== order_id || rr.buyer_id !== payload.userId) {
+        return NextResponse.json({ success: false, error: "Invalid return request" }, { status: 400 });
+      }
+      if (rr.status !== "seller_rejected") {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "The seller must decline your return request before you can ask for platform review.",
+          },
+          { status: 400 }
+        );
+      }
+      sourceReturnRequestId = rrId;
+    }
+
     const { data: existing } = await supabase
       .from("disputes")
       .select("id")
@@ -55,13 +89,17 @@ export async function POST(req: NextRequest) {
     const { data: dispute, error: disputeInsertErr } = await supabase
       .from("disputes")
       .insert({
-        order_id, opened_by: payload.userId,
-        reason, evidence: evidence ?? [],
+        order_id,
+        opened_by: payload.userId,
+        reason,
+        evidence: evidence ?? [],
         status: "open",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        ...(sourceReturnRequestId ? { source_return_request_id: sourceReturnRequestId } : {}),
       })
-      .select().single();
+      .select()
+      .single();
     if (disputeInsertErr || !dispute?.id) {
       return NextResponse.json({ success: false, error: disputeInsertErr?.message ?? "Failed to create dispute" }, { status: 500 });
     }
@@ -84,6 +122,17 @@ export async function POST(req: NextRequest) {
       .eq("id", order_id);
     if (orderDisputedErr) {
       return NextResponse.json({ success: false, error: orderDisputedErr.message }, { status: 500 });
+    }
+
+    if (sourceReturnRequestId) {
+      await supabase
+        .from("market_return_requests")
+        .update({
+          status: "escalated",
+          escalated_dispute_id: dispute.id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sourceReturnRequestId);
     }
 
     const analysis = await analyzeDispute({

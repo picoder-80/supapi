@@ -59,7 +59,15 @@ export default function PublicProfilePage() {
   const [liveCommentInput, setLiveCommentInput] = useState("");
   const liveCommentInputRef = useRef<HTMLInputElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
-  const [reviewsList, setReviewsList] = useState<{ id: string; rating: number; comment: string | null; created_at: string; platform: string; reviewer: { username: string; display_name: string | null; avatar_url: string | null } }[]>([]);
+  const [reviewsList, setReviewsList] = useState<{
+    id: string;
+    rating: number;
+    comment: string | null;
+    images?: string[];
+    created_at: string;
+    platform: string;
+    reviewer: { username: string; display_name: string | null; avatar_url: string | null };
+  }[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [statusPosts, setStatusPosts] = useState<{ id: string; body: string; created_at: string }[]>([]);
   const [statusLoading, setStatusLoading] = useState(false);
@@ -522,6 +530,21 @@ export default function PublicProfilePage() {
                         ))}
                       </div>
                       {r.comment && <div className={styles.reviewText}>{r.comment}</div>}
+                      {r.images && r.images.length > 0 && (
+                        <div className={styles.reviewPhotoThumbs}>
+                          {r.images.map((url) => (
+                            <a
+                              key={url}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={styles.reviewPhotoThumbLink}
+                            >
+                              <img src={url} alt="" className={styles.reviewPhotoThumb} />
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

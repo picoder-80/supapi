@@ -1181,6 +1181,28 @@
   line-height: 1.5;
 }
 
+.reviewPhotoThumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.reviewPhotoThumbLink {
+  display: block;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.reviewPhotoThumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 /* ═══════════════════════════════════
    STATUS TAB (newsfeed)
 ═══════════════════════════════════ */

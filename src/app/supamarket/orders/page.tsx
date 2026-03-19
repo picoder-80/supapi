@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./page.module.css";
 
 function timeAgo(iso: string) {
@@ -42,6 +42,7 @@ const STATUS_CLASS: Record<string, string> = {
 export default function OrdersPage() {
   const { user }  = useAuth();
   const router    = useRouter();
+  const searchParams = useSearchParams();
   const [tab, setTab]           = useState<"buying"|"selling">("buying");
   const [orders, setOrders]     = useState<any[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -66,6 +67,12 @@ export default function OrdersPage() {
     if (!user) { router.push("/dashboard"); return; }
     fetchOrders();
   }, [user, fetchOrders, router]);
+
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t === "selling") setTab("selling");
+    else if (t === "buying") setTab("buying");
+  }, [searchParams]);
 
   useEffect(() => { setOrdersPage(1); }, [tab]);
 

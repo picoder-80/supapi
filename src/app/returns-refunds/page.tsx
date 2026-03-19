@@ -28,8 +28,8 @@ const sections = [
     id: "marketplace",
     title: "SupaMarket & Physical Products",
     content: [
-      "Returns and refunds for SupaMarket orders are governed by the seller's policy and our dispute process. Sellers may set their own return windows (e.g. 7 days, 14 days) and conditions.",
-      "Buyers should contact the seller first to resolve issues. If the seller does not respond or you cannot reach an agreement, you may open a dispute before releasing escrow. Once funds are released to the seller, returns are handled directly between buyer and seller unless a dispute is raised.",
+      "Returns and refunds for SupaMarket orders use a return request first: after you confirm receipt, you can ask the seller for a refund. If the seller declines, you may ask for platform review before payment is released from escrow.",
+      "Once you complete the order, funds are released to the seller and returns are handled directly between you and the seller unless a new case is raised under our policies.",
       "For items not as described, damaged in transit, or never received, open a dispute promptly. We will review the case and may issue a full or partial refund to the buyer.",
     ],
   },

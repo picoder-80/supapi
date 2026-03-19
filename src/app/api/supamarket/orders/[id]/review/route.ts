@@ -7,6 +7,26 @@ import { verifyToken } from "@/lib/auth/jwt";
 
 type Params = { params: Promise<{ id: string }> };
 
+const MAX_REVIEW_IMAGES = 4;
+
+/** Only accept URLs from our public listings bucket (review uploads). */
+function sanitizeReviewImageUrls(raw: unknown): string[] {
+  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
+  const needle = "/storage/v1/object/public/listings/reviews/";
+  if (!base) return [];
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const u of raw) {
+    if (out.length >= MAX_REVIEW_IMAGES) break;
+    if (typeof u !== "string") continue;
+    const s = u.trim().slice(0, 2048);
+    if (!/^https?:\/\//i.test(s)) continue;
+    if (!s.startsWith(base) || !s.includes(needle)) continue;
+    out.push(s);
+  }
+  return out;
+}
+
 export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { id: orderId } = await params;
@@ -18,6 +38,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     const body = await req.json();
     const rating = Number(body?.rating);
     const comment = typeof body?.comment === "string" ? body.comment.trim().slice(0, 500) : null;
+    const images = sanitizeReviewImageUrls(body?.images);
 
     if (!rating || rating < 1 || rating > 5) {
       return NextResponse.json({ success: false, error: "Rating must be 1–5" }, { status: 400 });
@@ -55,6 +76,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         target_type: "listing",
         rating: Math.round(rating),
         comment: comment || null,
+        images: images.length ? images : [],
       },
       { onConflict: "reviewer_id,target_id,target_type" }
     );

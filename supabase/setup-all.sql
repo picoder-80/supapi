@@ -258,6 +258,7 @@ CREATE TABLE reviews (
                CHECK (target_type IN ('listing','gig','course','stay','user')),
   rating       INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
   comment      TEXT,
+  images       TEXT[] NOT NULL DEFAULT '{}',
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(reviewer_id, target_id, target_type)
 );

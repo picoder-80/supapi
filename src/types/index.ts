@@ -210,6 +210,7 @@ export interface Review {
   target_type: "listing" | "gig" | "course" | "stay" | "user";
   rating: number;
   comment: string | null;
+  images?: string[];
   created_at: string;
 }
 

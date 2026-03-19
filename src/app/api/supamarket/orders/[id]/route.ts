@@ -124,7 +124,8 @@ export async function GET(req: NextRequest, { params }: Params) {
       .single();
 
     if (error || !data) return withCors(NextResponse.json({ success: false, error: "Not found" }, { status: 404 }), req);
-    const normalized = { ...data, status: getEffectiveOrderStatus(data) };
+    const normalized = { ...data, status: getEffectiveOrderStatus(data) } as Record<string, unknown>;
+    delete normalized.tracking_url;
 
     // has_review: whether buyer has left a review for this order's listing
     let hasReview = false;
@@ -141,6 +142,14 @@ export async function GET(req: NextRequest, { params }: Params) {
     }
     (normalized as Record<string, unknown>).has_review = hasReview;
 
+    const { data: rrList, error: rrErr } = await supabase
+      .from("market_return_requests")
+      .select("*")
+      .eq("order_id", id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    (normalized as Record<string, unknown>).return_request = !rrErr ? (rrList?.[0] ?? null) : null;
+
     return withCors(NextResponse.json({ success: true, data: normalized }), req);
   } catch {
     return withCors(NextResponse.json({ success: false }, { status: 500 }), req);
@@ -156,7 +165,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!payload) return withCors(NextResponse.json({ success: false }, { status: 401 }), req);
 
     const body = await req.json();
-    const { status: newStatus, tracking_number, tracking_carrier, tracking_url, meetup_location, meetup_time, pi_payment_id } = body;
+    const { status: newStatus, tracking_number, tracking_carrier, meetup_location, meetup_time, pi_payment_id } = body;
 
     const supabase = await createAdminClient();
     const { data: order } = await supabase.from("orders").select("*").eq("id", id).single();
@@ -174,6 +183,28 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       if (!allowed.includes(newStatus))
         return withCors(NextResponse.json({ success: false, error: `Cannot move from ${effectiveStatus} to ${newStatus}` }, { status: 400 }), req);
 
+      if (newStatus === "completed" && isBuyer) {
+        const { data: pendRr, error: pendErr } = await supabase
+          .from("market_return_requests")
+          .select("id")
+          .eq("order_id", id)
+          .eq("status", "pending_seller")
+          .maybeSingle();
+        if (!pendErr && pendRr) {
+          return withCors(
+            NextResponse.json(
+              {
+                success: false,
+                error:
+                  "Withdraw or wait for the seller to respond to your return request before completing the order.",
+              },
+              { status: 400 }
+            ),
+            req
+          );
+        }
+      }
+
       // Validate actor
       const actor = TRANSITION_ACTOR[newStatus];
       if (actor === "buyer"  && !isBuyer)
@@ -184,9 +215,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (newStatus)         updates.status = newStatus;
-    if (tracking_number)   updates.tracking_number = tracking_number;
-    if (tracking_carrier)  updates.tracking_carrier = tracking_carrier;
-    if (tracking_url)      updates.tracking_url = tracking_url;
+    if (tracking_number) {
+      updates.tracking_number = tracking_number;
+      updates.tracking_url = null;
+    }
+    if (tracking_carrier) updates.tracking_carrier = tracking_carrier;
     if (meetup_location)   updates.meetup_location = meetup_location;
     if (meetup_time)     updates.meetup_time = meetup_time;
     if (pi_payment_id)   updates.pi_payment_id = pi_payment_id;
@@ -278,7 +311,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     if (error) return withCors(NextResponse.json({ success: false, error: error.message }, { status: 500 }), req);
-    const normalized = { ...data, status: getEffectiveOrderStatus(data) };
+    const normalized = { ...data, status: getEffectiveOrderStatus(data) } as Record<string, unknown>;
+    delete normalized.tracking_url;
     return withCors(NextResponse.json({ success: true, data: normalized }), req);
   } catch {
     return withCors(NextResponse.json({ success: false }, { status: 500 }), req);
