@@ -257,6 +257,7 @@
 .statusPaused { color: #744210; background: #fffaf0; border-color: #fbd38d; }
 .statusSold { color: #2d3748; background: #edf2f7; border-color: #cbd5e0; }
 .statusDeleted { color: #9b2335; background: #fff5f5; border-color: #fed7d7; }
+.statusArchived { color: #4a5568; background: #edf2f7; border-color: #cbd5e0; }
 
 .listingCategory {
   margin-top: 6px;
@@ -305,7 +306,49 @@
 .actionBtn:hover { border-color: #f5a623; transform: translateY(-1px); }
 .actionBtnDelete { border-color: #fed7d7; color: #9b2335; background: #fff5f5; }
 .actionBtnDelete:hover { border-color: #fc8181; }
+.actionBtnRestore { border-color: #c6f6d5; color: #276749; background: #f0fff4; min-width: 100px; }
+.actionBtnRestore:hover { border-color: #68d391; }
+.actionBtnDeleteForever { border-color: #fed7d7; color: #9b2335; background: #fff5f5; min-width: 100px; }
+.actionBtnDeleteForever:hover { border-color: #fc8181; }
 .actionBtn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.archivedSection {
+  margin-top: 20px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: var(--supa-card-shadow);
+  overflow: hidden;
+}
+.archivedToggle {
+  width: 100%;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8f9fd;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  color: #4a5568;
+  transition: background 0.22s ease;
+}
+.archivedToggle:hover { background: #edf2f7; }
+.archivedToggleIcon { font-size: 10px; color: #718096; }
+.archivedCount { color: #718096; font-weight: 600; font-size: 13px; }
+.archivedBody {
+  padding: 12px;
+  border-top: 1px solid #e2e8f0;
+  display: grid;
+  gap: 12px;
+}
+.archivedEmpty {
+  padding: 20px;
+  text-align: center;
+  color: #718096;
+  font-size: 14px;
+}
 
 .stickyBuyBar {
   position: fixed;

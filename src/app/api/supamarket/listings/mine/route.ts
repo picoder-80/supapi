@@ -31,24 +31,29 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status"); // optional filter
+  const archived = searchParams.get("archived") === "true" || searchParams.get("archived") === "1";
 
   try {
     let query = supabase
       .from("listings")
       .select("id, title, description, price_pi, category, subcategory, condition, buying_method, images, stock, status, location, views, likes, is_boosted, boost_tier, boost_expires_at, created_at, updated_at")
       .eq("seller_id", userId)
-      .neq("status", "deleted")
-      .neq("status", "removed")
       .order("created_at", { ascending: false });
 
-    if (status) query = query.eq("status", status);
+    if (archived) {
+      query = query.in("status", ["removed", "deleted"]);
+    } else {
+      query = query.neq("status", "deleted").neq("status", "removed");
+    }
+
+    if (status && !archived) query = query.eq("status", status);
 
     const { data, error } = await query;
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
 
     const normalized = (data ?? []).map((row: Record<string, unknown>) => ({
       ...row,
-      status: normalizeListingStatusForUi(row.status),
+      status: archived ? String(row.status ?? "") : normalizeListingStatusForUi(row.status),
     }));
     return NextResponse.json({ success: true, data: normalized });
   } catch {

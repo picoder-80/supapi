@@ -47,7 +47,7 @@ CREATE TABLE listings (
   images          TEXT[] NOT NULL DEFAULT '{}',
   stock           INT NOT NULL DEFAULT 1,
   status          TEXT NOT NULL DEFAULT 'active'
-                  CHECK (status IN ('active','paused','sold','deleted')),
+                  CHECK (status IN ('active','paused','sold','deleted','removed')),
   location        TEXT,
   country_code    TEXT,
   ship_worldwide  BOOLEAN NOT NULL DEFAULT FALSE,

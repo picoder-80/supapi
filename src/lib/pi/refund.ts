@@ -39,9 +39,6 @@ export async function issueA2URefund(
   const note = `Supapi dispute refund #${disputeId.slice(0, 8)}`;
 
   const payoutConfigured = isOwnerTransferConfigured();
-  // #region agent log
-  fetch('http://127.0.0.1:7583/ingest/85ab3f18-cb22-483f-9206-fdd2fd446d94',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9e0db8'},body:JSON.stringify({sessionId:'9e0db8',location:'refund.ts:config-check',message:'Payout config',data:{payoutConfigured,hasPiApiKey:!!process.env.PI_API_KEY,hasTreasuryUid:!!process.env.PI_TREASURY_UID},hypothesisId:'D',timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
 
   // Prefer payout service (same as SupaChat, SupaScrow) — no PI_TREASURY_UID needed
   if (payoutConfigured) {
@@ -50,9 +47,6 @@ export async function issueA2URefund(
       recipientUid: buyerUid.trim(),
       note,
     });
-    // #region agent log
-    fetch('http://127.0.0.1:7583/ingest/85ab3f18-cb22-483f-9206-fdd2fd446d94',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9e0db8'},body:JSON.stringify({sessionId:'9e0db8',location:'refund.ts:executeOwnerTransfer-result',message:'Transfer result',data:{ok:tx.ok,message:tx.message,txid:tx.txid},hypothesisId:'E',timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     if (!tx.ok) {
       throw new Error(tx.message ?? "Payout service refund failed");
     }

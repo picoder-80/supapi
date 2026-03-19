@@ -80,10 +80,6 @@ export async function POST(req: NextRequest, { params }: Params) {
       .update({ refund_status: "processing", updated_at: new Date().toISOString() })
       .eq("id", disputeId);
 
-    // #region agent log
-    fetch('http://127.0.0.1:7583/ingest/85ab3f18-cb22-483f-9206-fdd2fd446d94',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9e0db8'},body:JSON.stringify({sessionId:'9e0db8',location:'refund/route.ts:pre-issueA2URefund',message:'Before issueA2URefund',data:{disputeId,orderId:order.id,amountPi,buyerPiUid:!!buyer?.pi_uid},hypothesisId:'A',timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-
     try {
       const refund = await issueA2URefund(buyer.pi_uid, amountPi, disputeId, order.id);
       const now = new Date().toISOString();
@@ -177,9 +173,6 @@ export async function POST(req: NextRequest, { params }: Params) {
         console.error("[Refund] Email notification failed:", emailErr);
       }
 
-      // #region agent log
-      fetch('http://127.0.0.1:7583/ingest/85ab3f18-cb22-483f-9206-fdd2fd446d94',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9e0db8'},body:JSON.stringify({sessionId:'9e0db8',location:'refund/route.ts:refund-success',message:'Refund issued successfully',data:{paymentId:refund.paymentId,txid:refund.txid},hypothesisId:'B',timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       return NextResponse.json({
         success: true,
         refund: {
@@ -201,9 +194,6 @@ export async function POST(req: NextRequest, { params }: Params) {
 
       const msg = error?.message ?? "Failed to issue A2U refund";
       console.error("[Refund] A2U refund failed:", { disputeId, orderId: order.id, amountPi, error: msg });
-      // #region agent log
-      fetch('http://127.0.0.1:7583/ingest/85ab3f18-cb22-483f-9206-fdd2fd446d94',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9e0db8'},body:JSON.stringify({sessionId:'9e0db8',location:'refund/route.ts:refund-error',message:'Refund failed',data:{disputeId,orderId:order.id,amountPi,errorMsg:msg},hypothesisId:'C',timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
 
       // Return 502 when payout/transfer config is the issue (actionable)
       const isConfigError =

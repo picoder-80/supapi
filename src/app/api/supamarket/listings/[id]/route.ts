@@ -11,7 +11,8 @@ function normalizeListingStatusForUi(status: unknown): string {
 }
 
 function fallbackStatuses(requested: string): string[] {
-  if (requested === "paused") return ["paused", "removed"];
+  // paused = only paused (never fallback to removed — that would hide listing from seller)
+  if (requested === "paused") return ["paused"];
   if (requested === "deleted") return ["deleted", "removed"];
   return [requested];
 }
@@ -147,7 +148,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 }
 
-// DELETE — soft delete
+// DELETE — soft delete, or permanent delete when ?permanent=true (archived listings only)
 export async function DELETE(req: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
@@ -156,7 +157,39 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     const payload = verifyToken(auth);
     if (!payload) return NextResponse.json({ success: false }, { status: 401 });
 
+    const { searchParams } = new URL(req.url);
+    const permanent = searchParams.get("permanent") === "true" || searchParams.get("permanent") === "1";
+
     const supabase = await createAdminClient();
+
+    if (permanent) {
+      // Permanent delete: only for archived (removed/deleted) listings, and only if no orders
+      const { data: listing } = await supabase
+        .from("listings")
+        .select("id, status, seller_id")
+        .eq("id", id)
+        .eq("seller_id", payload.userId)
+        .single();
+
+      if (!listing) return NextResponse.json({ success: false, error: "Listing not found or unauthorized" }, { status: 404 });
+      if (!["removed", "deleted"].includes(String(listing.status))) {
+        return NextResponse.json({ success: false, error: "Only archived listings can be permanently deleted" }, { status: 400 });
+      }
+
+      const { count } = await supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("listing_id", id);
+      if ((count ?? 0) > 0) {
+        return NextResponse.json({ success: false, error: "Cannot delete: this listing has order history" }, { status: 400 });
+      }
+
+      const { error } = await supabase.from("listings").delete().eq("id", id).eq("seller_id", payload.userId);
+      if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+      return NextResponse.json({ success: true });
+    }
+
+    // Soft delete
     const tryStatuses = ["deleted", "removed"];
     let lastError: { message?: string; code?: string } | null = null;
     for (const status of tryStatuses) {

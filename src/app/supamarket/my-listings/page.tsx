@@ -23,6 +23,7 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string }> 
   paused:  { label: "Paused",  color: "#744210", bg: "#FFFAF0" },
   sold:    { label: "Sold",    color: "#2D3748", bg: "#EDF2F7" },
   deleted: { label: "Deleted", color: "#9B2335", bg: "#FFF5F5" },
+  removed: { label: "Archived", color: "#4A5568", bg: "#EDF2F7" },
 };
 
 const STATUS_CLASS: Record<string, string> = {
@@ -30,6 +31,7 @@ const STATUS_CLASS: Record<string, string> = {
   paused: styles.statusPaused,
   sold: styles.statusSold,
   deleted: styles.statusDeleted,
+  removed: styles.statusArchived,
 };
 
 export default function MyListingsPage() {
@@ -37,7 +39,10 @@ export default function MyListingsPage() {
   const router    = useRouter();
 
   const [listings, setListings] = useState<any[]>([]);
+  const [archivedListings, setArchivedListings] = useState<any[]>([]);
   const [loading, setLoading]   = useState(true);
+  const [archivedLoading, setArchivedLoading] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [filter, setFilter]     = useState<"all"|"active"|"paused"|"sold">("all");
   const [toast, setToast]       = useState<{ msg: string; type: "success"|"error" }|null>(null);
   const [actionId, setActionId] = useState<string|null>(null);
@@ -65,10 +70,27 @@ export default function MyListingsPage() {
     setLoading(false);
   }, [user]);
 
+  const fetchArchivedListings = useCallback(async () => {
+    if (!user) return;
+    setArchivedLoading(true);
+    try {
+      const r = await fetch("/api/supamarket/listings/mine?archived=true", {
+        headers: { Authorization: `Bearer ${token()}` }
+      });
+      const d = await r.json();
+      if (d.success) setArchivedListings(d.data ?? []);
+    } catch {}
+    setArchivedLoading(false);
+  }, [user]);
+
   useEffect(() => {
     if (!user) { router.push("/dashboard"); return; }
     fetchListings();
   }, [user, fetchListings, router]);
+
+  useEffect(() => {
+    if (user) fetchArchivedListings();
+  }, [user, fetchArchivedListings]);
 
   const fetchScBalance = useCallback(async () => {
     const t = token();
@@ -119,6 +141,7 @@ export default function MyListingsPage() {
       if (d.success) {
         showToast(`Listing ${status === "deleted" ? "deleted" : status === "paused" ? "paused" : "activated"}!`);
         fetchListings();
+        if (showArchived) fetchArchivedListings();
       } else {
         showToast(d.error ?? "Update failed", "error");
       }
@@ -137,6 +160,27 @@ export default function MyListingsPage() {
       if (d.success) {
         showToast("Listing deleted!");
         setListings(prev => prev.filter(l => l.id !== id));
+      } else {
+        showToast(d.error ?? "Delete failed", "error");
+      }
+    } catch {
+      showToast("Something went wrong", "error");
+    }
+    setActionId(null);
+  };
+
+  const handleDeleteForever = async (id: string) => {
+    if (!confirm("Delete this listing permanently? This cannot be undone.")) return;
+    setActionId(id);
+    try {
+      const r = await fetch(`/api/supamarket/listings/${id}?permanent=true`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token()}` },
+      });
+      const d = await r.json();
+      if (d.success) {
+        showToast("Listing permanently deleted");
+        setArchivedListings(prev => prev.filter(l => l.id !== id));
       } else {
         showToast(d.error ?? "Delete failed", "error");
       }
@@ -182,6 +226,81 @@ export default function MyListingsPage() {
               </button>
             );
           })}
+        </div>
+
+        <div className={styles.archivedSection}>
+          <button
+            className={styles.archivedToggle}
+            onClick={() => setShowArchived((v) => !v)}
+            aria-expanded={showArchived}
+          >
+            <span className={styles.archivedToggleIcon}>{showArchived ? "▼" : "▶"}</span>
+            <span>Archived / Removed listings</span>
+            {!showArchived && archivedListings.length > 0 && (
+              <span className={styles.archivedCount}>({archivedListings.length})</span>
+            )}
+          </button>
+          {showArchived && (
+            <div className={styles.archivedBody}>
+              {archivedLoading ? (
+                [...Array(2)].map((_, i) => (
+                  <div key={i} className={styles.skeletonCard}>
+                    <div className={styles.skeletonImage} />
+                    <div className={styles.skeletonLines}>
+                      <div className={styles.skeletonLineLg} />
+                      <div className={styles.skeletonLineMd} />
+                      <div className={styles.skeletonLineSm} />
+                    </div>
+                  </div>
+                ))
+              ) : archivedListings.length === 0 ? (
+                <div className={styles.archivedEmpty}>
+                  No archived or removed listings.
+                </div>
+              ) : (
+                archivedListings.map((listing) => {
+                  const meta = STATUS_META[listing.status] ?? STATUS_META.removed;
+                  const statusClass = STATUS_CLASS[listing.status] ?? styles.statusArchived;
+                  return (
+                    <div key={listing.id} className={styles.listingRow}>
+                      <Link href={`/supamarket/${listing.id}`} className={styles.listingImg}>
+                        {listing.images?.[0]
+                          ? <img src={listing.images[0]} alt="" className={styles.listingImgEl} />
+                          : <span>🛍️</span>
+                        }
+                      </Link>
+                      <div className={styles.listingInfo}>
+                        <div className={styles.listingTitle}>{listing.title}</div>
+                        <div className={styles.listingMeta}>
+                          <span className={styles.listingPrice}>{parseFloat(listing.price_pi).toFixed(2)} π</span>
+                          <span className={`${styles.statusBadge} ${statusClass}`}>{meta.label}</span>
+                        </div>
+                        <div className={styles.listingCategory}>{listing.category ?? "General"} · {timeAgo(listing.created_at)}</div>
+                      </div>
+                      <div className={styles.listingActions}>
+                        <button
+                          className={`${styles.actionBtn} ${styles.actionBtnRestore}`}
+                          title="Restore"
+                          disabled={actionId === listing.id}
+                          onClick={() => handleStatusChange(listing.id, "active")}
+                        >
+                          ↩ Restore
+                        </button>
+                        <button
+                          className={`${styles.actionBtn} ${styles.actionBtnDeleteForever}`}
+                          title="Delete Forever"
+                          disabled={actionId === listing.id}
+                          onClick={() => handleDeleteForever(listing.id)}
+                        >
+                          🗑 Delete Forever
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
 
         <div className={styles.body}>
