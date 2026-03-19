@@ -48,6 +48,7 @@ interface TreasuryData {
   admin_user?: { username: string; pi_uid: string } | null;
   summary: TreasurySummary;
   by_platform: Record<string, { gross: number; commission: number; count: number }>;
+  platform_display?: Record<string, { label: string; emoji: string }>;
   monthly_trend: Record<string, number>;
   pending_withdrawals: PendingWithdrawal[];
   recent_withdrawals: Array<{ id: string; amount_pi: number; status: string; pi_txid: string; processed_at: string; seller: { username: string } }>;

@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     .eq("user_id", recipient.id)
     .single();
 
-  const recipientNewBalance = (recipientWallet?.balance ?? 0) + creatorSc;
+  const recipientNewBalance = Number(recipientWallet?.balance ?? 0) + creatorSc;
 
   // Optimistic debit guard to reduce race-condition double-spend.
   const { data: senderUpdated } = await supabase.from("supapi_credits")
@@ -113,8 +113,6 @@ export async function POST(req: NextRequest) {
       .eq("user_id", userId);
     return NextResponse.json({ success: false, error: "Gift failed. Please retry." }, { status: 500 });
   }
-
-  const recipientNewBalance = recipientOldBalance + creatorSc;
 
   // Log sender transaction
   await supabase.from("credit_transactions").insert({

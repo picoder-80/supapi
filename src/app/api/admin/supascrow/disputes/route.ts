@@ -18,6 +18,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = (searchParams.get("status") ?? "").trim().toLowerCase(); // open | resolved | all
 
+  type DisputeRow = { id: string; deal_id: string; initiator_id: string; reason?: string; resolution?: string | null; resolved_at?: string | null; created_at?: string; ai_decision?: string | null; ai_reasoning?: string | null; ai_confidence?: number | null; [k: string]: unknown };
+
   const runDisputesQuery = async (withAiColumns: boolean) => {
     const selectCols = withAiColumns
       ? "id, deal_id, initiator_id, reason, resolution, resolved_at, ai_decision, ai_reasoning, ai_confidence, created_at"
@@ -31,32 +33,38 @@ export async function GET(req: NextRequest) {
     return q;
   };
 
-  let { data: disputes, error } = await runDisputesQuery(true);
+  let disputes: DisputeRow[] | null = null;
+  let err: Error | null = null;
+  const res = await runDisputesQuery(true);
+  disputes = res.data as unknown as DisputeRow[] | null;
+  err = res.error;
+
   // Backward compatibility: old DBs may not have ai_* columns yet.
-  if (error && /column .*ai_decision.* does not exist/i.test(error.message)) {
+  if (err && /column .*ai_decision.* does not exist/i.test(err.message)) {
     const fallback = await runDisputesQuery(false);
-    disputes = (fallback.data ?? []).map((d: Record<string, unknown>) => ({
+    const fallbackRows = (fallback.data ?? []) as unknown as Record<string, unknown>[];
+    disputes = fallbackRows.map((d) => ({
       ...d,
       ai_decision: null,
       ai_reasoning: null,
       ai_confidence: null,
-    }));
-    error = fallback.error;
+    })) as DisputeRow[];
+    err = fallback.error;
   }
 
-  if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  if (err) return NextResponse.json({ success: false, error: err.message }, { status: 500 });
 
   type DealRow = { id: string; buyer_id: string; seller_id: string; title?: string; amount_pi?: number; currency?: string; [k: string]: unknown };
-  const dealIds = [...new Set((disputes ?? []).map((d: { deal_id: string }) => d.deal_id))];
+  const dealIds = [...new Set((disputes ?? []).map((d) => d.deal_id))];
   const { data: deals } = await supabase.from("supascrow_deals").select("*").in("id", dealIds);
   const dealMap = new Map<string, DealRow>(((deals ?? []) as DealRow[]).map((d) => [d.id, d]));
 
   const partyIds = [...new Set(((deals ?? []) as DealRow[]).flatMap((d) => [d.buyer_id, d.seller_id]))];
-  const initiatorIds = [...new Set((disputes ?? []).map((d: { initiator_id: string }) => d.initiator_id))];
+  const initiatorIds = [...new Set((disputes ?? []).map((d) => d.initiator_id))];
   const { data: users } = await supabase.from("users").select("id, username, display_name").in("id", [...partyIds, ...initiatorIds]);
   const userMap = new Map((users ?? []).map((u: { id: string }) => [u.id, u]));
 
-  const enriched = (disputes ?? []).map((d: { deal_id: string; initiator_id: string }) => {
+  const enriched = (disputes ?? []).map((d) => {
     const deal = dealMap.get(d.deal_id);
     return {
       ...d,

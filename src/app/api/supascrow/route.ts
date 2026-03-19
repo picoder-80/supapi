@@ -480,7 +480,7 @@ export async function POST(req: NextRequest) {
           (autoReleaseAllowed && effectiveDecision === "release")
         );
 
-      if (autoResolve && effectiveDecision !== "manual_review") {
+      if (autoResolve) {
         const resolution = effectiveDecision === "refund" ? "refund_to_buyer" : "release_to_seller";
         const grossRounded = Math.round(amount * 1000000) / 1000000;
         const commissionPct = deal.currency === "pi" ? await getSupaScrowCommissionPct() : 0;
