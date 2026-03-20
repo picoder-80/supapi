@@ -1,0 +1,19 @@
+.wrap { display: grid; gap: 12px; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.score { font-weight: 800; color: #1a1a2e; }
+.progress { height: 10px; border: 1px solid #e2e8f0; border-radius: 999px; overflow: hidden; background: #fff; }
+.progressFill { height: 100%; background: #f5a623; transition: width .2s ease; }
+.timerFill { height: 100%; background: linear-gradient(90deg, #f5a623, #ef4444); transition: width 1s linear; }
+.question { font-size: 20px; font-weight: 700; color: #1a1a2e; }
+.options { display: grid; gap: 8px; grid-template-columns: 1fr; }
+.btn { border: 1px solid #e2e8f0; background: #fff; border-radius: 12px; padding: 10px; text-align: left; color: #1a1a2e; }
+.btnOk { border-color: #22c55e; background: #ecfdf3; }
+.btnBad { border-color: #ef4444; background: #fff1f2; }
+.input { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; width: 100%; }
+.textarea { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; width: 100%; min-height: 120px; }
+.mini { color: #718096; font-size: 12px; }
+.gridCards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.card { min-height: 44px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; color: #1a1a2e; font-weight: 700; }
+.chipRow { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { border: 1px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 6px 10px; }
+.chipActive { border-color: #f5a623; color: #a06400; }

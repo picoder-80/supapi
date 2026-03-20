@@ -723,7 +723,7 @@ export default function WalletPage() {
                 {scPageItems.map((txn: ScTxn) => {
                   const meta = SC_TYPE_META[txn.type] ?? SC_TYPE_META.default;
                   const amount = Number(txn.amount ?? 0);
-                  const isSpend = amount < 0;
+                  const isSpend = ["spend", "gift_sent", "transfer_out"].includes(String(txn.type)) || amount < 0;
                   return (
                     <div key={txn.id} className={styles.txnRow}>
                       <div className={styles.txnIcon} style={{ background: meta.color + "18" }}>
