@@ -49,7 +49,8 @@ export async function GET(req: NextRequest) {
     else query = query.neq("status", "deleted").neq("status", "removed");
     if (status && !archived) query = query.eq("status", status);
 
-    let { data, error } = await query;
+    const { data, error } = await query;
+    let rows: Record<string, unknown>[] = (data ?? []) as Record<string, unknown>[];
     if (error) {
       const mayBeSchemaMismatch =
         /column .* does not exist|schema cache/i.test(error.message ?? "");
@@ -70,7 +71,7 @@ export async function GET(req: NextRequest) {
       if (legacyRes.error) {
         return NextResponse.json({ success: false, error: legacyRes.error.message }, { status: 500 });
       }
-      data = (legacyRes.data ?? []).map((row: Record<string, unknown>) => ({
+      rows = (legacyRes.data ?? []).map((row: Record<string, unknown>) => ({
         ...row,
         category_deep: "",
         is_boosted: false,
@@ -79,7 +80,7 @@ export async function GET(req: NextRequest) {
       }));
     }
 
-    const normalized = (data ?? []).map((row: Record<string, unknown>) => ({
+    const normalized = rows.map((row: Record<string, unknown>) => ({
       ...row,
       status: archived ? String(row.status ?? "") : normalizeListingStatusForUi(row.status),
     }));
