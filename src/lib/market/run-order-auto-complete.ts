@@ -54,6 +54,7 @@ export async function runMarketOrderAutoComplete(params: {
   supabase: SupabaseClient;
   limit?: number;
 }): Promise<MarketAutoCompleteResult> {
+  const supabase = params.supabase;
   const confirmDays = Math.min(90, Math.max(1, parseInt(process.env.MARKET_AUTO_CONFIRM_RECEIPT_DAYS ?? "7", 10) || 7));
   const completeDays = Math.min(30, Math.max(1, parseInt(process.env.MARKET_AUTO_COMPLETE_ORDER_DAYS ?? "3", 10) || 3));
   const confirmMs = daysToMs(confirmDays);
