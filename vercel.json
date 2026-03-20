@@ -1,1 +1,8 @@
-{}
+{
+  "crons": [
+    {
+      "path": "/api/supamarket/orders/auto-complete-cron",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}

@@ -41,6 +41,7 @@ CREATE TABLE listings (
   price_pi        DECIMAL(18,7) NOT NULL,
   category        TEXT NOT NULL,
   subcategory     TEXT,
+  category_deep   TEXT NOT NULL DEFAULT '',
   condition       TEXT NOT NULL DEFAULT 'new',
   buying_method   TEXT NOT NULL DEFAULT 'both'
                   CHECK (buying_method IN ('meetup','ship','both')),
@@ -64,6 +65,9 @@ CREATE TABLE listings (
 CREATE INDEX idx_listings_seller     ON listings(seller_id);
 CREATE INDEX idx_listings_category   ON listings(category);
 CREATE INDEX idx_listings_status     ON listings(status);
+
+-- Supasifieds classified ads (no Pi escrow; boost with SupaCredits). See src/app/supasifieds/** and migration 20260324_classified_listings.sql.
+-- CREATE TABLE classified_listings ( ... ); CREATE TABLE classified_boosts ( ... );
 
 -- ── GIGS (Freelance) ────────────────────────────────────────
 CREATE TABLE gigs (
@@ -137,6 +141,10 @@ CREATE TABLE orders (
 
   -- Pi payment
   pi_payment_id    TEXT,
+
+  -- Auto timeline (SupaMarket cron: confirm receipt / complete if buyer silent)
+  fulfilled_at     TIMESTAMPTZ,
+  delivered_at     TIMESTAMPTZ,
 
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()

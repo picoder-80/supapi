@@ -6,13 +6,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import KycBadge from "@/components/ui/KycBadge";
-import { CONDITIONS, BUYING_METHODS } from "@/lib/market/categories";
+import { CONDITIONS, BUYING_METHODS, formatListingCategoryPath } from "@/lib/market/categories";
 import { ensurePaymentReady, createPiPayment, isPiBrowser, getApiBase } from "@/lib/pi/sdk";
 import styles from "./page.module.css";
 
 interface Listing {
   id: string; title: string; description: string; price_pi: number;
-  category: string; subcategory: string; condition: string; buying_method: string;
+  category: string; subcategory: string; category_deep?: string | null;
+  condition: string; buying_method: string;
   images: string[]; stock: number; status: string; location: string;
   views: number; likes: number; created_at: string; type: string;
   liked?: boolean;
@@ -383,7 +384,13 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
               <span className={styles.tag}>{conditionLabel}</span>
               <span className={styles.tag}>{methodLabel?.emoji} {methodLabel?.label ?? listing.buying_method}</span>
               {listing.location && <span className={styles.tag}>📍 {listing.location}</span>}
-              <span className={styles.tag}>{listing.category}</span>
+              <span className={styles.tag}>
+                {formatListingCategoryPath(
+                  listing.category,
+                  listing.subcategory ?? "",
+                  listing.category_deep
+                )}
+              </span>
             </div>
             <div className={styles.escrowBanner}>π held in escrow until you confirm delivery</div>
           </div>

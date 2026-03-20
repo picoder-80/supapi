@@ -19,7 +19,7 @@ const platformCategories: { id: string; title: string; modules: ModuleItem[] }[]
       { href: "/supabulk",       emoji: "📦", label: "SupaBulk",      desc: "Pi B2B Wholesale Marketplace" },
       { href: "/supaauto", emoji: "🚗", label: "SupaAuto",      desc: "Pi Automotive Marketplace" },
       { href: "/supadomus",         emoji: "🏠", label: "SupaDomus",     desc: "Pi Property Marketplace" },
-      { href: "/supasifieds",   emoji: "📋", label: "Supasifieds",   desc: "Promote services & businesses" },
+      { href: "/supasifieds",   emoji: "📋", label: "Supasifieds",   desc: "Classified ads — boost with SupaCredits" },
       { href: "/supascrow",     emoji: "🛡️", label: "SupaScrow",     desc: "Secure Pi escrow for safe trading" },
     ],
   },

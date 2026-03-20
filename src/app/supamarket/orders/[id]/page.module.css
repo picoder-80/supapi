@@ -590,6 +590,28 @@
   color: #1a1a2e;
 }
 .cancelBtn:hover { border-color: #f5a623; transform: translateY(-1px); }
+.withdrawReturnBtn {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 999px;
+  border: 1px solid #f3c2c9;
+  background: #fff5f7;
+  color: #9b2335;
+  font-size: 14px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform var(--supa-motion-fast) var(--supa-ease), border-color var(--supa-motion-fast) ease, background var(--supa-motion-fast) ease;
+}
+.withdrawReturnBtn:hover:not(:disabled) {
+  border-color: #e18493;
+  background: #ffecef;
+  transform: translateY(-1px);
+}
+.withdrawReturnBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .disputeBtn {
   flex: 2;
   border: none;

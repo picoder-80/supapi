@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import KycBadge from "@/components/ui/KycBadge";
-import { CATEGORIES, CONDITIONS, BUYING_METHODS } from "@/lib/market/categories";
+import { CATEGORIES, CONDITIONS, BUYING_METHODS, getSubcategory } from "@/lib/market/categories";
 import { ALL_COUNTRIES, getCountry } from "@/lib/market/countries";
 import styles from "./page.module.css";
 
 interface Listing {
   id: string; title: string; price_pi: number; images: string[];
-  category: string; condition: string; buying_method: string;
+  category: string; subcategory?: string; category_deep?: string;
+  condition: string; buying_method: string;
   location: string; views: number; likes: number; created_at: string;
   country_code: string; ship_worldwide: boolean; is_boosted?: boolean; boost_tier?: string;
   seller: { id: string; username: string; display_name: string | null; avatar_url: string | null; kyc_status: string };
@@ -108,12 +109,14 @@ function MarketPageContent() {
   const [searchInput, setSearchInput] = useState("");
   const [category, setCategory]     = useState("");
   const [subcategory, setSubcategory] = useState("");
+  const [categoryDeep, setCategoryDeep] = useState("");
   const [condition, setCondition]   = useState("");
   const [method, setMethod]         = useState("");
   const [sort, setSort]             = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
 
   const selectedCat = CATEGORIES.find(c => c.id === category);
+  const selectedSub = category && subcategory ? getSubcategory(category, subcategory) : undefined;
 
   useEffect(() => {
     fetch("/api/geo").then(r => r.json()).then(d => {
@@ -142,6 +145,7 @@ function MarketPageContent() {
         ...(q && { q }),
         ...(category && { category }),
         ...(subcategory && { subcategory }),
+        ...(categoryDeep && { category_deep: categoryDeep }),
         ...(condition && { condition }),
         ...(method && { method }),
         ...(sellerFromUrl && { seller: sellerFromUrl }),
@@ -151,7 +155,7 @@ function MarketPageContent() {
       if (d.success) { setListings(d.data.listings); setTotal(d.data.total); }
     } catch {}
     setLoading(false);
-  }, [page, q, category, subcategory, condition, method, sort, country, sellerFromUrl]);
+  }, [page, q, category, subcategory, categoryDeep, condition, method, sort, country, sellerFromUrl]);
 
   useEffect(() => { fetchListings(); }, [fetchListings]);
 
@@ -162,11 +166,11 @@ function MarketPageContent() {
   };
 
   const resetFilters = () => {
-    setCategory(""); setSubcategory(""); setCondition(""); setMethod("");
+    setCategory(""); setSubcategory(""); setCategoryDeep(""); setCondition(""); setMethod("");
     setQ(""); setSearchInput(""); setPage(1);
   };
 
-  const hasFilters = category || condition || method || q;
+  const hasFilters = category || condition || method || q || categoryDeep;
 
   return (
     <div className={styles.page}>
@@ -262,14 +266,14 @@ function MarketPageContent() {
         {/* Category tabs */}
         <div className={styles.catScroll}>
           <button type="button" className={`${styles.catPill} ${styles.catPillAll} ${!category ? styles.catPillActive : ""}`}
-            onClick={() => { setCategory(""); setSubcategory(""); setPage(1); }}>
+            onClick={() => { setCategory(""); setSubcategory(""); setCategoryDeep(""); setPage(1); }}>
             All
           </button>
           {CATEGORIES.map(c => (
             <button type="button" key={c.id}
               className={`${styles.catPill} ${category === c.id ? styles.catPillActive : ""}`}
               data-category={c.id}
-              onClick={() => { setCategory(c.id); setSubcategory(""); setPage(1); }}>
+              onClick={() => { setCategory(c.id); setSubcategory(""); setCategoryDeep(""); setPage(1); }}>
               {c.emoji} {c.label}
             </button>
           ))}
@@ -283,14 +287,30 @@ function MarketPageContent() {
       {selectedCat && (
         <div className={styles.subCatWrap}>
           <button type="button" className={`${styles.subPill} ${!subcategory ? styles.subPillActive : ""}`}
-            onClick={() => { setSubcategory(""); setPage(1); }}>
+            onClick={() => { setSubcategory(""); setCategoryDeep(""); setPage(1); }}>
             All {selectedCat.label}
           </button>
           {selectedCat.subcategories.map(s => (
             <button type="button" key={s.id}
               className={`${styles.subPill} ${subcategory === s.id ? styles.subPillActive : ""}`}
-              onClick={() => { setSubcategory(s.id); setPage(1); }}>
+              onClick={() => { setSubcategory(s.id); setCategoryDeep(""); setPage(1); }}>
               {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {selectedCat && subcategory && selectedSub && selectedSub.deep.length > 0 && (
+        <div className={styles.deepCatWrap}>
+          <button type="button" className={`${styles.deepPill} ${!categoryDeep ? styles.deepPillActive : ""}`}
+            onClick={() => { setCategoryDeep(""); setPage(1); }}>
+            All types
+          </button>
+          {selectedSub.deep.map((d) => (
+            <button type="button" key={d.id}
+              className={`${styles.deepPill} ${categoryDeep === d.id ? styles.deepPillActive : ""}`}
+              onClick={() => { setCategoryDeep(d.id); setPage(1); }}>
+              {d.label}
             </button>
           ))}
         </div>

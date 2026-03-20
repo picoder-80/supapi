@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   try {
     let query = supabase
       .from("listings")
-      .select("id, title, description, price_pi, category, subcategory, condition, buying_method, images, stock, status, location, views, likes, is_boosted, boost_tier, boost_expires_at, created_at, updated_at")
+      .select("id, title, description, price_pi, category, subcategory, category_deep, condition, buying_method, images, stock, status, location, views, likes, is_boosted, boost_tier, boost_expires_at, created_at, updated_at")
       .eq("seller_id", userId)
       .order("created_at", { ascending: false });
 

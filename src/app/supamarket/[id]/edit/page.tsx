@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { CATEGORIES, CONDITIONS, BUYING_METHODS } from "@/lib/market/categories";
+import { CATEGORIES, CONDITIONS, BUYING_METHODS, getSubcategory } from "@/lib/market/categories";
 import { ALL_COUNTRIES, getCountry } from "@/lib/market/countries";
 import styles from "./page.module.css";
 
@@ -72,7 +72,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
   const [form, setForm] = useState({
     title: "", description: "", price_pi: "",
-    category: "", subcategory: "", condition: "new",
+    category: "", subcategory: "", category_deep: "", condition: "new",
     buying_method: "both", location: "", stock: "1", type: "physical",
   });
   const [countryCode, setCountryCode] = useState("MY");
@@ -87,6 +87,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   const [notOwner, setNotOwner] = useState(false);
 
   const selectedCat = CATEGORIES.find(c => c.id === form.category);
+  const selectedSub = form.category && form.subcategory ? getSubcategory(form.category, form.subcategory) : undefined;
   const parsedPrice = parseFloat(form.price_pi || "0");
   const safePrice = Number.isFinite(parsedPrice) ? parsedPrice : 0;
 
@@ -111,6 +112,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
           price_pi: String(l.price_pi ?? ""),
           category: l.category ?? "",
           subcategory: l.subcategory ?? "",
+          category_deep: typeof l.category_deep === "string" ? l.category_deep : "",
           condition: l.condition ?? "new",
           buying_method: l.buying_method ?? "both",
           location: l.location ?? "",
@@ -126,6 +128,35 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
     if (user) fetch_();
     else setLoading(false);
   }, [id, user]);
+
+  useEffect(() => {
+    const cat = CATEGORIES.find((c) => c.id === form.category);
+    if (!cat?.subcategories.length) return;
+    if (cat.subcategories.length === 1) {
+      const only = cat.subcategories[0].id;
+      setForm((f) =>
+        f.subcategory === only ? f : { ...f, subcategory: only, category_deep: "" }
+      );
+    }
+  }, [form.category]);
+
+  useEffect(() => {
+    const sub =
+      form.category && form.subcategory ? getSubcategory(form.category, form.subcategory) : undefined;
+    if (!sub?.deep.length) {
+      setForm((f) => (f.category_deep ? { ...f, category_deep: "" } : f));
+      return;
+    }
+    if (sub.deep.length === 1) {
+      const only = sub.deep[0].id;
+      setForm((f) => (f.category_deep === only ? f : { ...f, category_deep: only }));
+      return;
+    }
+    setForm((f) => {
+      if (!f.category_deep || sub.deep.some((d) => d.id === f.category_deep)) return f;
+      return { ...f, category_deep: "" };
+    });
+  }, [form.category, form.subcategory]);
 
   const set = (key: string, val: string) => setForm(prev => ({ ...prev, [key]: val }));
 
@@ -155,7 +186,18 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
   const removeImage = (i: number) => setImages(prev => prev.filter((_, idx) => idx !== i));
 
+  const validateCategoryPath = (): string | null => {
+    if (!form.category) return "Choose a category";
+    const cat = CATEGORIES.find((c) => c.id === form.category);
+    if (cat && cat.subcategories.length > 0 && !form.subcategory) return "Choose a subcategory";
+    const sub = form.category && form.subcategory ? getSubcategory(form.category, form.subcategory) : undefined;
+    if (sub && sub.deep.length > 1 && !form.category_deep) return "Choose a type";
+    return null;
+  };
+
   const handleSubmit = async () => {
+    const catErr = validateCategoryPath();
+    if (catErr) { setError(catErr); return; }
     if (!form.title || !form.price_pi || !form.category) { setError("Fill in required fields"); return; }
     if (parseFloat(form.price_pi) <= 0) { setError("Price must be greater than 0"); return; }
     const token = localStorage.getItem("supapi_token");
@@ -167,6 +209,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           ...form,
+          category_deep: form.category_deep || "",
           price_pi: parseFloat(form.price_pi),
           stock: Math.max(1, parseInt(form.stock, 10) || 1),
           images,
@@ -182,7 +225,9 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   };
 
   const goNextFromDetails = () => {
+    const catErr = validateCategoryPath();
     if (!form.title || !form.category) { setError("Title and category are required"); return; }
+    if (catErr) { setError(catErr); return; }
     setError("");
     setStep("images");
   };
@@ -310,7 +355,9 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
                 <div className={styles.formField}>
                   <label className={styles.label}>Category <span className={styles.req}>*</span></label>
-                  <select className={styles.input} value={form.category} onChange={e => { set("category", e.target.value); set("subcategory", ""); }}>
+                  <select className={styles.input} value={form.category} onChange={e => {
+                    setForm((prev) => ({ ...prev, category: e.target.value, subcategory: "", category_deep: "" }));
+                  }}>
                     <option value="">Select category...</option>
                     {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
                   </select>
@@ -318,10 +365,22 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
                 {selectedCat && selectedCat.subcategories.length > 1 && (
                   <div className={styles.formField}>
-                    <label className={styles.label}>Subcategory</label>
-                    <select className={styles.input} value={form.subcategory} onChange={e => set("subcategory", e.target.value)}>
+                    <label className={styles.label}>Subcategory <span className={styles.req}>*</span></label>
+                    <select className={styles.input} value={form.subcategory} onChange={e => {
+                      setForm((prev) => ({ ...prev, subcategory: e.target.value, category_deep: "" }));
+                    }}>
                       <option value="">Select subcategory...</option>
                       {selectedCat.subcategories.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {selectedSub && selectedSub.deep.length > 1 && (
+                  <div className={styles.formField}>
+                    <label className={styles.label}>Type <span className={styles.req}>*</span></label>
+                    <select className={styles.input} value={form.category_deep} onChange={e => set("category_deep", e.target.value)}>
+                      <option value="">Select type...</option>
+                      {selectedSub.deep.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
                     </select>
                   </div>
                 )}

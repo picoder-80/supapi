@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import styles from "./page.module.css";
+import { formatListingCategoryPath } from "@/lib/market/categories";
 
 interface Order {
   id: string; status: string; buying_method: string; amount_pi: number;
@@ -16,7 +17,7 @@ interface Order {
   notes: string; pi_payment_id: string;
   created_at: string; updated_at: string;
   has_review?: boolean;
-  listing: { id: string; title: string; images: string[]; price_pi: number; description: string; location: string; category: string } | null;
+  listing: { id: string; title: string; images: string[]; price_pi: number; description: string; location: string; category: string; subcategory?: string; category_deep?: string | null } | null;
   buyer:  { id: string; username: string; display_name: string | null; avatar_url: string | null; phone: string; email: string };
   seller: { id: string; username: string; display_name: string | null; avatar_url: string | null; phone: string };
   disputes: { id: string; reason: string; evidence?: string[]; status: string; ai_decision: string; ai_reasoning: string; ai_confidence: number; created_at: string }[];
@@ -293,6 +294,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const cancelReturnRequest = async () => {
     const token = localStorage.getItem("supapi_token");
     if (!token) return;
+    const ok = typeof window === "undefined"
+      ? true
+      : window.confirm("Withdraw this return request? You can submit a new one later if needed.");
+    if (!ok) return;
     setReturnSubmitting(true);
     setMsg("");
     try {
@@ -304,7 +309,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       if (d.success) {
         setMsg("Return request withdrawn.");
         await fetchOrder();
-      } else setMsg(d.error ?? "Could not withdraw");
+      } else setMsg(d.error ?? "Could not withdraw request");
     } catch {
       setMsg("Something went wrong");
     }
@@ -444,7 +449,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               <div className={styles.listingInfo}>
                 <div className={styles.listingTitle}>{order.listing.title}</div>
                 <div className={styles.listingPrice}>{Number(order.amount_pi).toFixed(2)} π</div>
-                <div className={styles.listingCat}>{order.listing.category} · {order.buying_method === "ship" ? "📦 Shipping" : "📍 Meetup"}</div>
+                <div className={styles.listingCat}>{formatListingCategoryPath(order.listing.category, order.listing.subcategory ?? "", order.listing.category_deep)} · {order.buying_method === "ship" ? "📦 Shipping" : "📍 Meetup"}</div>
               </div>
             </Link>
           ) : <div className={styles.removedNote}>Listing has been removed</div>}
@@ -532,7 +537,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         {isBuyer && (order.status === "shipped" || order.status === "meetup_set") && (
           <div className={styles.section}>
             <div className={styles.sectionTitle}>✅ Confirm Receipt</div>
-            <div className={styles.confirmNote}>Once confirmed, Pi will be released to seller from escrow.</div>
+            <div className={styles.confirmNote}>
+              Once confirmed, you can complete the order to release payment to the seller. If you take no action, receipt
+              may be auto-confirmed after several days (see Return &amp; Refund policy).
+            </div>
             <button className={styles.confirmBtn} disabled={updating} onClick={() => updateStatus("delivered")}>
               {updating ? "Updating..." : "I've Received This Item ✅"}
             </button>
@@ -544,7 +552,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <div className={styles.section}>
             <div className={styles.sectionTitle}>🎉 Complete Order</div>
             <div className={styles.confirmNote}>
-              Happy with your purchase? Mark as complete to finalise payment to the seller.
+              Happy with your purchase? Mark as complete to finalise payment to the seller. If you do nothing, the order
+              may auto-complete after a short period unless a return request is open.
               {order.return_request?.status === "pending_seller" ? (
                 <span className={styles.returnWarning}>
                   {" "}
@@ -741,11 +750,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
                 <button
                   type="button"
-                  className={styles.cancelBtn}
+                  className={styles.withdrawReturnBtn}
                   disabled={returnSubmitting}
                   onClick={() => void cancelReturnRequest()}
                 >
-                  {returnSubmitting ? "…" : "Withdraw request"}
+                  {returnSubmitting ? "Withdrawing..." : "↩ Withdraw request"}
                 </button>
               </>
             ) : order.return_request?.status === "seller_rejected" ? (

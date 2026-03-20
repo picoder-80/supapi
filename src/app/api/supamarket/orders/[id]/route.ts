@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyToken } from "@/lib/auth/jwt";
+import { releaseEscrowForMarketOrderCompletion } from "@/lib/market/complete-market-order";
 import * as R from "@/lib/api";
 
 type Params = { params: Promise<{ id: string }> };
@@ -58,42 +59,6 @@ const getEffectiveOrderStatus = (order: {
   return "paid";
 };
 
-async function creditSellerEarnings(params: {
-  origin: string;
-  sellerId: string;
-  orderId: string;
-  amountPi: number;
-}) {
-  const internalSecret = process.env.INTERNAL_API_SECRET;
-  if (!internalSecret) {
-    console.warn("[Earnings Credit] INTERNAL_API_SECRET missing");
-    return;
-  }
-
-  const response = await fetch(`${params.origin}/api/wallet`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-internal-key": internalSecret,
-    },
-    body: JSON.stringify({
-      action: "credit_earnings",
-      target_user_id: params.sellerId,
-      type: "market_order",
-      source: "Marketplace Order Completion",
-      amount_pi: params.amountPi,
-      status: "available",
-      ref_id: params.orderId,
-      note: `Auto payout for completed order ${params.orderId}`,
-    }),
-  });
-
-  if (!response.ok) {
-    const payload = await response.text().catch(() => "");
-    console.warn(`[Earnings Credit] Failed for order ${params.orderId}: ${response.status} ${payload}`);
-  }
-}
-
 const cors = (req: NextRequest) => req.headers.get("origin");
 const withCors = (res: NextResponse, req: NextRequest) => R.withCors(res, cors(req));
 
@@ -114,7 +79,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       .from("orders")
       .select(`
         *,
-        listing:listing_id ( id, title, images, price_pi, category, description, location ),
+        listing:listing_id ( id, title, images, price_pi, category, subcategory, category_deep, description, location ),
         buyer:buyer_id ( id, username, display_name, avatar_url, phone, email ),
         seller:seller_id ( id, username, display_name, avatar_url, phone ),
         disputes ( * )
@@ -215,6 +180,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (newStatus)         updates.status = newStatus;
+    if (newStatus === "shipped" || newStatus === "meetup_set") {
+      const fulfilledAt = (order as { fulfilled_at?: string | null }).fulfilled_at;
+      if (!fulfilledAt) updates.fulfilled_at = new Date().toISOString();
+    }
+    if (newStatus === "delivered") {
+      updates.delivered_at = new Date().toISOString();
+    }
     if (tracking_number) {
       updates.tracking_number = tracking_number;
       updates.tracking_url = null;
@@ -226,56 +198,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     // ── ESCROW RELEASE — buyer confirms completed ──────────────
     if (newStatus === "completed") {
-      // 1. Release escrow → seller can now withdraw
-      const { data: earning } = await supabase
-        .from("seller_earnings")
-        .select("id, commission_pi, gross_pi, net_pi, commission_pct, platform")
-        .eq("order_id", id)
-        .eq("status", "escrow")
-        .single();
-
-      if (earning) {
-        await supabase.from("seller_earnings")
-          .update({ status: "pending" }) // pending = released, awaiting withdrawal
-          .eq("id", earning.id);
-
-        // 2. Record admin commission revenue
-        await supabase.from("admin_revenue").insert({
-          platform:       earning.platform,
-          order_id:       id,
-          gross_pi:       earning.gross_pi,
-          commission_pi:  earning.commission_pi,
-          commission_pct: earning.commission_pct,
-        });
-
-        const sellerAmount = Number(earning.net_pi ?? 0);
-        if (sellerAmount > 0 && order.seller_id) {
-          // Best-effort: do not block order completion if wallet credit has transient failure.
-          await creditSellerEarnings({
-            origin: req.nextUrl.origin,
-            sellerId: String(order.seller_id),
-            orderId: id,
-            amountPi: sellerAmount,
-          });
-        }
-
-        console.log(`[Escrow Released] orderId=${id} commission=${earning.commission_pi}π seller earnings unlocked`);
-      }
-
-      // 3. Decrement listing stock
-      if (order.listing_id) {
-        const { data: listing } = await supabase
-          .from("listings")
-          .select("id, stock")
-          .eq("id", order.listing_id)
-          .single();
-
-        if (listing) {
-          await supabase
-            .from("listings")
-            .update({ stock: Math.max(0, (listing.stock ?? 1) - 1), updated_at: new Date().toISOString() })
-            .eq("id", listing.id);
-        }
+      const rel = await releaseEscrowForMarketOrderCompletion({
+        supabase,
+        orderId: id,
+        origin: req.nextUrl.origin,
+        order: {
+          listing_id: (order as { listing_id?: string | null }).listing_id,
+          seller_id:  order.seller_id,
+        },
+      });
+      if (!rel.ok) {
+        return withCors(NextResponse.json({ success: false, error: rel.error }, { status: 500 }), req);
       }
     }
 

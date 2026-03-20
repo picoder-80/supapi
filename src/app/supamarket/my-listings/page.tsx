@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
+import { formatListingCategoryPath } from "@/lib/market/categories";
 
 const BOOST_TIERS: Record<string, { sc: number; hrs: number; label: string }> = {
   bronze: { sc: 100, hrs: 24,  label: "🥉 Bronze · 24h" },
@@ -278,7 +279,7 @@ export default function MyListingsPage() {
                           <span className={styles.listingPrice}>{parseFloat(listing.price_pi).toFixed(2)} π</span>
                           <span className={`${styles.statusBadge} ${statusClass}`}>{meta.label}</span>
                         </div>
-                        <div className={styles.listingCategory}>{listing.category ?? "General"} · {timeAgo(listing.created_at)}</div>
+                        <div className={styles.listingCategory}>{(formatListingCategoryPath(listing.category ?? "", listing.subcategory ?? "", listing.category_deep) || "General")} · {timeAgo(listing.created_at)}</div>
                       </div>
                       <div className={styles.listingActions}>
                         <button
@@ -349,7 +350,7 @@ export default function MyListingsPage() {
                       <span className={styles.listingPrice}>{parseFloat(listing.price_pi).toFixed(2)} π</span>
                       <span className={`${styles.statusBadge} ${statusClass}`}>{meta.label}</span>
                     </div>
-                    <div className={styles.listingCategory}>{listing.category ?? "General"} · {timeAgo(listing.created_at)}</div>
+                    <div className={styles.listingCategory}>{(formatListingCategoryPath(listing.category ?? "", listing.subcategory ?? "", listing.category_deep) || "General")} · {timeAgo(listing.created_at)}</div>
                     <div className={styles.escrowBanner}>π held in escrow until buyer confirms delivery</div>
                     <div className={styles.listingStats}>
                       <span>👁 {listing.views ?? 0}</span>

@@ -95,7 +95,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!payload) return NextResponse.json({ success: false }, { status: 401 });
 
     const body = await req.json();
-    const allowed = ["title","description","price_pi","category","subcategory",
+    const allowed = ["title","description","price_pi","category","subcategory","category_deep",
                      "condition","buying_method","images","stock","location","status","type",
                      "country_code","ship_worldwide"];
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };

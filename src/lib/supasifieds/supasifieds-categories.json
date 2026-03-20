@@ -1,0 +1,843 @@
+[
+  {
+    "id": 1,
+    "slug": "jobs-employment",
+    "name": "Jobs & Employment",
+    "icon": "💼",
+    "subcategories": [
+      {
+        "id": 101,
+        "slug": "full-time-jobs",
+        "name": "Full-Time Jobs",
+        "deep": [
+          { "id": 10101, "slug": "accounting-finance", "name": "Accounting & Finance" },
+          { "id": 10102, "slug": "admin-clerical", "name": "Admin & Clerical" },
+          { "id": 10103, "slug": "architecture-engineering", "name": "Architecture & Engineering" },
+          { "id": 10104, "slug": "banking-insurance", "name": "Banking & Insurance" },
+          { "id": 10105, "slug": "customer-service", "name": "Customer Service" },
+          { "id": 10106, "slug": "education-training", "name": "Education & Training" },
+          { "id": 10107, "slug": "food-beverage", "name": "Food & Beverage" },
+          { "id": 10108, "slug": "healthcare-medical", "name": "Healthcare & Medical" },
+          { "id": 10109, "slug": "hospitality-tourism", "name": "Hospitality & Tourism" },
+          { "id": 10110, "slug": "hr-recruitment", "name": "HR & Recruitment" },
+          { "id": 10111, "slug": "it-software", "name": "IT & Software" },
+          { "id": 10112, "slug": "legal", "name": "Legal" },
+          { "id": 10113, "slug": "logistics-supply-chain", "name": "Logistics & Supply Chain" },
+          { "id": 10114, "slug": "manufacturing-production", "name": "Manufacturing & Production" },
+          { "id": 10115, "slug": "marketing-advertising", "name": "Marketing & Advertising" },
+          { "id": 10116, "slug": "media-creative", "name": "Media & Creative" },
+          { "id": 10117, "slug": "oil-gas-energy", "name": "Oil, Gas & Energy" },
+          { "id": 10118, "slug": "property-real-estate", "name": "Property & Real Estate" },
+          { "id": 10119, "slug": "retail-sales", "name": "Retail & Sales" },
+          { "id": 10120, "slug": "security-safety", "name": "Security & Safety" },
+          { "id": 10121, "slug": "telecommunications", "name": "Telecommunications" },
+          { "id": 10122, "slug": "transport-driving", "name": "Transport & Driving" }
+        ]
+      },
+      {
+        "id": 102,
+        "slug": "part-time-jobs",
+        "name": "Part-Time Jobs",
+        "deep": [
+          { "id": 10201, "slug": "promoter-events", "name": "Promoter & Events" },
+          { "id": 10202, "slug": "data-entry", "name": "Data Entry" },
+          { "id": 10203, "slug": "food-delivery-rider", "name": "Food Delivery & Rider" },
+          { "id": 10204, "slug": "cashier-retail-staff", "name": "Cashier & Retail Staff" },
+          { "id": 10205, "slug": "tutor-teacher", "name": "Tutor & Teacher" },
+          { "id": 10206, "slug": "waiter-restaurant", "name": "Waiter & Restaurant" },
+          { "id": 10207, "slug": "customer-support", "name": "Customer Support" },
+          { "id": 10208, "slug": "warehouse-picker", "name": "Warehouse & Picker" }
+        ]
+      },
+      {
+        "id": 103,
+        "slug": "freelance-contract",
+        "name": "Freelance & Contract",
+        "deep": [
+          { "id": 10301, "slug": "graphic-design", "name": "Graphic Design" },
+          { "id": 10302, "slug": "web-app-development", "name": "Web & App Development" },
+          { "id": 10303, "slug": "content-writing", "name": "Content Writing" },
+          { "id": 10304, "slug": "video-photography", "name": "Video & Photography" },
+          { "id": 10305, "slug": "translation-language", "name": "Translation & Language" },
+          { "id": 10306, "slug": "accounting-bookkeeping", "name": "Accounting & Bookkeeping" },
+          { "id": 10307, "slug": "social-media-management", "name": "Social Media Management" },
+          { "id": 10308, "slug": "virtual-assistant", "name": "Virtual Assistant" }
+        ]
+      },
+      {
+        "id": 104,
+        "slug": "internship",
+        "name": "Internship",
+        "deep": [
+          { "id": 10401, "slug": "it-tech-internship", "name": "IT & Tech" },
+          { "id": 10402, "slug": "business-admin-internship", "name": "Business & Admin" },
+          { "id": 10403, "slug": "marketing-internship", "name": "Marketing & PR" },
+          { "id": 10404, "slug": "engineering-internship", "name": "Engineering" },
+          { "id": 10405, "slug": "design-internship", "name": "Design & Creative" },
+          { "id": 10406, "slug": "finance-internship", "name": "Finance & Accounting" }
+        ]
+      },
+      {
+        "id": 105,
+        "slug": "resume-cv",
+        "name": "Resume & CV",
+        "deep": [
+          { "id": 10501, "slug": "resume-writing", "name": "Resume Writing Services" },
+          { "id": 10502, "slug": "linkedin-profile", "name": "LinkedIn Profile Optimisation" },
+          { "id": 10503, "slug": "career-coaching", "name": "Career Coaching" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "slug": "services",
+    "name": "Services",
+    "icon": "🛠️",
+    "subcategories": [
+      {
+        "id": 201,
+        "slug": "home-services",
+        "name": "Home Services",
+        "deep": [
+          { "id": 20101, "slug": "cleaning-services", "name": "Cleaning Services" },
+          { "id": 20102, "slug": "plumbing", "name": "Plumbing" },
+          { "id": 20103, "slug": "electrical-works", "name": "Electrical Works" },
+          { "id": 20104, "slug": "aircon-services", "name": "Aircon Services" },
+          { "id": 20105, "slug": "renovation-contractor", "name": "Renovation & Contractor" },
+          { "id": 20106, "slug": "painting-services", "name": "Painting Services" },
+          { "id": 20107, "slug": "pest-control", "name": "Pest Control" },
+          { "id": 20108, "slug": "roofing-waterproofing", "name": "Roofing & Waterproofing" },
+          { "id": 20109, "slug": "landscaping-gardening", "name": "Landscaping & Gardening" },
+          { "id": 20110, "slug": "furniture-assembly", "name": "Furniture Assembly" },
+          { "id": 20111, "slug": "locksmith", "name": "Locksmith" },
+          { "id": 20112, "slug": "interior-design", "name": "Interior Design" }
+        ]
+      },
+      {
+        "id": 202,
+        "slug": "professional-services",
+        "name": "Professional Services",
+        "deep": [
+          { "id": 20201, "slug": "legal-services", "name": "Legal Services" },
+          { "id": 20202, "slug": "accounting-tax", "name": "Accounting & Tax" },
+          { "id": 20203, "slug": "business-consulting", "name": "Business Consulting" },
+          { "id": 20204, "slug": "insurance-services", "name": "Insurance Services" },
+          { "id": 20205, "slug": "financial-planning", "name": "Financial Planning" },
+          { "id": 20206, "slug": "company-secretary", "name": "Company Secretary" },
+          { "id": 20207, "slug": "trademark-ip", "name": "Trademark & IP" },
+          { "id": 20208, "slug": "notary-commissioner", "name": "Notary & Commissioner of Oaths" }
+        ]
+      },
+      {
+        "id": 203,
+        "slug": "it-tech-services",
+        "name": "IT & Tech Services",
+        "deep": [
+          { "id": 20301, "slug": "computer-repair", "name": "Computer & Laptop Repair" },
+          { "id": 20302, "slug": "phone-repair", "name": "Phone & Tablet Repair" },
+          { "id": 20303, "slug": "networking-cctv", "name": "Networking & CCTV Setup" },
+          { "id": 20304, "slug": "web-development", "name": "Website Development" },
+          { "id": 20305, "slug": "app-development", "name": "App Development" },
+          { "id": 20306, "slug": "software-it-support", "name": "Software & IT Support" },
+          { "id": 20307, "slug": "cybersecurity", "name": "Cybersecurity" },
+          { "id": 20308, "slug": "data-recovery", "name": "Data Recovery" }
+        ]
+      },
+      {
+        "id": 204,
+        "slug": "beauty-wellness-services",
+        "name": "Beauty & Wellness",
+        "deep": [
+          { "id": 20401, "slug": "haircut-salon", "name": "Haircut & Salon" },
+          { "id": 20402, "slug": "makeup-artist", "name": "Makeup Artist" },
+          { "id": 20403, "slug": "massage-spa", "name": "Massage & Spa" },
+          { "id": 20404, "slug": "nail-services", "name": "Nail Services" },
+          { "id": 20405, "slug": "facial-skincare", "name": "Facial & Skincare" },
+          { "id": 20406, "slug": "personal-trainer", "name": "Personal Trainer" },
+          { "id": 20407, "slug": "yoga-fitness-class", "name": "Yoga & Fitness Class" },
+          { "id": 20408, "slug": "dietitian-nutritionist", "name": "Dietitian & Nutritionist" }
+        ]
+      },
+      {
+        "id": 205,
+        "slug": "education-services",
+        "name": "Education & Tuition",
+        "deep": [
+          { "id": 20501, "slug": "primary-secondary-tuition", "name": "Primary & Secondary Tuition" },
+          { "id": 20502, "slug": "university-tuition", "name": "University Tuition" },
+          { "id": 20503, "slug": "language-classes", "name": "Language Classes" },
+          { "id": 20504, "slug": "music-lessons", "name": "Music Lessons" },
+          { "id": 20505, "slug": "art-drawing-classes", "name": "Art & Drawing Classes" },
+          { "id": 20506, "slug": "coding-programming", "name": "Coding & Programming" },
+          { "id": 20507, "slug": "driving-lessons", "name": "Driving Lessons" },
+          { "id": 20508, "slug": "religious-classes", "name": "Religious Classes" }
+        ]
+      },
+      {
+        "id": 206,
+        "slug": "event-services",
+        "name": "Events & Entertainment",
+        "deep": [
+          { "id": 20601, "slug": "photographer-videographer", "name": "Photographer & Videographer" },
+          { "id": 20602, "slug": "wedding-services", "name": "Wedding Services" },
+          { "id": 20603, "slug": "catering-services", "name": "Catering Services" },
+          { "id": 20604, "slug": "event-planning", "name": "Event Planning" },
+          { "id": 20605, "slug": "dj-emcee", "name": "DJ & Emcee" },
+          { "id": 20606, "slug": "balloon-decoration", "name": "Balloon & Decoration" },
+          { "id": 20607, "slug": "printing-banner", "name": "Printing & Banner" },
+          { "id": 20608, "slug": "live-band-performer", "name": "Live Band & Performer" }
+        ]
+      },
+      {
+        "id": 207,
+        "slug": "transport-moving",
+        "name": "Transport & Moving",
+        "deep": [
+          { "id": 20701, "slug": "lorry-moving", "name": "Lorry & Moving Services" },
+          { "id": 20702, "slug": "courier-delivery", "name": "Courier & Delivery" },
+          { "id": 20703, "slug": "airport-transfer", "name": "Airport Transfer" },
+          { "id": 20704, "slug": "chauffeur-rental", "name": "Chauffeur & Car Rental" },
+          { "id": 20705, "slug": "motorcycle-delivery", "name": "Motorcycle Delivery" },
+          { "id": 20706, "slug": "storage-warehouse", "name": "Storage & Warehouse" }
+        ]
+      },
+      {
+        "id": 208,
+        "slug": "pet-services",
+        "name": "Pet Services",
+        "deep": [
+          { "id": 20801, "slug": "pet-grooming", "name": "Pet Grooming" },
+          { "id": 20802, "slug": "pet-boarding", "name": "Pet Boarding" },
+          { "id": 20803, "slug": "veterinary-services", "name": "Veterinary Services" },
+          { "id": 20804, "slug": "pet-training", "name": "Pet Training" },
+          { "id": 20805, "slug": "pet-sitting-walking", "name": "Pet Sitting & Walking" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "slug": "property-rentals",
+    "name": "Property & Rentals",
+    "icon": "🏠",
+    "subcategories": [
+      {
+        "id": 301,
+        "slug": "property-for-rent",
+        "name": "Property For Rent",
+        "deep": [
+          { "id": 30101, "slug": "room-for-rent", "name": "Room For Rent" },
+          { "id": 30102, "slug": "house-for-rent", "name": "House For Rent" },
+          { "id": 30103, "slug": "apartment-condo-rent", "name": "Apartment & Condo" },
+          { "id": 30104, "slug": "serviced-apartment", "name": "Serviced Apartment" },
+          { "id": 30105, "slug": "shophouse-for-rent", "name": "Shophouse For Rent" },
+          { "id": 30106, "slug": "office-space-rent", "name": "Office Space" },
+          { "id": 30107, "slug": "warehouse-factory-rent", "name": "Warehouse & Factory" },
+          { "id": 30108, "slug": "land-for-rent", "name": "Land For Rent" }
+        ]
+      },
+      {
+        "id": 302,
+        "slug": "property-for-sale",
+        "name": "Property For Sale",
+        "deep": [
+          { "id": 30201, "slug": "house-for-sale", "name": "House For Sale" },
+          { "id": 30202, "slug": "apartment-condo-sale", "name": "Apartment & Condo" },
+          { "id": 30203, "slug": "shophouse-for-sale", "name": "Shophouse For Sale" },
+          { "id": 30204, "slug": "commercial-property-sale", "name": "Commercial Property" },
+          { "id": 30205, "slug": "land-for-sale", "name": "Land For Sale" },
+          { "id": 30206, "slug": "industrial-property-sale", "name": "Industrial Property" }
+        ]
+      },
+      {
+        "id": 303,
+        "slug": "short-term-rental",
+        "name": "Short-Term Rental",
+        "deep": [
+          { "id": 30301, "slug": "airbnb-homestay", "name": "Airbnb & Homestay" },
+          { "id": 30302, "slug": "vacation-rental", "name": "Vacation Rental" },
+          { "id": 30303, "slug": "daily-weekly-rental", "name": "Daily & Weekly Rental" },
+          { "id": 30304, "slug": "event-space-rental", "name": "Event Space Rental" },
+          { "id": 30305, "slug": "co-working-space", "name": "Co-Working Space" }
+        ]
+      },
+      {
+        "id": 304,
+        "slug": "roommate-wanted",
+        "name": "Roommate Wanted",
+        "deep": [
+          { "id": 30401, "slug": "male-roommate", "name": "Male Roommate" },
+          { "id": 30402, "slug": "female-roommate", "name": "Female Roommate" },
+          { "id": 30403, "slug": "couple-family-roommate", "name": "Couple & Family" },
+          { "id": 30404, "slug": "student-accommodation", "name": "Student Accommodation" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "slug": "vehicles",
+    "name": "Vehicles",
+    "icon": "🚗",
+    "subcategories": [
+      {
+        "id": 401,
+        "slug": "cars-for-sale",
+        "name": "Cars For Sale",
+        "deep": [
+          { "id": 40101, "slug": "sedan", "name": "Sedan" },
+          { "id": 40102, "slug": "suv-mpv", "name": "SUV & MPV" },
+          { "id": 40103, "slug": "hatchback", "name": "Hatchback" },
+          { "id": 40104, "slug": "pickup-truck", "name": "Pickup Truck" },
+          { "id": 40105, "slug": "sports-car", "name": "Sports Car" },
+          { "id": 40106, "slug": "electric-hybrid", "name": "Electric & Hybrid" },
+          { "id": 40107, "slug": "luxury-car", "name": "Luxury Car" },
+          { "id": 40108, "slug": "van-minivan", "name": "Van & Minivan" }
+        ]
+      },
+      {
+        "id": 402,
+        "slug": "motorcycles-scooters",
+        "name": "Motorcycles & Scooters",
+        "deep": [
+          { "id": 40201, "slug": "underbone-kapchai", "name": "Underbone & Kapchai" },
+          { "id": 40202, "slug": "scooter-moped", "name": "Scooter & Moped" },
+          { "id": 40203, "slug": "sport-bike", "name": "Sport Bike" },
+          { "id": 40204, "slug": "cruiser-touring", "name": "Cruiser & Touring" },
+          { "id": 40205, "slug": "electric-motorcycle", "name": "Electric Motorcycle" },
+          { "id": 40206, "slug": "dirt-bike-offroad", "name": "Dirt Bike & Off-Road" }
+        ]
+      },
+      {
+        "id": 403,
+        "slug": "vehicle-parts-accessories",
+        "name": "Parts & Accessories",
+        "deep": [
+          { "id": 40301, "slug": "car-parts", "name": "Car Parts" },
+          { "id": 40302, "slug": "motorcycle-parts", "name": "Motorcycle Parts" },
+          { "id": 40303, "slug": "tyres-rims", "name": "Tyres & Rims" },
+          { "id": 40304, "slug": "car-audio-electronics", "name": "Car Audio & Electronics" },
+          { "id": 40305, "slug": "car-accessories", "name": "Car Accessories" },
+          { "id": 40306, "slug": "workshop-tools", "name": "Workshop Tools" }
+        ]
+      },
+      {
+        "id": 404,
+        "slug": "vehicle-services",
+        "name": "Vehicle Services",
+        "deep": [
+          { "id": 40401, "slug": "workshop-repair", "name": "Workshop & Repair" },
+          { "id": 40402, "slug": "car-wash-detailing", "name": "Car Wash & Detailing" },
+          { "id": 40403, "slug": "towing-recovery", "name": "Towing & Recovery" },
+          { "id": 40404, "slug": "car-rental", "name": "Car Rental" },
+          { "id": 40405, "slug": "motorcycle-rental", "name": "Motorcycle Rental" },
+          { "id": 40406, "slug": "car-insurance", "name": "Car Insurance" },
+          { "id": 40407, "slug": "road-tax-jpj", "name": "Road Tax & JPJ Services" }
+        ]
+      },
+      {
+        "id": 405,
+        "slug": "other-vehicles",
+        "name": "Other Vehicles",
+        "deep": [
+          { "id": 40501, "slug": "bicycle-e-bike", "name": "Bicycle & E-Bike" },
+          { "id": 40502, "slug": "boat-marine", "name": "Boat & Marine" },
+          { "id": 40503, "slug": "lorry-truck", "name": "Lorry & Truck" },
+          { "id": 40504, "slug": "bus-minibus", "name": "Bus & Minibus" },
+          { "id": 40505, "slug": "forklift-machinery", "name": "Forklift & Machinery" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "slug": "electronics-gadgets",
+    "name": "Electronics & Gadgets",
+    "icon": "💻",
+    "subcategories": [
+      {
+        "id": 501,
+        "slug": "phones-tablets",
+        "name": "Phones & Tablets",
+        "deep": [
+          { "id": 50101, "slug": "smartphones-used", "name": "Smartphones (Used)" },
+          { "id": 50102, "slug": "smartphones-new", "name": "Smartphones (New)" },
+          { "id": 50103, "slug": "tablets-ipads", "name": "Tablets & iPads" },
+          { "id": 50104, "slug": "phone-accessories", "name": "Phone Accessories" }
+        ]
+      },
+      {
+        "id": 502,
+        "slug": "computers-laptops",
+        "name": "Computers & Laptops",
+        "deep": [
+          { "id": 50201, "slug": "laptops-used", "name": "Laptops (Used)" },
+          { "id": 50202, "slug": "laptops-new", "name": "Laptops (New)" },
+          { "id": 50203, "slug": "desktop-pcs", "name": "Desktop PCs" },
+          { "id": 50204, "slug": "monitors", "name": "Monitors" },
+          { "id": 50205, "slug": "computer-parts", "name": "Computer Parts" },
+          { "id": 50206, "slug": "computer-accessories", "name": "Computer Accessories" }
+        ]
+      },
+      {
+        "id": 503,
+        "slug": "audio-visual-electronics",
+        "name": "Audio & Visual",
+        "deep": [
+          { "id": 50301, "slug": "tvs", "name": "TVs" },
+          { "id": 50302, "slug": "speakers-headphones", "name": "Speakers & Headphones" },
+          { "id": 50303, "slug": "cameras", "name": "Cameras" },
+          { "id": 50304, "slug": "gaming-consoles", "name": "Gaming Consoles" },
+          { "id": 50305, "slug": "home-appliances-electronics", "name": "Home Appliances" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "slug": "furniture-home",
+    "name": "Furniture & Home",
+    "icon": "🛋️",
+    "subcategories": [
+      {
+        "id": 601,
+        "slug": "furniture",
+        "name": "Furniture",
+        "deep": [
+          { "id": 60101, "slug": "sofa-living-room", "name": "Sofa & Living Room" },
+          { "id": 60102, "slug": "bed-bedroom", "name": "Bed & Bedroom" },
+          { "id": 60103, "slug": "dining-table-chairs", "name": "Dining Table & Chairs" },
+          { "id": 60104, "slug": "office-furniture", "name": "Office Furniture" },
+          { "id": 60105, "slug": "wardrobe-cabinet", "name": "Wardrobe & Cabinet" },
+          { "id": 60106, "slug": "kids-furniture-classifieds", "name": "Kids Furniture" },
+          { "id": 60107, "slug": "outdoor-furniture-classifieds", "name": "Outdoor Furniture" }
+        ]
+      },
+      {
+        "id": 602,
+        "slug": "home-appliances",
+        "name": "Home Appliances",
+        "deep": [
+          { "id": 60201, "slug": "washing-machine-classifieds", "name": "Washing Machine" },
+          { "id": 60202, "slug": "refrigerator-classifieds", "name": "Refrigerator" },
+          { "id": 60203, "slug": "aircon-classifieds", "name": "Air Conditioner" },
+          { "id": 60204, "slug": "water-heater-classifieds", "name": "Water Heater" },
+          { "id": 60205, "slug": "kitchen-appliances-classifieds", "name": "Kitchen Appliances" },
+          { "id": 60206, "slug": "vacuum-cleaner-classifieds", "name": "Vacuum Cleaner" }
+        ]
+      },
+      {
+        "id": 603,
+        "slug": "home-decor-classifieds",
+        "name": "Home Decor",
+        "deep": [
+          { "id": 60301, "slug": "curtains-rugs", "name": "Curtains & Rugs" },
+          { "id": 60302, "slug": "lighting-classifieds", "name": "Lighting" },
+          { "id": 60303, "slug": "wall-art-classifieds", "name": "Wall Art & Decor" },
+          { "id": 60304, "slug": "plants-pots", "name": "Plants & Pots" }
+        ]
+      },
+      {
+        "id": 604,
+        "slug": "kitchen-dining-classifieds",
+        "name": "Kitchen & Dining",
+        "deep": [
+          { "id": 60401, "slug": "cookware-classifieds", "name": "Cookware" },
+          { "id": 60402, "slug": "tableware-classifieds", "name": "Tableware & Cutlery" },
+          { "id": 60403, "slug": "storage-containers", "name": "Storage & Containers" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "slug": "fashion-apparel",
+    "name": "Fashion & Apparel",
+    "icon": "👗",
+    "subcategories": [
+      {
+        "id": 701,
+        "slug": "mens-fashion",
+        "name": "Men's Fashion",
+        "deep": [
+          { "id": 70101, "slug": "mens-clothing-classifieds", "name": "Clothing" },
+          { "id": 70102, "slug": "mens-shoes-classifieds", "name": "Shoes" },
+          { "id": 70103, "slug": "mens-watches-classifieds", "name": "Watches" },
+          { "id": 70104, "slug": "mens-bags-classifieds", "name": "Bags & Wallets" },
+          { "id": 70105, "slug": "mens-accessories-classifieds", "name": "Accessories" }
+        ]
+      },
+      {
+        "id": 702,
+        "slug": "womens-fashion",
+        "name": "Women's Fashion",
+        "deep": [
+          { "id": 70201, "slug": "womens-clothing-classifieds", "name": "Clothing" },
+          { "id": 70202, "slug": "womens-shoes-classifieds", "name": "Shoes & Heels" },
+          { "id": 70203, "slug": "womens-bags-classifieds", "name": "Bags & Purses" },
+          { "id": 70204, "slug": "womens-jewellery", "name": "Jewellery" },
+          { "id": 70205, "slug": "hijab-accessories", "name": "Hijab & Accessories" },
+          { "id": 70206, "slug": "womens-watches", "name": "Watches" }
+        ]
+      },
+      {
+        "id": 703,
+        "slug": "kids-fashion",
+        "name": "Kids' Fashion",
+        "deep": [
+          { "id": 70301, "slug": "kids-clothing-classifieds", "name": "Clothing" },
+          { "id": 70302, "slug": "kids-shoes-classifieds", "name": "Shoes" },
+          { "id": 70303, "slug": "school-uniforms-classifieds", "name": "School Uniforms" }
+        ]
+      },
+      {
+        "id": 704,
+        "slug": "luxury-branded",
+        "name": "Luxury & Branded",
+        "deep": [
+          { "id": 70401, "slug": "luxury-bags", "name": "Luxury Bags" },
+          { "id": 70402, "slug": "luxury-watches", "name": "Luxury Watches" },
+          { "id": 70403, "slug": "luxury-shoes", "name": "Luxury Shoes" },
+          { "id": 70404, "slug": "luxury-jewellery", "name": "Luxury Jewellery" },
+          { "id": 70405, "slug": "branded-clothing", "name": "Branded Clothing" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "slug": "babies-kids",
+    "name": "Babies & Kids",
+    "icon": "👶",
+    "subcategories": [
+      {
+        "id": 801,
+        "slug": "baby-gear",
+        "name": "Baby Gear",
+        "deep": [
+          { "id": 80101, "slug": "stroller-classifieds", "name": "Stroller & Pram" },
+          { "id": 80102, "slug": "baby-cot-classifieds", "name": "Baby Cot & Crib" },
+          { "id": 80103, "slug": "car-seat-classifieds", "name": "Car Seat" },
+          { "id": 80104, "slug": "baby-carrier-classifieds", "name": "Baby Carrier" },
+          { "id": 80105, "slug": "high-chair", "name": "High Chair" },
+          { "id": 80106, "slug": "baby-monitor-classifieds", "name": "Baby Monitor" }
+        ]
+      },
+      {
+        "id": 802,
+        "slug": "toys-games-classifieds",
+        "name": "Toys & Games",
+        "deep": [
+          { "id": 80201, "slug": "toys-classifieds", "name": "Toys (Used & New)" },
+          { "id": 80202, "slug": "board-games-classifieds", "name": "Board Games" },
+          { "id": 80203, "slug": "outdoor-toys-classifieds", "name": "Outdoor Toys" },
+          { "id": 80204, "slug": "educational-toys-classifieds", "name": "Educational Toys" }
+        ]
+      },
+      {
+        "id": 803,
+        "slug": "maternity",
+        "name": "Maternity",
+        "deep": [
+          { "id": 80301, "slug": "maternity-clothing", "name": "Maternity Clothing" },
+          { "id": 80302, "slug": "breastfeeding-accessories", "name": "Breastfeeding Accessories" },
+          { "id": 80303, "slug": "breast-pump", "name": "Breast Pump" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "slug": "health-beauty-classifieds",
+    "name": "Health & Beauty",
+    "icon": "💄",
+    "subcategories": [
+      {
+        "id": 901,
+        "slug": "skincare-cosmetics",
+        "name": "Skincare & Cosmetics",
+        "deep": [
+          { "id": 90101, "slug": "skincare-classifieds", "name": "Skincare" },
+          { "id": 90102, "slug": "makeup-classifieds", "name": "Makeup & Cosmetics" },
+          { "id": 90103, "slug": "perfume-classifieds", "name": "Perfume & Fragrance" },
+          { "id": 90104, "slug": "haircare-classifieds", "name": "Haircare" }
+        ]
+      },
+      {
+        "id": 902,
+        "slug": "health-medical",
+        "name": "Health & Medical",
+        "deep": [
+          { "id": 90201, "slug": "medical-equipment", "name": "Medical Equipment" },
+          { "id": 90202, "slug": "supplements-vitamins", "name": "Supplements & Vitamins" },
+          { "id": 90203, "slug": "mobility-aids-classifieds", "name": "Mobility Aids" },
+          { "id": 90204, "slug": "optical-classifieds", "name": "Optical & Eye Care" }
+        ]
+      },
+      {
+        "id": 903,
+        "slug": "fitness-gym",
+        "name": "Fitness & Gym",
+        "deep": [
+          { "id": 90301, "slug": "gym-equipment-classifieds", "name": "Gym Equipment" },
+          { "id": 90302, "slug": "sports-equipment-classifieds", "name": "Sports Equipment" },
+          { "id": 90303, "slug": "sportswear-classifieds", "name": "Sportswear" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "slug": "hobbies-sports-classifieds",
+    "name": "Hobbies & Sports",
+    "icon": "⚽",
+    "subcategories": [
+      {
+        "id": 1001,
+        "slug": "sports-equipment",
+        "name": "Sports Equipment",
+        "deep": [
+          { "id": 100101, "slug": "badminton-classifieds", "name": "Badminton" },
+          { "id": 100102, "slug": "football-classifieds", "name": "Football" },
+          { "id": 100103, "slug": "cycling-classifieds", "name": "Cycling" },
+          { "id": 100104, "slug": "gym-fitness-classifieds", "name": "Gym & Fitness" },
+          { "id": 100105, "slug": "swimming-classifieds", "name": "Swimming" },
+          { "id": 100106, "slug": "martial-arts-classifieds", "name": "Martial Arts" },
+          { "id": 100107, "slug": "fishing-classifieds", "name": "Fishing" },
+          { "id": 100108, "slug": "golf-classifieds", "name": "Golf" }
+        ]
+      },
+      {
+        "id": 1002,
+        "slug": "hobbies-collectibles",
+        "name": "Hobbies & Collectibles",
+        "deep": [
+          { "id": 100201, "slug": "trading-cards-classifieds", "name": "Trading Cards" },
+          { "id": 100202, "slug": "action-figures-classifieds", "name": "Action Figures" },
+          { "id": 100203, "slug": "gundam-models-classifieds", "name": "Gundam & Models" },
+          { "id": 100204, "slug": "vintage-collectibles", "name": "Vintage & Collectibles" },
+          { "id": 100205, "slug": "coins-stamps-classifieds", "name": "Coins & Stamps" },
+          { "id": 100206, "slug": "art-supplies-classifieds", "name": "Art Supplies" }
+        ]
+      },
+      {
+        "id": 1003,
+        "slug": "musical-instruments",
+        "name": "Musical Instruments",
+        "deep": [
+          { "id": 100301, "slug": "guitar-bass", "name": "Guitar & Bass" },
+          { "id": 100302, "slug": "piano-keyboard", "name": "Piano & Keyboard" },
+          { "id": 100303, "slug": "drums-percussion", "name": "Drums & Percussion" },
+          { "id": 100304, "slug": "wind-instruments", "name": "Wind Instruments" },
+          { "id": 100305, "slug": "recording-gear", "name": "Recording Gear" }
+        ]
+      },
+      {
+        "id": 1004,
+        "slug": "books-magazines",
+        "name": "Books & Magazines",
+        "deep": [
+          { "id": 100401, "slug": "textbooks-classifieds", "name": "Textbooks" },
+          { "id": 100402, "slug": "novels-fiction-classifieds", "name": "Novels & Fiction" },
+          { "id": 100403, "slug": "comics-manga-classifieds", "name": "Comics & Manga" },
+          { "id": 100404, "slug": "magazines-classifieds", "name": "Magazines" },
+          { "id": 100405, "slug": "religious-books", "name": "Religious Books" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "slug": "pets-classifieds",
+    "name": "Pets",
+    "icon": "🐾",
+    "subcategories": [
+      {
+        "id": 1101,
+        "slug": "pets-for-adoption",
+        "name": "Pets For Adoption",
+        "deep": [
+          { "id": 110101, "slug": "dogs-adoption", "name": "Dogs" },
+          { "id": 110102, "slug": "cats-adoption", "name": "Cats" },
+          { "id": 110103, "slug": "birds-adoption", "name": "Birds" },
+          { "id": 110104, "slug": "fish-adoption", "name": "Fish & Aquatic" },
+          { "id": 110105, "slug": "small-animals-adoption", "name": "Small Animals" },
+          { "id": 110106, "slug": "reptiles-adoption", "name": "Reptiles" }
+        ]
+      },
+      {
+        "id": 1102,
+        "slug": "pet-accessories-classifieds",
+        "name": "Pet Accessories",
+        "deep": [
+          { "id": 110201, "slug": "pet-food-classifieds", "name": "Pet Food" },
+          { "id": 110202, "slug": "pet-cages-tanks", "name": "Cages & Tanks" },
+          { "id": 110203, "slug": "pet-toys-classifieds", "name": "Toys & Accessories" },
+          { "id": 110204, "slug": "pet-grooming-products", "name": "Grooming Products" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "slug": "food-beverage-classifieds",
+    "name": "Food & Beverage",
+    "icon": "🍜",
+    "subcategories": [
+      {
+        "id": 1201,
+        "slug": "food-business",
+        "name": "Food Business",
+        "deep": [
+          { "id": 120101, "slug": "homemade-food", "name": "Homemade Food" },
+          { "id": 120102, "slug": "catering-food", "name": "Catering" },
+          { "id": 120103, "slug": "baked-goods", "name": "Baked Goods & Cakes" },
+          { "id": 120104, "slug": "frozen-food-homemade", "name": "Frozen Food (Homemade)" },
+          { "id": 120105, "slug": "healthy-diet-food", "name": "Healthy & Diet Food" },
+          { "id": 120106, "slug": "traditional-food", "name": "Traditional & Local Food" },
+          { "id": 120107, "slug": "beverages-drinks", "name": "Beverages & Drinks" }
+        ]
+      },
+      {
+        "id": 1202,
+        "slug": "restaurant-business",
+        "name": "Restaurant & Business",
+        "deep": [
+          { "id": 120201, "slug": "restaurant-for-sale", "name": "Restaurant For Sale/Takeover" },
+          { "id": 120202, "slug": "food-cart-stall", "name": "Food Cart & Stall" },
+          { "id": 120203, "slug": "franchise-food", "name": "Food Franchise" },
+          { "id": 120204, "slug": "food-truck", "name": "Food Truck" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "slug": "business-industrial",
+    "name": "Business & Industrial",
+    "icon": "🏭",
+    "subcategories": [
+      {
+        "id": 1301,
+        "slug": "business-for-sale",
+        "name": "Business For Sale",
+        "deep": [
+          { "id": 130101, "slug": "retail-business-sale", "name": "Retail Business" },
+          { "id": 130102, "slug": "online-business-sale", "name": "Online Business" },
+          { "id": 130103, "slug": "franchise-sale", "name": "Franchise" },
+          { "id": 130104, "slug": "manufacturing-business", "name": "Manufacturing Business" },
+          { "id": 130105, "slug": "service-business-sale", "name": "Service Business" }
+        ]
+      },
+      {
+        "id": 1302,
+        "slug": "office-industrial-equipment",
+        "name": "Office & Industrial Equipment",
+        "deep": [
+          { "id": 130201, "slug": "office-equipment-classifieds", "name": "Office Equipment" },
+          { "id": 130202, "slug": "industrial-machinery", "name": "Industrial Machinery" },
+          { "id": 130203, "slug": "construction-equipment", "name": "Construction Equipment" },
+          { "id": 130204, "slug": "printing-equipment", "name": "Printing Equipment" },
+          { "id": 130205, "slug": "restaurant-equipment", "name": "Restaurant Equipment" },
+          { "id": 130206, "slug": "agricultural-equipment", "name": "Agricultural Equipment" }
+        ]
+      },
+      {
+        "id": 1303,
+        "slug": "investment-opportunities",
+        "name": "Investment Opportunities",
+        "deep": [
+          { "id": 130301, "slug": "business-partnership", "name": "Business Partnership" },
+          { "id": 130302, "slug": "investment-property", "name": "Investment Property" },
+          { "id": 130303, "slug": "startup-funding", "name": "Startup Funding" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "slug": "education-learning",
+    "name": "Education & Learning",
+    "icon": "📚",
+    "subcategories": [
+      {
+        "id": 1401,
+        "slug": "classes-courses",
+        "name": "Classes & Courses",
+        "deep": [
+          { "id": 140101, "slug": "language-classes-classifieds", "name": "Language Classes" },
+          { "id": 140102, "slug": "academic-tuition", "name": "Academic Tuition" },
+          { "id": 140103, "slug": "music-classes-classifieds", "name": "Music Classes" },
+          { "id": 140104, "slug": "art-classes-classifieds", "name": "Art Classes" },
+          { "id": 140105, "slug": "coding-classes", "name": "Coding & Tech Classes" },
+          { "id": 140106, "slug": "religious-classes-classifieds", "name": "Religious Classes" },
+          { "id": 140107, "slug": "cooking-baking-classes", "name": "Cooking & Baking Classes" },
+          { "id": 140108, "slug": "sports-fitness-classes", "name": "Sports & Fitness Classes" }
+        ]
+      },
+      {
+        "id": 1402,
+        "slug": "books-learning-materials",
+        "name": "Books & Learning Materials",
+        "deep": [
+          { "id": 140201, "slug": "school-textbooks", "name": "School Textbooks" },
+          { "id": 140202, "slug": "university-textbooks", "name": "University Textbooks" },
+          { "id": 140203, "slug": "reference-books", "name": "Reference Books" },
+          { "id": 140204, "slug": "workbooks-notes", "name": "Workbooks & Notes" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "slug": "community-announcements",
+    "name": "Community",
+    "icon": "📢",
+    "subcategories": [
+      {
+        "id": 1501,
+        "slug": "lost-found",
+        "name": "Lost & Found",
+        "deep": [
+          { "id": 150101, "slug": "lost-items", "name": "Lost Items" },
+          { "id": 150102, "slug": "found-items", "name": "Found Items" },
+          { "id": 150103, "slug": "lost-pets", "name": "Lost Pets" },
+          { "id": 150104, "slug": "found-pets", "name": "Found Pets" }
+        ]
+      },
+      {
+        "id": 1502,
+        "slug": "free-giveaway",
+        "name": "Free & Giveaway",
+        "deep": [
+          { "id": 150201, "slug": "free-items", "name": "Free Items" },
+          { "id": 150202, "slug": "giveaway", "name": "Giveaway" },
+          { "id": 150203, "slug": "charity-donation", "name": "Charity & Donation" }
+        ]
+      },
+      {
+        "id": 1503,
+        "slug": "announcements",
+        "name": "Announcements",
+        "deep": [
+          { "id": 150301, "slug": "events-happenings", "name": "Events & Happenings" },
+          { "id": 150302, "slug": "carpool-rideshare", "name": "Carpool & Rideshare" },
+          { "id": 150303, "slug": "volunteers-needed", "name": "Volunteers Needed" },
+          { "id": 150304, "slug": "neighbourhood-notices", "name": "Neighbourhood Notices" }
+        ]
+      },
+      {
+        "id": 1504,
+        "slug": "seeking-wanted",
+        "name": "Seeking & Wanted",
+        "deep": [
+          { "id": 150401, "slug": "items-wanted", "name": "Items Wanted" },
+          { "id": 150402, "slug": "services-wanted", "name": "Services Wanted" },
+          { "id": 150403, "slug": "property-wanted", "name": "Property Wanted" },
+          { "id": 150404, "slug": "business-partner-wanted", "name": "Business Partner Wanted" }
+        ]
+      }
+    ]
+  }
+]

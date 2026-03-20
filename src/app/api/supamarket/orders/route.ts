@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
       .from("orders")
       .select(`
         *, 
-        listing:listing_id ( id, title, images, price_pi, category ),
+        listing:listing_id ( id, title, images, price_pi, category, subcategory, category_deep ),
         buyer:buyer_id ( id, username, display_name, avatar_url ),
         seller:seller_id ( id, username, display_name, avatar_url )
       `)

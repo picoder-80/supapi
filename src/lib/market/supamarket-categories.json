@@ -1,0 +1,2472 @@
+[
+  {
+    "id": 1,
+    "slug": "electronics-gadgets",
+    "name": "Electronics & Gadgets",
+    "icon": "💻",
+    "subcategories": [
+      {
+        "id": 101,
+        "slug": "phones-tablets",
+        "name": "Phones & Tablets",
+        "deep": [
+          {
+            "id": 10101,
+            "slug": "smartphones",
+            "name": "Smartphones"
+          },
+          {
+            "id": 10102,
+            "slug": "feature-phones",
+            "name": "Feature Phones"
+          },
+          {
+            "id": 10103,
+            "slug": "tablets",
+            "name": "Tablets"
+          },
+          {
+            "id": 10104,
+            "slug": "ipads",
+            "name": "iPads"
+          },
+          {
+            "id": 10105,
+            "slug": "phone-cases-covers",
+            "name": "Phone Cases & Covers"
+          },
+          {
+            "id": 10106,
+            "slug": "screen-protectors",
+            "name": "Screen Protectors"
+          },
+          {
+            "id": 10107,
+            "slug": "chargers-cables",
+            "name": "Chargers & Cables"
+          },
+          {
+            "id": 10108,
+            "slug": "power-banks",
+            "name": "Power Banks"
+          },
+          {
+            "id": 10109,
+            "slug": "phone-holders-mounts",
+            "name": "Phone Holders & Mounts"
+          }
+        ]
+      },
+      {
+        "id": 102,
+        "slug": "computers-laptops",
+        "name": "Computers & Laptops",
+        "deep": [
+          {
+            "id": 10201,
+            "slug": "laptops",
+            "name": "Laptops"
+          },
+          {
+            "id": 10202,
+            "slug": "desktop-pcs",
+            "name": "Desktop PCs"
+          },
+          {
+            "id": 10203,
+            "slug": "monitors",
+            "name": "Monitors"
+          },
+          {
+            "id": 10204,
+            "slug": "keyboards-mice",
+            "name": "Keyboards & Mice"
+          },
+          {
+            "id": 10205,
+            "slug": "ram-storage",
+            "name": "RAM & Storage"
+          },
+          {
+            "id": 10206,
+            "slug": "graphics-cards",
+            "name": "Graphics Cards"
+          },
+          {
+            "id": 10207,
+            "slug": "cooling-systems",
+            "name": "Cooling Systems"
+          },
+          {
+            "id": 10208,
+            "slug": "ups-power-supplies",
+            "name": "UPS & Power Supplies"
+          },
+          {
+            "id": 10209,
+            "slug": "laptop-bags-sleeves",
+            "name": "Laptop Bags & Sleeves"
+          }
+        ]
+      },
+      {
+        "id": 103,
+        "slug": "audio-visual",
+        "name": "Audio & Visual",
+        "deep": [
+          {
+            "id": 10301,
+            "slug": "headphones-earbuds",
+            "name": "Headphones & Earbuds"
+          },
+          {
+            "id": 10302,
+            "slug": "speakers-soundbars",
+            "name": "Speakers & Soundbars"
+          },
+          {
+            "id": 10303,
+            "slug": "smart-tvs",
+            "name": "Smart TVs"
+          },
+          {
+            "id": 10304,
+            "slug": "projectors",
+            "name": "Projectors"
+          },
+          {
+            "id": 10305,
+            "slug": "hdmi-av-cables",
+            "name": "HDMI & AV Cables"
+          },
+          {
+            "id": 10306,
+            "slug": "remote-controls",
+            "name": "Remote Controls"
+          },
+          {
+            "id": 10307,
+            "slug": "home-theatre-systems",
+            "name": "Home Theatre Systems"
+          }
+        ]
+      },
+      {
+        "id": 104,
+        "slug": "cameras-photography",
+        "name": "Cameras & Photography",
+        "deep": [
+          {
+            "id": 10401,
+            "slug": "dslr-mirrorless",
+            "name": "DSLR & Mirrorless"
+          },
+          {
+            "id": 10402,
+            "slug": "action-cameras",
+            "name": "Action Cameras"
+          },
+          {
+            "id": 10403,
+            "slug": "camera-lenses",
+            "name": "Camera Lenses"
+          },
+          {
+            "id": 10404,
+            "slug": "tripods-stabilizers",
+            "name": "Tripods & Stabilizers"
+          },
+          {
+            "id": 10405,
+            "slug": "memory-cards",
+            "name": "Memory Cards"
+          },
+          {
+            "id": 10406,
+            "slug": "camera-bags",
+            "name": "Camera Bags"
+          },
+          {
+            "id": 10407,
+            "slug": "drones-accessories",
+            "name": "Drones & Accessories"
+          }
+        ]
+      },
+      {
+        "id": 105,
+        "slug": "wearables-smart-devices",
+        "name": "Wearables & Smart Devices",
+        "deep": [
+          {
+            "id": 10501,
+            "slug": "smartwatches",
+            "name": "Smartwatches"
+          },
+          {
+            "id": 10502,
+            "slug": "fitness-trackers",
+            "name": "Fitness Trackers"
+          },
+          {
+            "id": 10503,
+            "slug": "smart-home-devices",
+            "name": "Smart Home Devices"
+          },
+          {
+            "id": 10504,
+            "slug": "vr-headsets",
+            "name": "VR Headsets"
+          },
+          {
+            "id": 10505,
+            "slug": "smart-glasses",
+            "name": "Smart Glasses"
+          }
+        ]
+      },
+      {
+        "id": 106,
+        "slug": "gaming",
+        "name": "Gaming",
+        "deep": [
+          {
+            "id": 10601,
+            "slug": "consoles",
+            "name": "Consoles"
+          },
+          {
+            "id": 10602,
+            "slug": "controllers-joysticks",
+            "name": "Controllers & Joysticks"
+          },
+          {
+            "id": 10603,
+            "slug": "gaming-headsets",
+            "name": "Gaming Headsets"
+          },
+          {
+            "id": 10604,
+            "slug": "gaming-chairs",
+            "name": "Gaming Chairs"
+          },
+          {
+            "id": 10605,
+            "slug": "pc-gaming-accessories",
+            "name": "PC Gaming Accessories"
+          },
+          {
+            "id": 10606,
+            "slug": "game-titles-vouchers",
+            "name": "Game Titles & Vouchers"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "slug": "fashion-apparel",
+    "name": "Fashion & Apparel",
+    "icon": "👗",
+    "subcategories": [
+      {
+        "id": 201,
+        "slug": "mens-clothing",
+        "name": "Men's Clothing",
+        "deep": [
+          {
+            "id": 20101,
+            "slug": "tshirts-polos",
+            "name": "T-Shirts & Polos"
+          },
+          {
+            "id": 20102,
+            "slug": "shirts-blouses",
+            "name": "Shirts & Blouses"
+          },
+          {
+            "id": 20103,
+            "slug": "pants-jeans",
+            "name": "Pants & Jeans"
+          },
+          {
+            "id": 20104,
+            "slug": "shorts",
+            "name": "Shorts"
+          },
+          {
+            "id": 20105,
+            "slug": "suits-blazers",
+            "name": "Suits & Blazers"
+          },
+          {
+            "id": 20106,
+            "slug": "traditional-wear-men",
+            "name": "Traditional Wear (Baju Melayu, Batik)"
+          },
+          {
+            "id": 20107,
+            "slug": "mens-sportswear",
+            "name": "Sportswear"
+          },
+          {
+            "id": 20108,
+            "slug": "mens-sleepwear",
+            "name": "Sleepwear & Innerwear"
+          },
+          {
+            "id": 20109,
+            "slug": "mens-outerwear",
+            "name": "Outerwear & Jackets"
+          }
+        ]
+      },
+      {
+        "id": 202,
+        "slug": "womens-clothing",
+        "name": "Women's Clothing",
+        "deep": [
+          {
+            "id": 20201,
+            "slug": "dresses-skirts",
+            "name": "Dresses & Skirts"
+          },
+          {
+            "id": 20202,
+            "slug": "tops-blouses",
+            "name": "Tops & Blouses"
+          },
+          {
+            "id": 20203,
+            "slug": "womens-pants-jeans",
+            "name": "Pants & Jeans"
+          },
+          {
+            "id": 20204,
+            "slug": "abayas-hijabs",
+            "name": "Abayas & Hijabs"
+          },
+          {
+            "id": 20205,
+            "slug": "traditional-wear-women",
+            "name": "Traditional Wear (Baju Kurung, Kebaya)"
+          },
+          {
+            "id": 20206,
+            "slug": "womens-sportswear",
+            "name": "Sportswear"
+          },
+          {
+            "id": 20207,
+            "slug": "sleepwear-lingerie",
+            "name": "Sleepwear & Lingerie"
+          },
+          {
+            "id": 20208,
+            "slug": "maternity-wear",
+            "name": "Maternity Wear"
+          },
+          {
+            "id": 20209,
+            "slug": "womens-outerwear",
+            "name": "Outerwear & Jackets"
+          }
+        ]
+      },
+      {
+        "id": 203,
+        "slug": "kids-clothing",
+        "name": "Kids' Clothing",
+        "deep": [
+          {
+            "id": 20301,
+            "slug": "boys-clothing",
+            "name": "Boys Clothing"
+          },
+          {
+            "id": 20302,
+            "slug": "girls-clothing",
+            "name": "Girls Clothing"
+          },
+          {
+            "id": 20303,
+            "slug": "baby-toddler",
+            "name": "Baby & Toddler"
+          },
+          {
+            "id": 20304,
+            "slug": "school-uniforms",
+            "name": "School Uniforms"
+          },
+          {
+            "id": 20305,
+            "slug": "kids-sportswear",
+            "name": "Kids Sportswear"
+          },
+          {
+            "id": 20306,
+            "slug": "kids-traditional-wear",
+            "name": "Kids Traditional Wear"
+          }
+        ]
+      },
+      {
+        "id": 204,
+        "slug": "footwear",
+        "name": "Footwear",
+        "deep": [
+          {
+            "id": 20401,
+            "slug": "mens-shoes",
+            "name": "Men's Shoes"
+          },
+          {
+            "id": 20402,
+            "slug": "womens-shoes",
+            "name": "Women's Shoes"
+          },
+          {
+            "id": 20403,
+            "slug": "kids-shoes",
+            "name": "Kids' Shoes"
+          },
+          {
+            "id": 20404,
+            "slug": "sandals-slippers",
+            "name": "Sandals & Slippers"
+          },
+          {
+            "id": 20405,
+            "slug": "sports-shoes",
+            "name": "Sports Shoes"
+          },
+          {
+            "id": 20406,
+            "slug": "boots",
+            "name": "Boots"
+          },
+          {
+            "id": 20407,
+            "slug": "shoe-care-accessories",
+            "name": "Shoe Care & Accessories"
+          }
+        ]
+      },
+      {
+        "id": 205,
+        "slug": "bags-wallets",
+        "name": "Bags & Wallets",
+        "deep": [
+          {
+            "id": 20501,
+            "slug": "handbags",
+            "name": "Handbags"
+          },
+          {
+            "id": 20502,
+            "slug": "backpacks",
+            "name": "Backpacks"
+          },
+          {
+            "id": 20503,
+            "slug": "clutches-purses",
+            "name": "Clutches & Purses"
+          },
+          {
+            "id": 20504,
+            "slug": "mens-wallets",
+            "name": "Men's Wallets"
+          },
+          {
+            "id": 20505,
+            "slug": "womens-wallets",
+            "name": "Women's Wallets"
+          },
+          {
+            "id": 20506,
+            "slug": "luggage-travel-bags",
+            "name": "Luggage & Travel Bags"
+          },
+          {
+            "id": 20507,
+            "slug": "school-bags",
+            "name": "School Bags"
+          },
+          {
+            "id": 20508,
+            "slug": "laptop-bags",
+            "name": "Laptop Bags"
+          }
+        ]
+      },
+      {
+        "id": 206,
+        "slug": "accessories",
+        "name": "Accessories",
+        "deep": [
+          {
+            "id": 20601,
+            "slug": "watches",
+            "name": "Watches"
+          },
+          {
+            "id": 20602,
+            "slug": "sunglasses",
+            "name": "Sunglasses"
+          },
+          {
+            "id": 20603,
+            "slug": "belts",
+            "name": "Belts"
+          },
+          {
+            "id": 20604,
+            "slug": "scarves-shawls",
+            "name": "Scarves & Shawls"
+          },
+          {
+            "id": 20605,
+            "slug": "hats-caps",
+            "name": "Hats & Caps"
+          },
+          {
+            "id": 20606,
+            "slug": "jewellery",
+            "name": "Jewellery"
+          },
+          {
+            "id": 20607,
+            "slug": "hair-accessories",
+            "name": "Hair Accessories"
+          },
+          {
+            "id": 20608,
+            "slug": "ties-pocket-squares",
+            "name": "Ties & Pocket Squares"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "slug": "home-living",
+    "name": "Home & Living",
+    "icon": "🏠",
+    "subcategories": [
+      {
+        "id": 301,
+        "slug": "furniture",
+        "name": "Furniture",
+        "deep": [
+          {
+            "id": 30101,
+            "slug": "sofas-couches",
+            "name": "Sofas & Couches"
+          },
+          {
+            "id": 30102,
+            "slug": "beds-bed-frames",
+            "name": "Beds & Bed Frames"
+          },
+          {
+            "id": 30103,
+            "slug": "dining-tables-chairs",
+            "name": "Dining Tables & Chairs"
+          },
+          {
+            "id": 30104,
+            "slug": "study-office-desks",
+            "name": "Study & Office Desks"
+          },
+          {
+            "id": 30105,
+            "slug": "wardrobes-cabinets",
+            "name": "Wardrobes & Cabinets"
+          },
+          {
+            "id": 30106,
+            "slug": "shelving-bookcases",
+            "name": "Shelving & Bookcases"
+          },
+          {
+            "id": 30107,
+            "slug": "outdoor-furniture",
+            "name": "Outdoor Furniture"
+          },
+          {
+            "id": 30108,
+            "slug": "kids-furniture",
+            "name": "Kids Furniture"
+          }
+        ]
+      },
+      {
+        "id": 302,
+        "slug": "bedding-bath",
+        "name": "Bedding & Bath",
+        "deep": [
+          {
+            "id": 30201,
+            "slug": "bed-sheets-pillowcases",
+            "name": "Bed Sheets & Pillowcases"
+          },
+          {
+            "id": 30202,
+            "slug": "comforters-duvets",
+            "name": "Comforters & Duvets"
+          },
+          {
+            "id": 30203,
+            "slug": "pillows-bolsters",
+            "name": "Pillows & Bolsters"
+          },
+          {
+            "id": 30204,
+            "slug": "towels-bathrobes",
+            "name": "Towels & Bathrobes"
+          },
+          {
+            "id": 30205,
+            "slug": "mattresses-toppers",
+            "name": "Mattresses & Toppers"
+          },
+          {
+            "id": 30206,
+            "slug": "mattress-protectors",
+            "name": "Mattress Protectors"
+          }
+        ]
+      },
+      {
+        "id": 303,
+        "slug": "kitchen-dining",
+        "name": "Kitchen & Dining",
+        "deep": [
+          {
+            "id": 30301,
+            "slug": "cookware-pots",
+            "name": "Cookware & Pots"
+          },
+          {
+            "id": 30302,
+            "slug": "kitchen-appliances",
+            "name": "Kitchen Appliances"
+          },
+          {
+            "id": 30303,
+            "slug": "cutlery-utensils",
+            "name": "Cutlery & Utensils"
+          },
+          {
+            "id": 30304,
+            "slug": "plates-bowls",
+            "name": "Plates & Bowls"
+          },
+          {
+            "id": 30305,
+            "slug": "glasses-mugs",
+            "name": "Glasses & Mugs"
+          },
+          {
+            "id": 30306,
+            "slug": "food-storage",
+            "name": "Food Storage"
+          },
+          {
+            "id": 30307,
+            "slug": "coffee-tea-accessories",
+            "name": "Coffee & Tea Accessories"
+          },
+          {
+            "id": 30308,
+            "slug": "baking-tools",
+            "name": "Baking Tools"
+          }
+        ]
+      },
+      {
+        "id": 304,
+        "slug": "home-appliances",
+        "name": "Home Appliances",
+        "deep": [
+          {
+            "id": 30401,
+            "slug": "washing-machines",
+            "name": "Washing Machines"
+          },
+          {
+            "id": 30402,
+            "slug": "refrigerators",
+            "name": "Refrigerators"
+          },
+          {
+            "id": 30403,
+            "slug": "air-conditioners",
+            "name": "Air Conditioners"
+          },
+          {
+            "id": 30404,
+            "slug": "vacuum-cleaners",
+            "name": "Vacuum Cleaners"
+          },
+          {
+            "id": 30405,
+            "slug": "water-heaters",
+            "name": "Water Heaters"
+          },
+          {
+            "id": 30406,
+            "slug": "fans-air-purifiers",
+            "name": "Fans & Air Purifiers"
+          },
+          {
+            "id": 30407,
+            "slug": "irons-steamers",
+            "name": "Irons & Steamers"
+          },
+          {
+            "id": 30408,
+            "slug": "microwave-ovens",
+            "name": "Microwave & Ovens"
+          }
+        ]
+      },
+      {
+        "id": 305,
+        "slug": "home-decor",
+        "name": "Home Decor",
+        "deep": [
+          {
+            "id": 30501,
+            "slug": "wall-art-paintings",
+            "name": "Wall Art & Paintings"
+          },
+          {
+            "id": 30502,
+            "slug": "clocks",
+            "name": "Clocks"
+          },
+          {
+            "id": 30503,
+            "slug": "vases-planters",
+            "name": "Vases & Planters"
+          },
+          {
+            "id": 30504,
+            "slug": "curtains-blinds",
+            "name": "Curtains & Blinds"
+          },
+          {
+            "id": 30505,
+            "slug": "rugs-carpets",
+            "name": "Rugs & Carpets"
+          },
+          {
+            "id": 30506,
+            "slug": "lighting-lamps",
+            "name": "Lighting & Lamps"
+          },
+          {
+            "id": 30507,
+            "slug": "candles-aromatherapy",
+            "name": "Candles & Aromatherapy"
+          },
+          {
+            "id": 30508,
+            "slug": "photo-frames-albums",
+            "name": "Photo Frames & Albums"
+          },
+          {
+            "id": 30509,
+            "slug": "mirrors",
+            "name": "Mirrors"
+          }
+        ]
+      },
+      {
+        "id": 306,
+        "slug": "garden-outdoor",
+        "name": "Garden & Outdoor",
+        "deep": [
+          {
+            "id": 30601,
+            "slug": "garden-tools",
+            "name": "Garden Tools"
+          },
+          {
+            "id": 30602,
+            "slug": "plant-pots-planters",
+            "name": "Plant Pots & Planters"
+          },
+          {
+            "id": 30603,
+            "slug": "seeds-fertilizers",
+            "name": "Seeds & Fertilizers"
+          },
+          {
+            "id": 30604,
+            "slug": "outdoor-lighting",
+            "name": "Outdoor Lighting"
+          },
+          {
+            "id": 30605,
+            "slug": "bbq-grilling",
+            "name": "BBQ & Grilling"
+          },
+          {
+            "id": 30606,
+            "slug": "garden-furniture",
+            "name": "Garden Furniture"
+          },
+          {
+            "id": 30607,
+            "slug": "pest-control",
+            "name": "Pest Control"
+          },
+          {
+            "id": 30608,
+            "slug": "water-hoses-sprinklers",
+            "name": "Water Hoses & Sprinklers"
+          }
+        ]
+      },
+      {
+        "id": 307,
+        "slug": "diy-hardware",
+        "name": "DIY & Hardware",
+        "deep": [
+          {
+            "id": 30701,
+            "slug": "power-tools",
+            "name": "Power Tools"
+          },
+          {
+            "id": 30702,
+            "slug": "hand-tools",
+            "name": "Hand Tools"
+          },
+          {
+            "id": 30703,
+            "slug": "painting-wall-repair",
+            "name": "Painting & Wall Repair"
+          },
+          {
+            "id": 30704,
+            "slug": "locks-security",
+            "name": "Locks & Security"
+          },
+          {
+            "id": 30705,
+            "slug": "plumbing-supplies",
+            "name": "Plumbing Supplies"
+          },
+          {
+            "id": 30706,
+            "slug": "electrical-supplies",
+            "name": "Electrical Supplies"
+          },
+          {
+            "id": 30707,
+            "slug": "screws-nails-fasteners",
+            "name": "Screws, Nails & Fasteners"
+          },
+          {
+            "id": 30708,
+            "slug": "storage-organisation",
+            "name": "Storage & Organisation"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "slug": "food-groceries",
+    "name": "Food & Groceries",
+    "icon": "🍎",
+    "subcategories": [
+      {
+        "id": 401,
+        "slug": "fresh-produce",
+        "name": "Fresh Produce",
+        "deep": [
+          {
+            "id": 40101,
+            "slug": "fruits",
+            "name": "Fruits"
+          },
+          {
+            "id": 40102,
+            "slug": "vegetables",
+            "name": "Vegetables"
+          },
+          {
+            "id": 40103,
+            "slug": "herbs-spices",
+            "name": "Herbs & Spices"
+          },
+          {
+            "id": 40104,
+            "slug": "eggs-dairy",
+            "name": "Eggs & Dairy"
+          }
+        ]
+      },
+      {
+        "id": 402,
+        "slug": "dry-goods-pantry",
+        "name": "Dry Goods & Pantry",
+        "deep": [
+          {
+            "id": 40201,
+            "slug": "rice-grains",
+            "name": "Rice & Grains"
+          },
+          {
+            "id": 40202,
+            "slug": "noodles-pasta",
+            "name": "Noodles & Pasta"
+          },
+          {
+            "id": 40203,
+            "slug": "cooking-oil-sauces",
+            "name": "Cooking Oil & Sauces"
+          },
+          {
+            "id": 40204,
+            "slug": "canned-preserved-foods",
+            "name": "Canned & Preserved Foods"
+          },
+          {
+            "id": 40205,
+            "slug": "snacks-biscuits",
+            "name": "Snacks & Biscuits"
+          },
+          {
+            "id": 40206,
+            "slug": "breakfast-cereals",
+            "name": "Breakfast Cereals"
+          },
+          {
+            "id": 40207,
+            "slug": "condiments-seasonings",
+            "name": "Condiments & Seasonings"
+          }
+        ]
+      },
+      {
+        "id": 403,
+        "slug": "beverages",
+        "name": "Beverages",
+        "deep": [
+          {
+            "id": 40301,
+            "slug": "water-juices",
+            "name": "Water & Juices"
+          },
+          {
+            "id": 40302,
+            "slug": "coffee-tea",
+            "name": "Coffee & Tea"
+          },
+          {
+            "id": 40303,
+            "slug": "energy-sports-drinks",
+            "name": "Energy & Sports Drinks"
+          },
+          {
+            "id": 40304,
+            "slug": "milk-plant-based",
+            "name": "Milk & Plant-Based Drinks"
+          },
+          {
+            "id": 40305,
+            "slug": "soft-drinks",
+            "name": "Soft Drinks"
+          }
+        ]
+      },
+      {
+        "id": 404,
+        "slug": "health-foods",
+        "name": "Health Foods",
+        "deep": [
+          {
+            "id": 40401,
+            "slug": "organic-natural",
+            "name": "Organic & Natural"
+          },
+          {
+            "id": 40402,
+            "slug": "protein-supplements",
+            "name": "Protein Supplements"
+          },
+          {
+            "id": 40403,
+            "slug": "vitamins-minerals",
+            "name": "Vitamins & Minerals"
+          },
+          {
+            "id": 40404,
+            "slug": "superfoods",
+            "name": "Superfoods"
+          },
+          {
+            "id": 40405,
+            "slug": "gluten-free-vegan",
+            "name": "Gluten-Free & Vegan"
+          }
+        ]
+      },
+      {
+        "id": 405,
+        "slug": "frozen-ready-to-eat",
+        "name": "Frozen & Ready-to-Eat",
+        "deep": [
+          {
+            "id": 40501,
+            "slug": "frozen-meals",
+            "name": "Frozen Meals"
+          },
+          {
+            "id": 40502,
+            "slug": "frozen-seafood-meat",
+            "name": "Frozen Seafood & Meat"
+          },
+          {
+            "id": 40503,
+            "slug": "ice-cream-desserts",
+            "name": "Ice Cream & Desserts"
+          },
+          {
+            "id": 40504,
+            "slug": "ready-to-cook-meals",
+            "name": "Ready-to-Cook Meals"
+          }
+        ]
+      },
+      {
+        "id": 406,
+        "slug": "halal-certified",
+        "name": "Halal Certified",
+        "deep": [
+          {
+            "id": 40601,
+            "slug": "halal-meat-poultry",
+            "name": "Halal Meat & Poultry"
+          },
+          {
+            "id": 40602,
+            "slug": "halal-snacks",
+            "name": "Halal Snacks"
+          },
+          {
+            "id": 40603,
+            "slug": "halal-frozen-foods",
+            "name": "Halal Frozen Foods"
+          },
+          {
+            "id": 40604,
+            "slug": "halal-condiments",
+            "name": "Halal Condiments"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "slug": "health-beauty",
+    "name": "Health & Beauty",
+    "icon": "💄",
+    "subcategories": [
+      {
+        "id": 501,
+        "slug": "skincare",
+        "name": "Skincare",
+        "deep": [
+          {
+            "id": 50101,
+            "slug": "cleansers-toners",
+            "name": "Cleansers & Toners"
+          },
+          {
+            "id": 50102,
+            "slug": "moisturisers-serums",
+            "name": "Moisturisers & Serums"
+          },
+          {
+            "id": 50103,
+            "slug": "sunscreen-spf",
+            "name": "Sunscreen & SPF"
+          },
+          {
+            "id": 50104,
+            "slug": "face-masks-treatments",
+            "name": "Face Masks & Treatments"
+          },
+          {
+            "id": 50105,
+            "slug": "eye-creams",
+            "name": "Eye Creams"
+          },
+          {
+            "id": 50106,
+            "slug": "lip-care",
+            "name": "Lip Care"
+          },
+          {
+            "id": 50107,
+            "slug": "mens-skincare",
+            "name": "Men's Skincare"
+          }
+        ]
+      },
+      {
+        "id": 502,
+        "slug": "haircare",
+        "name": "Haircare",
+        "deep": [
+          {
+            "id": 50201,
+            "slug": "shampoo-conditioner",
+            "name": "Shampoo & Conditioner"
+          },
+          {
+            "id": 50202,
+            "slug": "hair-treatments-masks",
+            "name": "Hair Treatments & Masks"
+          },
+          {
+            "id": 50203,
+            "slug": "hair-styling-products",
+            "name": "Hair Styling Products"
+          },
+          {
+            "id": 50204,
+            "slug": "hair-colours-dye",
+            "name": "Hair Colours & Dye"
+          },
+          {
+            "id": 50205,
+            "slug": "hair-tools",
+            "name": "Hair Tools"
+          },
+          {
+            "id": 50206,
+            "slug": "hair-accessories",
+            "name": "Hair Accessories"
+          }
+        ]
+      },
+      {
+        "id": 503,
+        "slug": "makeup-cosmetics",
+        "name": "Makeup & Cosmetics",
+        "deep": [
+          {
+            "id": 50301,
+            "slug": "foundation-concealer",
+            "name": "Foundation & Concealer"
+          },
+          {
+            "id": 50302,
+            "slug": "lipstick-lip-gloss",
+            "name": "Lipstick & Lip Gloss"
+          },
+          {
+            "id": 50303,
+            "slug": "eyeshadow-eyeliner",
+            "name": "Eyeshadow & Eyeliner"
+          },
+          {
+            "id": 50304,
+            "slug": "blush-bronzer",
+            "name": "Blush & Bronzer"
+          },
+          {
+            "id": 50305,
+            "slug": "mascara",
+            "name": "Mascara"
+          },
+          {
+            "id": 50306,
+            "slug": "makeup-brushes-tools",
+            "name": "Makeup Brushes & Tools"
+          },
+          {
+            "id": 50307,
+            "slug": "nail-polish-nail-care",
+            "name": "Nail Polish & Nail Care"
+          }
+        ]
+      },
+      {
+        "id": 504,
+        "slug": "fragrances-deodorants",
+        "name": "Fragrances & Deodorants",
+        "deep": [
+          {
+            "id": 50401,
+            "slug": "perfumes-men",
+            "name": "Perfumes (Men)"
+          },
+          {
+            "id": 50402,
+            "slug": "perfumes-women",
+            "name": "Perfumes (Women)"
+          },
+          {
+            "id": 50403,
+            "slug": "body-sprays",
+            "name": "Body Sprays"
+          },
+          {
+            "id": 50404,
+            "slug": "deodorants-antiperspirants",
+            "name": "Deodorants & Antiperspirants"
+          },
+          {
+            "id": 50405,
+            "slug": "oud-traditional-fragrances",
+            "name": "Oud & Traditional Fragrances"
+          }
+        ]
+      },
+      {
+        "id": 505,
+        "slug": "personal-care",
+        "name": "Personal Care",
+        "deep": [
+          {
+            "id": 50501,
+            "slug": "toothbrush-toothpaste",
+            "name": "Toothbrush & Toothpaste"
+          },
+          {
+            "id": 50502,
+            "slug": "shaving-grooming",
+            "name": "Shaving & Grooming"
+          },
+          {
+            "id": 50503,
+            "slug": "body-wash-soap",
+            "name": "Body Wash & Soap"
+          },
+          {
+            "id": 50504,
+            "slug": "feminine-hygiene",
+            "name": "Feminine Hygiene"
+          },
+          {
+            "id": 50505,
+            "slug": "cotton-wipes",
+            "name": "Cotton & Wipes"
+          },
+          {
+            "id": 50506,
+            "slug": "hand-sanitisers",
+            "name": "Hand Sanitisers"
+          }
+        ]
+      },
+      {
+        "id": 506,
+        "slug": "health-wellness",
+        "name": "Health & Wellness",
+        "deep": [
+          {
+            "id": 50601,
+            "slug": "vitamins-supplements",
+            "name": "Vitamins & Supplements"
+          },
+          {
+            "id": 50602,
+            "slug": "medical-devices",
+            "name": "Medical Devices"
+          },
+          {
+            "id": 50603,
+            "slug": "first-aid-medicine",
+            "name": "First Aid & Medicine"
+          },
+          {
+            "id": 50604,
+            "slug": "eye-care-contact-lenses",
+            "name": "Eye Care & Contact Lenses"
+          },
+          {
+            "id": 50605,
+            "slug": "mobility-aids",
+            "name": "Mobility Aids"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "slug": "baby-kids",
+    "name": "Baby & Kids",
+    "icon": "👶",
+    "subcategories": [
+      {
+        "id": 601,
+        "slug": "baby-essentials",
+        "name": "Baby Essentials",
+        "deep": [
+          {
+            "id": 60101,
+            "slug": "diapers-wipes",
+            "name": "Diapers & Wipes"
+          },
+          {
+            "id": 60102,
+            "slug": "baby-formula-food",
+            "name": "Baby Formula & Food"
+          },
+          {
+            "id": 60103,
+            "slug": "baby-bottles-feeding",
+            "name": "Baby Bottles & Feeding"
+          },
+          {
+            "id": 60104,
+            "slug": "baby-monitors",
+            "name": "Baby Monitors"
+          },
+          {
+            "id": 60105,
+            "slug": "baby-carriers-slings",
+            "name": "Baby Carriers & Slings"
+          },
+          {
+            "id": 60106,
+            "slug": "strollers-prams",
+            "name": "Strollers & Prams"
+          }
+        ]
+      },
+      {
+        "id": 602,
+        "slug": "nursery",
+        "name": "Nursery",
+        "deep": [
+          {
+            "id": 60201,
+            "slug": "baby-cots-cribs",
+            "name": "Baby Cots & Cribs"
+          },
+          {
+            "id": 60202,
+            "slug": "baby-bedding",
+            "name": "Baby Bedding"
+          },
+          {
+            "id": 60203,
+            "slug": "baby-furniture",
+            "name": "Baby Furniture"
+          },
+          {
+            "id": 60204,
+            "slug": "nursery-decor",
+            "name": "Nursery Decor"
+          },
+          {
+            "id": 60205,
+            "slug": "baby-safety-proofing",
+            "name": "Baby Safety & Proofing"
+          }
+        ]
+      },
+      {
+        "id": 603,
+        "slug": "toys-games",
+        "name": "Toys & Games",
+        "deep": [
+          {
+            "id": 60301,
+            "slug": "educational-toys",
+            "name": "Educational Toys"
+          },
+          {
+            "id": 60302,
+            "slug": "building-blocks-lego",
+            "name": "Building Blocks & LEGO"
+          },
+          {
+            "id": 60303,
+            "slug": "dolls-action-figures",
+            "name": "Dolls & Action Figures"
+          },
+          {
+            "id": 60304,
+            "slug": "outdoor-toys",
+            "name": "Outdoor Toys"
+          },
+          {
+            "id": 60305,
+            "slug": "board-games-puzzles",
+            "name": "Board Games & Puzzles"
+          },
+          {
+            "id": 60306,
+            "slug": "remote-control-toys",
+            "name": "Remote Control Toys"
+          },
+          {
+            "id": 60307,
+            "slug": "arts-crafts",
+            "name": "Arts & Crafts"
+          },
+          {
+            "id": 60308,
+            "slug": "stuffed-animals-plush",
+            "name": "Stuffed Animals & Plush"
+          }
+        ]
+      },
+      {
+        "id": 604,
+        "slug": "kids-school-learning",
+        "name": "Kids School & Learning",
+        "deep": [
+          {
+            "id": 60401,
+            "slug": "stationery-art-supplies",
+            "name": "Stationery & Art Supplies"
+          },
+          {
+            "id": 60402,
+            "slug": "school-bags",
+            "name": "School Bags"
+          },
+          {
+            "id": 60403,
+            "slug": "lunch-boxes-bottles",
+            "name": "Lunch Boxes & Bottles"
+          },
+          {
+            "id": 60404,
+            "slug": "books-workbooks",
+            "name": "Books & Workbooks"
+          },
+          {
+            "id": 60405,
+            "slug": "scientific-math-tools",
+            "name": "Scientific & Math Tools"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "slug": "books-media-music",
+    "name": "Books, Media & Music",
+    "icon": "📚",
+    "subcategories": [
+      {
+        "id": 701,
+        "slug": "books",
+        "name": "Books",
+        "deep": [
+          {
+            "id": 70101,
+            "slug": "fiction-novels",
+            "name": "Fiction & Novels"
+          },
+          {
+            "id": 70102,
+            "slug": "non-fiction-self-help",
+            "name": "Non-Fiction & Self-Help"
+          },
+          {
+            "id": 70103,
+            "slug": "childrens-books",
+            "name": "Children's Books"
+          },
+          {
+            "id": 70104,
+            "slug": "religious-spiritual",
+            "name": "Religious & Spiritual"
+          },
+          {
+            "id": 70105,
+            "slug": "academic-textbooks",
+            "name": "Academic & Textbooks"
+          },
+          {
+            "id": 70106,
+            "slug": "comics-manga",
+            "name": "Comics & Manga"
+          },
+          {
+            "id": 70107,
+            "slug": "malay-local-authors",
+            "name": "Malay & Local Authors"
+          },
+          {
+            "id": 70108,
+            "slug": "cookbooks-lifestyle",
+            "name": "Cookbooks & Lifestyle"
+          }
+        ]
+      },
+      {
+        "id": 702,
+        "slug": "music",
+        "name": "Music",
+        "deep": [
+          {
+            "id": 70201,
+            "slug": "musical-instruments",
+            "name": "Musical Instruments"
+          },
+          {
+            "id": 70202,
+            "slug": "music-accessories",
+            "name": "Music Accessories"
+          },
+          {
+            "id": 70203,
+            "slug": "vinyl-records-cds",
+            "name": "Vinyl Records & CDs"
+          },
+          {
+            "id": 70204,
+            "slug": "recording-equipment",
+            "name": "Recording Equipment"
+          },
+          {
+            "id": 70205,
+            "slug": "dj-studio-equipment",
+            "name": "DJ & Studio Equipment"
+          }
+        ]
+      },
+      {
+        "id": 703,
+        "slug": "stationery-art",
+        "name": "Stationery & Art",
+        "deep": [
+          {
+            "id": 70301,
+            "slug": "notebooks-journals",
+            "name": "Notebooks & Journals"
+          },
+          {
+            "id": 70302,
+            "slug": "pens-pencils",
+            "name": "Pens & Pencils"
+          },
+          {
+            "id": 70303,
+            "slug": "markers-highlighters",
+            "name": "Markers & Highlighters"
+          },
+          {
+            "id": 70304,
+            "slug": "art-supplies",
+            "name": "Art Supplies"
+          },
+          {
+            "id": 70305,
+            "slug": "craft-supplies",
+            "name": "Craft Supplies"
+          },
+          {
+            "id": 70306,
+            "slug": "office-stationery",
+            "name": "Office Stationery"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "slug": "sports-outdoors",
+    "name": "Sports & Outdoors",
+    "icon": "💪",
+    "subcategories": [
+      {
+        "id": 801,
+        "slug": "fitness-equipment",
+        "name": "Fitness Equipment",
+        "deep": [
+          {
+            "id": 80101,
+            "slug": "treadmills-cardio",
+            "name": "Treadmills & Cardio"
+          },
+          {
+            "id": 80102,
+            "slug": "weights-dumbbells",
+            "name": "Weights & Dumbbells"
+          },
+          {
+            "id": 80103,
+            "slug": "resistance-bands",
+            "name": "Resistance Bands"
+          },
+          {
+            "id": 80104,
+            "slug": "yoga-mats-accessories",
+            "name": "Yoga Mats & Accessories"
+          },
+          {
+            "id": 80105,
+            "slug": "pull-up-bars",
+            "name": "Pull-Up Bars"
+          },
+          {
+            "id": 80106,
+            "slug": "gym-bags-gear",
+            "name": "Gym Bags & Gear"
+          }
+        ]
+      },
+      {
+        "id": 802,
+        "slug": "team-ball-sports",
+        "name": "Team & Ball Sports",
+        "deep": [
+          {
+            "id": 80201,
+            "slug": "football-futsal",
+            "name": "Football & Futsal"
+          },
+          {
+            "id": 80202,
+            "slug": "basketball",
+            "name": "Basketball"
+          },
+          {
+            "id": 80203,
+            "slug": "badminton",
+            "name": "Badminton"
+          },
+          {
+            "id": 80204,
+            "slug": "tennis-squash",
+            "name": "Tennis & Squash"
+          },
+          {
+            "id": 80205,
+            "slug": "volleyball",
+            "name": "Volleyball"
+          },
+          {
+            "id": 80206,
+            "slug": "cricket-baseball",
+            "name": "Cricket & Baseball"
+          }
+        ]
+      },
+      {
+        "id": 803,
+        "slug": "outdoor-adventure",
+        "name": "Outdoor & Adventure",
+        "deep": [
+          {
+            "id": 80301,
+            "slug": "camping-hiking-gear",
+            "name": "Camping & Hiking Gear"
+          },
+          {
+            "id": 80302,
+            "slug": "tents-sleeping-bags",
+            "name": "Tents & Sleeping Bags"
+          },
+          {
+            "id": 80303,
+            "slug": "fishing-equipment",
+            "name": "Fishing Equipment"
+          },
+          {
+            "id": 80304,
+            "slug": "climbing-gear",
+            "name": "Climbing Gear"
+          },
+          {
+            "id": 80305,
+            "slug": "cycling-accessories",
+            "name": "Cycling Accessories"
+          },
+          {
+            "id": 80306,
+            "slug": "water-sports",
+            "name": "Water Sports"
+          }
+        ]
+      },
+      {
+        "id": 804,
+        "slug": "martial-arts-combat",
+        "name": "Martial Arts & Combat",
+        "deep": [
+          {
+            "id": 80401,
+            "slug": "boxing-gloves-gear",
+            "name": "Boxing Gloves & Gear"
+          },
+          {
+            "id": 80402,
+            "slug": "taekwondo-karate",
+            "name": "Taekwondo & Karate"
+          },
+          {
+            "id": 80403,
+            "slug": "wrestling-mma",
+            "name": "Wrestling & MMA"
+          },
+          {
+            "id": 80404,
+            "slug": "protective-gear",
+            "name": "Protective Gear"
+          }
+        ]
+      },
+      {
+        "id": 805,
+        "slug": "sports-apparel",
+        "name": "Sports Apparel",
+        "deep": [
+          {
+            "id": 80501,
+            "slug": "running-jogging-wear",
+            "name": "Running & Jogging Wear"
+          },
+          {
+            "id": 80502,
+            "slug": "gym-workout-wear",
+            "name": "Gym & Workout Wear"
+          },
+          {
+            "id": 80503,
+            "slug": "swimming-diving",
+            "name": "Swimming & Diving"
+          },
+          {
+            "id": 80504,
+            "slug": "cycling-jerseys",
+            "name": "Cycling Jerseys"
+          },
+          {
+            "id": 80505,
+            "slug": "sports-shoes-specific",
+            "name": "Sports Shoes (Specific)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "slug": "pets-animals",
+    "name": "Pets & Animals",
+    "icon": "🐾",
+    "subcategories": [
+      {
+        "id": 901,
+        "slug": "dogs",
+        "name": "Dogs",
+        "deep": [
+          {
+            "id": 90101,
+            "slug": "dog-food-treats",
+            "name": "Dog Food & Treats"
+          },
+          {
+            "id": 90102,
+            "slug": "dog-collars-leashes",
+            "name": "Dog Collars & Leashes"
+          },
+          {
+            "id": 90103,
+            "slug": "dog-toys",
+            "name": "Dog Toys"
+          },
+          {
+            "id": 90104,
+            "slug": "dog-grooming",
+            "name": "Dog Grooming"
+          },
+          {
+            "id": 90105,
+            "slug": "dog-beds-crates",
+            "name": "Dog Beds & Crates"
+          },
+          {
+            "id": 90106,
+            "slug": "dog-clothing-accessories",
+            "name": "Dog Clothing & Accessories"
+          },
+          {
+            "id": 90107,
+            "slug": "dog-health-supplements",
+            "name": "Dog Health & Supplements"
+          }
+        ]
+      },
+      {
+        "id": 902,
+        "slug": "cats",
+        "name": "Cats",
+        "deep": [
+          {
+            "id": 90201,
+            "slug": "cat-food-treats",
+            "name": "Cat Food & Treats"
+          },
+          {
+            "id": 90202,
+            "slug": "cat-litter-trays",
+            "name": "Cat Litter & Trays"
+          },
+          {
+            "id": 90203,
+            "slug": "cat-toys",
+            "name": "Cat Toys"
+          },
+          {
+            "id": 90204,
+            "slug": "cat-grooming",
+            "name": "Cat Grooming"
+          },
+          {
+            "id": 90205,
+            "slug": "cat-beds-carriers",
+            "name": "Cat Beds & Carriers"
+          },
+          {
+            "id": 90206,
+            "slug": "cat-scratchers-trees",
+            "name": "Cat Scratchers & Trees"
+          },
+          {
+            "id": 90207,
+            "slug": "cat-health-supplements",
+            "name": "Cat Health & Supplements"
+          }
+        ]
+      },
+      {
+        "id": 903,
+        "slug": "birds",
+        "name": "Birds",
+        "deep": [
+          {
+            "id": 90301,
+            "slug": "bird-cages-aviaries",
+            "name": "Bird Cages & Aviaries"
+          },
+          {
+            "id": 90302,
+            "slug": "bird-food-treats",
+            "name": "Bird Food & Treats"
+          },
+          {
+            "id": 90303,
+            "slug": "bird-toys-accessories",
+            "name": "Bird Toys & Accessories"
+          },
+          {
+            "id": 90304,
+            "slug": "bird-health-products",
+            "name": "Bird Health Products"
+          }
+        ]
+      },
+      {
+        "id": 904,
+        "slug": "fish-aquatic",
+        "name": "Fish & Aquatic",
+        "deep": [
+          {
+            "id": 90401,
+            "slug": "aquariums-fish-tanks",
+            "name": "Aquariums & Fish Tanks"
+          },
+          {
+            "id": 90402,
+            "slug": "fish-food",
+            "name": "Fish Food"
+          },
+          {
+            "id": 90403,
+            "slug": "pumps-filters",
+            "name": "Pumps & Filters"
+          },
+          {
+            "id": 90404,
+            "slug": "aquarium-decorations",
+            "name": "Aquarium Decorations"
+          },
+          {
+            "id": 90405,
+            "slug": "water-treatment",
+            "name": "Water Treatment"
+          }
+        ]
+      },
+      {
+        "id": 905,
+        "slug": "small-animals",
+        "name": "Small Animals",
+        "deep": [
+          {
+            "id": 90501,
+            "slug": "hamster-rabbit-cages",
+            "name": "Hamster & Rabbit Cages"
+          },
+          {
+            "id": 90502,
+            "slug": "small-animal-food",
+            "name": "Small Animal Food"
+          },
+          {
+            "id": 90503,
+            "slug": "bedding-litter",
+            "name": "Bedding & Litter"
+          },
+          {
+            "id": 90504,
+            "slug": "small-animal-toys",
+            "name": "Small Animal Toys"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "slug": "hobbies-crafts",
+    "name": "Hobbies & Crafts",
+    "icon": "🎨",
+    "subcategories": [
+      {
+        "id": 1001,
+        "slug": "art-craft",
+        "name": "Art & Craft",
+        "deep": [
+          {
+            "id": 100101,
+            "slug": "painting-drawing",
+            "name": "Painting & Drawing"
+          },
+          {
+            "id": 100102,
+            "slug": "knitting-sewing",
+            "name": "Knitting & Sewing"
+          },
+          {
+            "id": 100103,
+            "slug": "scrapbooking",
+            "name": "Scrapbooking"
+          },
+          {
+            "id": 100104,
+            "slug": "candle-soap-making",
+            "name": "Candle & Soap Making"
+          },
+          {
+            "id": 100105,
+            "slug": "resin-art",
+            "name": "Resin Art"
+          },
+          {
+            "id": 100106,
+            "slug": "pottery-ceramics",
+            "name": "Pottery & Ceramics"
+          }
+        ]
+      },
+      {
+        "id": 1002,
+        "slug": "collecting",
+        "name": "Collecting",
+        "deep": [
+          {
+            "id": 100201,
+            "slug": "trading-cards",
+            "name": "Trading Cards"
+          },
+          {
+            "id": 100202,
+            "slug": "coins-stamps",
+            "name": "Coins & Stamps"
+          },
+          {
+            "id": 100203,
+            "slug": "vintage-items",
+            "name": "Vintage Items"
+          },
+          {
+            "id": 100204,
+            "slug": "action-figures-collectibles",
+            "name": "Action Figures & Collectibles"
+          },
+          {
+            "id": 100205,
+            "slug": "sports-memorabilia",
+            "name": "Sports Memorabilia"
+          }
+        ]
+      },
+      {
+        "id": 1003,
+        "slug": "models-diy-kits",
+        "name": "Models & DIY Kits",
+        "deep": [
+          {
+            "id": 100301,
+            "slug": "scale-models",
+            "name": "Scale Models"
+          },
+          {
+            "id": 100302,
+            "slug": "gundam-model-kits",
+            "name": "Gundam & Model Kits"
+          },
+          {
+            "id": 100303,
+            "slug": "puzzles",
+            "name": "Puzzles (3D & Jigsaw)"
+          },
+          {
+            "id": 100304,
+            "slug": "miniatures-dioramas",
+            "name": "Miniatures & Dioramas"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "slug": "software-digital",
+    "name": "Software & Digital",
+    "icon": "🖥️",
+    "subcategories": [
+      {
+        "id": 1101,
+        "slug": "software-licenses",
+        "name": "Software & Licenses",
+        "deep": [
+          {
+            "id": 110101,
+            "slug": "operating-systems",
+            "name": "Operating Systems"
+          },
+          {
+            "id": 110102,
+            "slug": "productivity-software",
+            "name": "Productivity Software"
+          },
+          {
+            "id": 110103,
+            "slug": "antivirus-security",
+            "name": "Antivirus & Security"
+          },
+          {
+            "id": 110104,
+            "slug": "design-creative-software",
+            "name": "Design & Creative Software"
+          },
+          {
+            "id": 110105,
+            "slug": "accounting-software",
+            "name": "Accounting Software"
+          }
+        ]
+      },
+      {
+        "id": 1102,
+        "slug": "digital-services",
+        "name": "Digital Services",
+        "deep": [
+          {
+            "id": 110201,
+            "slug": "vpn-proxy",
+            "name": "VPN & Proxy"
+          },
+          {
+            "id": 110202,
+            "slug": "cloud-storage",
+            "name": "Cloud Storage"
+          },
+          {
+            "id": 110203,
+            "slug": "website-hosting-domains",
+            "name": "Website Hosting & Domains"
+          },
+          {
+            "id": 110204,
+            "slug": "online-subscriptions",
+            "name": "Online Subscriptions"
+          },
+          {
+            "id": 110205,
+            "slug": "api-developer-tools",
+            "name": "API & Developer Tools"
+          }
+        ]
+      },
+      {
+        "id": 1103,
+        "slug": "game-credits-vouchers",
+        "name": "Game Credits & Vouchers",
+        "deep": [
+          {
+            "id": 110301,
+            "slug": "mobile-game-topups",
+            "name": "Mobile Game Top-ups"
+          },
+          {
+            "id": 110302,
+            "slug": "pc-game-credits",
+            "name": "PC Game Credits"
+          },
+          {
+            "id": 110303,
+            "slug": "console-game-credits",
+            "name": "Console Game Credits"
+          },
+          {
+            "id": 110304,
+            "slug": "gift-cards",
+            "name": "Gift Cards"
+          }
+        ]
+      },
+      {
+        "id": 1104,
+        "slug": "online-courses-education",
+        "name": "Online Courses & Education",
+        "deep": [
+          {
+            "id": 110401,
+            "slug": "language-learning",
+            "name": "Language Learning"
+          },
+          {
+            "id": 110402,
+            "slug": "programming-tech",
+            "name": "Programming & Tech"
+          },
+          {
+            "id": 110403,
+            "slug": "business-marketing",
+            "name": "Business & Marketing"
+          },
+          {
+            "id": 110404,
+            "slug": "design-creative",
+            "name": "Design & Creative"
+          },
+          {
+            "id": 110405,
+            "slug": "health-fitness-courses",
+            "name": "Health & Fitness Courses"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "slug": "industrial-business",
+    "name": "Industrial & Business",
+    "icon": "🔧",
+    "subcategories": [
+      {
+        "id": 1201,
+        "slug": "office-equipment",
+        "name": "Office Equipment",
+        "deep": [
+          {
+            "id": 120101,
+            "slug": "printers-scanners",
+            "name": "Printers & Scanners"
+          },
+          {
+            "id": 120102,
+            "slug": "projectors-screens",
+            "name": "Projectors & Screens"
+          },
+          {
+            "id": 120103,
+            "slug": "shredders",
+            "name": "Shredders"
+          },
+          {
+            "id": 120104,
+            "slug": "pos-systems",
+            "name": "POS Systems"
+          },
+          {
+            "id": 120105,
+            "slug": "office-chairs-desks",
+            "name": "Office Chairs & Desks"
+          },
+          {
+            "id": 120106,
+            "slug": "filing-storage",
+            "name": "Filing & Storage"
+          }
+        ]
+      },
+      {
+        "id": 1202,
+        "slug": "safety-security",
+        "name": "Safety & Security",
+        "deep": [
+          {
+            "id": 120201,
+            "slug": "cctv-surveillance",
+            "name": "CCTV & Surveillance"
+          },
+          {
+            "id": 120202,
+            "slug": "alarm-systems",
+            "name": "Alarm Systems"
+          },
+          {
+            "id": 120203,
+            "slug": "fire-safety-equipment",
+            "name": "Fire Safety Equipment"
+          },
+          {
+            "id": 120204,
+            "slug": "locks-access-control",
+            "name": "Locks & Access Control"
+          },
+          {
+            "id": 120205,
+            "slug": "safety-helmets-vests",
+            "name": "Safety Helmets & Vests"
+          },
+          {
+            "id": 120206,
+            "slug": "first-aid-kits",
+            "name": "First Aid Kits"
+          }
+        ]
+      },
+      {
+        "id": 1203,
+        "slug": "packaging-shipping",
+        "name": "Packaging & Shipping",
+        "deep": [
+          {
+            "id": 120301,
+            "slug": "boxes-cartons",
+            "name": "Boxes & Cartons"
+          },
+          {
+            "id": 120302,
+            "slug": "bubble-wrap-foam",
+            "name": "Bubble Wrap & Foam"
+          },
+          {
+            "id": 120303,
+            "slug": "tapes-adhesives",
+            "name": "Tapes & Adhesives"
+          },
+          {
+            "id": 120304,
+            "slug": "labels-stickers",
+            "name": "Labels & Stickers"
+          },
+          {
+            "id": 120305,
+            "slug": "shrink-wrap-bags",
+            "name": "Shrink Wrap & Bags"
+          },
+          {
+            "id": 120306,
+            "slug": "weighing-scales",
+            "name": "Weighing Scales"
+          }
+        ]
+      },
+      {
+        "id": 1204,
+        "slug": "cleaning-janitorial",
+        "name": "Cleaning & Janitorial",
+        "deep": [
+          {
+            "id": 120401,
+            "slug": "mops-brooms",
+            "name": "Mops & Brooms"
+          },
+          {
+            "id": 120402,
+            "slug": "cleaning-chemicals",
+            "name": "Cleaning Chemicals"
+          },
+          {
+            "id": 120403,
+            "slug": "bins-waste-management",
+            "name": "Bins & Waste Management"
+          },
+          {
+            "id": 120404,
+            "slug": "gloves-ppe",
+            "name": "Gloves & PPE"
+          },
+          {
+            "id": 120405,
+            "slug": "pressure-washers",
+            "name": "Pressure Washers"
+          },
+          {
+            "id": 120406,
+            "slug": "floor-cleaning-machines",
+            "name": "Floor Cleaning Machines"
+          }
+        ]
+      },
+      {
+        "id": 1205,
+        "slug": "fb-equipment",
+        "name": "F&B Equipment",
+        "deep": [
+          {
+            "id": 120501,
+            "slug": "commercial-refrigerators",
+            "name": "Commercial Refrigerators"
+          },
+          {
+            "id": 120502,
+            "slug": "food-prep-equipment",
+            "name": "Food Prep Equipment"
+          },
+          {
+            "id": 120503,
+            "slug": "cooking-equipment-commercial",
+            "name": "Cooking Equipment (Commercial)"
+          },
+          {
+            "id": 120504,
+            "slug": "display-fridges-warmers",
+            "name": "Display Fridges & Warmers"
+          },
+          {
+            "id": 120505,
+            "slug": "packaging-for-food",
+            "name": "Packaging for Food"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "slug": "travel-experiences",
+    "name": "Travel & Experiences",
+    "icon": "✈️",
+    "subcategories": [
+      {
+        "id": 1301,
+        "slug": "travel-accessories",
+        "name": "Travel Accessories",
+        "deep": [
+          {
+            "id": 130101,
+            "slug": "luggage-suitcases",
+            "name": "Luggage & Suitcases"
+          },
+          {
+            "id": 130102,
+            "slug": "travel-pillows-eye-masks",
+            "name": "Travel Pillows & Eye Masks"
+          },
+          {
+            "id": 130103,
+            "slug": "travel-adapters-converters",
+            "name": "Travel Adapters & Converters"
+          },
+          {
+            "id": 130104,
+            "slug": "passport-holders",
+            "name": "Passport Holders"
+          },
+          {
+            "id": 130105,
+            "slug": "packing-cubes",
+            "name": "Packing Cubes"
+          },
+          {
+            "id": 130106,
+            "slug": "portable-chargers",
+            "name": "Portable Chargers"
+          }
+        ]
+      },
+      {
+        "id": 1302,
+        "slug": "tickets-vouchers",
+        "name": "Tickets & Vouchers",
+        "deep": [
+          {
+            "id": 130201,
+            "slug": "theme-park-tickets",
+            "name": "Theme Park Tickets"
+          },
+          {
+            "id": 130202,
+            "slug": "concert-event-tickets",
+            "name": "Concert & Event Tickets"
+          },
+          {
+            "id": 130203,
+            "slug": "museum-attraction-passes",
+            "name": "Museum & Attraction Passes"
+          },
+          {
+            "id": 130204,
+            "slug": "spa-wellness-vouchers",
+            "name": "Spa & Wellness Vouchers"
+          },
+          {
+            "id": 130205,
+            "slug": "restaurant-vouchers",
+            "name": "Restaurant Vouchers"
+          }
+        ]
+      },
+      {
+        "id": 1303,
+        "slug": "outdoor-adventure-experiences",
+        "name": "Outdoor & Adventure Experiences",
+        "deep": [
+          {
+            "id": 130301,
+            "slug": "hiking-trekking-packages",
+            "name": "Hiking & Trekking Packages"
+          },
+          {
+            "id": 130302,
+            "slug": "scuba-diving-snorkelling",
+            "name": "Scuba Diving & Snorkelling"
+          },
+          {
+            "id": 130303,
+            "slug": "kayaking-water-sports",
+            "name": "Kayaking & Water Sports"
+          },
+          {
+            "id": 130304,
+            "slug": "paragliding-extreme-sports",
+            "name": "Paragliding & Extreme Sports"
+          }
+        ]
+      }
+    ]
+  }
+]

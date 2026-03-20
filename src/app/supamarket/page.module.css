@@ -142,6 +142,22 @@
   margin-bottom: 16px;
 }
 
+.searchSubmitBtn {
+  background: var(--color-gold);
+  border: 1px solid var(--color-gold);
+  color: var(--color-primary);
+  border-radius: 0;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+.searchSubmitBtn:hover {
+  background: var(--color-gold-dark);
+  border-color: var(--color-gold-dark);
+}
+
 .searchBox {
   flex: 1;
   display: flex;
@@ -195,6 +211,12 @@
 }
 .filterBtn:hover { background: rgba(255,255,255,0.12); }
 .filterBtnActive { background: rgba(245,166,35,0.15); border-color: rgba(245,166,35,0.4); color: var(--color-gold); }
+
+.searchHint {
+  margin: -8px 0 10px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+}
 
 /* ── Country row ── */
 .countryRow { margin-bottom: 14px; }
@@ -307,54 +329,6 @@
   background: rgba(255,255,255,0.12);
   border-color: rgba(255,255,255,0.25);
 }
-.catPill[data-category="autos"] {
-  background: rgba(59,130,246,0.25);
-  border-color: rgba(59,130,246,0.5);
-}
-.catPill[data-category="leisure"] {
-  background: rgba(34,197,94,0.25);
-  border-color: rgba(34,197,94,0.5);
-}
-.catPill[data-category="property"] {
-  background: rgba(234,179,8,0.28);
-  border-color: rgba(234,179,8,0.55);
-}
-.catPill[data-category="jobs_services"] {
-  background: rgba(139,92,246,0.25);
-  border-color: rgba(139,92,246,0.5);
-}
-.catPill[data-category="pets"] {
-  background: rgba(249,115,22,0.28);
-  border-color: rgba(249,115,22,0.55);
-}
-.catPill[data-category="travel"] {
-  background: rgba(6,182,212,0.25);
-  border-color: rgba(6,182,212,0.5);
-}
-.catPill[data-category="electronics"] {
-  background: rgba(99,102,241,0.25);
-  border-color: rgba(99,102,241,0.5);
-}
-.catPill[data-category="home_personal"] {
-  background: rgba(236,72,153,0.25);
-  border-color: rgba(236,72,153,0.5);
-}
-.catPill[data-category="b2b"] {
-  background: rgba(100,116,139,0.3);
-  border-color: rgba(100,116,139,0.55);
-}
-.catPill[data-category="food"] {
-  background: rgba(132,204,22,0.28);
-  border-color: rgba(132,204,22,0.55);
-}
-.catPill[data-category="swap"] {
-  background: rgba(20,184,166,0.25);
-  border-color: rgba(20,184,166,0.5);
-}
-.catPill[data-category="others"] {
-  background: rgba(163,163,163,0.3);
-  border-color: rgba(163,163,163,0.5);
-}
 
 /* Subcategory bar below hero */
 .subCatWrap {
@@ -365,6 +339,40 @@
   scrollbar-width: none;
 }
 .subCatWrap::-webkit-scrollbar { display: none; }
+
+/* Third-level (leaf) filter row */
+.deepCatWrap {
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  display: flex;
+  scrollbar-width: none;
+  gap: 6px;
+  padding: 8px var(--space-4) 10px;
+}
+.deepCatWrap::-webkit-scrollbar { display: none; }
+
+.deepPill {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  color: var(--color-text-muted);
+}
+.deepPill:hover {
+  border-color: var(--color-gold);
+  color: var(--color-text);
+}
+.deepPillActive {
+  border-color: var(--color-gold);
+  background: rgba(245,166,35,0.12);
+  color: var(--color-text);
+}
 
 .subPill {
   flex-shrink: 0;

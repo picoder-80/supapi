@@ -40,8 +40,9 @@ async function awardSC(userId: string, event: string, refId: string, amount: num
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const category    = searchParams.get("category")    ?? "";
-  const subcategory = searchParams.get("subcategory") ?? "";
+  const category     = searchParams.get("category")      ?? "";
+  const subcategory  = searchParams.get("subcategory")   ?? "";
+  const categoryDeep = searchParams.get("category_deep") ?? "";
   const q           = searchParams.get("q")           ?? "";
   const method      = searchParams.get("method")      ?? "";
   const condition   = searchParams.get("condition")   ?? "";
@@ -57,11 +58,12 @@ export async function GET(req: NextRequest) {
     try { await supabase.rpc("expire_listing_boosts"); } catch {}
 
     let query = supabase.from("listings")
-      .select(`id, title, description, price_pi, category, subcategory, condition, buying_method, images, stock, status, location, country_code, ship_worldwide, views, likes, created_at, is_boosted, boost_tier, seller:seller_id ( id, username, display_name, avatar_url, kyc_status )`, { count: "exact" })
+      .select(`id, title, description, price_pi, category, subcategory, category_deep, condition, buying_method, images, stock, status, location, country_code, ship_worldwide, views, likes, created_at, is_boosted, boost_tier, seller:seller_id ( id, username, display_name, avatar_url, kyc_status )`, { count: "exact" })
       .eq("status", "active").gt("stock", 0);
 
-    if (category)    query = query.eq("category", category);
-    if (subcategory) query = query.eq("subcategory", subcategory);
+    if (category)      query = query.eq("category", category);
+    if (subcategory)  query = query.eq("subcategory", subcategory);
+    if (categoryDeep) query = query.eq("category_deep", categoryDeep);
     if (condition)   query = query.eq("condition", condition);
     if (country === "WORLDWIDE") {
       query = query.eq("ship_worldwide", true);
@@ -104,7 +106,7 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { title, description, price_pi, category, subcategory, condition, buying_method, images, stock, location, type, country_code, ship_worldwide } = body;
+  const { title, description, price_pi, category, subcategory, category_deep, condition, buying_method, images, stock, location, type, country_code, ship_worldwide } = body;
 
   if (!title?.trim() || !price_pi || !category)
     return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
@@ -113,6 +115,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await supabase.from("listings").insert({
       seller_id: userId, title: title.trim(), description: description ?? "",
       price_pi: parseFloat(price_pi), category, subcategory: subcategory ?? "",
+      category_deep: typeof category_deep === "string" ? category_deep : "",
       condition: condition ?? "new", buying_method: buying_method ?? "both",
       images: images ?? [], stock: stock ?? 1, location: location ?? "",
       type: type ?? "physical", status: "active",
