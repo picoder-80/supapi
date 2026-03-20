@@ -423,10 +423,8 @@ export default function SupasifiedsMyListingsPage() {
             filtered.map((listing) => {
               const st = String(listing.status ?? "");
               const meta = STATUS_META[st] ?? STATUS_META.active;
-              const isBoost =
-                listing.is_boosted &&
-                listing.boost_expires_at &&
-                new Date(String(listing.boost_expires_at)) > new Date();
+              const boostExpiryIso = typeof listing.boost_expires_at === "string" ? listing.boost_expires_at : "";
+              const isBoost = Boolean(listing.is_boosted) && Boolean(boostExpiryIso) && new Date(boostExpiryIso) > new Date();
               const statusClass = STATUS_CLASS[st] ?? styles.statusActive;
               return (
                 <div key={String(listing.id)} className={styles.listingRow}>
