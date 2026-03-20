@@ -25,6 +25,7 @@ export default function GameSlugPage() {
   const [wallet, setWallet] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [result, setResult] = useState<any | null>(null);
+  const [starting, setStarting] = useState(false);
   const token = typeof window !== "undefined" ? localStorage.getItem("supapi_token") : "";
 
   useEffect(() => {
@@ -43,16 +44,21 @@ export default function GameSlugPage() {
   }, [params.slug]);
 
   async function startPlay() {
-    if (!selected) return;
+    if (!selected || starting) return;
+    setStarting(true);
     const res = await fetch("/api/supanova/play", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : "" },
       body: JSON.stringify({ gameSlug: params.slug, levelId: selected.id }),
     });
     const json = await res.json();
-    if (!res.ok) return alert(json?.error ?? "Failed to start");
+    if (!res.ok) {
+      setStarting(false);
+      return alert(json?.error ?? "Failed to start");
+    }
     setSessionId(json?.data?.sessionId ?? null);
     setResult(null);
+    setStarting(false);
   }
 
   async function onComplete(score: number, timeTaken: number) {
@@ -109,7 +115,9 @@ export default function GameSlugPage() {
 
       <section className={styles.playArea}>
         {!sessionId ? (
-          <button className={styles.primaryBtn} onClick={startPlay} disabled={!selected || cannotAfford}>Start Level</button>
+          <button className={styles.primaryBtn} onClick={startPlay} disabled={!selected || cannotAfford || starting}>
+            {starting ? "Starting..." : "Start Level"}
+          </button>
         ) : (
           gameComp()
         )}
@@ -121,6 +129,7 @@ export default function GameSlugPage() {
             <h2>Result</h2>
             <p className={styles.score}>{result.score}</p>
             <p>SC Earned: <b>{Number(result.scEarned ?? 0).toFixed(2)}</b></p>
+            {result.rewardMessage && <p>{result.rewardMessage}</p>}
             <p>SC Spent: <b>{Number(selected?.cost_sc ?? 0).toFixed(2)}</b></p>
             <p>Net: <b>{(Number(result.scEarned ?? 0) - Number(selected?.cost_sc ?? 0)).toFixed(2)}</b></p>
             <p>Leaderboard: #{result.leaderboardRank ?? "-"}</p>

@@ -34,6 +34,10 @@ export default function MySpacePage() {
   const [displayName,  setDisplayName] = useState("");
   const [bio,          setBio]         = useState("");
   const [walletAddress, setWalletAddress] = useState("");
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressCity, setAddressCity] = useState("");
+  const [addressPostcode, setAddressPostcode] = useState("");
+  const [addressCountry, setAddressCountry] = useState("");
   const [avatarUrl,    setAvatarUrl]   = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [coverUrl,      setCoverUrl]      = useState<string | null>(null);
@@ -74,6 +78,26 @@ export default function MySpacePage() {
     setAvatarUrl(user.avatar_url ?? null);
     setCoverUrl(user.cover_url ?? null);
   }, [user]);
+
+  useEffect(() => {
+    const loadAddress = async () => {
+      if (!token) return;
+      try {
+        const r = await fetch("/api/dashboard/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
+        const d = await r.json();
+        if (d?.success && d?.data) {
+          setAddressLine1(d.data.address_line1 ?? "");
+          setAddressCity(d.data.city ?? "");
+          setAddressPostcode(d.data.postcode ?? "");
+          setAddressCountry(d.data.country ?? "");
+        }
+      } catch {}
+    };
+    if (user) loadAddress();
+  }, [user, token]);
 
   // Fetch real stats
   const fetchStats = useCallback(async (username: string) => {
@@ -118,7 +142,15 @@ export default function MySpacePage() {
       const r = await fetch("/api/supaspace/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ display_name: displayName, bio, wallet_address: walletAddress }),
+        body: JSON.stringify({
+          display_name: displayName,
+          bio,
+          wallet_address: walletAddress,
+          address_line1: addressLine1,
+          city: addressCity,
+          postcode: addressPostcode,
+          country: addressCountry,
+        }),
       });
       const d = await r.json();
       if (d.success) setShowEdit(false);
@@ -213,6 +245,11 @@ export default function MySpacePage() {
     { id: "bio", label: "Bio", done: Boolean(bio.trim()) },
     { id: "avatar", label: "Profile photo", done: Boolean(avatarUrl?.trim()) },
     { id: "wallet", label: "Pi wallet address", done: Boolean(walletAddress.trim()) },
+    {
+      id: "address",
+      label: "Shipping address",
+      done: Boolean(addressLine1.trim() && addressCity.trim() && addressPostcode.trim() && addressCountry.trim()),
+    },
   ];
 
 
@@ -528,6 +565,42 @@ export default function MySpacePage() {
                 value={walletAddress}
                 onChange={(e) => setWalletAddress(e.target.value)}
                 placeholder="Paste your Pi wallet address"
+              />
+            </div>
+            <div className={styles.formField}>
+              <label className={styles.formLabel}>Shipping Address</label>
+              <input
+                className={styles.formInput}
+                value={addressLine1}
+                onChange={(e) => setAddressLine1(e.target.value)}
+                placeholder="Street address"
+              />
+            </div>
+            <div className={styles.formField}>
+              <label className={styles.formLabel}>City</label>
+              <input
+                className={styles.formInput}
+                value={addressCity}
+                onChange={(e) => setAddressCity(e.target.value)}
+                placeholder="City"
+              />
+            </div>
+            <div className={styles.formField}>
+              <label className={styles.formLabel}>Postcode</label>
+              <input
+                className={styles.formInput}
+                value={addressPostcode}
+                onChange={(e) => setAddressPostcode(e.target.value)}
+                placeholder="Postcode"
+              />
+            </div>
+            <div className={styles.formField}>
+              <label className={styles.formLabel}>Country</label>
+              <input
+                className={styles.formInput}
+                value={addressCountry}
+                onChange={(e) => setAddressCountry(e.target.value)}
+                placeholder="Country"
               />
             </div>
             <div className={styles.modalActions}>

@@ -72,19 +72,20 @@ export async function creditEarningsBalance(params: CreditEarningsParams): Promi
     if (existing?.id) return { ok: true, reason: "duplicate_skipped" };
   }
 
-  await supabase
+  const { error: upsertErr } = await supabase
     .from("earnings_wallet")
     .upsert({ user_id: params.userId }, { onConflict: "user_id", ignoreDuplicates: true });
+  if (upsertErr) return { ok: false, reason: "wallet_upsert_failed" };
 
-  const { data: wallet } = await supabase
+  const { data: wallet, error: walletErr } = await supabase
     .from("earnings_wallet")
     .select("pending_pi, available_pi, total_earned")
     .eq("user_id", params.userId)
     .single();
 
-  if (!wallet) return { ok: false, reason: "wallet_not_found" };
+  if (walletErr || !wallet) return { ok: false, reason: "wallet_not_found" };
 
-  await supabase
+  const { error: walletUpdateErr } = await supabase
     .from("earnings_wallet")
     .update({
       pending_pi: status === "pending" ? Number(wallet.pending_pi ?? 0) + amount : Number(wallet.pending_pi ?? 0),
@@ -93,8 +94,9 @@ export async function creditEarningsBalance(params: CreditEarningsParams): Promi
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", params.userId);
+  if (walletUpdateErr) return { ok: false, reason: "wallet_update_failed" };
 
-  await supabase.from("earnings_transactions").insert({
+  const { error: txnErr } = await supabase.from("earnings_transactions").insert({
     user_id: params.userId,
     type: params.type,
     source: params.source,
@@ -103,6 +105,7 @@ export async function creditEarningsBalance(params: CreditEarningsParams): Promi
     ref_id: refId || "",
     note: params.note ?? "",
   });
+  if (txnErr) return { ok: false, reason: "txn_insert_failed" };
 
   return { ok: true };
 }

@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       supabase.from("referrals").select("id", { count: "exact", head: true })
         .eq("referrer_id", uid),
       // Earnings for the user are tracked in earnings_wallet/earnings_transactions (seller + platform payouts).
-      supabase.from("earnings_wallet").select("total_earned").maybeSingle(),
+      supabase.from("earnings_wallet").select("total_earned").eq("user_id", uid).maybeSingle(),
       supabase.from("transactions").select("id, type, amount_pi, memo, status, created_at")
         .eq("user_id", uid).order("created_at", { ascending: false }).limit(5),
       supabase.from("supapi_credits").select("balance").eq("user_id", uid).maybeSingle(),

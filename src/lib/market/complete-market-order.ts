@@ -6,7 +6,7 @@ export async function creditSellerEarningsMarket(params: {
   sellerId: string;
   orderId: string;
   amountPi: number;
-}) {
+}): Promise<{ ok: true } | { ok: false; reason: string }> {
   // Primary path: direct DB credit (idempotent by refId/type) to avoid env/header mismatch issues.
   const direct = await creditPresetEarning("market_order_complete", {
     userId: params.sellerId,
@@ -16,13 +16,13 @@ export async function creditSellerEarningsMarket(params: {
     note: `Auto payout for completed order ${params.orderId}`,
   });
 
-  if (direct.ok) return;
+  if (direct.ok) return { ok: true };
 
   // Fallback path: legacy internal API credit.
   const internalSecret = process.env.INTERNAL_API_SECRET;
   if (!internalSecret) {
     console.warn(`[Earnings Credit] Direct credit failed for order ${params.orderId}: ${direct.reason ?? "unknown"}`);
-    return;
+    return { ok: false, reason: direct.reason ?? "direct_credit_failed" };
   }
 
   try {
@@ -47,9 +47,12 @@ export async function creditSellerEarningsMarket(params: {
     if (!response.ok) {
       const payload = await response.text().catch(() => "");
       console.warn(`[Earnings Credit] Fallback failed for order ${params.orderId}: ${response.status} ${payload}`);
+      return { ok: false, reason: `fallback_http_${response.status}` };
     }
+    return { ok: true };
   } catch (e) {
     console.warn(`[Earnings Credit] Fallback exception for order ${params.orderId}`, e);
+    return { ok: false, reason: "fallback_exception" };
   }
 }
 
@@ -97,12 +100,15 @@ export async function releaseEscrowForMarketOrderCompletion(params: {
 
     const sellerAmount = Number(earning.net_pi ?? 0);
     if (sellerAmount > 0 && order.seller_id) {
-      await creditSellerEarningsMarket({
+      const creditRes = await creditSellerEarningsMarket({
         origin,
         sellerId: String(order.seller_id),
         orderId,
         amountPi: sellerAmount,
       });
+      if (!creditRes.ok) {
+        return { ok: false, error: `Failed to credit seller earnings (${creditRes.reason})` };
+      }
     }
 
     console.log(`[Escrow Released] orderId=${orderId} commission=${earning.commission_pi}π seller earnings unlocked`);

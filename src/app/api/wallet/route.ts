@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
 import { isAdminRole } from "@/lib/admin/roles";
-import { creditEarningsBalance } from "@/lib/wallet/earnings";
+import { creditEarningsBalance, creditPresetEarning } from "@/lib/wallet/earnings";
 import { executeOwnerTransfer, isOwnerTransferConfigured } from "@/lib/pi/payout";
 
 const supabase = createClient(
@@ -28,6 +28,55 @@ function getUserAuth(req: NextRequest): { userId: string; role: string } | null 
   }
 }
 
+async function reconcileMissingMarketEarnings(userId: string) {
+  // Use completed market orders as source of truth, then credit any missing ledger rows idempotently.
+  const { data: orderRows } = await supabase
+    .from("orders")
+    .select("id, seller_id, amount_pi, seller_net_pi")
+    .eq("seller_id", userId)
+    .eq("status", "completed")
+    .not("listing_id", "is", null)
+    .order("updated_at", { ascending: false })
+    .limit(300);
+
+  const rows = (orderRows ?? []) as Array<{ id: string; seller_id: string; amount_pi?: number; seller_net_pi?: number }>;
+  if (!rows.length) return;
+
+  const orderIds = rows.map((r) => String(r.id));
+  const { data: txRows } = await supabase
+    .from("earnings_transactions")
+    .select("ref_id, type")
+    .eq("user_id", userId)
+    .in("ref_id", orderIds)
+    .in("type", ["market_order_complete", "market_order"]);
+
+  const credited = new Set((txRows ?? []).map((r: any) => String(r.ref_id ?? "")));
+
+  const { data: seRows } = await supabase
+    .from("seller_earnings")
+    .select("order_id, net_pi")
+    .eq("seller_id", userId)
+    .in("order_id", orderIds);
+  const seMap = new Map<string, number>();
+  for (const se of (seRows ?? [])) {
+    seMap.set(String((se as any).order_id), Number((se as any).net_pi ?? 0));
+  }
+
+  for (const row of rows) {
+    const orderId = String(row.id ?? "");
+    if (!orderId || credited.has(orderId)) continue;
+    const amount = Number(seMap.get(orderId) ?? row.seller_net_pi ?? row.amount_pi ?? 0);
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    await creditPresetEarning("market_order_complete", {
+      userId,
+      amountPi: amount,
+      refId: orderId,
+      status: "available",
+      note: `Auto-reconcile missing market earning for order ${orderId}`,
+    });
+  }
+}
+
 export async function GET(req: NextRequest) {
   const auth = getUserAuth(req);
   if (!auth) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
@@ -37,6 +86,10 @@ export async function GET(req: NextRequest) {
   const tab = searchParams.get("tab") ?? "sc";
 
   try {
+    if (tab === "earnings") {
+      await reconcileMissingMarketEarnings(userId);
+    }
+
     // Always fetch SC wallet — ✅ FIX: streak_days → checkin_streak
     const { data: scWallet } = await supabase
       .from("supapi_credits")

@@ -44,24 +44,57 @@ export async function POST(req: NextRequest) {
     .gte("completed_at", dayStartIso())
     .eq("status", "completed");
   const earnedToday = (todayRows ?? []).reduce((s, r) => s + Number(r.sc_earned ?? 0), 0);
-  userGets = Math.max(0, Math.min(userGets, dailyLimit - earnedToday));
+  const dailyRemaining = Math.max(0, dailyLimit - earnedToday);
+  userGets = Math.max(0, Math.min(userGets, dailyRemaining));
 
-  const roundedUserGets = Number(userGets.toFixed(4));
-  const roundedCut = Number((grossEarn - roundedUserGets).toFixed(4));
+  // Keep SC economy integer-based for compatibility with existing wallet schema/routes.
+  const roundedUserGets = Math.max(0, Math.trunc(userGets));
+  const roundedCut = Math.max(0, Number((grossEarn - roundedUserGets).toFixed(4)));
 
   let newBalance = Number((await readWallet(userId)).balance ?? 0);
   if (roundedUserGets > 0) {
-    newBalance = await creditSC(userId, roundedUserGets, "arcade_play_complete", `🎮 ${game.name} reward`);
+    const shortSession = sessionId.slice(0, 8).toUpperCase();
+    const rewardNote = `🎮 ${game.name} L${Number(level.level_number ?? 1)} reward #${shortSession}`;
+    newBalance = await creditSC(userId, roundedUserGets, "arcade_play_complete", rewardNote, sessionId);
   }
 
-  await supabase.from("arcade_sessions").update({
-    score: Math.max(0, Math.floor(score)),
-    time_taken_seconds: Math.max(0, Math.floor(timeTaken)),
-    sc_earned: roundedUserGets,
-    platform_cut_sc: roundedCut,
-    status: "completed",
-    completed_at: new Date().toISOString(),
-  }).eq("id", sessionId).eq("user_id", userId);
+  // Only the first request to flip active → completed may record leaderboard / revenue (stops concurrent double-count).
+  const { data: transitioned, error: transErr } = await supabase
+    .from("arcade_sessions")
+    .update({
+      score: Math.max(0, Math.floor(score)),
+      time_taken_seconds: Math.max(0, Math.floor(timeTaken)),
+      sc_earned: roundedUserGets,
+      platform_cut_sc: roundedCut,
+      status: "completed",
+      completed_at: new Date().toISOString(),
+    })
+    .eq("id", sessionId)
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .select("id")
+    .maybeSingle();
+
+  if (transErr) {
+    return NextResponse.json({ success: false, error: transErr.message }, { status: 500 });
+  }
+
+  if (!transitioned?.id) {
+    const { data: latest } = await supabase.from("arcade_sessions").select("*").eq("id", sessionId).eq("user_id", userId).single();
+    newBalance = Number((await readWallet(userId)).balance ?? 0);
+    return NextResponse.json({
+      success: true,
+      data: {
+        scEarned: Number(latest?.sc_earned ?? 0),
+        platformCut: Number(latest?.platform_cut_sc ?? 0),
+        newBalance,
+        leaderboardRank: null,
+        grossEarn: Number(grossEarn.toFixed(4)),
+        dailyRemaining: Number(dailyRemaining.toFixed(4)),
+        rewardMessage: "Session already completed.",
+      },
+    });
+  }
 
   const { data: existingBoard } = await supabase
     .from("arcade_leaderboard")
@@ -112,6 +145,14 @@ export async function POST(req: NextRequest) {
       platformCut: roundedCut,
       newBalance,
       leaderboardRank: leaderboardRank > 0 ? leaderboardRank : null,
+      grossEarn: Number(grossEarn.toFixed(4)),
+      dailyRemaining: Number(dailyRemaining.toFixed(4)),
+      rewardMessage:
+        roundedUserGets <= 0
+          ? (dailyRemaining <= 0
+              ? "Daily earn limit reached. Try again tomorrow."
+              : "Score too low for positive reward after commission.")
+          : "Reward credited successfully.",
     },
   });
 }

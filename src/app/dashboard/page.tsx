@@ -37,6 +37,17 @@ interface DashboardStats {
   profile_reward_claimed?: boolean;
 }
 
+interface ProfileSnapshot {
+  display_name?: string | null;
+  bio?: string | null;
+  avatar_url?: string | null;
+  wallet_address?: string | null;
+  address_line1?: string | null;
+  city?: string | null;
+  postcode?: string | null;
+  country?: string | null;
+}
+
 function fmtPi(n: number) {
   return `${Number(n).toFixed(2)} π`;
 }
@@ -45,6 +56,7 @@ export default function DashboardPage() {
   const { user, isHydrating, login, isLoading } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [profileSnapshot, setProfileSnapshot] = useState<ProfileSnapshot | null>(null);
   const [claimingProfileReward, setClaimingProfileReward] = useState(false);
   const [profileRewardMsg, setProfileRewardMsg] = useState("");
 
@@ -73,6 +85,18 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) fetchStats();
   }, [user, fetchStats]);
+
+  useEffect(() => {
+    const t = token();
+    if (!t || !user) return;
+    fetch("/api/dashboard/profile", {
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${t}` },
+    })
+      .then((r) => r.json())
+      .then((d) => setProfileSnapshot(d?.success ? (d.data as ProfileSnapshot) : null))
+      .catch(() => setProfileSnapshot(null));
+  }, [user]);
 
   if (isHydrating)
     return (
@@ -103,11 +127,22 @@ export default function DashboardPage() {
 
   const isAdmin = isAdminRole(user.role);
   const walletMissing = !user.wallet_address?.trim();
+  const profileDisplayName = profileSnapshot?.display_name ?? user.display_name;
+  const profileBio = profileSnapshot?.bio ?? user.bio;
+  const profileAvatar = profileSnapshot?.avatar_url ?? user.avatar_url;
+  const profileWallet = profileSnapshot?.wallet_address ?? user.wallet_address;
+  const hasShippingAddress = Boolean(
+    profileSnapshot?.address_line1?.trim() &&
+    profileSnapshot?.city?.trim() &&
+    profileSnapshot?.postcode?.trim() &&
+    profileSnapshot?.country?.trim()
+  );
   const profileChecks = [
-    { label: "Add display name", done: Boolean(user.display_name?.trim()), href: `/supaspace/${user.username}` },
-    { label: "Add bio", done: Boolean(user.bio?.trim()), href: `/supaspace/${user.username}` },
-    { label: "Add profile photo", done: Boolean(user.avatar_url?.trim()), href: `/supaspace/${user.username}` },
-    { label: "Add Pi wallet address", done: Boolean(user.wallet_address?.trim()), href: `/supaspace/${user.username}` },
+    { label: "Add display name", done: Boolean(profileDisplayName?.trim()), href: `/supaspace/${user.username}` },
+    { label: "Add bio", done: Boolean(profileBio?.trim()), href: `/supaspace/${user.username}` },
+    { label: "Add profile photo", done: Boolean(profileAvatar?.trim()), href: `/supaspace/${user.username}` },
+    { label: "Add Pi wallet address", done: Boolean(profileWallet?.trim()), href: `/supaspace/${user.username}` },
+    { label: "Add shipping address", done: hasShippingAddress, href: `/supaspace/${user.username}` },
   ];
   const doneCount = profileChecks.filter((c) => c.done).length;
   const completenessPct = Math.round((doneCount / profileChecks.length) * 100);

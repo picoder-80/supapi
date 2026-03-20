@@ -14,6 +14,21 @@ export async function POST(req: NextRequest) {
   const { data: level } = await supabase.from("arcade_levels").select("*").eq("id", levelId).single();
   if (!game || !level) return NextResponse.json({ success: false, error: "Invalid game or level" }, { status: 404 });
 
+  // Idempotency guard: if active session already exists for this exact level, reuse it.
+  const { data: activeSession } = await supabase
+    .from("arcade_sessions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("game_id", game.id)
+    .eq("level_id", level.id)
+    .eq("status", "active")
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (activeSession?.id) {
+    return NextResponse.json({ success: true, data: { sessionId: activeSession.id, reused: true } });
+  }
+
   const levelCost = Number(level.cost_sc ?? 0);
   const scSpent = level.is_free ? 0 : levelCost;
   if (scSpent > 0) {

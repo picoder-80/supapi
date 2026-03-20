@@ -9,7 +9,15 @@ export async function PATCH(req: NextRequest) {
     const payload = verifyToken(auth);
     if (!payload) return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 });
 
-    const { display_name, bio, wallet_address } = await req.json();
+    const {
+      display_name,
+      bio,
+      wallet_address,
+      address_line1,
+      city,
+      postcode,
+      country,
+    } = await req.json();
     const wallet =
       typeof wallet_address === "string" && wallet_address.trim()
         ? wallet_address.trim()
@@ -21,6 +29,10 @@ export async function PATCH(req: NextRequest) {
         display_name,
         bio,
         wallet_address: wallet,
+        address_line1: typeof address_line1 === "string" ? address_line1.trim() : null,
+        city: typeof city === "string" ? city.trim() : null,
+        postcode: typeof postcode === "string" ? postcode.trim() : null,
+        country: typeof country === "string" ? country.trim() : null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", payload.userId)
