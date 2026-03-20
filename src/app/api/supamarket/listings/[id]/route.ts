@@ -138,7 +138,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     let lastError: { message?: string; code?: string } | null = null;
     for (const statusCandidate of fallbackStatuses(requestedStatus)) {
-      let nextUpdates = { ...updates, status: statusCandidate };
+      let nextUpdates: Record<string, unknown> = { ...updates, status: statusCandidate };
       let { data, error } = await supabase
         .from("listings")
         .update(nextUpdates)
