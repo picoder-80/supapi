@@ -11,22 +11,12 @@ import ToastBanner from "@/components/ui/ToastBanner";
 import KycBadge from "@/components/ui/KycBadge";
 import styles from "../page.module.css";
 
-/* Susunan tab seragam dengan /supaspace: [1st], Reviews, Status, Reels, Live */
+/* Susunan tab seragam dengan /supaspace: Bio, Reviews, Status, Reels */
 const TABS = [
   { id: "bio",      label: "Bio",      emoji: "📝" },
   { id: "reviews",  label: "Reviews",  emoji: "⭐" },
   { id: "status",   label: "Status",   emoji: "📰" },
   { id: "reels",    label: "Reels",    emoji: "🎬" },
-  { id: "live",     label: "Live",     emoji: "🔴" },
-];
-
-const LIVE_GIFT_ITEMS = [
-  { id: "rose",    emoji: "🌹", name: "Rose",    sc: 10  },
-  { id: "heart",   emoji: "💖", name: "Heart",   sc: 20  },
-  { id: "star",    emoji: "⭐", name: "Star",    sc: 50  },
-  { id: "crown",   emoji: "👑", name: "Crown",   sc: 100 },
-  { id: "diamond", emoji: "💎", name: "Diamond", sc: 200 },
-  { id: "rocket",  emoji: "🚀", name: "Rocket",  sc: 500 },
 ];
 
 function getInitial(name: string) { return name?.charAt(0).toUpperCase() ?? "?"; }
@@ -45,19 +35,6 @@ export default function PublicProfilePage() {
   const [following,  setFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [stats,      setStats]     = useState<Record<string, number | string>>({});
-  const [showLiveDemo, setShowLiveDemo] = useState(false);
-  const [liveViewers] = useState(() => 128 + Math.floor(Math.random() * 200));
-  const [wallet, setWallet] = useState<{ balance: number } | null>(null);
-  const [giftItem, setGiftItem] = useState<typeof LIVE_GIFT_ITEMS[0] | null>(null);
-  const [gifting, setGifting] = useState(false);
-  const [liveComments, setLiveComments] = useState<{ id: number; username: string; text: string }[]>([
-    { id: 1, username: "pioneer1", text: "Hello from Pi! 🪐" },
-    { id: 2, username: "trader_amy", text: "Nice stream!" },
-  ]);
-  const [liveLiked, setLiveLiked] = useState(false);
-  const [liveLikeCount, setLiveLikeCount] = useState(42);
-  const [liveCommentInput, setLiveCommentInput] = useState("");
-  const liveCommentInputRef = useRef<HTMLInputElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const [reviewsList, setReviewsList] = useState<{
     id: string;
@@ -151,72 +128,8 @@ export default function PublicProfilePage() {
       .finally(() => setStatusLoading(false));
   }, [activeTab, username]);
 
-  // Fetch SC balance when Live tab active (for gifts)
-  useEffect(() => {
-    if (activeTab !== "live" || !token) return;
-    fetch("/api/credits", { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(d => { if (d.success && d.data?.wallet) setWallet(d.data.wallet); })
-      .catch(() => {});
-  }, [activeTab, token]);
-
-  const isLive = showLiveDemo; // In production: fetch real live status for this user
   const fromHook = useProfileOnline(profile?.id);
   const isOnline = isOwnProfile && me ? true : fromHook;
-
-  const handleSendGift = async () => {
-    if (!giftItem || !token || gifting) return;
-    if ((wallet?.balance ?? 0) < giftItem.sc) {
-      alert(`Need ${giftItem.sc} SC. Get more in Rewards.`);
-      return;
-    }
-    setGifting(true);
-    try {
-      const r = await fetch("/api/credits/gift", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          toUsername: username,
-          giftId: giftItem.id,
-          sc: giftItem.sc,
-          emoji: giftItem.emoji,
-          name: giftItem.name,
-        }),
-      });
-      const d = await r.json();
-      if (d.success) {
-        setLiveComments(prev => [...prev, { id: Date.now(), username: me?.username ?? "You", text: `Sent ${giftItem.emoji} ${giftItem.name}!` }]);
-        setWallet(w => w ? { ...w, balance: w.balance - giftItem.sc } : null);
-        setGiftItem(null);
-      } else {
-        alert(d.error ?? "Gift failed");
-      }
-    } catch {
-      alert("Gift failed");
-    }
-    setGifting(false);
-  };
-
-  const handleLiveLike = () => {
-    setLiveLiked(prev => !prev);
-    setLiveLikeCount(prev => prev + (liveLiked ? -1 : 1));
-  };
-
-  const handleSendLiveComment = () => {
-    const text = liveCommentInput.trim();
-    if (!text || !me) return;
-    setLiveComments(prev => [...prev, { id: Date.now(), username: me.username, text }]);
-    setLiveCommentInput("");
-  };
-
-  const handleShareLive = () => {
-    if (navigator.share) {
-      navigator.share({ title: `${username} is live on Supapi`, url: window.location.href, text: `Watch @${username} live!` });
-    } else {
-      navigator.clipboard?.writeText(window.location.href);
-      alert("Link copied!");
-    }
-  };
 
   const handleFollow = async () => {
     if (!me) {
@@ -400,9 +313,15 @@ export default function PublicProfilePage() {
                 {followLoading ? "..." : following ? "Unfollow" : me ? "+ Follow" : "Sign in to follow"}
               </button>
             )}
-            <button type="button" className={styles.messageBtn} onClick={handleMessage} title="Message" aria-label="Message">💬 Message</button>
+            <button type="button" className={styles.messageBtn} onClick={handleMessage} title="Message" aria-label="Message">
+              <span className={styles.actionIcon}>✉</span>
+              <span>Message</span>
+            </button>
             <button type="button" className={styles.tipBtn} onClick={openTipModal} title="Tip" aria-label="Tip">π Tip</button>
-            <button type="button" className={styles.shareBtn} onClick={handleShare} title="Share" aria-label="Share">🔗</button>
+            <button type="button" className={styles.shareBtn} onClick={handleShare} title="Share" aria-label="Share">
+              <span className={styles.actionIcon}>⤴</span>
+              <span>Share</span>
+            </button>
           </div>
         </div>
 
@@ -597,117 +516,6 @@ export default function PublicProfilePage() {
                 <Link href="/reels/create" className={styles.emptyBtn}>+ Upload Reel</Link>
               )}
             </div>
-          )}
-
-          {activeTab === "live" && (
-            <>
-              {!isLive ? (
-                <div className={styles.liveEmpty}>
-                  <div className={styles.liveEmptyIcon}>🔴</div>
-                  <div className={styles.liveEmptyTitle}>{isOwnProfile ? "You're not live" : `@${username} is not live`}</div>
-                  <div className={styles.liveEmptyDesc}>
-                    {isOwnProfile ? "Go live to connect with your followers and receive gifts." : "When they go live, you can watch and send gifts here."}
-                  </div>
-                  {isOwnProfile ? (
-                    <button className={styles.liveGoLiveBtn} onClick={() => setShowLiveDemo(true)}>Go Live</button>
-                  ) : (
-                    <button className={styles.liveDemoBtn} onClick={() => setShowLiveDemo(true)}>Try demo room</button>
-                  )}
-                </div>
-              ) : (
-                <div className={styles.liveRoom}>
-                  <div className={styles.liveVideo}>
-                    <div className={styles.liveVideoPlaceholder} />
-                    <span className={styles.liveBadge}>● LIVE</span>
-                    <span className={styles.liveViewerCount}>👁 {liveViewers}</span>
-                    <div className={styles.liveHostBar}>
-                      <span className={styles.liveHostAvatar}>{profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : getInitial(name)}</span>
-                      <span className={styles.liveHostName}>@{username}</span>
-                    </div>
-                    <div className={styles.liveCommentsStrip}>
-                      {liveComments.slice(-5).map(c => (
-                        <div key={c.id} className={styles.liveComment}>
-                          <span className={styles.liveCommentUser}>@{c.username}</span>
-                          <span className={styles.liveCommentText}>{c.text}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className={styles.liveActionsBar}>
-                      <button type="button" className={styles.liveActionBtn} onClick={handleLiveLike} aria-label="Like">
-                        <span className={styles.liveActionIcon}>{liveLiked ? "❤️" : "🤍"}</span>
-                        <span className={styles.liveActionCount}>{liveLikeCount}</span>
-                      </button>
-                      <button type="button" className={styles.liveActionBtn} onClick={() => liveCommentInputRef.current?.focus()} aria-label="Comment">
-                        <span className={styles.liveActionIcon}>💬</span>
-                        <span className={styles.liveActionCount}>{liveComments.length}</span>
-                      </button>
-                      <button type="button" className={styles.liveActionBtn} onClick={handleShareLive} aria-label="Share">
-                        <span className={styles.liveActionIcon}>🔗</span>
-                        <span className={styles.liveActionLabel}>Share</span>
-                      </button>
-                    </div>
-                  </div>
-                  {isLive && !isOwnProfile && (
-                    <div className={styles.liveCommentForm}>
-                      <input
-                        ref={liveCommentInputRef}
-                        type="text"
-                        className={styles.liveCommentInput}
-                        placeholder={me ? "Add a comment..." : "Sign in to comment"}
-                        value={liveCommentInput}
-                        onChange={e => setLiveCommentInput(e.target.value)}
-                        onKeyDown={e => { if (e.key === "Enter") handleSendLiveComment(); }}
-                        disabled={!me}
-                      />
-                      <button type="button" className={styles.liveCommentSubmit} onClick={handleSendLiveComment} disabled={!me || !liveCommentInput.trim()}>
-                        Send
-                      </button>
-                    </div>
-                  )}
-                  {!isOwnProfile && (
-                    <div className={styles.liveGiftBar}>
-                      {!me ? (
-                        <div className={styles.liveGiftLogin}>
-                          <Link href="/dashboard" className={styles.liveGiftLoginBtn}>Sign in to send gifts</Link>
-                        </div>
-                      ) : (
-                        <>
-                          <span className={styles.liveGiftLabel}>Send gift</span>
-                          <div className={styles.liveGiftRow}>
-                            {LIVE_GIFT_ITEMS.map(g => (
-                              <button
-                                key={g.id}
-                                className={`${styles.liveGiftBtn} ${giftItem?.id === g.id ? styles.liveGiftBtnActive : ""}`}
-                                onClick={() => setGiftItem(giftItem?.id === g.id ? null : g)}
-                                disabled={(wallet?.balance ?? 0) < g.sc}
-                                title={`${g.emoji} ${g.name} — ${g.sc} SC`}
-                              >
-                                <span className={styles.liveGiftEmoji}>{g.emoji}</span>
-                                <span className={styles.liveGiftSc}>{g.sc}</span>
-                              </button>
-                            ))}
-                          </div>
-                          <button
-                            className={styles.liveGiftSendBtn}
-                            onClick={handleSendGift}
-                            disabled={!giftItem || gifting || (wallet?.balance ?? 0) < (giftItem?.sc ?? 0)}
-                          >
-                            {gifting ? "Sending..." : giftItem ? `Send ${giftItem.emoji} (${giftItem.sc} SC)` : "Pick a gift"}
-                          </button>
-                          <span className={styles.liveGiftBalance}>💎 {wallet?.balance ?? 0} SC</span>
-                        </>
-                      )}
-                    </div>
-                  )}
-                  {isLive && isOwnProfile && (
-                    <button className={styles.liveExitDemo} type="button" onClick={() => setShowLiveDemo(false)}>End Live</button>
-                  )}
-                  {isLive && !isOwnProfile && (
-                    <button className={styles.liveExitDemo} type="button" onClick={() => setShowLiveDemo(false)}>✕ Exit</button>
-                  )}
-                </div>
-              )}
-            </>
           )}
 
         </div>

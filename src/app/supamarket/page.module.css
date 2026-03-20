@@ -158,19 +158,25 @@
   border-color: var(--color-gold-dark);
 }
 
-.searchBox {
+.searchBox,
+.searchWrap {
   flex: 1;
   display: flex;
   align-items: center;
   background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1.5px solid rgba(245,166,35,0.55);
   border-right: none;
   border-radius: 6px 0 0 6px;
   padding: 0 14px;
   gap: 8px;
-  transition: border-color 150ms;
+  transition: border-color 150ms, box-shadow 150ms;
+  box-shadow: 0 0 0 1px rgba(245,166,35,0.18), inset 0 1px 0 rgba(255,255,255,0.12);
 }
-.searchBox:focus-within { border-color: rgba(245,166,35,0.5); }
+.searchBox:focus-within,
+.searchWrap:focus-within {
+  border-color: rgba(245,166,35,0.8);
+  box-shadow: 0 0 0 2px rgba(245,166,35,0.22), inset 0 1px 0 rgba(255,255,255,0.18);
+}
 
 .searchIcon { font-size: 14px; opacity: 0.5; flex-shrink: 0; }
 
@@ -198,7 +204,7 @@
 
 .filterBtn {
   background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1.5px solid rgba(245,166,35,0.55);
   border-radius: 0 6px 6px 0;
   padding: 0 16px;
   color: rgba(255,255,255,0.7);
@@ -208,6 +214,7 @@
   white-space: nowrap;
   font-family: var(--font-sans);
   transition: all 150ms;
+  box-shadow: 0 0 0 1px rgba(245,166,35,0.18), inset 0 1px 0 rgba(255,255,255,0.12);
 }
 .filterBtn:hover { background: rgba(255,255,255,0.12); }
 .filterBtnActive { background: rgba(245,166,35,0.15); border-color: rgba(245,166,35,0.4); color: var(--color-gold); }
@@ -225,22 +232,39 @@
 
 .countryBtn {
   width: 100%;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 6px;
-  padding: 9px 14px;
-  color: rgba(255,255,255,0.8);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.05));
+  border: 1.5px solid rgba(245,166,35,0.55);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: rgba(255,255,255,0.92);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   font-family: var(--font-sans);
   text-align: left;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: border-color 150ms;
+  transition: border-color 150ms, transform 150ms, background 150ms, box-shadow 150ms;
+  box-shadow: 0 0 0 1px rgba(245,166,35,0.18), inset 0 1px 0 rgba(255,255,255,0.18);
 }
-.countryBtn:hover { border-color: rgba(245,166,35,0.4); }
+.countryBtn:hover {
+  border-color: rgba(245,166,35,0.5);
+  background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+  box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+  transform: translateY(-1px);
+}
+.countryBtnName { flex: 1; }
+.countryBtnCode {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #1a1a2e;
+  background: rgba(245,166,35,0.95);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.countryBtnArrow { color: rgba(255,255,255,0.7); }
 
 .countryDropdown {
   position: absolute;
@@ -409,6 +433,23 @@
   border-bottom: 1px solid var(--color-border);
   padding: var(--space-4);
 }
+.filterPanelHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.filterPanelTitle {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-text);
+  letter-spacing: 0.2px;
+}
+.filterPanelHint {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
 .filterRow { display: flex; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-4); }
 .filterGroup { flex: 1; min-width: 180px; }
 .filterLabel {
@@ -420,21 +461,31 @@
   margin-bottom: var(--space-2);
   font-family: var(--font-sans);
 }
-.filterOptions { display: flex; flex-wrap: wrap; gap: 6px; }
+.filterOptions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
 .filterOpt {
-  padding: 5px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  font-weight: 600;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg);
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid #d7dce7;
+  background: #f8fafc;
   color: var(--color-text-muted);
   cursor: pointer;
   transition: all 150ms;
   font-family: var(--font-sans);
 }
-.filterOpt:hover { border-color: var(--color-gold); color: var(--color-text); }
-.filterOptActive { background: var(--color-gold); color: var(--color-primary); border-color: var(--color-gold); }
+.filterOpt:hover { border-color: #c9d1df; color: var(--color-text); transform: translateY(-1px); }
+.filterOptActive {
+  background: linear-gradient(180deg, #f8b133, #f5a623);
+  color: var(--color-primary);
+  border-color: #efab36;
+  box-shadow: 0 6px 14px rgba(245,166,35,0.28);
+}
 .resetBtn {
   font-size: 12px;
   color: var(--color-error);
@@ -448,6 +499,59 @@
 
 /* ── Body ── */
 .body { padding: var(--space-4); }
+
+.carouselCardWrap {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.carouselViewport {
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.carouselTrack {
+  display: flex;
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.carouselSlide {
+  width: 100%;
+  flex: 0 0 100%;
+  display: block;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+}
+
+.carouselDots {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.carouselDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: none;
+  background: #d2d7e2;
+  cursor: pointer;
+  padding: 0;
+}
+
+.carouselDotActive {
+  width: 18px;
+  background: var(--color-gold);
+}
 
 .resultsHeader {
   display: flex;
@@ -517,8 +621,18 @@
 }
 
 /* Boost badge */
+.badgeStack {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
 .boostBadge {
-  position: absolute; top: 8px; left: 8px;
+  position: relative;
   background: var(--color-gold);
   color: var(--color-primary);
   font-size: 9px;

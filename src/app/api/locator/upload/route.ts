@@ -6,6 +6,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 function getUser(req: Request) {
   try {
@@ -24,8 +26,18 @@ export async function POST(req: Request) {
     const file = formData.get("file") as File | null;
     if (!file) return NextResponse.json({ success: false, error: "No file" }, { status: 400 });
 
-    // Max 2MB
-    
+    if (!ALLOWED_TYPES.has(file.type)) {
+      return NextResponse.json(
+        { success: false, error: "Only JPG, PNG, WEBP, or GIF images are allowed" },
+        { status: 400 }
+      );
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { success: false, error: "Image too large. Max size is 2MB." },
+        { status: 400 }
+      );
+    }
 
     const ext      = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
     const filename = `${user.userId}-${Date.now()}.${ext}`;

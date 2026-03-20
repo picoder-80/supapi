@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import KycBadge from "@/components/ui/KycBadge";
 import styles from "./page.module.css";
@@ -13,7 +14,6 @@ const TABS = [
   { id: "reviews",   label: "Reviews",   emoji: "⭐" },
   { id: "status",    label: "Status",     emoji: "📰" },
   { id: "reels",     label: "Reels",     emoji: "🎬" },
-  { id: "live",      label: "Live",      emoji: "🔴" },
 ];
 
 
@@ -25,29 +25,20 @@ function formatDate(d: string) {
 
 export default function MySpacePage() {
   const { user, isHydrating, login, isLoading } = useAuth();
+  const router = useRouter();
   const token = typeof window !== "undefined" ? localStorage.getItem("supapi_token") : null;
 
   const [activeTab,    setActiveTab]   = useState("bio");
   const [showEdit,     setShowEdit]    = useState(false);
-  const [showMsg,      setShowMsg]     = useState(false);
   const [saving,       setSaving]      = useState(false);
   const [displayName,  setDisplayName] = useState("");
   const [bio,          setBio]         = useState("");
+  const [walletAddress, setWalletAddress] = useState("");
   const [avatarUrl,    setAvatarUrl]   = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [coverUrl,      setCoverUrl]      = useState<string | null>(null);
   const [coverUploading, setCoverUploading] = useState(false);
   const [stats,        setStats]       = useState<Record<string, number | string>>({});
-  const [showLiveDemo, setShowLiveDemo] = useState(false);
-  const [liveViewers]  = useState(() => 128 + Math.floor(Math.random() * 200));
-  const [liveComments, setLiveComments] = useState<{ id: number; username: string; text: string }[]>([
-    { id: 1, username: "pioneer1", text: "Hello from Pi! 🪐" },
-    { id: 2, username: "trader_amy", text: "Nice stream!" },
-  ]);
-  const [liveLiked, setLiveLiked] = useState(false);
-  const [liveLikeCount, setLiveLikeCount] = useState(42);
-  const [liveCommentInput, setLiveCommentInput] = useState("");
-  const liveCommentInputRef = useRef<HTMLInputElement>(null);
   const tabsRef    = useRef<HTMLDivElement>(null);
   const fileRef    = useRef<HTMLInputElement>(null);
   const coverFileRef = useRef<HTMLInputElement>(null);
@@ -79,6 +70,7 @@ export default function MySpacePage() {
     if (!user) return;
     setDisplayName(user.display_name ?? user.username);
     setBio(user.bio ?? "");
+    setWalletAddress(user.wallet_address ?? "");
     setAvatarUrl(user.avatar_url ?? null);
     setCoverUrl(user.cover_url ?? null);
   }, [user]);
@@ -126,7 +118,7 @@ export default function MySpacePage() {
       const r = await fetch("/api/supaspace/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ display_name: displayName, bio }),
+        body: JSON.stringify({ display_name: displayName, bio, wallet_address: walletAddress }),
       });
       const d = await r.json();
       if (d.success) setShowEdit(false);
@@ -176,8 +168,27 @@ export default function MySpacePage() {
   const handleShare = () => {
     if (!user) return;
     const url = `${window.location.origin}/myspace/${user.username}`;
-    if (navigator.share) navigator.share({ title: `${displayName} on Supapi`, url });
-    else { navigator.clipboard.writeText(url); alert("Profile link copied!"); }
+    if (navigator.share) {
+      navigator
+        .share({ title: `${displayName} on Supapi`, url })
+        .catch(async () => {
+          try {
+            await navigator.clipboard.writeText(url);
+            alert("Profile link copied!");
+          } catch {
+            alert(url);
+          }
+        });
+      return;
+    }
+    navigator.clipboard
+      .writeText(url)
+      .then(() => alert("Profile link copied!"))
+      .catch(() => alert(url));
+  };
+
+  const handleOpenInbox = () => {
+    router.push("/supachat");
   };
 
   if (isHydrating) return (
@@ -196,6 +207,13 @@ export default function MySpacePage() {
       </button>
     </div>
   );
+
+  const editSteps = [
+    { id: "display_name", label: "Display name", done: Boolean(displayName.trim()) },
+    { id: "bio", label: "Bio", done: Boolean(bio.trim()) },
+    { id: "avatar", label: "Profile photo", done: Boolean(avatarUrl?.trim()) },
+    { id: "wallet", label: "Pi wallet address", done: Boolean(walletAddress.trim()) },
+  ];
 
 
   return (
@@ -251,8 +269,14 @@ export default function MySpacePage() {
         </div>
         <div className={styles.avatarRow}>
           <div className={styles.avatarActions}>
-            <button type="button" className={styles.messageBtn} onClick={() => setShowMsg(true)} title="Message" aria-label="Message">💬</button>
-            <button type="button" className={styles.shareBtn} onClick={handleShare} title="Share" aria-label="Share">🔗</button>
+            <button type="button" className={styles.messageBtn} onClick={handleOpenInbox} title="Inbox" aria-label="Inbox">
+              <span className={styles.actionIcon}>✉</span>
+              <span>Inbox</span>
+            </button>
+            <button type="button" className={styles.shareBtn} onClick={handleShare} title="Share" aria-label="Share">
+              <span className={styles.actionIcon}>⤴</span>
+              <span>Share</span>
+            </button>
           </div>
         </div>
 
@@ -464,54 +488,6 @@ export default function MySpacePage() {
             </>
           )}
 
-          {activeTab === "live" && (
-            <>
-              {!showLiveDemo ? (
-                <div className={styles.liveEmpty}>
-                  <div className={styles.liveEmptyIcon}>🔴</div>
-                  <div className={styles.liveEmptyTitle}>You're not live</div>
-                  <div className={styles.liveEmptyDesc}>Go live to connect with your followers and receive gifts.</div>
-                  <Link href="/live/go" className={styles.liveGoLiveBtn}>Go Live</Link>
-                </div>
-              ) : (
-                <div className={styles.liveRoom}>
-                  <div className={styles.liveVideo}>
-                    <div className={styles.liveVideoPlaceholder} />
-                    <span className={styles.liveBadge}>● LIVE</span>
-                    <span className={styles.liveViewerCount}>👁 {liveViewers}</span>
-                    <div className={styles.liveHostBar}>
-                      <span className={styles.liveHostAvatar}>{avatarUrl ? <img src={avatarUrl} alt="" /> : getInitial(displayName)}</span>
-                      <span className={styles.liveHostName}>@{user.username}</span>
-                    </div>
-                    <div className={styles.liveCommentsStrip}>
-                      {liveComments.slice(-5).map(c => (
-                        <div key={c.id} className={styles.liveComment}>
-                          <span className={styles.liveCommentUser}>@{c.username}</span>
-                          <span className={styles.liveCommentText}>{c.text}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className={styles.liveActionsBar}>
-                      <button type="button" className={styles.liveActionBtn} onClick={() => { setLiveLiked(p => !p); setLiveLikeCount(c => c + (liveLiked ? -1 : 1)); }} aria-label="Like">
-                        <span className={styles.liveActionIcon}>{liveLiked ? "❤️" : "🤍"}</span>
-                        <span className={styles.liveActionCount}>{liveLikeCount}</span>
-                      </button>
-                      <button type="button" className={styles.liveActionBtn} aria-label="Comment">
-                        <span className={styles.liveActionIcon}>💬</span>
-                        <span className={styles.liveActionCount}>{liveComments.length}</span>
-                      </button>
-                      <button type="button" className={styles.liveActionBtn} onClick={() => { if (navigator.share) navigator.share({ title: `${user.username} is live on Supapi`, url: window.location.href }); else { navigator.clipboard?.writeText(window.location.href); alert("Link copied!"); } }} aria-label="Share">
-                        <span className={styles.liveActionIcon}>🔗</span>
-                        <span className={styles.liveActionLabel}>Share</span>
-                      </button>
-                    </div>
-                  </div>
-                  <button className={styles.liveExitDemo} type="button" onClick={() => setShowLiveDemo(false)}>End Live</button>
-                </div>
-              )}
-            </>
-          )}
-
         </div>
       </div>
 
@@ -521,6 +497,16 @@ export default function MySpacePage() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHandle} />
             <div className={styles.modalTitle}>Edit Profile</div>
+            <div className={styles.editSteps}>
+              {editSteps.map((step) => (
+                <div key={step.id} className={styles.editStep}>
+                  <span className={step.done ? styles.editStepDone : styles.editStepPending}>
+                    {step.done ? "✓" : "○"}
+                  </span>
+                  <span>{step.label}</span>
+                </div>
+              ))}
+            </div>
             <div className={styles.formField}>
               <label className={styles.formLabel}>Display Name</label>
               <input className={styles.formInput} value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={user.username} />
@@ -528,6 +514,21 @@ export default function MySpacePage() {
             <div className={styles.formField}>
               <label className={styles.formLabel}>Bio</label>
               <textarea className={`${styles.formInput} ${styles.formTextarea}`} value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell the Pi community about yourself..." />
+            </div>
+            <div className={styles.formField}>
+              <label className={styles.formLabel}>Profile Photo</label>
+              <button className={styles.photoPickBtn} onClick={() => fileRef.current?.click()} type="button" disabled={avatarUploading}>
+                {avatarUploading ? "Uploading..." : avatarUrl ? "Change profile photo" : "Upload profile photo"}
+              </button>
+            </div>
+            <div className={styles.formField}>
+              <label className={styles.formLabel}>Pi Wallet Address</label>
+              <input
+                className={styles.formInput}
+                value={walletAddress}
+                onChange={(e) => setWalletAddress(e.target.value)}
+                placeholder="Paste your Pi wallet address"
+              />
             </div>
             <div className={styles.modalActions}>
               <button className={styles.modalCancel} onClick={() => setShowEdit(false)}>Cancel</button>
@@ -537,21 +538,6 @@ export default function MySpacePage() {
         </div>
       )}
 
-      {/* Message Modal */}
-      {showMsg && (
-        <div className={styles.modalOverlay} onClick={() => setShowMsg(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHandle} />
-            <div className={styles.modalTitle}>💬 Messages</div>
-            <div className={styles.messageSoon}>
-              <div className={styles.messageSoonIcon}>🚀</div>
-              <div className={styles.messageSoonTitle}>Coming Soon</div>
-              <div className={styles.messageSoonText}>Direct messaging between Pi users is coming soon!</div>
-            </div>
-            <button className={styles.modalSave} onClick={() => setShowMsg(false)}>Got it</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

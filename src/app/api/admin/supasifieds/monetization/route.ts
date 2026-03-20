@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { verifyAdmin } from "@/lib/admin-auth";
+import {
+  getSupasifiedsMonetizationConfig,
+  serializeSupasifiedsMonetizationConfig,
+} from "@/lib/supasifieds/monetization-config";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,6 +50,11 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    if (type === "pricing") {
+      const config = await getSupasifiedsMonetizationConfig(supabase);
+      return NextResponse.json({ success: true, data: config });
+    }
+
     if (type === "carousel") {
       const { data, error } = await supabase
         .from("classified_carousel_ads")
@@ -88,7 +97,24 @@ export async function PATCH(req: NextRequest) {
   const admin = await verifyAdmin(req.headers.get("authorization"));
   if (!admin.ok) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   try {
-    const { type, id, is_active } = await req.json();
+    const body = await req.json();
+
+    if (body?.type === "pricing") {
+      const boostTiers = body?.boostTiers;
+      const carouselPackages = body?.carouselPackages;
+      const spotlightPackages = body?.spotlightPackages;
+      const autorepostPackages = body?.autorepostPackages;
+      if (!boostTiers || !Array.isArray(carouselPackages) || !Array.isArray(spotlightPackages) || !Array.isArray(autorepostPackages)) {
+        return NextResponse.json({ success: false, error: "Invalid pricing payload" }, { status: 400 });
+      }
+      const rows = serializeSupasifiedsMonetizationConfig({ boostTiers, carouselPackages, spotlightPackages, autorepostPackages });
+      const { error } = await supabase.from("platform_config").upsert(rows, { onConflict: "key" });
+      if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+      const latest = await getSupasifiedsMonetizationConfig(supabase);
+      return NextResponse.json({ success: true, data: latest });
+    }
+
+    const { type, id, is_active } = body;
     if (!type || !id || typeof is_active !== "boolean") {
       return NextResponse.json({ success: false, error: "Invalid payload" }, { status: 400 });
     }

@@ -2,9 +2,10 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { CATEGORIES, getSubcategory } from "@/lib/supasifieds/categories";
+import { CATEGORIES as SUPASIFIEDS_CATEGORIES, getSubcategory as getSupasifiedsSubcategory } from "@/lib/supasifieds/categories";
+import { CATEGORIES as SUPAAUTO_CATEGORIES, getSubcategory as getSupaautoSubcategory } from "@/lib/supaauto/categories";
 import { formatPiPriceDisplay } from "@/lib/supasifieds/price";
 import { ALL_COUNTRIES, getCountry } from "@/lib/market/countries";
 import styles from "../../supamarket/create/page.module.css";
@@ -70,7 +71,14 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (code: st
 export default function SupasifiedsCreatePage() {
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const fileRef = useRef<HTMLInputElement>(null);
+  const isSupaauto = pathname?.startsWith("/supaauto");
+  const isSupadomus = pathname?.startsWith("/supadomus");
+  const appBase = isSupaauto ? "/supaauto" : isSupadomus ? "/supadomus" : "/supasifieds";
+  const apiBase = isSupaauto ? "/api/supaauto" : isSupadomus ? "/api/supadomus" : "/api/supasifieds";
+  const CATEGORIES = isSupaauto ? SUPAAUTO_CATEGORIES : SUPASIFIEDS_CATEGORIES;
+  const getSubcategory = isSupaauto ? getSupaautoSubcategory : getSupasifiedsSubcategory;
 
   const [form, setForm] = useState({
     title: "",
@@ -148,7 +156,7 @@ export default function SupasifiedsCreatePage() {
       fd.append("image", file);
       fd.append("index", String(images.length + uploaded.length));
       try {
-        const r = await fetch("/api/supasifieds/images", {
+        const r = await fetch(`${apiBase}/images`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           body: fd,
@@ -194,7 +202,7 @@ export default function SupasifiedsCreatePage() {
     setSaving(true);
     setError("");
     try {
-      const r = await fetch("/api/supasifieds/listings", {
+      const r = await fetch(`${apiBase}/listings`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -212,7 +220,7 @@ export default function SupasifiedsCreatePage() {
         }),
       });
       const d = await r.json();
-      if (d.success) router.push(`/supasifieds/${d.data.id}`);
+      if (d.success) router.push(`${appBase}/${d.data.id}`);
       else setError(d.error ?? "Failed to publish");
     } catch {
       setError("Something went wrong");
@@ -498,7 +506,7 @@ export default function SupasifiedsCreatePage() {
         </div>
         <aside className={styles.rightCol}>
           <div className={styles.infoCard}>
-            <div className={styles.infoTitle}>Supasifieds</div>
+            <div className={styles.infoTitle}>{isSupaauto ? "SupaAuto" : isSupadomus ? "SupaDomus" : "Supasifieds"}</div>
             <ul className={styles.infoList}>
               <li>Free to post; boost with SupaCredits</li>
               <li>Payment &amp; delivery happen outside the app</li>

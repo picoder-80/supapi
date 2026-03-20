@@ -144,6 +144,26 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    const listingIds = listings.map((row) => String(row.id));
+    const spotlightMap = new Map<string, string>();
+    if (listingIds.length) {
+      const { data: spotRows } = await supabase
+        .from("classified_spotlights")
+        .select("listing_id, expires_at")
+        .in("listing_id", listingIds)
+        .eq("is_active", true)
+        .gte("expires_at", new Date().toISOString())
+        .order("expires_at", { ascending: false });
+      for (const row of spotRows ?? []) {
+        const id = String(row.listing_id ?? "");
+        if (id && !spotlightMap.has(id)) spotlightMap.set(id, String(row.expires_at ?? ""));
+      }
+    }
+    listings = listings.map((row) => ({
+      ...row,
+      spotlight_expires_at: spotlightMap.get(String(row.id)) ?? null,
+    }));
+
     return NextResponse.json({
       success: true,
       data: { listings, total: count ?? 0, page, limit },

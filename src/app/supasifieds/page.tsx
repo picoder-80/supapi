@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import KycBadge from "@/components/ui/KycBadge";
-import { CATEGORIES, getSubcategory } from "@/lib/supasifieds/categories";
+import { CATEGORIES as SUPASIFIEDS_CATEGORIES, getSubcategory as getSupasifiedsSubcategory } from "@/lib/supasifieds/categories";
+import { CATEGORIES as SUPAAUTO_CATEGORIES, getSubcategory as getSupaautoSubcategory } from "@/lib/supaauto/categories";
 import { formatPiPriceDisplay } from "@/lib/supasifieds/price";
 import { ALL_COUNTRIES, getCountry } from "@/lib/market/countries";
 import styles from "../supamarket/page.module.css";
@@ -24,6 +25,7 @@ interface ClassifiedRow {
   country_code: string | null;
   is_boosted?: boolean;
   boost_tier?: string;
+  spotlight_expires_at?: string | null;
   seller: { id: string; username: string; display_name: string | null; avatar_url: string | null; kyc_status: string };
 }
 
@@ -37,7 +39,7 @@ interface CarouselAd {
 
 const SORT_OPTIONS = [
   { id: "newest", label: "Newest" },
-  { id: "popular", label: "Most viewed" },
+  { id: "popular", label: "Most Viewed" },
 ];
 
 function getInitial(u: string) {
@@ -74,7 +76,10 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (code: st
   return (
     <div ref={ref} className={styles.countrySelect}>
       <button type="button" className={styles.countryBtn} onClick={() => setOpen((p) => !p)}>
-        {selected.flag} {selected.name} ▾
+        <span>{selected.flag}</span>
+        <span className={styles.countryBtnName}>{selected.name}</span>
+        <span className={styles.countryBtnCode}>{selected.code}</span>
+        <span className={styles.countryBtnArrow}>▾</span>
       </button>
       {open && (
         <div className={styles.countryDropdown}>
@@ -109,7 +114,14 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (code: st
 
 function SupasifiedsContent() {
   const { user } = useAuth();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isSupaauto = pathname?.startsWith("/supaauto");
+  const isSupadomus = pathname?.startsWith("/supadomus");
+  const appBase = isSupaauto ? "/supaauto" : isSupadomus ? "/supadomus" : "/supasifieds";
+  const apiBase = isSupaauto ? "/api/supaauto" : isSupadomus ? "/api/supadomus" : "/api/supasifieds";
+  const CATEGORIES = isSupaauto ? SUPAAUTO_CATEGORIES : SUPASIFIEDS_CATEGORIES;
+  const getSubcategory = isSupaauto ? getSupaautoSubcategory : getSupasifiedsSubcategory;
   const sellerFromUrl = searchParams.get("seller") ?? "";
 
   const [listings, setListings] = useState<ClassifiedRow[]>([]);
@@ -120,6 +132,8 @@ function SupasifiedsContent() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [country, setCountry] = useState("MY");
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [carouselPaused, setCarouselPaused] = useState(false);
 
   const [q, setQ] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -143,7 +157,7 @@ function SupasifiedsContent() {
   }, []);
 
   useEffect(() => {
-    fetch(`/api/supasifieds/stats?t=${Date.now()}`, { cache: "no-store" })
+    fetch(`${apiBase}/stats?t=${Date.now()}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         if (d.success && typeof d.data?.total === "number") setTotalAds(d.data.total);
@@ -152,13 +166,26 @@ function SupasifiedsContent() {
   }, []);
 
   useEffect(() => {
-    fetch(`/api/supasifieds/carousel?t=${Date.now()}`, { cache: "no-store" })
+    fetch(`${apiBase}/carousel?t=${Date.now()}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         if (d.success && Array.isArray(d.data)) setCarouselAds(d.data);
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (carouselAds.length <= 1 || carouselPaused) return;
+    const timer = window.setInterval(() => {
+      setCarouselIndex((prev) => (prev + 1) % carouselAds.length);
+    }, 4000);
+    return () => window.clearInterval(timer);
+  }, [carouselAds.length, carouselPaused]);
+
+  useEffect(() => {
+    if (!carouselAds.length) setCarouselIndex(0);
+    else if (carouselIndex >= carouselAds.length) setCarouselIndex(0);
+  }, [carouselAds.length, carouselIndex]);
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
@@ -173,7 +200,7 @@ function SupasifiedsContent() {
         ...(categoryDeep && { category_deep: categoryDeep }),
         ...(sellerFromUrl && { seller: sellerFromUrl }),
       });
-      const r = await fetch(`/api/supasifieds/listings?${params}`);
+      const r = await fetch(`${apiBase}/listings?${params}`);
       const d = await r.json();
       if (d.success) {
         setListings(d.data.listings);
@@ -230,18 +257,18 @@ function SupasifiedsContent() {
         <div className={styles.heroTop}>
           <div className={styles.heroInner}>
             <div className={styles.heroBadge}>Classifieds · SupaCredits boost</div>
-            <h1 className={styles.heroTitle}>📋 Supasifieds</h1>
+            <h1 className={styles.heroTitle}>📋 {isSupaauto ? "SupaAuto" : isSupadomus ? "SupaDomus" : "Supasifieds"}</h1>
             <p className={styles.heroSub}>
               Local classifieds made simple - no Pi escrow. Connect with sellers directly and boost your listings with SupaCredits.
             </p>
           </div>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flexShrink: 0, marginTop: 4 }}>
             {user && (
-              <Link href="/supasifieds/my-listings" className={styles.hubBtn}>
+              <Link href={`${appBase}/my-listings`} className={styles.hubBtn}>
                 📂 My ads
               </Link>
             )}
-            <Link href="/supasifieds/create" className={styles.sellBtn} style={{ marginLeft: 0 }}>
+            <Link href={`${appBase}/create`} className={styles.sellBtn} style={{ marginLeft: 0 }}>
               + Post ad
             </Link>
           </div>
@@ -299,7 +326,7 @@ function SupasifiedsContent() {
               @{sellerFromUrl}
             </Link>
             {" · "}
-            <Link href="/supasifieds" className={styles.sellerFilterLink}>
+            <Link href={appBase} className={styles.sellerFilterLink}>
               Show all
             </Link>
           </div>
@@ -399,9 +426,22 @@ function SupasifiedsContent() {
 
           {showFilters && (
             <div className={styles.filterPanel}>
+              <div className={styles.filterPanelHead}>
+                <div>
+                  <div className={styles.filterPanelTitle}>Refine results</div>
+                  <div className={styles.filterPanelHint}>Choose region and sorting preference</div>
+                </div>
+              </div>
               <div className={styles.filterGroup}>
                 <div className={styles.filterLabel}>Country / region</div>
-                <CountrySelect value={country} onChange={(code) => { setCountry(code); setPage(1); }} />
+                <CountrySelect
+                  value={country}
+                  onChange={(code) => {
+                    setCountry(code);
+                    setPage(1);
+                    setShowFilters(false);
+                  }}
+                />
               </div>
               <div className={styles.filterGroup}>
                 <div className={styles.filterLabel}>Sort</div>
@@ -414,6 +454,7 @@ function SupasifiedsContent() {
                       onClick={() => {
                         setSort(s.id);
                         setPage(1);
+                        setShowFilters(false);
                       }}
                     >
                       {s.label}
@@ -422,7 +463,14 @@ function SupasifiedsContent() {
                 </div>
               </div>
               {hasFilters && (
-                <button type="button" className={styles.resetBtn} onClick={resetFilters}>
+                <button
+                  type="button"
+                  className={styles.resetBtn}
+                  onClick={() => {
+                    resetFilters();
+                    setShowFilters(false);
+                  }}
+                >
                   Reset filters
                 </button>
               )}
@@ -431,81 +479,79 @@ function SupasifiedsContent() {
 
           <div className={styles.body}>
             {carouselAds.length > 0 && (
-              <div
-                style={{
-                  background: "#fff",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 14,
-                  padding: 12,
-                  marginBottom: 12,
-                }}
-              >
+              <div className={styles.carouselCardWrap}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                   <strong style={{ color: "var(--color-text)" }}>🎠 Sponsored Carousel</strong>
                   <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Paid sponsor</span>
                 </div>
                 <div
-                  style={{
-                    display: "grid",
-                    gridAutoFlow: "column",
-                    gridAutoColumns: "minmax(240px, 1fr)",
-                    gap: 10,
-                    overflowX: "auto",
-                    paddingBottom: 4,
-                    scrollbarWidth: "thin",
-                  }}
+                  className={styles.carouselViewport}
+                  onMouseEnter={() => setCarouselPaused(true)}
+                  onMouseLeave={() => setCarouselPaused(false)}
+                  onTouchStart={() => setCarouselPaused(true)}
+                  onTouchEnd={() => setCarouselPaused(false)}
                 >
-                  {carouselAds.map((ad) => (
-                    <Link
-                      key={ad.id}
-                      href={ad.link_url}
-                      target={ad.link_url.startsWith("http") ? "_blank" : undefined}
-                      rel={ad.link_url.startsWith("http") ? "noopener noreferrer" : undefined}
-                      style={{
-                        display: "block",
-                        border: "1px solid #e5e7eb",
-                        borderRadius: 12,
-                        overflow: "hidden",
-                        background: "#fff",
-                        textDecoration: "none",
-                        color: "inherit",
-                      }}
-                    >
-                      <div style={{ height: 120, background: "#f5f5f5" }}>
-                        <img
-                          src={ad.image_url}
-                          alt={ad.headline}
-                          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                        />
-                      </div>
-                      <div style={{ padding: 10, display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
-                        <div
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 700,
-                            lineHeight: 1.3,
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                          }}
-                        >
-                          {ad.headline}
+                  <div
+                    className={styles.carouselTrack}
+                    style={{ transform: `translateX(-${carouselIndex * 100}%)` }}
+                  >
+                    {carouselAds.map((ad) => (
+                      <Link
+                        key={ad.id}
+                        href={ad.link_url}
+                        target={ad.link_url.startsWith("http") ? "_blank" : undefined}
+                        rel={ad.link_url.startsWith("http") ? "noopener noreferrer" : undefined}
+                        className={styles.carouselSlide}
+                      >
+                        <div style={{ height: 120, background: "#f5f5f5" }}>
+                          <img
+                            src={ad.image_url}
+                            alt={ad.headline}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                          />
                         </div>
-                        <span
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 700,
-                            color: "var(--color-gold-dark)",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {ad.cta_label || "View"}
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
+                        <div style={{ padding: 10, display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+                          <div
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 700,
+                              lineHeight: 1.3,
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {ad.headline}
+                          </div>
+                          <span
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: "var(--color-gold-dark)",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {ad.cta_label || "View"}
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
+                {carouselAds.length > 1 && (
+                  <div className={styles.carouselDots}>
+                    {carouselAds.map((ad, idx) => (
+                      <button
+                        key={ad.id}
+                        type="button"
+                        className={`${styles.carouselDot} ${idx === carouselIndex ? styles.carouselDotActive : ""}`}
+                        aria-label={`Go to sponsored ad ${idx + 1}`}
+                        onClick={() => setCarouselIndex(idx)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -533,7 +579,7 @@ function SupasifiedsContent() {
                   slot ? (
                     <Link
                       key={slot.id}
-                      href={`/supasifieds/${slot.id}`}
+                      href={`${appBase}/${slot.id}`}
                       style={{
                         display: "block",
                         border: "1px solid #f2d08a",
@@ -635,7 +681,7 @@ function SupasifiedsContent() {
                 <div className={styles.emptyIcon}>📋</div>
                 <div className={styles.emptyTitle}>No ads found</div>
                 <div className={styles.emptyDesc}>Try different filters or be the first to post.</div>
-                <Link href="/supasifieds/create" className={styles.emptyBtn}>
+                <Link href={`${appBase}/create`} className={styles.emptyBtn}>
                   + Post an ad
                 </Link>
               </div>
@@ -643,18 +689,25 @@ function SupasifiedsContent() {
               <>
                 <div className={styles.grid}>
                   {listings.map((l) => (
-                    <Link key={l.id} href={`/supasifieds/${l.id}`} className={styles.card}>
+                    <Link key={l.id} href={`${appBase}/${l.id}`} className={styles.card}>
                       <div className={styles.cardImg}>
                         {l.images?.[0] ? (
                           <img src={l.images[0]} alt={l.title} className={styles.cardImgEl} />
                         ) : (
                           <div className={styles.cardImgPlaceholder}>📋</div>
                         )}
-                        {l.is_boosted && (
-                          <div className={styles.boostBadge}>
-                            {l.boost_tier === "gold" ? "👑" : l.boost_tier === "silver" ? "🥈" : "🥉"} Boost
-                          </div>
-                        )}
+                        <div className={styles.badgeStack}>
+                          {l.is_boosted && (
+                            <div className={styles.boostBadge}>
+                              {l.boost_tier === "gold" ? "👑" : l.boost_tier === "silver" ? "🥈" : "🥉"} Boost
+                            </div>
+                          )}
+                          {l.spotlight_expires_at && new Date(l.spotlight_expires_at) > new Date() && (
+                            <div className={styles.boostBadge}>
+                              ⭐ Spotlight
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className={styles.cardBody}>
                         <div className={styles.cardTitle}>{l.title}</div>
@@ -712,7 +765,7 @@ function SupasifiedsContent() {
             {user && listings.length > 0 && (
               <div className={styles.sellCta}>
                 <div className={styles.sellCtaText}>Got something to sell or offer?</div>
-                <Link href="/supasifieds/create" className={styles.sellCtaBtn}>
+                <Link href={`${appBase}/create`} className={styles.sellCtaBtn}>
                   + Post an ad
                 </Link>
               </div>

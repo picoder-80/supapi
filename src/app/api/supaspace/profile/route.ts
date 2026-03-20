@@ -9,11 +9,20 @@ export async function PATCH(req: NextRequest) {
     const payload = verifyToken(auth);
     if (!payload) return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 });
 
-    const { display_name, bio } = await req.json();
+    const { display_name, bio, wallet_address } = await req.json();
+    const wallet =
+      typeof wallet_address === "string" && wallet_address.trim()
+        ? wallet_address.trim()
+        : null;
     const supabase = await createAdminClient();
     const { data, error } = await supabase
       .from("users")
-      .update({ display_name, bio, updated_at: new Date().toISOString() })
+      .update({
+        display_name,
+        bio,
+        wallet_address: wallet,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", payload.userId)
       .select().single();
 

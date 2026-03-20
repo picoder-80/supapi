@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
+import { getSupasifiedsMonetizationConfig } from "@/lib/supasifieds/monetization-config";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
-const CAROUSEL_PACKAGES: Record<number, { sc: number; label: string }> = {
-  3: { sc: 180, label: "3 days carousel ad" },
-  7: { sc: 360, label: "7 days carousel ad" },
-  14: { sc: 650, label: "14 days carousel ad" },
-};
 
 function getUserId(req: NextRequest): string | null {
   try {
@@ -30,7 +25,8 @@ export async function POST(req: NextRequest) {
 
   const { listing_id, image_url, headline, cta_label, link_url, duration_days } = await req.json();
   const days = Number(duration_days);
-  const pkg = CAROUSEL_PACKAGES[days];
+  const config = await getSupasifiedsMonetizationConfig(supabase);
+  const pkg = config.carouselPackages.find((row) => row.days === days);
   if (!pkg || !image_url || !headline || !link_url) {
     return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
   }

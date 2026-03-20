@@ -1,0 +1,685 @@
+[
+  {
+    "id": 1,
+    "slug": "cars",
+    "name": "Cars",
+    "icon": "🚗",
+    "subcategories": [
+      {
+        "id": 101,
+        "slug": "sedan",
+        "name": "Sedan",
+        "deep": [
+          { "id": 10101, "slug": "small-sedan", "name": "Small Sedan (below 1.6L)" },
+          { "id": 10102, "slug": "mid-sedan", "name": "Mid-Size Sedan (1.6L - 2.0L)" },
+          { "id": 10103, "slug": "large-sedan", "name": "Large Sedan (above 2.0L)" },
+          { "id": 10104, "slug": "executive-sedan", "name": "Executive Sedan" },
+          { "id": 10105, "slug": "hybrid-sedan", "name": "Hybrid Sedan" },
+          { "id": 10106, "slug": "electric-sedan", "name": "Electric Sedan" }
+        ]
+      },
+      {
+        "id": 102,
+        "slug": "hatchback",
+        "name": "Hatchback",
+        "deep": [
+          { "id": 10201, "slug": "small-hatchback", "name": "Small Hatchback (below 1.3L)" },
+          { "id": 10202, "slug": "mid-hatchback", "name": "Mid Hatchback (1.3L - 1.8L)" },
+          { "id": 10203, "slug": "hot-hatch", "name": "Hot Hatch / Performance" },
+          { "id": 10204, "slug": "hybrid-hatchback", "name": "Hybrid Hatchback" },
+          { "id": 10205, "slug": "electric-hatchback", "name": "Electric Hatchback" }
+        ]
+      },
+      {
+        "id": 103,
+        "slug": "suv",
+        "name": "SUV",
+        "deep": [
+          { "id": 10301, "slug": "small-suv", "name": "Small SUV / Crossover" },
+          { "id": 10302, "slug": "mid-suv", "name": "Mid-Size SUV" },
+          { "id": 10303, "slug": "large-suv", "name": "Large SUV / Full-Size" },
+          { "id": 10304, "slug": "luxury-suv", "name": "Luxury SUV" },
+          { "id": 10305, "slug": "hybrid-suv", "name": "Hybrid SUV" },
+          { "id": 10306, "slug": "electric-suv", "name": "Electric SUV" },
+          { "id": 10307, "slug": "offroad-suv", "name": "Off-Road SUV (4WD/4x4)" }
+        ]
+      },
+      {
+        "id": 104,
+        "slug": "mpv",
+        "name": "MPV / People Carrier",
+        "deep": [
+          { "id": 10401, "slug": "small-mpv", "name": "Small MPV (5-6 seater)" },
+          { "id": 10402, "slug": "large-mpv", "name": "Large MPV (7-8 seater)" },
+          { "id": 10403, "slug": "luxury-mpv", "name": "Luxury MPV" },
+          { "id": 10404, "slug": "hybrid-mpv", "name": "Hybrid MPV" }
+        ]
+      },
+      {
+        "id": 105,
+        "slug": "coupe-convertible",
+        "name": "Coupe & Convertible",
+        "deep": [
+          { "id": 10501, "slug": "coupe", "name": "Coupe" },
+          { "id": 10502, "slug": "convertible-cabriolet", "name": "Convertible / Cabriolet" },
+          { "id": 10503, "slug": "fastback", "name": "Fastback" },
+          { "id": 10504, "slug": "targa", "name": "Targa" }
+        ]
+      },
+      {
+        "id": 106,
+        "slug": "sports-performance",
+        "name": "Sports & Performance",
+        "deep": [
+          { "id": 10601, "slug": "sports-car", "name": "Sports Car" },
+          { "id": 10602, "slug": "supercar", "name": "Supercar" },
+          { "id": 10603, "slug": "hypercar", "name": "Hypercar" },
+          { "id": 10604, "slug": "track-race-car", "name": "Track & Race Car" },
+          { "id": 10605, "slug": "modified-tuned", "name": "Modified & Tuned" }
+        ]
+      },
+      {
+        "id": 107,
+        "slug": "luxury-premium",
+        "name": "Luxury & Premium",
+        "deep": [
+          { "id": 10701, "slug": "luxury-sedan", "name": "Luxury Sedan" },
+          { "id": 10702, "slug": "luxury-suv-listing", "name": "Luxury SUV" },
+          { "id": 10703, "slug": "ultra-luxury", "name": "Ultra Luxury (Rolls Royce, Bentley)" },
+          { "id": 10704, "slug": "classic-vintage-luxury", "name": "Classic & Vintage Luxury" }
+        ]
+      },
+      {
+        "id": 108,
+        "slug": "electric-hybrid",
+        "name": "Electric & Hybrid",
+        "deep": [
+          { "id": 10801, "slug": "full-electric-ev", "name": "Full Electric (EV)" },
+          { "id": 10802, "slug": "plug-in-hybrid-phev", "name": "Plug-in Hybrid (PHEV)" },
+          { "id": 10803, "slug": "mild-hybrid-mhev", "name": "Mild Hybrid (MHEV)" },
+          { "id": 10804, "slug": "hydrogen-fuel-cell", "name": "Hydrogen / Fuel Cell" }
+        ]
+      },
+      {
+        "id": 109,
+        "slug": "classic-vintage",
+        "name": "Classic & Vintage",
+        "deep": [
+          { "id": 10901, "slug": "classic-pre-1980", "name": "Classic (Pre-1980)" },
+          { "id": 10902, "slug": "vintage-1980s", "name": "Vintage 1980s" },
+          { "id": 10903, "slug": "retro-1990s", "name": "Retro 1990s" },
+          { "id": 10904, "slug": "barn-find-project-car", "name": "Barn Find & Project Car" },
+          { "id": 10905, "slug": "restored-classic", "name": "Restored Classic" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "slug": "motorcycles",
+    "name": "Motorcycles & Scooters",
+    "icon": "🏍️",
+    "subcategories": [
+      {
+        "id": 201,
+        "slug": "underbone",
+        "name": "Underbone / Kapchai",
+        "deep": [
+          { "id": 20101, "slug": "underbone-100-115cc", "name": "100cc - 115cc" },
+          { "id": 20102, "slug": "underbone-125cc", "name": "125cc" },
+          { "id": 20103, "slug": "underbone-150cc", "name": "150cc" },
+          { "id": 20104, "slug": "underbone-fuel-injection", "name": "Fuel Injection (FI)" }
+        ]
+      },
+      {
+        "id": 202,
+        "slug": "scooter",
+        "name": "Scooter / Moped",
+        "deep": [
+          { "id": 20201, "slug": "scooter-50-110cc", "name": "50cc - 110cc" },
+          { "id": 20202, "slug": "scooter-125-150cc", "name": "125cc - 150cc" },
+          { "id": 20203, "slug": "maxi-scooter", "name": "Maxi Scooter (250cc+)" },
+          { "id": 20204, "slug": "electric-scooter", "name": "Electric Scooter" }
+        ]
+      },
+      {
+        "id": 203,
+        "slug": "sport-bike",
+        "name": "Sport Bike",
+        "deep": [
+          { "id": 20301, "slug": "sport-150-250cc", "name": "150cc - 250cc" },
+          { "id": 20302, "slug": "sport-300-500cc", "name": "300cc - 500cc" },
+          { "id": 20303, "slug": "sport-600cc", "name": "600cc (Supersport)" },
+          { "id": 20304, "slug": "sport-1000cc", "name": "1000cc (Superbike)" },
+          { "id": 20305, "slug": "naked-streetfighter", "name": "Naked / Streetfighter" }
+        ]
+      },
+      {
+        "id": 204,
+        "slug": "adventure-touring",
+        "name": "Adventure & Touring",
+        "deep": [
+          { "id": 20401, "slug": "adventure-bike", "name": "Adventure Bike (ADV)" },
+          { "id": 20402, "slug": "touring-bike", "name": "Touring Bike" },
+          { "id": 20403, "slug": "cruiser", "name": "Cruiser" },
+          { "id": 20404, "slug": "cafe-racer", "name": "Cafe Racer" },
+          { "id": 20405, "slug": "scrambler", "name": "Scrambler" }
+        ]
+      },
+      {
+        "id": 205,
+        "slug": "dirt-offroad",
+        "name": "Dirt Bike & Off-Road",
+        "deep": [
+          { "id": 20501, "slug": "motocross", "name": "Motocross" },
+          { "id": 20502, "slug": "enduro", "name": "Enduro" },
+          { "id": 20503, "slug": "trail-bike", "name": "Trail Bike" },
+          { "id": 20504, "slug": "mini-pit-bike", "name": "Mini / Pit Bike" }
+        ]
+      },
+      {
+        "id": 206,
+        "slug": "electric-motorcycle",
+        "name": "Electric Motorcycle",
+        "deep": [
+          { "id": 20601, "slug": "electric-moto-low-speed", "name": "Low Speed (below 45km/h)" },
+          { "id": 20602, "slug": "electric-moto-high-speed", "name": "High Speed (above 45km/h)" },
+          { "id": 20603, "slug": "electric-delivery-moto", "name": "Delivery & Commercial" }
+        ]
+      },
+      {
+        "id": 207,
+        "slug": "classic-vintage-moto",
+        "name": "Classic & Vintage",
+        "deep": [
+          { "id": 20701, "slug": "classic-moto", "name": "Classic Motorcycle" },
+          { "id": 20702, "slug": "restored-moto", "name": "Restored Motorcycle" },
+          { "id": 20703, "slug": "collector-moto", "name": "Collector's Item" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "slug": "commercial-vehicles",
+    "name": "Commercial Vehicles",
+    "icon": "🚛",
+    "subcategories": [
+      {
+        "id": 301,
+        "slug": "pickup-truck",
+        "name": "Pickup Truck",
+        "deep": [
+          { "id": 30101, "slug": "single-cab-pickup", "name": "Single Cab" },
+          { "id": 30102, "slug": "extra-cab-pickup", "name": "Extra Cab" },
+          { "id": 30103, "slug": "double-cab-pickup", "name": "Double Cab" },
+          { "id": 30104, "slug": "electric-pickup", "name": "Electric Pickup" }
+        ]
+      },
+      {
+        "id": 302,
+        "slug": "van",
+        "name": "Van",
+        "deep": [
+          { "id": 30201, "slug": "panel-van", "name": "Panel Van" },
+          { "id": 30202, "slug": "window-van", "name": "Window Van" },
+          { "id": 30203, "slug": "minivan", "name": "Minivan" },
+          { "id": 30204, "slug": "high-roof-van", "name": "High Roof Van" },
+          { "id": 30205, "slug": "refrigerated-van", "name": "Refrigerated Van" }
+        ]
+      },
+      {
+        "id": 303,
+        "slug": "lorry-truck",
+        "name": "Lorry & Truck",
+        "deep": [
+          { "id": 30301, "slug": "light-lorry", "name": "Light Lorry (1-3 ton)" },
+          { "id": 30302, "slug": "medium-lorry", "name": "Medium Lorry (3-10 ton)" },
+          { "id": 30303, "slug": "heavy-lorry", "name": "Heavy Lorry (10 ton+)" },
+          { "id": 30304, "slug": "prime-mover", "name": "Prime Mover / Trailer" },
+          { "id": 30305, "slug": "flatbed-truck", "name": "Flatbed Truck" },
+          { "id": 30306, "slug": "tipper-truck", "name": "Tipper Truck" },
+          { "id": 30307, "slug": "tanker-truck", "name": "Tanker Truck" },
+          { "id": 30308, "slug": "refrigerated-truck", "name": "Refrigerated Truck" }
+        ]
+      },
+      {
+        "id": 304,
+        "slug": "bus-minibus",
+        "name": "Bus & Minibus",
+        "deep": [
+          { "id": 30401, "slug": "minibus-10-20-seater", "name": "Minibus (10-20 seater)" },
+          { "id": 30402, "slug": "midi-bus", "name": "Midi Bus (20-40 seater)" },
+          { "id": 30403, "slug": "full-size-bus", "name": "Full-Size Bus (40+ seater)" },
+          { "id": 30404, "slug": "school-bus", "name": "School Bus" },
+          { "id": 30405, "slug": "tour-coach", "name": "Tour Coach" }
+        ]
+      },
+      {
+        "id": 305,
+        "slug": "special-purpose-vehicle",
+        "name": "Special Purpose",
+        "deep": [
+          { "id": 30501, "slug": "ambulance", "name": "Ambulance" },
+          { "id": 30502, "slug": "food-truck", "name": "Food Truck" },
+          { "id": 30503, "slug": "mobile-workshop", "name": "Mobile Workshop" },
+          { "id": 30504, "slug": "garbage-truck", "name": "Garbage Truck" },
+          { "id": 30505, "slug": "fire-truck", "name": "Fire Truck" },
+          { "id": 30506, "slug": "campervan-rv", "name": "Campervan & RV" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "slug": "heavy-machinery",
+    "name": "Heavy Machinery & Equipment",
+    "icon": "🏗️",
+    "subcategories": [
+      {
+        "id": 401,
+        "slug": "construction-machinery",
+        "name": "Construction Machinery",
+        "deep": [
+          { "id": 40101, "slug": "excavator", "name": "Excavator" },
+          { "id": 40102, "slug": "bulldozer", "name": "Bulldozer" },
+          { "id": 40103, "slug": "crane", "name": "Crane" },
+          { "id": 40104, "slug": "concrete-mixer", "name": "Concrete Mixer" },
+          { "id": 40105, "slug": "road-roller", "name": "Road Roller / Compactor" },
+          { "id": 40106, "slug": "backhoe-loader", "name": "Backhoe Loader" },
+          { "id": 40107, "slug": "grader", "name": "Grader" },
+          { "id": 40108, "slug": "piling-machine", "name": "Piling Machine" }
+        ]
+      },
+      {
+        "id": 402,
+        "slug": "lifting-equipment",
+        "name": "Lifting Equipment",
+        "deep": [
+          { "id": 40201, "slug": "forklift", "name": "Forklift" },
+          { "id": 40202, "slug": "reach-truck", "name": "Reach Truck" },
+          { "id": 40203, "slug": "scissor-lift", "name": "Scissor Lift" },
+          { "id": 40204, "slug": "boom-lift", "name": "Boom Lift" },
+          { "id": 40205, "slug": "pallet-jack", "name": "Pallet Jack" }
+        ]
+      },
+      {
+        "id": 403,
+        "slug": "agricultural-machinery",
+        "name": "Agricultural Machinery",
+        "deep": [
+          { "id": 40301, "slug": "tractor", "name": "Tractor" },
+          { "id": 40302, "slug": "harvester", "name": "Harvester" },
+          { "id": 40303, "slug": "transplanter", "name": "Transplanter" },
+          { "id": 40304, "slug": "irrigation-equipment", "name": "Irrigation Equipment" },
+          { "id": 40305, "slug": "sprayer", "name": "Sprayer" }
+        ]
+      },
+      {
+        "id": 404,
+        "slug": "generator-compressor",
+        "name": "Generator & Compressor",
+        "deep": [
+          { "id": 40401, "slug": "diesel-generator", "name": "Diesel Generator" },
+          { "id": 40402, "slug": "petrol-generator", "name": "Petrol Generator" },
+          { "id": 40403, "slug": "air-compressor", "name": "Air Compressor" },
+          { "id": 40404, "slug": "water-pump", "name": "Water Pump" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "slug": "boat-marine",
+    "name": "Boats & Marine",
+    "icon": "⛵",
+    "subcategories": [
+      {
+        "id": 501,
+        "slug": "recreational-boat",
+        "name": "Recreational Boats",
+        "deep": [
+          { "id": 50101, "slug": "speedboat", "name": "Speedboat" },
+          { "id": 50102, "slug": "fishing-boat", "name": "Fishing Boat" },
+          { "id": 50103, "slug": "pontoon-boat", "name": "Pontoon Boat" },
+          { "id": 50104, "slug": "inflatable-boat", "name": "Inflatable Boat" },
+          { "id": 50105, "slug": "kayak-canoe", "name": "Kayak & Canoe" },
+          { "id": 50106, "slug": "sailboat", "name": "Sailboat" }
+        ]
+      },
+      {
+        "id": 502,
+        "slug": "luxury-boat",
+        "name": "Luxury & Yacht",
+        "deep": [
+          { "id": 50201, "slug": "yacht", "name": "Yacht" },
+          { "id": 50202, "slug": "motor-yacht", "name": "Motor Yacht" },
+          { "id": 50203, "slug": "catamaran", "name": "Catamaran" },
+          { "id": 50204, "slug": "houseboat", "name": "Houseboat" }
+        ]
+      },
+      {
+        "id": 503,
+        "slug": "commercial-boat",
+        "name": "Commercial & Work Boats",
+        "deep": [
+          { "id": 50301, "slug": "cargo-boat", "name": "Cargo Boat" },
+          { "id": 50302, "slug": "ferry-passenger", "name": "Ferry & Passenger Boat" },
+          { "id": 50303, "slug": "tug-boat", "name": "Tug Boat" },
+          { "id": 50304, "slug": "fishing-vessel", "name": "Fishing Vessel" }
+        ]
+      },
+      {
+        "id": 504,
+        "slug": "marine-accessories",
+        "name": "Marine Accessories",
+        "deep": [
+          { "id": 50401, "slug": "outboard-engine", "name": "Outboard Engine" },
+          { "id": 50402, "slug": "boat-trailer", "name": "Boat Trailer" },
+          { "id": 50403, "slug": "marine-electronics", "name": "Marine Electronics" },
+          { "id": 50404, "slug": "safety-equipment-marine", "name": "Safety Equipment" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "slug": "bicycle-personal-mobility",
+    "name": "Bicycle & Personal Mobility",
+    "icon": "🚲",
+    "subcategories": [
+      {
+        "id": 601,
+        "slug": "bicycle",
+        "name": "Bicycle",
+        "deep": [
+          { "id": 60101, "slug": "road-bike", "name": "Road Bike" },
+          { "id": 60102, "slug": "mountain-bike", "name": "Mountain Bike (MTB)" },
+          { "id": 60103, "slug": "hybrid-bike", "name": "Hybrid Bike" },
+          { "id": 60104, "slug": "folding-bike", "name": "Folding Bike" },
+          { "id": 60105, "slug": "bmx-bike", "name": "BMX Bike" },
+          { "id": 60106, "slug": "kids-bike", "name": "Kids Bike" },
+          { "id": 60107, "slug": "fixie-single-speed", "name": "Fixie & Single Speed" }
+        ]
+      },
+      {
+        "id": 602,
+        "slug": "electric-bicycle",
+        "name": "Electric Bicycle (E-Bike)",
+        "deep": [
+          { "id": 60201, "slug": "electric-road-bike", "name": "Electric Road Bike" },
+          { "id": 60202, "slug": "electric-mountain-bike", "name": "Electric Mountain Bike" },
+          { "id": 60203, "slug": "electric-folding-bike", "name": "Electric Folding Bike" },
+          { "id": 60204, "slug": "electric-cargo-bike", "name": "Electric Cargo Bike" }
+        ]
+      },
+      {
+        "id": 603,
+        "slug": "personal-mobility-device",
+        "name": "Personal Mobility Device",
+        "deep": [
+          { "id": 60301, "slug": "electric-scooter-pmd", "name": "Electric Scooter (PMD)" },
+          { "id": 60302, "slug": "hoverboard", "name": "Hoverboard" },
+          { "id": 60303, "slug": "electric-unicycle", "name": "Electric Unicycle (EUC)" },
+          { "id": 60304, "slug": "onewheel", "name": "Onewheel" },
+          { "id": 60305, "slug": "skateboard-longboard", "name": "Skateboard & Longboard" }
+        ]
+      },
+      {
+        "id": 604,
+        "slug": "bicycle-accessories",
+        "name": "Bicycle Accessories",
+        "deep": [
+          { "id": 60401, "slug": "helmets-safety", "name": "Helmets & Safety" },
+          { "id": 60402, "slug": "bike-parts-components", "name": "Parts & Components" },
+          { "id": 60403, "slug": "bike-lights", "name": "Lights & Reflectors" },
+          { "id": 60404, "slug": "bike-locks", "name": "Locks & Security" },
+          { "id": 60405, "slug": "bike-racks-bags", "name": "Racks & Bags" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "slug": "vehicle-parts-accessories",
+    "name": "Parts & Accessories",
+    "icon": "⚙️",
+    "subcategories": [
+      {
+        "id": 701,
+        "slug": "car-parts",
+        "name": "Car Parts",
+        "deep": [
+          { "id": 70101, "slug": "engine-parts", "name": "Engine Parts" },
+          { "id": 70102, "slug": "transmission-gearbox", "name": "Transmission & Gearbox" },
+          { "id": 70103, "slug": "suspension-steering", "name": "Suspension & Steering" },
+          { "id": 70104, "slug": "brake-system", "name": "Brake System" },
+          { "id": 70105, "slug": "exhaust-system", "name": "Exhaust System" },
+          { "id": 70106, "slug": "cooling-system", "name": "Cooling System" },
+          { "id": 70107, "slug": "electrical-parts", "name": "Electrical & Electronic Parts" },
+          { "id": 70108, "slug": "body-parts-panels", "name": "Body Parts & Panels" },
+          { "id": 70109, "slug": "interior-parts", "name": "Interior Parts" },
+          { "id": 70110, "slug": "fuel-system", "name": "Fuel System" }
+        ]
+      },
+      {
+        "id": 702,
+        "slug": "tyres-rims",
+        "name": "Tyres & Rims",
+        "deep": [
+          { "id": 70201, "slug": "car-tyres-new", "name": "Car Tyres (New)" },
+          { "id": 70202, "slug": "car-tyres-used", "name": "Car Tyres (Used)" },
+          { "id": 70203, "slug": "motorcycle-tyres", "name": "Motorcycle Tyres" },
+          { "id": 70204, "slug": "alloy-rims", "name": "Alloy Rims" },
+          { "id": 70205, "slug": "steel-rims", "name": "Steel Rims" },
+          { "id": 70206, "slug": "tyre-accessories", "name": "Tyre Accessories" }
+        ]
+      },
+      {
+        "id": 703,
+        "slug": "car-audio-electronics",
+        "name": "Car Audio & Electronics",
+        "deep": [
+          { "id": 70301, "slug": "head-unit-player", "name": "Head Unit & Player" },
+          { "id": 70302, "slug": "speakers-subwoofer", "name": "Speakers & Subwoofer" },
+          { "id": 70303, "slug": "amplifier", "name": "Amplifier" },
+          { "id": 70304, "slug": "dashcam", "name": "Dashcam" },
+          { "id": 70305, "slug": "reverse-camera", "name": "Reverse Camera" },
+          { "id": 70306, "slug": "car-alarm-security", "name": "Car Alarm & Security" },
+          { "id": 70307, "slug": "gps-tracker", "name": "GPS Tracker" },
+          { "id": 70308, "slug": "obd-diagnostic", "name": "OBD & Diagnostic Tools" }
+        ]
+      },
+      {
+        "id": 704,
+        "slug": "car-accessories",
+        "name": "Car Accessories",
+        "deep": [
+          { "id": 70401, "slug": "floor-mats-carpets", "name": "Floor Mats & Carpets" },
+          { "id": 70402, "slug": "seat-covers", "name": "Seat Covers" },
+          { "id": 70403, "slug": "car-perfume-freshener", "name": "Car Perfume & Freshener" },
+          { "id": 70404, "slug": "sun-shades-tint", "name": "Sun Shades & Tint" },
+          { "id": 70405, "slug": "car-covers", "name": "Car Covers" },
+          { "id": 70406, "slug": "phone-holder-charger", "name": "Phone Holder & Charger" },
+          { "id": 70407, "slug": "roof-rack-carrier", "name": "Roof Rack & Carrier" },
+          { "id": 70408, "slug": "towing-accessories", "name": "Towing Accessories" }
+        ]
+      },
+      {
+        "id": 705,
+        "slug": "motorcycle-parts",
+        "name": "Motorcycle Parts",
+        "deep": [
+          { "id": 70501, "slug": "moto-engine-parts", "name": "Engine Parts" },
+          { "id": 70502, "slug": "moto-body-fairing", "name": "Body & Fairing" },
+          { "id": 70503, "slug": "moto-exhaust", "name": "Exhaust" },
+          { "id": 70504, "slug": "moto-suspension", "name": "Suspension" },
+          { "id": 70505, "slug": "moto-brake-parts", "name": "Brake Parts" },
+          { "id": 70506, "slug": "moto-accessories", "name": "Accessories & Gear" }
+        ]
+      },
+      {
+        "id": 706,
+        "slug": "workshop-tools",
+        "name": "Workshop Tools & Equipment",
+        "deep": [
+          { "id": 70601, "slug": "jack-stands", "name": "Jack & Stands" },
+          { "id": 70602, "slug": "diagnostic-scanner", "name": "Diagnostic Scanner" },
+          { "id": 70603, "slug": "hand-tools-workshop", "name": "Hand Tools" },
+          { "id": 70604, "slug": "power-tools-workshop", "name": "Power Tools" },
+          { "id": 70605, "slug": "spray-paint-booth", "name": "Spray Paint & Booth" },
+          { "id": 70606, "slug": "lift-ramp", "name": "Lift & Ramp" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "slug": "vehicle-services",
+    "name": "Vehicle Services",
+    "icon": "🔧",
+    "subcategories": [
+      {
+        "id": 801,
+        "slug": "workshop-repair",
+        "name": "Workshop & Repair",
+        "deep": [
+          { "id": 80101, "slug": "general-workshop", "name": "General Workshop" },
+          { "id": 80102, "slug": "engine-specialist", "name": "Engine Specialist" },
+          { "id": 80103, "slug": "gearbox-transmission-repair", "name": "Gearbox & Transmission" },
+          { "id": 80104, "slug": "aircon-repair-car", "name": "Car Aircon Repair" },
+          { "id": 80105, "slug": "electrical-workshop", "name": "Electrical Workshop" },
+          { "id": 80106, "slug": "body-paint-workshop", "name": "Body & Paint Workshop" },
+          { "id": 80107, "slug": "tyre-alignment-balancing", "name": "Tyre Alignment & Balancing" },
+          { "id": 80108, "slug": "windscreen-repair", "name": "Windscreen Repair & Replacement" }
+        ]
+      },
+      {
+        "id": 802,
+        "slug": "car-grooming-detailing",
+        "name": "Car Grooming & Detailing",
+        "deep": [
+          { "id": 80201, "slug": "car-wash", "name": "Car Wash" },
+          { "id": 80202, "slug": "car-polish-wax", "name": "Polishing & Waxing" },
+          { "id": 80203, "slug": "ceramic-coating", "name": "Ceramic Coating" },
+          { "id": 80204, "slug": "ppf-paint-protection", "name": "PPF (Paint Protection Film)" },
+          { "id": 80205, "slug": "interior-detailing", "name": "Interior Detailing" },
+          { "id": 80206, "slug": "engine-bay-cleaning", "name": "Engine Bay Cleaning" }
+        ]
+      },
+      {
+        "id": 803,
+        "slug": "wrapping-modification",
+        "name": "Wrapping & Modification",
+        "deep": [
+          { "id": 80301, "slug": "car-wrapping", "name": "Car Wrapping (Vinyl)" },
+          { "id": 80302, "slug": "window-tint", "name": "Window Tinting" },
+          { "id": 80303, "slug": "car-modification", "name": "Car Modification" },
+          { "id": 80304, "slug": "rim-refurbishment", "name": "Rim Refurbishment" },
+          { "id": 80305, "slug": "car-sticker-decal", "name": "Sticker & Decal" }
+        ]
+      },
+      {
+        "id": 804,
+        "slug": "admin-services",
+        "name": "Admin & Registration Services",
+        "deep": [
+          { "id": 80401, "slug": "road-tax-renewal", "name": "Road Tax Renewal" },
+          { "id": 80402, "slug": "car-insurance-service", "name": "Car Insurance" },
+          { "id": 80403, "slug": "jpj-puspakom", "name": "JPJ & PUSPAKOM" },
+          { "id": 80404, "slug": "vehicle-ownership-transfer", "name": "Ownership Transfer" },
+          { "id": 80405, "slug": "hire-purchase-financing", "name": "Hire Purchase & Financing" }
+        ]
+      },
+      {
+        "id": 805,
+        "slug": "towing-recovery",
+        "name": "Towing & Recovery",
+        "deep": [
+          { "id": 80501, "slug": "tow-truck", "name": "Tow Truck" },
+          { "id": 80502, "slug": "roadside-assistance", "name": "Roadside Assistance" },
+          { "id": 80503, "slug": "battery-jump-start", "name": "Battery Jump Start" },
+          { "id": 80504, "slug": "flat-tyre-assistance", "name": "Flat Tyre Assistance" }
+        ]
+      },
+      {
+        "id": 806,
+        "slug": "rental-hire",
+        "name": "Rental & Hire",
+        "deep": [
+          { "id": 80601, "slug": "car-rental-daily", "name": "Car Rental (Daily)" },
+          { "id": 80602, "slug": "car-rental-monthly", "name": "Car Rental (Monthly)" },
+          { "id": 80603, "slug": "motorcycle-rental", "name": "Motorcycle Rental" },
+          { "id": 80604, "slug": "van-lorry-rental", "name": "Van & Lorry Rental" },
+          { "id": 80605, "slug": "luxury-car-rental", "name": "Luxury Car Rental" },
+          { "id": 80606, "slug": "self-drive-rental", "name": "Self-Drive Rental" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "slug": "number-plates",
+    "name": "Number Plates",
+    "icon": "🔢",
+    "subcategories": [
+      {
+        "id": 901,
+        "slug": "special-number-plates",
+        "name": "Special Number Plates",
+        "deep": [
+          { "id": 90101, "slug": "single-digit", "name": "Single Digit (1-9)" },
+          { "id": 90102, "slug": "double-digit", "name": "Double Digit (10-99)" },
+          { "id": 90103, "slug": "triple-digit", "name": "Triple Digit (100-999)" },
+          { "id": 90104, "slug": "vip-plate", "name": "VIP Plates" },
+          { "id": 90105, "slug": "palindrome-plate", "name": "Palindrome Plates" },
+          { "id": 90106, "slug": "sequential-plate", "name": "Sequential Plates" }
+        ]
+      },
+      {
+        "id": 902,
+        "slug": "state-plates",
+        "name": "By State",
+        "deep": [
+          { "id": 90201, "slug": "plate-w-kl", "name": "W (Kuala Lumpur)" },
+          { "id": 90202, "slug": "plate-b-selangor", "name": "B (Selangor)" },
+          { "id": 90203, "slug": "plate-p-penang", "name": "P (Penang)" },
+          { "id": 90204, "slug": "plate-j-johor", "name": "J (Johor)" },
+          { "id": 90205, "slug": "plate-n-negeri-sembilan", "name": "N (Negeri Sembilan)" },
+          { "id": 90206, "slug": "plate-a-perak", "name": "A (Perak)" },
+          { "id": 90207, "slug": "plate-other-states", "name": "Other States" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "slug": "ev-charging",
+    "name": "EV Charging & Infrastructure",
+    "icon": "⚡",
+    "subcategories": [
+      {
+        "id": 1001,
+        "slug": "ev-charger",
+        "name": "EV Chargers",
+        "deep": [
+          { "id": 100101, "slug": "home-ev-charger", "name": "Home EV Charger" },
+          { "id": 100102, "slug": "portable-ev-charger", "name": "Portable EV Charger" },
+          { "id": 100103, "slug": "commercial-ev-charger", "name": "Commercial EV Charger" },
+          { "id": 100104, "slug": "dc-fast-charger", "name": "DC Fast Charger" }
+        ]
+      },
+      {
+        "id": 1002,
+        "slug": "ev-battery-parts",
+        "name": "EV Battery & Parts",
+        "deep": [
+          { "id": 100201, "slug": "ev-battery", "name": "EV Battery" },
+          { "id": 100202, "slug": "ev-motor", "name": "EV Motor" },
+          { "id": 100203, "slug": "ev-controller", "name": "EV Controller" },
+          { "id": 100204, "slug": "ev-conversion-kit", "name": "EV Conversion Kit" }
+        ]
+      }
+    ]
+  }
+]

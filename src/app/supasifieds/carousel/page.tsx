@@ -2,17 +2,29 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
 import styles from "../../supamarket/create/page.module.css";
+import carouselStyles from "./page.module.css";
 
 type MineListing = { id: string; title: string; images?: string[] };
+type CarouselPackage = { days: number; sc: number; label: string };
+const DEFAULT_PACKAGES: CarouselPackage[] = [
+  { days: 3, sc: 180, label: "3 days carousel ad" },
+  { days: 7, sc: 360, label: "7 days carousel ad" },
+  { days: 14, sc: 650, label: "14 days carousel ad" },
+];
 
 export default function SupasifiedsCarouselCreatePage() {
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const fileRef = useRef<HTMLInputElement>(null);
+  const isSupaauto = pathname?.startsWith("/supaauto");
+  const isSupadomus = pathname?.startsWith("/supadomus");
+  const appBase = isSupaauto ? "/supaauto" : isSupadomus ? "/supadomus" : "/supasifieds";
+  const apiBase = isSupaauto ? "/api/supaauto" : isSupadomus ? "/api/supadomus" : "/api/supasifieds";
 
   const [mine, setMine] = useState<MineListing[]>([]);
   const [listingId, setListingId] = useState("");
@@ -20,6 +32,7 @@ export default function SupasifiedsCarouselCreatePage() {
   const [ctaLabel, setCtaLabel] = useState("View Ad");
   const [linkUrl, setLinkUrl] = useState("");
   const [durationDays, setDurationDays] = useState(7);
+  const [carouselPackages, setCarouselPackages] = useState<CarouselPackage[]>(DEFAULT_PACKAGES);
   const [imageUrl, setImageUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -30,7 +43,7 @@ export default function SupasifiedsCarouselCreatePage() {
 
   useEffect(() => {
     if (!user) return;
-    fetch("/api/supasifieds/listings/mine", { headers: { Authorization: `Bearer ${token()}` } })
+    fetch(`${apiBase}/listings/mine`, { headers: { Authorization: `Bearer ${token()}` } })
       .then((r) => r.json())
       .then((d) => {
         if (d.success && Array.isArray(d.data)) setMine(d.data);
@@ -39,11 +52,24 @@ export default function SupasifiedsCarouselCreatePage() {
   }, [user]);
 
   useEffect(() => {
+    fetch(`${apiBase}/promote/config`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && Array.isArray(d.data?.carouselPackages) && d.data.carouselPackages.length) {
+          setCarouselPackages(d.data.carouselPackages);
+          const hasCurrent = d.data.carouselPackages.some((x: CarouselPackage) => x.days === durationDays);
+          if (!hasCurrent) setDurationDays(d.data.carouselPackages[0].days);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (!listingId) return;
     const selected = mine.find((x) => x.id === listingId);
     if (!selected) return;
     if (!headline.trim()) setHeadline(selected.title);
-    if (!linkUrl.trim()) setLinkUrl(`/supasifieds/${selected.id}`);
+    if (!linkUrl.trim()) setLinkUrl(`${appBase}/${selected.id}`);
     if (!imageUrl && selected.images?.[0]) setImageUrl(selected.images[0]);
   }, [listingId, mine, headline, linkUrl, imageUrl]);
 
@@ -55,7 +81,7 @@ export default function SupasifiedsCarouselCreatePage() {
       const fd = new FormData();
       fd.append("image", file);
       fd.append("index", "0");
-      const r = await fetch("/api/supasifieds/images", {
+      const r = await fetch(`${apiBase}/images`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token()}` },
         body: fd,
@@ -80,7 +106,7 @@ export default function SupasifiedsCarouselCreatePage() {
     if (!t) return;
     setSubmitting(true);
     try {
-      const r = await fetch("/api/supasifieds/promote/carousel", {
+      const r = await fetch(`${apiBase}/promote/carousel`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
         body: JSON.stringify({
@@ -112,8 +138,10 @@ export default function SupasifiedsCarouselCreatePage() {
         <button className={styles.iconBtn} onClick={() => router.back()}>
           ←
         </button>
-        <h1 className={styles.title}>Create Carousel Ad</h1>
-        <Link href="/supasifieds/my-listings" className={styles.iconBtn}>
+        <h1 className={styles.title}>
+          {isSupaauto ? "Create SupaAuto Carousel Ad" : isSupadomus ? "Create SupaDomus Carousel Ad" : "Create Carousel Ad"}
+        </h1>
+        <Link href={`${appBase}/my-listings`} className={styles.iconBtn}>
           📂
         </Link>
       </div>
@@ -142,23 +170,19 @@ export default function SupasifiedsCarouselCreatePage() {
               </div>
               <div className={styles.formField}>
                 <label className={styles.label}>Destination URL</label>
-                <input className={styles.input} value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="/supasifieds/..." />
+                <input className={styles.input} value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder={`${appBase}/...`} />
               </div>
               <div className={styles.formField}>
                 <label className={styles.label}>Campaign duration</label>
                 <div className={styles.optionGrid}>
-                  {[
-                    { d: 3, sc: 180 },
-                    { d: 7, sc: 360 },
-                    { d: 14, sc: 650 },
-                  ].map((opt) => (
+                  {carouselPackages.map((opt) => (
                     <button
-                      key={opt.d}
+                      key={opt.days}
                       type="button"
-                      className={`${styles.optBtn} ${durationDays === opt.d ? styles.optBtnActive : ""}`}
-                      onClick={() => setDurationDays(opt.d)}
+                      className={`${styles.optBtn} ${durationDays === opt.days ? styles.optBtnActive : ""}`}
+                      onClick={() => setDurationDays(opt.days)}
                     >
-                      {opt.d} days · {opt.sc} SC
+                      {opt.days} days · {opt.sc} SC
                     </button>
                   ))}
                 </div>
@@ -179,7 +203,12 @@ export default function SupasifiedsCarouselCreatePage() {
               </div>
               {error ? <div className={styles.error}>{error}</div> : null}
               {ok ? <div style={{ color: "#276749", fontWeight: 700 }}>{ok}</div> : null}
-              <button className={styles.publishBtn} type="button" disabled={submitting} onClick={submit}>
+              <button
+                className={`${styles.publishBtn} ${carouselStyles.launchBtn}`}
+                type="button"
+                disabled={submitting}
+                onClick={submit}
+              >
                 {submitting ? "Launching..." : "🎠 Launch Carousel Campaign"}
               </button>
             </div>

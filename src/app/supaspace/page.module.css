@@ -389,16 +389,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
+  width: auto;
   height: 44px;
-  padding: 0;
-  border-radius: 50%;
-  font-size: 20px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
   font-family: inherit;
   transition: all 150ms;
   flex-shrink: 0;
   border: none;
+  gap: 6px;
 }
 /* Message — background biru lembut */
 .messageBtn {
@@ -415,10 +417,16 @@
 
 /* Share — background gold lembut (selari dengan Follow) */
 .shareBtn {
+  min-width: 102px;
   background: rgba(245, 166, 35, 0.35);
-  color: #B8860B;
+  color: #8c6b10;
 }
 .shareBtn:hover { background: var(--color-gold); color: #1A1A2E; transform: translateY(-1px); }
+
+.actionIcon {
+  font-size: 15px;
+  line-height: 1;
+}
 
 .tipBtn {
   display: inline-flex;
@@ -1343,6 +1351,35 @@
   margin-bottom: 20px;
 }
 
+.editSteps {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.editStep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.editStepDone {
+  color: #27ae60;
+  font-weight: 800;
+}
+
+.editStepPending {
+  color: var(--color-text-muted);
+  font-weight: 800;
+}
+
 .formField {
   margin-bottom: 16px;
 }
@@ -1376,6 +1413,19 @@
   resize: none;
   height: 80px;
   line-height: 1.5;
+}
+
+.photoPickBtn {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .modalActions {

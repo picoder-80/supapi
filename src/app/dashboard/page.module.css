@@ -57,9 +57,107 @@
   border: 3px solid rgba(255,255,255,0.15);
 }
 
-/* ── Profile completeness (in hero — replaces stats / My Profile row) ── */
-/* NOTE: dashboard/page.tsx now uses a new "Overview" layout.
-   Older CSS for profile completeness (heroCompleteness*) is intentionally removed. */
+/* ── Profile Completeness ── */
+.completenessCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.completenessTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.completenessLabel {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.completenessPct {
+  font-size: 13px;
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.completenessBar {
+  width: 100%;
+  height: 8px;
+  background: var(--color-bg);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.completenessBar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #f5a623, #f8bf58);
+  border-radius: 999px;
+}
+
+.completenessSteps {
+  display: grid;
+  gap: 6px;
+}
+
+.completenessStep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.stepDone {
+  color: #27ae60;
+  font-weight: 800;
+}
+
+.stepPending {
+  color: var(--color-text-muted);
+  font-weight: 800;
+}
+
+.completenessRewardRow {
+  margin-top: 10px;
+}
+
+.completenessClaimBtn {
+  border: none;
+  background: linear-gradient(180deg, #f8b133, #f5a623);
+  color: #1a1a2e;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 16px rgba(245, 166, 35, 0.28);
+}
+
+.completenessClaimBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.completenessClaimed {
+  font-size: 12px;
+  font-weight: 700;
+  color: #27ae60;
+}
+
+.completenessHint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
 
 /* ── What's Next ── */
 .whatsNextCard {

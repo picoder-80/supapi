@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
       recentOrdersRes,
       creditTxRes,
       petsRes,
+      profileRewardClaimRes,
     ] = await Promise.all([
       supabase.from("orders").select("id", { count: "exact", head: true })
         .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`),
@@ -56,6 +57,10 @@ export async function GET(req: NextRequest) {
         .order("created_at", { ascending: false })
         .limit(50),
       supabase.from("supapets_pets").select("id", { count: "exact", head: true }).eq("user_id", uid),
+      supabase.from("credit_transactions")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", uid)
+        .eq("activity", "complete_profile"),
     ]);
 
     const earned = Number(earningsRes.data?.total_earned ?? 0);
@@ -80,6 +85,7 @@ export async function GET(req: NextRequest) {
         recent_orders: recentOrdersRes.data ?? [],
         credit_transactions: creditTxRes.data ?? [],
         pets: petsRes.count ?? 0,
+        profile_reward_claimed: Number(profileRewardClaimRes.count ?? 0) > 0,
       },
     });
   } catch {

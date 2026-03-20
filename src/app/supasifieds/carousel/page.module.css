@@ -1,0 +1,39 @@
+.launchBtn {
+  position: relative;
+  min-height: 52px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ffd36a 0%, #f5a623 48%, #ea8f12 100%);
+  color: #1a1a2e;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.1px;
+  box-shadow: 0 8px 18px rgba(245, 166, 35, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.launchBtn::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
+
+.launchBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(245, 166, 35, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  filter: saturate(1.03);
+}
+
+.launchBtn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 6px 14px rgba(245, 166, 35, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.launchBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+}

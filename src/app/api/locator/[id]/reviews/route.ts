@@ -18,15 +18,28 @@ function getUser(req: Request) {
 // GET /api/locator/[id]/reviews
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const user = getUser(req);
   const { data, error } = await supabase
     .from("business_reviews")
-    .select("id,rating,comment,created_at,users(username,avatar_url)")
+    .select("id,rating,comment,images,created_at,users(username,avatar_url)")
     .eq("business_id", id)
     .order("created_at", { ascending: false })
     .limit(20);
 
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true, data: data ?? [] });
+
+  let myReview: { id: string; rating: number; comment: string | null; images: string[] | null } | null = null;
+  if (user?.userId) {
+    const { data: own } = await supabase
+      .from("business_reviews")
+      .select("id,rating,comment,images")
+      .eq("business_id", id)
+      .eq("user_id", user.userId)
+      .maybeSingle();
+    if (own) myReview = own;
+  }
+
+  return NextResponse.json({ success: true, data: data ?? [], my_review: myReview });
 }
 
 // POST /api/locator/[id]/reviews
@@ -35,14 +48,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const user = getUser(req);
   if (!user) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
-  const { rating, comment } = await req.json();
+  const { rating, comment, images } = await req.json();
   if (!rating || rating < 1 || rating > 5) {
     return NextResponse.json({ success: false, error: "Rating 1-5 required" }, { status: 400 });
   }
+  const normalizedImages = Array.isArray(images)
+    ? images
+        .map((v) => String(v || "").trim())
+        .filter(Boolean)
+        .slice(0, 4)
+    : [];
 
   const { error } = await supabase
     .from("business_reviews")
-    .upsert({ business_id: id, user_id: user.userId, rating, comment });
+    .upsert({ business_id: id, user_id: user.userId, rating, comment, images: normalizedImages });
 
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
 

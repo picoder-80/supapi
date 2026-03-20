@@ -232,6 +232,12 @@
   right: 6px;
   font-size: 12px;
 }
+.spotlightIndicator {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 12px;
+}
 
 .listingInfo { min-width: 0; }
 .listingTitle {
@@ -297,6 +303,7 @@
 }
 .listingStats span { font-size: 12px; color: #718096; }
 .boostExpiry { color: #b7791f !important; font-weight: 700; }
+.spotlightExpiry { color: #805ad5 !important; font-weight: 700; }
 
 .listingActions {
   display: flex;

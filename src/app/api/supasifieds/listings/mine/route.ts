@@ -52,9 +52,27 @@ export async function GET(req: NextRequest) {
     const { data, error } = await query;
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
 
+    const listingIds = (data ?? []).map((row: { id: string }) => row.id);
+    const spotlightMap = new Map<string, string>();
+    if (listingIds.length) {
+      const { data: spotRows } = await supabase
+        .from("classified_spotlights")
+        .select("listing_id, expires_at")
+        .in("listing_id", listingIds)
+        .eq("is_active", true)
+        .gte("expires_at", new Date().toISOString())
+        .order("expires_at", { ascending: false });
+      for (const row of spotRows ?? []) {
+        if (!spotlightMap.has(String(row.listing_id ?? ""))) {
+          spotlightMap.set(String(row.listing_id ?? ""), String(row.expires_at ?? ""));
+        }
+      }
+    }
+
     const normalized = (data ?? []).map((row: Record<string, unknown>) => ({
       ...row,
       status: archived ? String(row.status ?? "") : normalizeStatusForUi(row.status),
+      spotlight_expires_at: spotlightMap.get(String(row.id ?? "")) ?? null,
     }));
     return NextResponse.json({ success: true, data: normalized });
   } catch {

@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
+import { getSupasifiedsMonetizationConfig } from "@/lib/supasifieds/monetization-config";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
-const SPOTLIGHT_PACKAGES: Record<number, { sc: number; label: string }> = {
-  3: { sc: 120, label: "3 days category spotlight" },
-  7: { sc: 250, label: "7 days category spotlight" },
-  14: { sc: 450, label: "14 days category spotlight" },
-};
 
 function getUserId(req: NextRequest): string | null {
   try {
@@ -30,7 +25,8 @@ export async function POST(req: NextRequest) {
 
   const { listing_id, duration_days } = await req.json();
   const days = Number(duration_days);
-  const pkg = SPOTLIGHT_PACKAGES[days];
+  const config = await getSupasifiedsMonetizationConfig(supabase);
+  const pkg = config.spotlightPackages.find((row) => row.days === days);
   if (!listing_id || !pkg) {
     return NextResponse.json({ success: false, error: "Invalid package" }, { status: 400 });
   }

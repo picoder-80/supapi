@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
-import { analyzeDispute, shouldAutoResolveDispute } from "@/lib/market/ai";
-import { logDisputeEvent } from "@/lib/security/dispute-audit";
 import { executeOwnerTransfer, isOwnerTransferConfigured } from "@/lib/pi/payout";
 import { creditPlatformEarning } from "@/lib/wallet/earnings";
 import { applyReferralCommissionForSettlement } from "@/lib/referral/commission";
@@ -42,54 +40,6 @@ function calcCommission(gross: number, pct: number): { commissionPi: number; net
   const commissionPi = Math.round((gross * (pct / 100)) * 1000000) / 1000000;
   const netPi = Math.round((gross - commissionPi) * 1000000) / 1000000;
   return { commissionPi, netPi };
-}
-
-function isNoResponseReason(reason: string): boolean {
-  const normalizedReason = (reason || "").toLowerCase();
-  const rawKeywords = process.env.SUPASCROW_AI_FORCE_MANUAL_KEYWORDS
-    ?? "no response,no reply,no update,tak respon,tak reply,tak balas,seller tak respon,seller tak reply,seller tak balas,ghosted,silent";
-  const keywords = rawKeywords
-    .split(",")
-    .map((k) => k.trim().toLowerCase())
-    .filter(Boolean);
-  return keywords.some((kw) => normalizedReason.includes(kw));
-}
-
-function getSupaScrowAutoPolicy(confidence: number, amount: number, currency: "pi" | "sc"): {
-  ok: boolean;
-  reason: "auto_disabled" | "confidence_too_low" | "amount_too_high" | "ok";
-  threshold: number;
-  max_auto_resolve: number;
-} {
-  const autoEnabled = (process.env.SUPASCROW_AI_AUTO_RESOLVE_ENABLED ?? "true").toLowerCase() !== "false";
-  const threshold = Math.min(
-    1,
-    Math.max(0, Number(process.env.SUPASCROW_AI_AUTO_THRESHOLD ?? process.env.MARKET_AI_AUTO_RESOLVE_THRESHOLD ?? "0.78"))
-  );
-
-  if (!autoEnabled) {
-    return { ok: false, reason: "auto_disabled", threshold, max_auto_resolve: 0 };
-  }
-
-  if (currency === "pi") {
-    const marketPolicy = shouldAutoResolveDispute(confidence, amount);
-    return {
-      ok: marketPolicy.ok,
-      reason: marketPolicy.reason,
-      threshold: marketPolicy.threshold,
-      max_auto_resolve: marketPolicy.max_auto_resolve_pi,
-    };
-  }
-
-  const maxAuto = Number(process.env.SUPASCROW_AI_MAX_AUTO_SC ?? 5000);
-  const safeMaxAuto = Number.isFinite(maxAuto) ? maxAuto : 5000;
-  if (confidence < threshold) {
-    return { ok: false, reason: "confidence_too_low", threshold, max_auto_resolve: safeMaxAuto };
-  }
-  if (amount > safeMaxAuto) {
-    return { ok: false, reason: "amount_too_high", threshold, max_auto_resolve: safeMaxAuto };
-  }
-  return { ok: true, reason: "ok", threshold, max_auto_resolve: safeMaxAuto };
 }
 
 export async function GET(req: NextRequest) {
@@ -277,7 +227,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, data: { message: "Escrow funded" } });
   }
 
-  if (action === "accept" || action === "add_tracking" || action === "confirm_delivery" || action === "release" || action === "cancel" || action === "dispute") {
+  if (action === "accept" || action === "add_tracking" || action === "confirm_delivery" || action === "release" || action === "cancel") {
     const dealId = String(body.deal_id ?? "");
     if (!dealId) {
       return NextResponse.json({ success: false, error: "Missing deal_id" }, { status: 400 });
@@ -413,200 +363,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, data: { message: "Deal cancelled" } });
     }
 
-    if (action === "dispute") {
-      if (!isBuyer && !isSeller) return NextResponse.json({ success: false, error: "Access denied" }, { status: 403 });
-      if (!["funded", "shipped", "delivered"].includes(deal.status)) return NextResponse.json({ success: false, error: "Cannot dispute at this stage" }, { status: 400 });
-      const reason = String(body.reason ?? "").trim();
-      const { error: upErr } = await supabase.from("supascrow_deals").update({ status: "disputed", updated_at: new Date().toISOString() }).eq("id", dealId);
-      if (upErr) return NextResponse.json({ success: false, error: upErr.message }, { status: 500 });
-
-      const { data: disputeRow, error: insertDisputeErr } = await supabase
-        .from("supascrow_disputes")
-        .insert({ deal_id: dealId, initiator_id: userId, reason: reason || null })
-        .select("id")
-        .single();
-
-      if (insertDisputeErr || !disputeRow) {
-        return NextResponse.json({ success: false, error: "Failed to create dispute" }, { status: 500 });
-      }
-      await logDisputeEvent({
-        platform: "supascrow",
-        disputeId: disputeRow.id,
-        dealId: dealId,
-        actorType: "user",
-        actorId: userId,
-        eventType: "opened",
-        fromStatus: deal.status,
-        toStatus: "disputed",
-        reasonExcerpt: reason || null,
-      });
-
-      const amount = Number(deal.amount_pi ?? 0);
-      const analysis = await analyzeDispute({
-        reason: reason || "No reason given",
-        amount_pi: amount,
-        order_status: deal.status,
-      });
-      const noResponseReason = isNoResponseReason(reason);
-      const effectiveDecision = noResponseReason ? "manual_review" : analysis.decision;
-      const autoReleaseAllowed = (process.env.SUPASCROW_AI_ALLOW_AUTO_RELEASE ?? "false").toLowerCase() === "true";
-      const autoPolicy = getSupaScrowAutoPolicy(analysis.confidence, amount, deal.currency === "sc" ? "sc" : "pi");
-
-      await supabase
-        .from("supascrow_disputes")
-        .update({
-          ai_decision: effectiveDecision,
-          ai_reasoning: analysis.reasoning,
-          ai_confidence: analysis.confidence,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", disputeRow.id);
-      await logDisputeEvent({
-        platform: "supascrow",
-        disputeId: disputeRow.id,
-        dealId: dealId,
-        actorType: "system",
-        actorId: null,
-        eventType: "analysis_updated",
-        fromStatus: "disputed",
-        toStatus: "disputed",
-        decision: effectiveDecision,
-        confidence: analysis.confidence,
-        reasonExcerpt: analysis.reasoning,
-        metadata: {
-          no_response_reason: noResponseReason,
-          auto_release_allowed: autoReleaseAllowed,
-          auto_policy_reason: autoPolicy.reason,
-          auto_policy_threshold: autoPolicy.threshold,
-          auto_policy_max_amount: autoPolicy.max_auto_resolve,
-        },
-      });
-      const autoResolve =
-        autoPolicy.ok &&
-        !noResponseReason &&
-        (
-          effectiveDecision === "refund" ||
-          (autoReleaseAllowed && effectiveDecision === "release")
-        );
-
-      if (autoResolve) {
-        const resolution = effectiveDecision === "refund" ? "refund_to_buyer" : "release_to_seller";
-        const grossRounded = Math.round(amount * 1000000) / 1000000;
-        const commissionPct = deal.currency === "pi" ? await getSupaScrowCommissionPct() : 0;
-        const { commissionPi, netPi } = calcCommission(grossRounded, commissionPct);
-        const sellerPayout = deal.currency === "pi" ? netPi : grossRounded;
-
-        if (resolution === "release_to_seller" && grossRounded > 0) {
-          if (deal.currency === "sc") {
-            await supabase.from("supapi_credits").upsert({ user_id: deal.seller_id }, { onConflict: "user_id", ignoreDuplicates: true });
-            const { data: w } = await supabase.from("supapi_credits").select("balance, total_earned").eq("user_id", deal.seller_id).single();
-            const next = (Number(w?.balance ?? 0)) + grossRounded;
-            await supabase.from("supapi_credits").update({ balance: next, total_earned: Number(w?.total_earned ?? 0) + grossRounded, updated_at: new Date().toISOString() }).eq("user_id", deal.seller_id);
-            await supabase.from("credit_transactions").insert({ user_id: deal.seller_id, type: "earn", activity: "supascrow_release", amount: grossRounded, balance_after: next, note: `SupaScrow release #${dealId.slice(0, 8)}` });
-          } else if (deal.currency === "pi" && isOwnerTransferConfigured()) {
-            const { data: seller } = await supabase.from("users").select("pi_uid, wallet_address, wallet_verified").eq("id", deal.seller_id).single();
-            const s = seller as { pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | null;
-            const uid = s?.pi_uid?.trim();
-            const wallet = s?.wallet_address?.trim();
-            const hasActivatedWallet = !!wallet || !!s?.wallet_verified;
-            if (uid && hasActivatedWallet) {
-              const tx = await executeOwnerTransfer({ amountPi: sellerPayout, recipientUid: uid || undefined, destinationWallet: wallet || undefined, note: `SupaScrow release #${dealId.slice(0, 8)}` });
-              if (!tx.ok) {
-                await supabase.from("supascrow_disputes").update({ resolution: "pending", updated_at: new Date().toISOString() }).eq("id", disputeRow.id);
-                return NextResponse.json({ success: true, data: { message: "Dispute received. Pi payout failed — will be reviewed manually.", auto_resolved: false } });
-              }
-              if (commissionPi > 0) {
-                await supabase.from("admin_revenue").insert({
-                  platform: "supascrow",
-                  order_id: null,
-                  gross_pi: grossRounded,
-                  commission_pi: commissionPi,
-                  commission_pct: commissionPct,
-                });
-              }
-              await creditPlatformEarning({
-                userId: deal.seller_id,
-                platform: "supascrow",
-                event: "release",
-                amountPi: sellerPayout,
-                status: "available",
-                refId: dealId,
-                note: `SupaScrow auto release ${dealId}`,
-              });
-              if (commissionPi > 0) {
-                await applyReferralCommissionForSettlement({
-                  buyerUserId: deal.buyer_id,
-                  platform: "supascrow",
-                  platformFeePi: commissionPi,
-                  settlementId: dealId,
-                });
-              }
-            }
-          }
-        }
-        if (resolution === "refund_to_buyer" && grossRounded > 0) {
-          if (deal.currency === "sc") {
-            await supabase.from("supapi_credits").upsert({ user_id: deal.buyer_id }, { onConflict: "user_id", ignoreDuplicates: true });
-            const { data: w } = await supabase.from("supapi_credits").select("balance, total_earned").eq("user_id", deal.buyer_id).single();
-            const next = (Number(w?.balance ?? 0)) + grossRounded;
-            await supabase.from("supapi_credits").update({ balance: next, total_earned: Number(w?.total_earned ?? 0) + grossRounded, updated_at: new Date().toISOString() }).eq("user_id", deal.buyer_id);
-            await supabase.from("credit_transactions").insert({ user_id: deal.buyer_id, type: "earn", activity: "supascrow_refund_admin", amount: grossRounded, balance_after: next, note: `SupaScrow refund #${dealId.slice(0, 8)}` });
-          } else if (deal.currency === "pi" && isOwnerTransferConfigured()) {
-            const { data: buyer } = await supabase.from("users").select("pi_uid, wallet_address, wallet_verified").eq("id", deal.buyer_id).single();
-            const b = buyer as { pi_uid?: string; wallet_address?: string; wallet_verified?: boolean } | null;
-            const uid = b?.pi_uid?.trim();
-            const wallet = b?.wallet_address?.trim();
-            const hasActivatedWallet = !!wallet || !!b?.wallet_verified;
-            if (uid && hasActivatedWallet) {
-              const tx = await executeOwnerTransfer({ amountPi: grossRounded, recipientUid: uid || undefined, destinationWallet: wallet || undefined, note: `SupaScrow refund #${dealId.slice(0, 8)}` });
-              if (!tx.ok) {
-                await supabase.from("supascrow_disputes").update({ resolution: "pending", updated_at: new Date().toISOString() }).eq("id", disputeRow.id);
-                return NextResponse.json({ success: true, data: { message: "Dispute received. Pi refund failed — will be reviewed manually.", auto_resolved: false } });
-              }
-            }
-          }
-        }
-        const now = new Date().toISOString();
-        await supabase.from("supascrow_deals").update({ status: resolution === "release_to_seller" ? "released" : "refunded", released_at: resolution === "release_to_seller" ? now : undefined, updated_at: now }).eq("id", dealId);
-        await supabase.from("supascrow_disputes").update({ resolution, resolved_at: now, updated_at: now }).eq("id", disputeRow.id);
-        await logDisputeEvent({
-          platform: "supascrow",
-          disputeId: disputeRow.id,
-          dealId: dealId,
-          actorType: "system",
-          actorId: null,
-          eventType: "auto_resolved",
-          fromStatus: "disputed",
-          toStatus: resolution === "release_to_seller" ? "released" : "refunded",
-          decision: effectiveDecision,
-          confidence: analysis.confidence,
-          reasonExcerpt: analysis.reasoning,
-          metadata: { resolution },
-        });
-        const outcomeMsg = resolution === "release_to_seller" ? "Funds have been released to the seller." : "Refund has been issued to the buyer.";
-        return NextResponse.json({
-          success: true,
-          data: {
-            message: `Dispute resolved. ${outcomeMsg}`,
-            ai_decision: effectiveDecision,
-            ai_confidence: analysis.confidence,
-            ai_reasoning: analysis.reasoning,
-            auto_resolved: true,
-          },
-        });
-      }
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          message: "Dispute received. Our team will review it shortly.",
-          ai_decision: effectiveDecision,
-          ai_confidence: analysis.confidence,
-          ai_reasoning: analysis.reasoning,
-          auto_resolved: false,
-        },
-      });
-    }
   }
 
   if (action === "send_message") {

@@ -21,24 +21,8 @@ type Deal = {
   seller?: { id: string; username: string; display_name: string | null };
 };
 
-type Dispute = {
-  id: string;
-  deal_id: string;
-  initiator_id: string;
-  reason: string | null;
-  resolution: string | null;
-  resolved_at: string | null;
-  ai_decision: string | null;
-  ai_reasoning: string | null;
-  ai_confidence: number | null;
-  created_at: string;
-  deal: (Deal & { title: string }) | null;
-  initiator?: { id: string; username: string; display_name: string | null };
-};
-
 type SupaScrowSummary = {
   total_deals: number;
-  open_disputes: number;
   status_counts: Record<string, number>;
   total_escrow_pi: number;
   funded_escrow_pi: number;
@@ -65,20 +49,15 @@ const STATUS_LABELS: Record<string, string> = {
 export default function AdminSupaScrowPage() {
   const [token, setToken] = useState("");
   const [deals, setDeals] = useState<Deal[]>([]);
-  const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [totalDeals, setTotalDeals] = useState(0);
   const [statusFilter, setStatusFilter] = useState("");
   const [loadingDeals, setLoadingDeals] = useState(true);
-  const [loadingDisputes, setLoadingDisputes] = useState(true);
   const [msg, setMsg] = useState("");
-  const [resolvingId, setResolvingId] = useState<string | null>(null);
-  const [exporting, setExporting] = useState<"deals" | "disputes" | null>(null);
-  const [openDisputesTotal, setOpenDisputesTotal] = useState(0);
+  const [exporting, setExporting] = useState<"deals" | null>(null);
   const [commPct, setCommPct] = useState("");
   const [commTotal, setCommTotal] = useState(0);
   const [summary, setSummary] = useState<SupaScrowSummary>({
     total_deals: 0,
-    open_disputes: 0,
     status_counts: {},
     total_escrow_pi: 0,
     funded_escrow_pi: 0,
@@ -114,40 +93,10 @@ export default function AdminSupaScrowPage() {
     }
   };
 
-  const fetchDisputes = async () => {
-    if (!token) return;
-    setLoadingDisputes(true);
-    try {
-      const r = await fetch("/api/admin/supascrow/disputes?status=open", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const d = await r.json();
-      if (d.success) {
-        setDisputes(d.data.disputes ?? []);
-        setOpenDisputesTotal(Number(d.data.total ?? (d.data.disputes ?? []).length));
-      } else {
-        setDisputes([]);
-        setOpenDisputesTotal(0);
-        setMsg(d.error ?? "Failed to load disputes");
-      }
-    } catch {
-      setDisputes([]);
-      setOpenDisputesTotal(0);
-      setMsg("Failed to load disputes");
-    } finally {
-      setLoadingDisputes(false);
-    }
-  };
-
   useEffect(() => {
     if (!token) return;
     fetchDeals();
   }, [token, statusFilter]);
-
-  useEffect(() => {
-    if (!token) return;
-    fetchDisputes();
-  }, [token]);
 
   useEffect(() => {
     if (!token) return;
@@ -185,31 +134,7 @@ export default function AdminSupaScrowPage() {
     }
   };
 
-  const resolveDispute = async (disputeId: string, resolution: "release_to_seller" | "refund_to_buyer") => {
-    if (!token || resolvingId) return;
-    setResolvingId(disputeId);
-    setMsg("");
-    try {
-      const r = await fetch(`/api/admin/supascrow/disputes/${disputeId}/resolve`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ resolution }),
-      });
-      const d = await r.json();
-      if (d.success) {
-        setMsg(`✅ ${d.data?.message ?? "Done"}`);
-        await Promise.all([fetchDeals(), fetchDisputes()]);
-      } else setMsg(`❌ ${d.error ?? "Failed"}`);
-    } catch {
-      setMsg("❌ Request failed");
-    } finally {
-      setResolvingId(null);
-    }
-  };
-
-  const openDisputes = disputes;
-
-  const exportCSV = async (type: "deals" | "disputes") => {
+  const exportCSV = async (type: "deals") => {
     if (!token || exporting) return;
     setExporting(type);
     try {
@@ -235,7 +160,7 @@ export default function AdminSupaScrowPage() {
       <AdminPageHero
         icon="🛡️"
         title="SupaScrow"
-        subtitle="Monitor escrow deals and resolve disputes"
+        subtitle="Monitor escrow deals"
       />
 
       {!!msg && <div className={styles.msg}>{msg}</div>}
@@ -264,11 +189,6 @@ export default function AdminSupaScrowPage() {
             <div className="adminCardLabel">Funded Deals</div>
             <div className="adminCardValue">{Number(summary.status_counts.funded ?? 0).toFixed(0)}</div>
             <div className="adminCardSub">π {Number(summary.funded_escrow_pi ?? 0).toFixed(4)} funded escrow</div>
-          </div>
-          <div className="adminCard">
-            <div className="adminCardLabel">Open Disputes</div>
-            <div className="adminCardValue">{Number(summary.open_disputes).toFixed(0)}</div>
-            <div className="adminCardSub">{Number(summary.status_counts.disputed ?? 0).toFixed(0)} deals currently disputed</div>
           </div>
           <div className="adminCard">
             <div className="adminCardLabel">Total Escrow (Pi)</div>
@@ -321,76 +241,6 @@ export default function AdminSupaScrowPage() {
       </section>
 
       <section className="adminSection">
-        <div className={styles.disputeHeaderRow}>
-          <h2 className={styles.sectionTitle}>Open Disputes</h2>
-          <span className={styles.disputeCountBadge}>{openDisputesTotal} open</span>
-        </div>
-        {loadingDisputes ? (
-          <div className={styles.empty}>Loading…</div>
-        ) : openDisputes.length === 0 ? (
-          <div className={styles.empty}>No open disputes</div>
-        ) : (
-          <div className={styles.disputeList}>
-            {openDisputes.map((d) => {
-              const aiSuggestsRefund = d.ai_decision === "refund";
-              const aiSuggestsRelease = d.ai_decision === "release";
-              const canApplyAi = (aiSuggestsRefund || aiSuggestsRelease) && !resolvingId;
-              return (
-                <div key={d.id} className={styles.disputeCard}>
-                  <div className={styles.disputeHead}>
-                    <span className={styles.disputeDealTitle}>{d.deal?.title ?? "Deal"}</span>
-                    <span className={styles.disputeMeta}>
-                      {d.deal?.currency === "sc" ? "💎" : "π"} {Number(d.deal?.amount_pi ?? 0).toLocaleString()} · Initiated by @{d.initiator?.username ?? "?"}
-                    </span>
-                  </div>
-                  {d.reason && <div className={styles.disputeReason}>{d.reason}</div>}
-                  {d.ai_decision && (
-                    <div className={styles.aiSuggestion}>
-                      <span className={styles.aiLabel}>Suggested resolution:</span>{" "}
-                      {d.ai_decision === "manual_review"
-                        ? "Manual review"
-                        : d.ai_decision === "refund"
-                          ? "Refund buyer"
-                          : "Release to seller"}
-                      {d.ai_confidence != null && (
-                        <span className={styles.aiConf}> · {(Number(d.ai_confidence) * 100).toFixed(0)}% confidence</span>
-                      )}
-                      {d.ai_reasoning && <div className={styles.aiReasoning}>{d.ai_reasoning}</div>}
-                    </div>
-                  )}
-                  <div className={styles.disputeActions}>
-                    {canApplyAi && (
-                      <button
-                        className={styles.btnApplyAi}
-                        onClick={() => resolveDispute(d.id, aiSuggestsRefund ? "refund_to_buyer" : "release_to_seller")}
-                        disabled={!!resolvingId}
-                      >
-                        {resolvingId === d.id ? "…" : "Apply suggestion"}
-                      </button>
-                    )}
-                    <button
-                      className={styles.btnRelease}
-                      onClick={() => resolveDispute(d.id, "release_to_seller")}
-                      disabled={!!resolvingId}
-                    >
-                      {resolvingId === d.id ? "…" : "Release to seller"}
-                    </button>
-                    <button
-                      className={styles.btnRefund}
-                      onClick={() => resolveDispute(d.id, "refund_to_buyer")}
-                      disabled={!!resolvingId}
-                    >
-                      {resolvingId === d.id ? "…" : "Refund to buyer"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <section className="adminSection">
         <div className={styles.filterRow}>
           <h2 className={styles.sectionTitle}>All Deals ({totalDeals})</h2>
           <div className={styles.exportRow}>
@@ -401,14 +251,6 @@ export default function AdminSupaScrowPage() {
               disabled={!!exporting}
             >
               {exporting === "deals" ? "…" : "Export deals CSV"}
-            </button>
-            <button
-              type="button"
-              className={styles.exportBtn}
-              onClick={() => exportCSV("disputes")}
-              disabled={!!exporting}
-            >
-              {exporting === "disputes" ? "…" : "Export disputes CSV"}
             </button>
           </div>
           <select

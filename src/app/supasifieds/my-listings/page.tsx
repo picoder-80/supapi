@@ -4,9 +4,10 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import styles from "../../supamarket/my-listings/page.module.css";
-import { formatListingCategoryPath } from "@/lib/supasifieds/categories";
+import { formatListingCategoryPath as formatSupasifiedsCategoryPath } from "@/lib/supasifieds/categories";
+import { formatListingCategoryPath as formatSupaautoCategoryPath } from "@/lib/supaauto/categories";
 import { CLASSIFIED_BOOST_TIERS } from "@/lib/supasifieds/boost-tiers";
 import { formatPiPriceDisplay } from "@/lib/supasifieds/price";
 
@@ -36,9 +37,35 @@ const STATUS_CLASS: Record<string, string> = {
   removed: styles.statusArchived,
 };
 
+type BoostTierConfig = { sc: number; hrs: number; label: string };
+type CarouselPackageConfig = { days: number; sc: number; label: string };
+type SpotlightPackageConfig = { days: number; sc: number; label: string };
+type AutoRepostPackageConfig = { id: string; interval_hours: number; days: number; sc: number; label: string };
+const DEFAULT_CAROUSEL_PACKAGES: CarouselPackageConfig[] = [
+  { days: 3, sc: 180, label: "3 days carousel ad" },
+  { days: 7, sc: 360, label: "7 days carousel ad" },
+  { days: 14, sc: 650, label: "14 days carousel ad" },
+];
+const DEFAULT_SPOTLIGHT_PACKAGES: SpotlightPackageConfig[] = [
+  { days: 3, sc: 120, label: "3 days category spotlight" },
+  { days: 7, sc: 250, label: "7 days category spotlight" },
+  { days: 14, sc: 450, label: "14 days category spotlight" },
+];
+const DEFAULT_AUTOREPOST_PACKAGES: AutoRepostPackageConfig[] = [
+  { id: "24h_7d", interval_hours: 24, days: 7, sc: 120, label: "Every 24h / 7d" },
+  { id: "12h_7d", interval_hours: 12, days: 7, sc: 200, label: "Every 12h / 7d" },
+  { id: "6h_14d", interval_hours: 6, days: 14, sc: 420, label: "Every 6h / 14d" },
+];
+
 export default function SupasifiedsMyListingsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const isSupaauto = pathname?.startsWith("/supaauto");
+  const isSupadomus = pathname?.startsWith("/supadomus");
+  const appBase = isSupaauto ? "/supaauto" : isSupadomus ? "/supadomus" : "/supasifieds";
+  const apiBase = isSupaauto ? "/api/supaauto" : isSupadomus ? "/api/supadomus" : "/api/supasifieds";
+  const formatListingCategoryPath = isSupaauto ? formatSupaautoCategoryPath : formatSupasifiedsCategoryPath;
 
   const [listings, setListings] = useState<Record<string, unknown>[]>([]);
   const [archivedListings, setArchivedListings] = useState<Record<string, unknown>[]>([]);
@@ -55,6 +82,10 @@ export default function SupasifiedsMyListingsPage() {
     priceLabel?: string;
   } | null>(null);
   const [boostTier, setBoostTier] = useState("");
+  const [boostTiers, setBoostTiers] = useState<Record<string, BoostTierConfig>>(CLASSIFIED_BOOST_TIERS);
+  const [carouselPackages, setCarouselPackages] = useState<CarouselPackageConfig[]>(DEFAULT_CAROUSEL_PACKAGES);
+  const [spotlightPackages, setSpotlightPackages] = useState<SpotlightPackageConfig[]>(DEFAULT_SPOTLIGHT_PACKAGES);
+  const [autorepostPackages, setAutorepostPackages] = useState<AutoRepostPackageConfig[]>(DEFAULT_AUTOREPOST_PACKAGES);
   const [boosting, setBoosting] = useState(false);
   const [scBalance, setScBalance] = useState<number | null>(null);
   const [promoteTab, setPromoteTab] = useState<"boost" | "spotlight" | "autorepost" | "carousel">("boost");
@@ -75,7 +106,7 @@ export default function SupasifiedsMyListingsPage() {
     if (!user) return;
     setLoading(true);
     try {
-      const r = await fetch("/api/supasifieds/listings/mine", { headers: { Authorization: `Bearer ${token()}` } });
+      const r = await fetch(`${apiBase}/listings/mine`, { headers: { Authorization: `Bearer ${token()}` } });
       const d = await r.json();
       if (d.success) setListings(d.data ?? []);
     } catch {
@@ -88,7 +119,7 @@ export default function SupasifiedsMyListingsPage() {
     if (!user) return;
     setArchivedLoading(true);
     try {
-      const r = await fetch("/api/supasifieds/listings/mine?archived=true", {
+      const r = await fetch(`${apiBase}/listings/mine?archived=true`, {
         headers: { Authorization: `Bearer ${token()}` },
       });
       const d = await r.json();
@@ -127,20 +158,44 @@ export default function SupasifiedsMyListingsPage() {
     if (user) fetchScBalance();
   }, [user, fetchScBalance]);
 
+  useEffect(() => {
+    fetch(`${apiBase}/promote/config`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.data?.boostTiers) setBoostTiers(d.data.boostTiers);
+        if (d.success && Array.isArray(d.data?.carouselPackages) && d.data.carouselPackages.length) {
+          setCarouselPackages(d.data.carouselPackages);
+          const hasCurrent = d.data.carouselPackages.some((x: CarouselPackageConfig) => x.days === carouselDays);
+          if (!hasCurrent) setCarouselDays(d.data.carouselPackages[0].days);
+        }
+        if (d.success && Array.isArray(d.data?.spotlightPackages) && d.data.spotlightPackages.length) {
+          setSpotlightPackages(d.data.spotlightPackages);
+          const hasCurrent = d.data.spotlightPackages.some((x: SpotlightPackageConfig) => x.days === spotlightDays);
+          if (!hasCurrent) setSpotlightDays(d.data.spotlightPackages[0].days);
+        }
+        if (d.success && Array.isArray(d.data?.autorepostPackages) && d.data.autorepostPackages.length) {
+          setAutorepostPackages(d.data.autorepostPackages);
+          const hasCurrent = d.data.autorepostPackages.some((x: AutoRepostPackageConfig) => x.id === autorepostPkg);
+          if (!hasCurrent) setAutorepostPkg(d.data.autorepostPackages[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const handleBoost = async () => {
-    if (!boostListing || !boostTier || !CLASSIFIED_BOOST_TIERS[boostTier]) return;
+    if (!boostListing || !boostTier || !boostTiers[boostTier]) return;
     const t = token();
     if (!t) return;
     setBoosting(true);
     try {
-      const r = await fetch("/api/supasifieds/boost", {
+      const r = await fetch(`${apiBase}/boost`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
         body: JSON.stringify({ classified_id: boostListing.id, tier: boostTier }),
       });
       const d = await r.json();
       if (d.success) {
-        showToast(`Boost! ${CLASSIFIED_BOOST_TIERS[boostTier].label}`);
+        showToast(`Boost! ${boostTiers[boostTier].label}`);
         setBoostListing(null);
         setBoostTier("");
         fetchListings();
@@ -158,7 +213,7 @@ export default function SupasifiedsMyListingsPage() {
     if (!t) return;
     setPromoting(true);
     try {
-      const r = await fetch("/api/supasifieds/promote/spotlight", {
+      const r = await fetch(`${apiBase}/promote/spotlight`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
         body: JSON.stringify({ listing_id: boostListing.id, duration_days: spotlightDays }),
@@ -166,6 +221,7 @@ export default function SupasifiedsMyListingsPage() {
       const d = await r.json();
       if (d.success) {
         showToast("Category spotlight activated");
+        fetchListings();
         fetchScBalance();
       } else showToast(d.error ?? "Spotlight failed", "error");
     } catch {
@@ -180,7 +236,7 @@ export default function SupasifiedsMyListingsPage() {
     if (!t) return;
     setPromoting(true);
     try {
-      const r = await fetch("/api/supasifieds/promote/autorepost", {
+      const r = await fetch(`${apiBase}/promote/autorepost`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
         body: JSON.stringify({ listing_id: boostListing.id, package_id: autorepostPkg }),
@@ -201,10 +257,10 @@ export default function SupasifiedsMyListingsPage() {
     if (!boostListing) return;
     const t = token();
     if (!t) return;
-    const linkUrl = `/supasifieds/${boostListing.id}`;
+    const linkUrl = `${appBase}/${boostListing.id}`;
     setPromoting(true);
     try {
-      const r = await fetch("/api/supasifieds/promote/carousel", {
+      const r = await fetch(`${apiBase}/promote/carousel`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
         body: JSON.stringify({
@@ -230,7 +286,7 @@ export default function SupasifiedsMyListingsPage() {
   const handleStatusChange = async (id: string, status: string) => {
     setActionId(id);
     try {
-      const r = await fetch(`/api/supasifieds/listings/${id}`, {
+      const r = await fetch(`${apiBase}/listings/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
         body: JSON.stringify({ status }),
@@ -250,7 +306,7 @@ export default function SupasifiedsMyListingsPage() {
   const handleDeleteListing = async (id: string) => {
     setActionId(id);
     try {
-      const r = await fetch(`/api/supasifieds/listings/${id}`, {
+      const r = await fetch(`${apiBase}/listings/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token()}` },
       });
@@ -269,7 +325,7 @@ export default function SupasifiedsMyListingsPage() {
     if (!confirm("Delete permanently? This cannot be undone.")) return;
     setActionId(id);
     try {
-      const r = await fetch(`/api/supasifieds/listings/${id}?permanent=true`, {
+      const r = await fetch(`${apiBase}/listings/${id}?permanent=true`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token()}` },
       });
@@ -302,15 +358,12 @@ export default function SupasifiedsMyListingsPage() {
         </button>
         <div className={styles.topBarCenter}>
           <h1 className={styles.title}>My ads</h1>
-          <p className={styles.subtitle}>Supasifieds · manage &amp; boost with SC</p>
-          <Link href="/supasifieds" className={styles.sellerHubLink}>
-            📋 Browse Supasifieds
-          </Link>
-          <Link href="/supasifieds/carousel" className={styles.sellerHubLink}>
-            🎠 Create Carousel Ad
+          <p className={styles.subtitle}>{isSupaauto ? "SupaAuto" : isSupadomus ? "SupaDomus" : "Supasifieds"} · manage &amp; boost with SC</p>
+          <Link href={appBase} className={styles.sellerHubLink}>
+            📋 Browse {isSupaauto ? "SupaAuto" : isSupadomus ? "SupaDomus" : "Supasifieds"}
           </Link>
         </div>
-        <Link href="/supasifieds/create" className={styles.iconBtn} aria-label="Create">
+        <Link href={`${appBase}/create`} className={styles.iconBtn} aria-label="Create">
           ＋
         </Link>
       </div>
@@ -333,6 +386,10 @@ export default function SupasifiedsMyListingsPage() {
               </button>
             );
           })}
+          <Link href={`${appBase}/carousel`} className={styles.statBtn} aria-label="Create Carousel Ad">
+            <span className={styles.statNum}>🎠</span>
+            <span className={styles.statLabel}>Carousel Ad</span>
+          </Link>
         </div>
 
         <div className={styles.archivedSection}>
@@ -361,7 +418,7 @@ export default function SupasifiedsMyListingsPage() {
                   const statusClass = STATUS_CLASS[st] ?? styles.statusArchived;
                   return (
                     <div key={String(listing.id)} className={styles.listingRow}>
-                      <Link href={`/supasifieds/${listing.id}`} className={styles.listingImg}>
+                      <Link href={`${appBase}/${listing.id}`} className={styles.listingImg}>
                         {listing.images && Array.isArray(listing.images) && (listing.images as string[])[0] ? (
                           <img src={(listing.images as string[])[0]} alt="" className={styles.listingImgEl} />
                         ) : (
@@ -421,7 +478,7 @@ export default function SupasifiedsMyListingsPage() {
                 <button type="button" className={styles.secondaryBtn} onClick={() => router.back()}>
                   Back
                 </button>
-                <Link href="/supasifieds/create" className={styles.emptyBtn}>
+                <Link href={`${appBase}/create`} className={styles.emptyBtn}>
                   + Post ad
                 </Link>
               </div>
@@ -431,17 +488,20 @@ export default function SupasifiedsMyListingsPage() {
               const st = String(listing.status ?? "");
               const meta = STATUS_META[st] ?? STATUS_META.active;
               const boostExpiryIso = typeof listing.boost_expires_at === "string" ? listing.boost_expires_at : "";
+              const spotlightExpiryIso = typeof listing.spotlight_expires_at === "string" ? listing.spotlight_expires_at : "";
               const isBoost = Boolean(listing.is_boosted) && Boolean(boostExpiryIso) && new Date(boostExpiryIso) > new Date();
+              const isSpotlight = Boolean(spotlightExpiryIso) && new Date(spotlightExpiryIso) > new Date();
               const statusClass = STATUS_CLASS[st] ?? styles.statusActive;
               return (
                 <div key={String(listing.id)} className={styles.listingRow}>
-                  <Link href={`/supasifieds/${listing.id}`} className={styles.listingImg}>
+                  <Link href={`${appBase}/${listing.id}`} className={styles.listingImg}>
                     {listing.images && Array.isArray(listing.images) && (listing.images as string[])[0] ? (
                       <img src={(listing.images as string[])[0]} alt="" className={styles.listingImgEl} />
                     ) : (
                       <span>📋</span>
                     )}
                     {isBoost && <span className={styles.boostIndicator}>🚀</span>}
+                    {isSpotlight && <span className={styles.spotlightIndicator}>⭐</span>}
                   </Link>
                   <div className={styles.listingInfo}>
                     <div className={styles.listingTitle}>{String(listing.title ?? "")}</div>
@@ -460,10 +520,30 @@ export default function SupasifiedsMyListingsPage() {
                     <div className={styles.escrowBanner}>No escrow — buyers contact you directly</div>
                     <div className={styles.listingStats}>
                       <span>👁 {Number(listing.views ?? 0)}</span>
+                      {isBoost && isSpotlight && (
+                        <span className={styles.boostExpiry}>
+                          🚀 Boost + ⭐ Spotlight active
+                        </span>
+                      )}
+                      {isBoost && !isSpotlight && (
+                        <span className={styles.boostExpiry}>
+                          ⭐ Boost active
+                        </span>
+                      )}
+                      {isSpotlight && !isBoost && (
+                        <span className={styles.spotlightExpiry}>
+                          ⭐ Spotlight active
+                        </span>
+                      )}
                       {isBoost && (
                         <span className={styles.boostExpiry}>
-                          🚀 until{" "}
+                          🚀 Boost until{" "}
                           {formatBoostExpiry(String(listing.boost_expires_at))}
+                        </span>
+                      )}
+                      {isSpotlight && (
+                        <span className={styles.spotlightExpiry}>
+                          ⭐ Spotlight until {formatBoostExpiry(spotlightExpiryIso)}
                         </span>
                       )}
                     </div>
@@ -486,7 +566,7 @@ export default function SupasifiedsMyListingsPage() {
                         >
                           🚀
                         </button>
-                        <Link href={`/supasifieds/${listing.id}/edit`} className={styles.actionBtn} title="Edit">
+                        <Link href={`${appBase}/${listing.id}/edit`} className={styles.actionBtn} title="Edit">
                           ✏️
                         </Link>
                         <button
@@ -537,7 +617,7 @@ export default function SupasifiedsMyListingsPage() {
           <div className={styles.stickyLabel}>Active</div>
           <div className={styles.stickyValue}>{listings.filter((l) => l.status === "active").length}</div>
         </div>
-        <Link href="/supasifieds/create" className={styles.stickyBuyBtn}>
+        <Link href={`${appBase}/create`} className={styles.stickyBuyBtn}>
           + New ad
         </Link>
       </div>
@@ -593,12 +673,18 @@ export default function SupasifiedsMyListingsPage() {
                   </button>
                 ))}
               </div>
+              <div className={styles.boostBalance}>
+                {promoteTab === "boost" && "Boost lifts your ad priority for a limited time so it appears higher in results."}
+                {promoteTab === "spotlight" && "Spotlight highlights your ad in its category feed for stronger visibility."}
+                {promoteTab === "autorepost" && "Auto-repost refreshes your ad on a schedule so it stays fresh without manual repost."}
+                {promoteTab === "carousel" && "Carousel displays your ad in the sponsored slider banner with image and CTA."}
+              </div>
 
               {promoteTab === "boost" && (
                 <>
                   <div className={styles.boostStepTitle}>Choose a tier</div>
                   <div className={styles.boostTiers}>
-                    {(Object.entries(CLASSIFIED_BOOST_TIERS) as [string, { sc: number; hrs: number; label: string }][]).map(
+                    {(Object.entries(boostTiers) as [string, { sc: number; hrs: number; label: string }][]).map(
                       ([tier, info]) => (
                         <button
                           key={tier}
@@ -619,7 +705,7 @@ export default function SupasifiedsMyListingsPage() {
                     disabled={!boostTier || boosting}
                     onClick={handleBoost}
                   >
-                    {boosting ? "..." : `Boost ${boostTier ? CLASSIFIED_BOOST_TIERS[boostTier].sc : 0} SC`}
+                    {boosting ? "..." : `Boost ${boostTier ? boostTiers[boostTier]?.sc ?? 0 : 0} SC`}
                   </button>
                 </>
               )}
@@ -628,19 +714,15 @@ export default function SupasifiedsMyListingsPage() {
                 <>
                   <div className={styles.boostStepTitle}>Category spotlight duration</div>
                   <div className={styles.boostTiers}>
-                    {[
-                      { d: 3, sc: 120 },
-                      { d: 7, sc: 250 },
-                      { d: 14, sc: 450 },
-                    ].map((opt) => (
+                    {spotlightPackages.map((opt) => (
                       <button
-                        key={opt.d}
+                        key={opt.days}
                         type="button"
-                        className={`${styles.boostTier} ${spotlightDays === opt.d ? styles.boostTierActive : ""}`}
-                        onClick={() => setSpotlightDays(opt.d)}
+                        className={`${styles.boostTier} ${spotlightDays === opt.days ? styles.boostTierActive : ""}`}
+                        onClick={() => setSpotlightDays(opt.days)}
                         disabled={scBalance != null && scBalance < opt.sc}
                       >
-                        <span className={styles.boostTierLabel}>{opt.d} days</span>
+                        <span className={styles.boostTierLabel}>{opt.days} days</span>
                         <span className={styles.boostTierSc}>{opt.sc} SC</span>
                       </button>
                     ))}
@@ -655,11 +737,7 @@ export default function SupasifiedsMyListingsPage() {
                 <>
                   <div className={styles.boostStepTitle}>Auto-repost package</div>
                   <div className={styles.boostTiers}>
-                    {[
-                      { id: "24h_7d", label: "Every 24h / 7d", sc: 120 },
-                      { id: "12h_7d", label: "Every 12h / 7d", sc: 200 },
-                      { id: "6h_14d", label: "Every 6h / 14d", sc: 420 },
-                    ].map((opt) => (
+                    {autorepostPackages.map((opt) => (
                       <button
                         key={opt.id}
                         type="button"
@@ -688,19 +766,15 @@ export default function SupasifiedsMyListingsPage() {
                     placeholder="Headline (optional)"
                   />
                   <div className={styles.boostTiers}>
-                    {[
-                      { d: 3, sc: 180 },
-                      { d: 7, sc: 360 },
-                      { d: 14, sc: 650 },
-                    ].map((opt) => (
+                    {carouselPackages.map((opt) => (
                       <button
-                        key={opt.d}
+                        key={opt.days}
                         type="button"
-                        className={`${styles.boostTier} ${carouselDays === opt.d ? styles.boostTierActive : ""}`}
-                        onClick={() => setCarouselDays(opt.d)}
+                        className={`${styles.boostTier} ${carouselDays === opt.days ? styles.boostTierActive : ""}`}
+                        onClick={() => setCarouselDays(opt.days)}
                         disabled={scBalance != null && scBalance < opt.sc}
                       >
-                        <span className={styles.boostTierLabel}>{opt.d} days</span>
+                        <span className={styles.boostTierLabel}>{opt.days} days</span>
                         <span className={styles.boostTierSc}>{opt.sc} SC</span>
                       </button>
                     ))}

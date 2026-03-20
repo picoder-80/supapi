@@ -58,29 +58,6 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
-const DISPUTE_PRESETS = [
-  {
-    id: "not_received",
-    label: "Item not received",
-    template: "Item not received yet. Tracking has no valid delivery update.",
-  },
-  {
-    id: "not_as_described",
-    label: "Not as described",
-    template: "Delivered item does not match the agreed description/terms.",
-  },
-  {
-    id: "damaged_item",
-    label: "Damaged or defective",
-    template: "Item arrived damaged/defective. Requesting resolution based on deal terms.",
-  },
-  {
-    id: "seller_unresponsive",
-    label: "Seller not responsive",
-    template: "Seller has not responded for more than 3 days after funding/shipping.",
-  },
-] as const;
-
 function timeAgo(iso: string) {
   const d = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   if (d < 60) return "just now";
@@ -106,8 +83,6 @@ function SupaScrowPageInner() {
   const [showCreate, setShowCreate] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
   const [trackingCarrier, setTrackingCarrier] = useState("");
-  const [disputeReason, setDisputeReason] = useState("");
-  const [disputePreset, setDisputePreset] = useState<(typeof DISPUTE_PRESETS)[number]["id"] | "">("");
   const [scBalance, setScBalance] = useState<number | null>(null);
   const { pay: payWithPi, isPaying: piPaying } = usePiPayment();
 
@@ -131,8 +106,6 @@ function SupaScrowPageInner() {
     if (!selectedDeal) return;
     setTrackingNumber("");
     setTrackingCarrier("");
-    setDisputeReason("");
-    setDisputePreset("");
   }, [selectedDeal?.id]);
 
   const fetchDeals = useCallback(async () => {
@@ -199,16 +172,7 @@ function SupaScrowPageInner() {
       const d = await r.json();
       if (d?.success) {
         const data = d.data || {};
-        if (action === "dispute") {
-          if (data.auto_resolved) {
-            setMsg(`✅ Dispute resolved. ${data.message ?? "Outcome has been applied."}`);
-          } else {
-            setMsg(`✅ Dispute received. Our team will review and resolve it shortly.`);
-          }
-          setDisputeReason("");
-        } else {
-          setMsg(`✅ ${data.message ?? "Done"}`);
-        }
+        setMsg(`✅ ${data.message ?? "Done"}`);
         if (selectedDeal) await fetchDealDetail(selectedDeal.id);
         await fetchDeals();
         if (action === "fund" || action === "release") fetchScBalance();
@@ -554,59 +518,7 @@ function SupaScrowPageInner() {
                   Cancel Deal
                 </button>
               )}
-              {["funded", "shipped", "delivered"].includes(selectedDeal.status) && (
-                <div className={styles.disputeBlock}>
-                  <div className={styles.disputeTopRow}>
-                    <span className={styles.disputeTitle}>Open dispute</span>
-                    <span className={styles.disputeHint}>For funded / shipped / delivered deals</span>
-                  </div>
-                  <div className={styles.disputePresetRow}>
-                    {DISPUTE_PRESETS.map((preset) => (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        className={`${styles.disputePresetBtn} ${disputePreset === preset.id ? styles.disputePresetBtnActive : ""}`}
-                        onClick={() => {
-                          setDisputePreset(preset.id);
-                          if (!disputeReason.trim()) setDisputeReason(preset.template);
-                        }}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                  <textarea
-                    className={styles.textarea}
-                    placeholder="Explain clearly what happened, when it happened, and what outcome you request."
-                    value={disputeReason}
-                    onChange={(e) => setDisputeReason(e.target.value)}
-                    rows={3}
-                    maxLength={400}
-                  />
-                  <div className={styles.disputeHelpRow}>
-                    <span className={styles.disputeHelpText}>
-                      Include timeline and proof details (tracking update, chat, item condition).
-                    </span>
-                    <span className={styles.disputeCount}>{disputeReason.trim().length}/400</span>
-                  </div>
-                  <button
-                    className={styles.btnSecondary}
-                    onClick={() => runAction("dispute", { deal_id: selectedDeal.id, reason: disputeReason.trim() })}
-                    disabled={busy || disputeReason.trim().length < 12}
-                  >
-                    {busy ? "Submitting..." : "Submit Dispute"}
-                  </button>
-                  {disputeReason.trim().length < 12 && (
-                    <div className={styles.disputeMinNote}>Add at least 12 characters so support can review faster.</div>
-                  )}
-                </div>
-              )}
             </div>
-            {!["funded", "shipped", "delivered"].includes(selectedDeal.status) && (
-              <div className={styles.disputeAvailabilityHint}>
-                Dispute available at: funded / shipped / delivered
-              </div>
-            )}
 
             {selectedDeal.tracking_number && (
               <div className={styles.trackingInfo}>

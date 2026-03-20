@@ -2,10 +2,11 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useRef, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { CATEGORIES, getSubcategory } from "@/lib/supasifieds/categories";
+import { CATEGORIES as SUPASIFIEDS_CATEGORIES, getSubcategory as getSupasifiedsSubcategory } from "@/lib/supasifieds/categories";
+import { CATEGORIES as SUPAAUTO_CATEGORIES, getSubcategory as getSupaautoSubcategory } from "@/lib/supaauto/categories";
 import { formatPiPriceDisplay } from "@/lib/supasifieds/price";
 import { ALL_COUNTRIES, getCountry } from "@/lib/market/countries";
 import styles from "../../../supamarket/[id]/edit/page.module.css";
@@ -72,7 +73,14 @@ export default function SupasifiedsEditPage({ params }: { params: Promise<{ id: 
   const { id } = use(params);
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const fileRef = useRef<HTMLInputElement>(null);
+  const isSupaauto = pathname?.startsWith("/supaauto");
+  const isSupadomus = pathname?.startsWith("/supadomus");
+  const appBase = isSupaauto ? "/supaauto" : isSupadomus ? "/supadomus" : "/supasifieds";
+  const apiBase = isSupaauto ? "/api/supaauto" : isSupadomus ? "/api/supadomus" : "/api/supasifieds";
+  const CATEGORIES = isSupaauto ? SUPAAUTO_CATEGORIES : SUPASIFIEDS_CATEGORIES;
+  const getSubcategory = isSupaauto ? getSupaautoSubcategory : getSupasifiedsSubcategory;
 
   const [form, setForm] = useState({
     title: "",
@@ -133,7 +141,7 @@ export default function SupasifiedsEditPage({ params }: { params: Promise<{ id: 
         return;
       }
       try {
-        const r = await fetch(`/api/supasifieds/listings/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+        const r = await fetch(`${apiBase}/listings/${id}`, { headers: { Authorization: `Bearer ${token}` } });
         const d = await r.json();
         if (!d.success || !d.data) {
           setNotFound(true);
@@ -191,7 +199,7 @@ export default function SupasifiedsEditPage({ params }: { params: Promise<{ id: 
       fd.append("classified_id", id);
       fd.append("index", String(images.length + uploaded.length));
       try {
-        const r = await fetch("/api/supasifieds/images", {
+        const r = await fetch(`${apiBase}/images`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           body: fd,
@@ -237,7 +245,7 @@ export default function SupasifiedsEditPage({ params }: { params: Promise<{ id: 
     setSaving(true);
     setError("");
     try {
-      const r = await fetch(`/api/supasifieds/listings/${id}`, {
+      const r = await fetch(`${apiBase}/listings/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -255,7 +263,7 @@ export default function SupasifiedsEditPage({ params }: { params: Promise<{ id: 
         }),
       });
       const d = await r.json();
-      if (d.success) router.push(`/supasifieds/${id}`);
+      if (d.success) router.push(`${appBase}/${id}`);
       else setError(d.error ?? "Failed to save");
     } catch {
       setError("Something went wrong");
@@ -323,7 +331,7 @@ export default function SupasifiedsEditPage({ params }: { params: Promise<{ id: 
           <div className={styles.stateCard}>
             <div className={styles.stateIcon}>🔍</div>
             <div className={styles.stateTitle}>Not found</div>
-            <Link href="/supasifieds/my-listings" className={styles.linkBtn}>
+            <Link href={`${appBase}/my-listings`} className={styles.linkBtn}>
               ← My ads
             </Link>
           </div>
@@ -340,7 +348,7 @@ export default function SupasifiedsEditPage({ params }: { params: Promise<{ id: 
           <div className={styles.stateCard}>
             <div className={styles.stateIcon}>🚫</div>
             <div className={styles.stateTitle}>Not your ad</div>
-            <Link href="/supasifieds/my-listings" className={styles.linkBtn}>
+            <Link href={`${appBase}/my-listings`} className={styles.linkBtn}>
               ← My ads
             </Link>
           </div>
@@ -580,7 +588,7 @@ export default function SupasifiedsEditPage({ params }: { params: Promise<{ id: 
 
         <aside className={styles.rightCol}>
           <div className={styles.infoCard}>
-            <div className={styles.infoTitle}>Supasifieds</div>
+            <div className={styles.infoTitle}>{isSupaauto ? "SupaAuto" : isSupadomus ? "SupaDomus" : "Supasifieds"}</div>
             <ul className={styles.infoList}>
               <li>Update contact details if your number changes</li>
               <li>Boost with SC from the ad page</li>

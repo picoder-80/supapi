@@ -3,10 +3,11 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import KycBadge from "@/components/ui/KycBadge";
-import { formatListingCategoryPath } from "@/lib/supasifieds/categories";
+import { formatListingCategoryPath as formatSupasifiedsCategoryPath } from "@/lib/supasifieds/categories";
+import { formatListingCategoryPath as formatSupaautoCategoryPath } from "@/lib/supaauto/categories";
 import { CLASSIFIED_BOOST_TIERS } from "@/lib/supasifieds/boost-tiers";
 import { formatPiPriceDisplay } from "@/lib/supasifieds/price";
 import styles from "../../supamarket/[id]/page.module.css";
@@ -56,6 +57,12 @@ export default function SupasifiedsDetailPage({ params }: { params: Promise<{ id
   const { id } = use(params);
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const isSupaauto = pathname?.startsWith("/supaauto");
+  const isSupadomus = pathname?.startsWith("/supadomus");
+  const appBase = isSupaauto ? "/supaauto" : isSupadomus ? "/supadomus" : "/supasifieds";
+  const apiBase = isSupaauto ? "/api/supaauto" : isSupadomus ? "/api/supadomus" : "/api/supasifieds";
+  const formatListingCategoryPath = isSupaauto ? formatSupaautoCategoryPath : formatSupasifiedsCategoryPath;
 
   const [row, setRow] = useState<Classified | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,7 +78,7 @@ export default function SupasifiedsDetailPage({ params }: { params: Promise<{ id
       setLoading(true);
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "";
-        const r = await fetch(`/api/supasifieds/listings/${id}`, {
+        const r = await fetch(`${apiBase}/listings/${id}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         const d = await r.json();
@@ -105,7 +112,7 @@ export default function SupasifiedsDetailPage({ params }: { params: Promise<{ id
     if (!token) return;
     setBoosting(true);
     try {
-      const r = await fetch("/api/supasifieds/boost", {
+      const r = await fetch(`${apiBase}/boost`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ classified_id: id, tier: boostTier }),
@@ -115,7 +122,7 @@ export default function SupasifiedsDetailPage({ params }: { params: Promise<{ id
         setShowBoost(false);
         setBoostTier("");
         const token2 = localStorage.getItem("supapi_token") ?? "";
-        const r2 = await fetch(`/api/supasifieds/listings/${id}`, {
+        const r2 = await fetch(`${apiBase}/listings/${id}`, {
           headers: token2 ? { Authorization: `Bearer ${token2}` } : {},
         });
         const d2 = await r2.json();
@@ -134,7 +141,7 @@ export default function SupasifiedsDetailPage({ params }: { params: Promise<{ id
           <button type="button" className={styles.iconBtn} onClick={() => router.back()}>
             ←
           </button>
-          <div className={styles.topBarTitle}>Supasifieds</div>
+          <div className={styles.topBarTitle}>{isSupaauto ? "SupaAuto" : isSupadomus ? "SupaDomus" : "Supasifieds"}</div>
           <span className={styles.iconBtn} />
         </div>
         <div className={styles.layout}>
@@ -158,8 +165,8 @@ export default function SupasifiedsDetailPage({ params }: { params: Promise<{ id
           <div className={styles.notFoundIcon}>🔍</div>
           <div className={styles.notFoundTitle}>Ad not found</div>
           <p className={styles.notFoundText}>It may have been removed or is no longer active.</p>
-          <button type="button" className={styles.notFoundBtn} onClick={() => router.push("/supasifieds")}>
-            Go to Supasifieds
+          <button type="button" className={styles.notFoundBtn} onClick={() => router.push(appBase)}>
+            Go to {isSupaauto ? "SupaAuto" : isSupadomus ? "SupaDomus" : "Supasifieds"}
           </button>
         </div>
       </div>
@@ -182,7 +189,7 @@ export default function SupasifiedsDetailPage({ params }: { params: Promise<{ id
         <button type="button" className={styles.iconBtn} onClick={() => router.back()}>
           ←
         </button>
-        <div className={styles.topBarTitle}>Supasifieds</div>
+        <div className={styles.topBarTitle}>{isSupaauto ? "SupaAuto" : isSupadomus ? "SupaDomus" : "Supasifieds"}</div>
         <span className={styles.iconBtn} />
       </div>
 
@@ -306,10 +313,10 @@ export default function SupasifiedsDetailPage({ params }: { params: Promise<{ id
                 🚀 Boost (SC)
               </button>
             )}
-            <Link href={`/supasifieds/${id}/edit`} className={styles.manageBtn}>
+            <Link href={`${appBase}/${id}/edit`} className={styles.manageBtn}>
               Edit
             </Link>
-            <Link href="/supasifieds/my-listings" className={styles.manageBtn}>
+            <Link href={`${appBase}/my-listings`} className={styles.manageBtn}>
               My ads →
             </Link>
           </div>

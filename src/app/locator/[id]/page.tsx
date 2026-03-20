@@ -14,6 +14,8 @@ const CATEGORIES = [
   { key: "transport", label: "Transport", emoji: "🚗" },
   { key: "other", label: "Other", emoji: "📍" },
 ];
+const MAX_REVIEW_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+const ALLOWED_REVIEW_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 interface Business {
   id: string;
@@ -39,11 +41,19 @@ interface Review {
   id: string;
   rating: number;
   comment: string;
+  images?: string[];
   created_at: string;
   users?: {
     username?: string;
     avatar_url?: string;
   } | null;
+}
+
+interface OwnReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  images?: string[] | null;
 }
 
 function Stars({ rating }: { rating: number }) {
@@ -65,6 +75,14 @@ export default function LocatorBusinessDetailPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewMsg, setReviewMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [myReview, setMyReview] = useState<OwnReview | null>(null);
+  const [reviewImages, setReviewImages] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const token = typeof window !== "undefined" ? localStorage.getItem("supapi_token") : null;
 
   const fetchBusiness = useCallback(async () => {
     if (!businessId) return;
@@ -97,15 +115,36 @@ export default function LocatorBusinessDetailPage() {
 
       setBusiness(found);
 
-      const rr = await fetch(`/api/locator/${businessId}/reviews`);
+      const rr = await fetch(`/api/locator/${businessId}/reviews`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
       const rd = await rr.json();
-      if (rd?.success) setReviews(rd.data ?? []);
-      else setReviews([]);
+      const nextReviews = rd?.success ? (rd.data ?? []) : [];
+      setReviews(nextReviews);
+      setMyReview(rd?.my_review ?? null);
+      if (rd?.my_review) {
+        setReviewRating(Number(rd.my_review.rating || 5));
+        setReviewComment(String(rd.my_review.comment || ""));
+        setReviewImages(Array.isArray(rd.my_review.images) ? rd.my_review.images.filter(Boolean).slice(0, 4) : []);
+      }
+
+      if (nextReviews.length > 0) {
+        const avg = nextReviews.reduce((sum: number, row: Review) => sum + Number(row.rating || 0), 0) / nextReviews.length;
+        setBusiness((prev) =>
+          prev
+            ? {
+                ...prev,
+                avg_rating: Number(avg.toFixed(2)),
+                review_count: nextReviews.length,
+              }
+            : prev
+        );
+      }
     } catch {
       setError("Unable to load this business right now.");
     }
     setLoading(false);
-  }, [businessId]);
+  }, [businessId, token]);
 
   useEffect(() => {
     fetchBusiness();
@@ -182,6 +221,92 @@ export default function LocatorBusinessDetailPage() {
   const directionHref = hasCoords
     ? `https://www.google.com/maps?q=${business.lat},${business.lng}`
     : "https://maps.google.com";
+  const submitReview = async () => {
+    if (!token) {
+      setReviewMsg({ type: "error", text: "Sign in first to leave a review." });
+      return;
+    }
+    if (reviewRating < 1 || reviewRating > 5) {
+      setReviewMsg({ type: "error", text: "Please choose a rating from 1 to 5." });
+      return;
+    }
+
+    setReviewSubmitting(true);
+    setReviewMsg(null);
+    try {
+      const res = await fetch(`/api/locator/${businessId}/reviews`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          rating: reviewRating,
+          comment: reviewComment.trim(),
+          images: reviewImages,
+        }),
+      });
+      const data = await res.json();
+      if (!data?.success) {
+        setReviewMsg({ type: "error", text: data?.error || "Failed to submit review." });
+        setReviewSubmitting(false);
+        return;
+      }
+      setReviewMsg({ type: "success", text: myReview ? "Review updated." : "Review submitted." });
+      await fetchBusiness();
+    } catch {
+      setReviewMsg({ type: "error", text: "Failed to submit review." });
+    }
+    setReviewSubmitting(false);
+  };
+
+  const handleReviewImagePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    if (!token) {
+      setReviewMsg({ type: "error", text: "Sign in first to upload photos." });
+      return;
+    }
+    const remain = Math.max(0, 4 - reviewImages.length);
+    if (remain <= 0) {
+      setReviewMsg({ type: "error", text: "Maximum 4 photos per review." });
+      return;
+    }
+    setUploadingImages(true);
+    setReviewMsg(null);
+    const next: string[] = [];
+    try {
+      for (const file of files.slice(0, remain)) {
+        if (!ALLOWED_REVIEW_IMAGE_TYPES.has(file.type)) {
+          throw new Error("Only JPG, PNG, WEBP, or GIF images are allowed");
+        }
+        if (file.size > MAX_REVIEW_IMAGE_SIZE) {
+          throw new Error("Each image must be 2MB or smaller");
+        }
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch("/api/locator/upload", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: form,
+        });
+        const data = await res.json();
+        if (!data?.success || !data?.url) {
+          throw new Error(data?.error || "Failed to upload image");
+        }
+        next.push(String(data.url));
+      }
+      setReviewImages((prev) => [...prev, ...next].slice(0, 4));
+    } catch (err: any) {
+      setReviewMsg({ type: "error", text: err?.message || "Failed to upload image." });
+    }
+    setUploadingImages(false);
+    e.currentTarget.value = "";
+  };
+
+  const removeReviewImage = (index: number) => {
+    setReviewImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
   return (
     <div className={styles.page}>
@@ -268,6 +393,78 @@ export default function LocatorBusinessDetailPage() {
 
         <section className={styles.sectionCard}>
           <h2 className={styles.sectionTitle}>Reviews</h2>
+          <div className={styles.reviewComposer}>
+            <div className={styles.reviewComposerHead}>{myReview ? "Edit your review" : "Leave a review"}</div>
+            <div className={styles.reviewPicker}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setReviewRating(n)}
+                  className={`${styles.rateBtn} ${reviewRating >= n ? styles.rateBtnActive : ""}`}
+                  aria-label={`Rate ${n} star${n > 1 ? "s" : ""}`}
+                >
+                  ★
+                </button>
+              ))}
+              <span className={styles.rateText}>{reviewRating}/5</span>
+            </div>
+            <textarea
+              className={styles.reviewInput}
+              value={reviewComment}
+              onChange={(e) => setReviewComment(e.target.value)}
+              rows={3}
+              placeholder="Share your experience (optional)"
+              maxLength={400}
+            />
+            <div className={styles.reviewImageRow}>
+              <label className={styles.uploadPhotoBtn}>
+                {uploadingImages ? "Uploading..." : "+ Add photo"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleReviewImagePick}
+                  className={styles.hiddenInput}
+                  disabled={uploadingImages || reviewImages.length >= 4}
+                />
+              </label>
+              <span className={styles.imageHint}>{reviewImages.length}/4 photos</span>
+            </div>
+            {reviewImages.length > 0 && (
+              <div className={styles.reviewPhotoGrid}>
+                {reviewImages.map((url, idx) => (
+                  <div key={`${url}-${idx}`} className={styles.reviewPhotoItem}>
+                    <img src={url} alt={`Review ${idx + 1}`} className={styles.reviewPhoto} />
+                    <button
+                      type="button"
+                      className={styles.removePhotoBtn}
+                      onClick={() => removeReviewImage(idx)}
+                      aria-label="Remove photo"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className={styles.reviewComposerFoot}>
+              <span className={styles.charCount}>{reviewComment.length}/400</span>
+              <button
+                type="button"
+                onClick={submitReview}
+                className={styles.submitReviewBtn}
+                disabled={reviewSubmitting}
+              >
+                {reviewSubmitting ? "Submitting..." : myReview ? "Update Review" : "Submit Review"}
+              </button>
+            </div>
+            {reviewMsg && (
+              <div className={reviewMsg.type === "success" ? styles.reviewMsgSuccess : styles.reviewMsgError}>
+                {reviewMsg.text}
+              </div>
+            )}
+          </div>
           {reviews.length === 0 ? (
             <p className={styles.sectionText}>No reviews yet. Be the first to leave one.</p>
           ) : (
@@ -292,6 +489,15 @@ export default function LocatorBusinessDetailPage() {
                     <span>{(review.rating || 0).toFixed(1)}</span>
                   </div>
                   <p className={styles.reviewComment}>{review.comment || "No comment provided."}</p>
+                  {Array.isArray(review.images) && review.images.length > 0 && (
+                    <div className={styles.reviewThumbs}>
+                      {review.images.map((url) => (
+                        <a key={url} href={url} target="_blank" rel="noreferrer" className={styles.reviewThumbLink}>
+                          <img src={url} alt="" className={styles.reviewThumb} />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </article>
               ))}
             </div>

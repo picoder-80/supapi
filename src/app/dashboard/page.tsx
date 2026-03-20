@@ -33,22 +33,8 @@ interface DashboardStats {
   sc_balance: number;
   listings: number;
   gigs: number;
-  recent_orders: Array<{
-    id: string;
-    status: string;
-    amount_pi: number;
-    created_at: string;
-    listing?: { title?: string | null } | null;
-  }>;
-  credit_transactions: Array<{
-    id: string;
-    type: string;
-    amount: number;
-    activity: string;
-    note: string | null;
-    created_at: string;
-  }>;
   pets: number;
+  profile_reward_claimed?: boolean;
 }
 
 function fmtPi(n: number) {
@@ -59,6 +45,8 @@ export default function DashboardPage() {
   const { user, isHydrating, login, isLoading } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [claimingProfileReward, setClaimingProfileReward] = useState(false);
+  const [profileRewardMsg, setProfileRewardMsg] = useState("");
 
   const token = () =>
     (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "");
@@ -115,6 +103,40 @@ export default function DashboardPage() {
 
   const isAdmin = isAdminRole(user.role);
   const walletMissing = !user.wallet_address?.trim();
+  const profileChecks = [
+    { label: "Add display name", done: Boolean(user.display_name?.trim()), href: `/supaspace/${user.username}` },
+    { label: "Add bio", done: Boolean(user.bio?.trim()), href: `/supaspace/${user.username}` },
+    { label: "Add profile photo", done: Boolean(user.avatar_url?.trim()), href: `/supaspace/${user.username}` },
+    { label: "Add Pi wallet address", done: Boolean(user.wallet_address?.trim()), href: `/supaspace/${user.username}` },
+  ];
+  const doneCount = profileChecks.filter((c) => c.done).length;
+  const completenessPct = Math.round((doneCount / profileChecks.length) * 100);
+  const canClaimProfileReward = completenessPct === 100 && !stats?.profile_reward_claimed;
+
+  const claimProfileReward = async () => {
+    const t = token();
+    if (!t || claimingProfileReward || !canClaimProfileReward) return;
+    setClaimingProfileReward(true);
+    setProfileRewardMsg("");
+    try {
+      const r = await fetch("/api/credits/earn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ activity: "complete_profile" }),
+      });
+      const d = await r.json();
+      if (d?.success) {
+        setProfileRewardMsg(d?.data?.message ?? "Profile reward claimed");
+      } else {
+        setProfileRewardMsg(d?.error ?? "Unable to claim reward");
+      }
+      await fetchStats();
+    } catch {
+      setProfileRewardMsg("Unable to claim reward");
+    } finally {
+      setClaimingProfileReward(false);
+    }
+  };
 
   return (
     <div>
@@ -220,6 +242,45 @@ export default function DashboardPage() {
 
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
+            <div className={styles.sectionTitle}>Profile Completeness</div>
+          </div>
+          <div className={styles.completenessCard}>
+            <div className={styles.completenessTop}>
+              <div className={styles.completenessLabel}>
+                {doneCount}/{profileChecks.length} completed
+              </div>
+              <div className={styles.completenessPct}>{completenessPct}%</div>
+            </div>
+            <div className={styles.completenessBar}>
+              <span style={{ width: `${completenessPct}%` }} />
+            </div>
+            <div className={styles.completenessSteps}>
+              {profileChecks.map((step) => (
+                <Link key={step.label} href={step.href} className={styles.completenessStep}>
+                  <span className={step.done ? styles.stepDone : styles.stepPending}>
+                    {step.done ? "✓" : "○"}
+                  </span>
+                  <span>{step.label}</span>
+                </Link>
+              ))}
+            </div>
+            <div className={styles.completenessRewardRow}>
+              {canClaimProfileReward ? (
+                <button className={styles.completenessClaimBtn} onClick={claimProfileReward} disabled={claimingProfileReward}>
+                  {claimingProfileReward ? "Claiming..." : "Claim 100 SC"}
+                </button>
+              ) : stats?.profile_reward_claimed ? (
+                <div className={styles.completenessClaimed}>Reward claimed</div>
+              ) : (
+                <div className={styles.completenessHint}>Complete all steps to unlock 100 SC.</div>
+              )}
+            </div>
+            {profileRewardMsg && <div className={styles.completenessHint}>{profileRewardMsg}</div>}
+          </div>
+        </div>
+
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
             <div className={styles.sectionTitle}>Quick Actions</div>
             <Link href="/rewards" className={styles.sectionLink}>
               Rewards →
@@ -252,87 +313,6 @@ export default function DashboardPage() {
               <div className={styles.quickLabel}>SupaChat</div>
             </Link>
           </div>
-        </div>
-
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.sectionTitle}>Recent Activity</div>
-            <Link href="/supamarket/orders" className={styles.sectionLink}>
-              Orders →
-            </Link>
-          </div>
-
-          {loadingStats ? (
-            <div className={styles.empty}>Loading your activity…</div>
-          ) : (
-            <>
-              <div className={styles.profileCard} style={{ marginBottom: 10 }}>
-                <div className={styles.profileAvatar} style={{ width: 52, height: 52, fontSize: 20 }}>
-                  🧾
-                </div>
-                <div className={styles.profileInfo}>
-                  <div className={styles.profileName}>Recent Orders</div>
-                  <div className={styles.profilePiId}>Latest marketplace activity</div>
-                </div>
-              </div>
-
-              {(stats?.recent_orders ?? []).slice(0, 6).length ? (
-                (stats?.recent_orders ?? []).slice(0, 6).map((o) => (
-                  <div key={o.id} className={styles.profileSection} style={{ cursor: "default" }}>
-                    <div className={styles.profileSectionIcon}>📦</div>
-                    <div className={styles.profileSectionInfo}>
-                      <div className={styles.profileSectionTitle}>
-                        {o.id.slice(0, 8)}… · {o.listing?.title ?? "—"}
-                      </div>
-                      <div className={styles.profileSectionDesc}>
-                        Amount: {Number(o.amount_pi ?? 0).toFixed(2)} π
-                      </div>
-                      <div className={styles.profileSectionStatus}>
-                        <span className={o.status === "completed" ? styles.statusDone : styles.statusPending}>
-                          {o.status}
-                        </span>
-                      </div>
-                    </div>
-                    <div className={styles.profileSectionArrow}>→</div>
-                  </div>
-                ))
-              ) : (
-                <div className={styles.empty}>No recent orders yet.</div>
-              )}
-
-              <div className={styles.profileCard} style={{ marginTop: 16 }}>
-                <div className={styles.profileAvatar} style={{ width: 52, height: 52, fontSize: 20 }}>
-                  💳
-                </div>
-                <div className={styles.profileInfo}>
-                  <div className={styles.profileName}>Recent SC Activity</div>
-                  <div className={styles.profilePiId}>Latest credit transactions</div>
-                </div>
-              </div>
-
-              {(stats?.credit_transactions ?? []).slice(0, 6).length ? (
-                (stats?.credit_transactions ?? []).slice(0, 6).map((t) => (
-                  <div key={t.id} className={styles.profileSection} style={{ cursor: "default" }}>
-                    <div className={styles.profileSectionIcon}>🔁</div>
-                    <div className={styles.profileSectionInfo}>
-                      <div className={styles.profileSectionTitle}>{t.activity}</div>
-                      <div className={styles.profileSectionDesc}>
-                        {Number(t.amount).toFixed(2)} SC · {t.type}
-                      </div>
-                      <div className={styles.profileSectionStatus}>
-                        <span className={t.amount >= 0 ? styles.statusDone : styles.statusPending}>
-                          {t.amount >= 0 ? "Earn" : "Spend"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className={styles.profileSectionArrow}>→</div>
-                  </div>
-                ))
-              ) : (
-                <div className={styles.empty}>No recent SC transactions yet.</div>
-              )}
-            </>
-          )}
         </div>
       </div>
     </div>

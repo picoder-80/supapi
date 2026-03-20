@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
-import { CLASSIFIED_BOOST_TIERS } from "@/lib/supasifieds/boost-tiers";
+import { getSupasifiedsMonetizationConfig } from "@/lib/supasifieds/monetization-config";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,7 +20,8 @@ function getUserId(req: NextRequest): string | null {
 }
 
 export async function GET() {
-  return NextResponse.json({ success: true, data: { tiers: CLASSIFIED_BOOST_TIERS } });
+  const config = await getSupasifiedsMonetizationConfig(supabase);
+  return NextResponse.json({ success: true, data: { tiers: config.boostTiers } });
 }
 
 export async function POST(req: NextRequest) {
@@ -30,7 +31,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { classified_id, tier } = body;
 
-  const boostTier = CLASSIFIED_BOOST_TIERS[tier];
+  const config = await getSupasifiedsMonetizationConfig(supabase);
+  const boostTier = config.boostTiers[tier];
   if (!boostTier) return NextResponse.json({ success: false, error: "Invalid tier" }, { status: 400 });
 
   try {

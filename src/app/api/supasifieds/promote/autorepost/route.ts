@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
+import { getSupasifiedsMonetizationConfig } from "@/lib/supasifieds/monetization-config";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
-const AUTO_REPOST_PACKAGES: Record<string, { interval_hours: number; days: number; sc: number; label: string }> = {
-  "24h_7d": { interval_hours: 24, days: 7, sc: 120, label: "Every 24h for 7 days" },
-  "12h_7d": { interval_hours: 12, days: 7, sc: 200, label: "Every 12h for 7 days" },
-  "6h_14d": { interval_hours: 6, days: 14, sc: 420, label: "Every 6h for 14 days" },
-};
 
 function getUserId(req: NextRequest): string | null {
   try {
@@ -29,7 +24,8 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
   const { listing_id, package_id } = await req.json();
-  const pkg = AUTO_REPOST_PACKAGES[String(package_id ?? "")];
+  const config = await getSupasifiedsMonetizationConfig(supabase);
+  const pkg = config.autorepostPackages.find((row) => row.id === String(package_id ?? ""));
   if (!listing_id || !pkg) return NextResponse.json({ success: false, error: "Invalid package" }, { status: 400 });
 
   try {
