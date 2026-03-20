@@ -77,6 +77,8 @@ export default function AdminMarketPage() {
   const [needsReviewOnly, setNeedsReviewOnly] = useState(false);
   const [userQ, setUserQ] = useState(""); const [userFilter, setUserFilter] = useState("");
   const [commPct, setCommPct] = useState(""); const [savingComm, setSavingComm] = useState(false); const [commMsg, setCommMsg] = useState("");
+  const [reconcileLoading, setReconcileLoading] = useState<"dry" | "run" | null>(null);
+  const [reconcileResult, setReconcileResult] = useState<any>(null);
   const [overrideId, setOverrideId] = useState<string|null>(null);
   const [overrideDecision, setOverrideDecision] = useState<"refund"|"release">("release");
   const [overrideReason, setOverrideReason] = useState(""); const [overriding, setOverriding] = useState(false);
@@ -261,6 +263,26 @@ export default function AdminMarketPage() {
   };
   const updateUser = async (userId: string, patch: object, msg: string) => { const r=await adminFetch(`/api/admin/users/${userId}`,{method:"PATCH",body:JSON.stringify(patch)}); const d=await r.json(); if(d.success){setUsers(prev=>prev.map(u=>u.id===userId?{...u,...d.data}:u));setUserActionMsg(prev=>({...prev,[userId]:msg}));setTimeout(()=>setUserActionMsg(prev=>{const n={...prev};delete n[userId];return n;}),2500);} setBanUserId(null);setBanReason(""); };
   const saveCommission = async () => { const pct=parseFloat(commPct); if(isNaN(pct)||pct<0||pct>50){setCommMsg("Enter 0–50");return;} setSavingComm(true); const r=await adminFetch("/api/admin/supamarket/commission",{method:"PATCH",body:JSON.stringify({commission_pct:pct})}); const d=await r.json(); setCommMsg(d.success?"✅ Saved!":"❌ Failed"); if(d.success&&commConfig)setCommConfig({...commConfig,commission_pct:pct}); setTimeout(()=>setCommMsg(""),2500); setSavingComm(false); };
+  const runEarningsReconcile = async (execute: boolean) => {
+    setReconcileLoading(execute ? "run" : "dry");
+    setReconcileResult(null);
+    try {
+      const r = await adminFetch("/api/admin/supamarket/earnings/reconcile", {
+        method: "POST",
+        body: JSON.stringify({ execute, limit: 300 }),
+      });
+      const d = await r.json();
+      if (!d?.success) {
+        setReconcileResult({ error: d?.error ?? "Failed to run reconcile" });
+      } else {
+        setReconcileResult(d.data);
+      }
+    } catch {
+      setReconcileResult({ error: "Failed to run reconcile" });
+    } finally {
+      setReconcileLoading(null);
+    }
+  };
   const exportCSV = async (type: "orders" | "listings" | "commissions") => {
     setExporting(type);
     try {
@@ -628,6 +650,33 @@ export default function AdminMarketPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+              <div className={styles.commEdit}>
+                <div className={styles.commEditTitle}>Reconcile Missing Seller Earnings</div>
+                <div className={styles.commNote}>
+                  For completed orders that were not credited to seller earnings due to old flow/env mismatch.
+                </div>
+                <div className={styles.exportRow}>
+                  <button
+                    className={styles.exportBtn}
+                    disabled={reconcileLoading !== null}
+                    onClick={() => runEarningsReconcile(false)}
+                  >
+                    {reconcileLoading === "dry" ? "⏳ Checking..." : "Preview missing earnings"}
+                  </button>
+                  <button
+                    className={styles.exportBtn}
+                    disabled={reconcileLoading !== null}
+                    onClick={() => runEarningsReconcile(true)}
+                  >
+                    {reconcileLoading === "run" ? "⏳ Reconciling..." : "Fix missing earnings"}
+                  </button>
+                </div>
+                {reconcileResult && (
+                  <pre className={styles.commNote} style={{ whiteSpace: "pre-wrap", marginTop: 10 }}>
+{JSON.stringify(reconcileResult, null, 2)}
+                  </pre>
+                )}
               </div>
               {commConfig.ledger?.length>0&&(<>
                 <div className={styles.sectionTitle} style={{marginTop:20}}>Recent Commission Ledger</div>

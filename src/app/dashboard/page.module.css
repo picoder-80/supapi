@@ -58,106 +58,8 @@
 }
 
 /* ── Profile completeness (in hero — replaces stats / My Profile row) ── */
-.heroCompleteness {
-  margin-top: 4px;
-  padding: 16px 16px 18px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.heroCompletenessTitle {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-gold);
-  margin-bottom: 12px;
-  opacity: 0.95;
-}
-
-.heroCompletenessTop {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-  gap: 12px;
-}
-
-.heroCompletenessLabel {
-  font-size: 13px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.92);
-}
-
-.heroCompletenessPct {
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--color-gold);
-  flex-shrink: 0;
-}
-
-.heroCompletenessPctDone {
-  color: #6ee7a8;
-}
-
-.heroCompletenessBar {
-  height: 8px;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.heroCompletenessFill {
-  height: 100%;
-  border-radius: 999px;
-  transition: width 0.45s ease;
-  background: var(--color-gold);
-}
-
-.heroCompletenessFillDone {
-  background: #27ae60;
-}
-
-.heroCompletenessHint {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.55);
-  margin-top: 10px;
-  line-height: 1.45;
-}
-
-.heroCompletenessLink {
-  display: inline-flex;
-  align-items: center;
-  margin-top: 12px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--color-gold);
-  text-decoration: none;
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(245, 166, 35, 0.4);
-  background: rgba(245, 166, 35, 0.12);
-  transition: var(--transition);
-}
-.heroCompletenessLink:hover {
-  background: rgba(245, 166, 35, 0.2);
-  border-color: rgba(245, 166, 35, 0.55);
-}
-
-.heroCompletenessSkeleton {
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  animation: heroCompletenessPulse 1.2s ease-in-out infinite;
-}
-@keyframes heroCompletenessPulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
+/* NOTE: dashboard/page.tsx now uses a new "Overview" layout.
+   Older CSS for profile completeness (heroCompleteness*) is intentionally removed. */
 
 /* ── What's Next ── */
 .whatsNextCard {
@@ -262,52 +164,7 @@
   letter-spacing: 0.2px;
 }
 
-/* ── Platforms Grid ── */
-.platformsGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.platformCard {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  padding: 16px 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  text-decoration: none;
-  transition: var(--transition);
-  position: relative;
-}
-.platformCard:hover {
-  border-color: var(--color-gold);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.platformEmoji { font-size: 24px; }
-
-.platformLabel {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-text);
-  text-align: center;
-}
-
-.platformBadge {
-  position: absolute;
-  top: 8px; right: 8px;
-  background: var(--color-gold);
-  color: #1A1A2E;
-  font-size: 9px;
-  font-weight: 800;
-  padding: 2px 5px;
-  border-radius: 6px;
-  line-height: 1.4;
-}
+/* (Removed) Platforms Grid styles: not used by current dashboard UI */
 
 /* ── Profile Card ── */
 .profileCard {
@@ -372,11 +229,7 @@
   border-color: rgba(231,76,60,0.2);
 }
 
-.profileEdit {
-  font-size: 20px;
-  color: var(--color-text-muted);
-  text-decoration: none;
-}
+/* (Removed) profileEdit styles: not used by current dashboard UI */
 
 /* ── Admin shortcut ── */
 .adminBanner {
@@ -476,46 +329,7 @@
   .platformsGrid { grid-template-columns: repeat(3, 1fr); }
 }
 
-/* ── Profile Progress ── */
-.profileProgress {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 14px 16px;
-  margin-bottom: 12px;
-}
-.profileProgressTop {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-.profileProgressLabel {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text);
-}
-.profileProgressPct {
-  font-size: 13px;
-  font-weight: 800;
-}
-.profileProgressBar {
-  height: 6px;
-  background: var(--color-bg);
-  border-radius: 999px;
-  overflow: hidden;
-}
-.profileProgressFill {
-  height: 100%;
-  border-radius: 999px;
-  transition: width 0.5s ease;
-}
-.profileProgressHint {
-  font-size: 11px;
-  color: var(--color-text-muted);
-  margin-top: 8px;
-  line-height: 1.4;
-}
+/* (Removed) profile progress styles: not used by current dashboard UI */
 
 /* ── Profile Sections ── */
 .profileSection {

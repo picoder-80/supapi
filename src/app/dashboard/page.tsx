@@ -17,79 +17,81 @@ function getGreeting() {
   return "Good evening";
 }
 
-/** Fields used to compute profile completeness (same weights as before). */
-interface ProfileCompletenessSource {
-  display_name: string;
-  phone: string;
-  email: string;
-  address_line1: string;
-  city: string;
-  postcode: string;
-  country: string;
-  wallet_address: string;
+interface DashboardStats {
+  orders: number;
+  referrals: number;
+  earned: string;
+  transactions: Array<{
+    id: string;
+    type: string;
+    amount_pi: number | string | null;
+    memo: string | null;
+    status: string | null;
+    created_at: string;
+  }>;
+  sc_balance: number;
+  listings: number;
+  gigs: number;
+  recent_orders: Array<{
+    id: string;
+    status: string;
+    amount_pi: number;
+    created_at: string;
+    listing?: { title?: string | null } | null;
+  }>;
+  credit_transactions: Array<{
+    id: string;
+    type: string;
+    amount: number;
+    activity: string;
+    note: string | null;
+    created_at: string;
+  }>;
+  pets: number;
 }
 
-const EMPTY_PROFILE_FIELDS: ProfileCompletenessSource = {
-  display_name:  "",
-  phone:         "",
-  email:         "",
-  address_line1: "",
-  city:          "",
-  postcode:      "",
-  country:       "",
-  wallet_address: "",
-};
-
-const COMPLETENESS_FIELDS: (keyof ProfileCompletenessSource)[] = [
-  "display_name",
-  "phone",
-  "email",
-  "address_line1",
-  "city",
-  "postcode",
-  "country",
-  "wallet_address",
-];
-
-function computeProfileCompletePct(profile: ProfileCompletenessSource): number {
-  const filled = COMPLETENESS_FIELDS.filter((f) => String(profile[f] ?? "").trim()).length;
-  return Math.round((filled / COMPLETENESS_FIELDS.length) * 100);
+function fmtPi(n: number) {
+  return `${Number(n).toFixed(2)} π`;
 }
 
 export default function DashboardPage() {
   const { user, isHydrating, login, isLoading } = useAuth();
-  const [profileFields, setProfileFields] = useState<ProfileCompletenessSource>(EMPTY_PROFILE_FIELDS);
-  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
 
-  const token = () => (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "");
+  const token = () =>
+    (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "");
 
-  const fetchProfileForCompleteness = useCallback(async () => {
-    if (!token()) return;
-    setLoadingProfile(true);
+  const fetchStats = useCallback(async () => {
+    const t = token();
+    if (!t) return;
+    setLoadingStats(true);
     try {
-      const r = await fetch("/api/dashboard/profile", { headers: { Authorization: `Bearer ${token()}` } });
+      const r = await fetch("/api/dashboard/stats", {
+        headers: { Authorization: `Bearer ${t}` },
+      });
       const d = await r.json();
-      if (d.success && d.data) {
-        setProfileFields({ ...EMPTY_PROFILE_FIELDS, ...d.data });
-      }
+      if (d?.success && d?.data) setStats(d.data as DashboardStats);
+      else setStats(null);
     } catch {
-      setProfileFields(EMPTY_PROFILE_FIELDS);
+      setStats(null);
+    } finally {
+      setLoadingStats(false);
     }
-    setLoadingProfile(false);
   }, []);
 
   useEffect(() => {
-    if (user) fetchProfileForCompleteness();
-  }, [user, fetchProfileForCompleteness]);
+    if (user) fetchStats();
+  }, [user, fetchStats]);
 
   if (isHydrating)
     return (
       <div
         style={{
-          minHeight:      "100vh",
-          background:     "linear-gradient(135deg,#1A1A2E,#0F3460)",
-          display:        "flex",
-          alignItems:     "center",
+          minHeight: "100vh",
+          background: "linear-gradient(135deg,#1A1A2E,#0F3460)",
+          display: "flex",
+          alignItems: "center",
           justifyContent: "center",
         }}
       >
@@ -110,8 +112,9 @@ export default function DashboardPage() {
     );
 
   const isAdmin = isAdminRole(user.role);
-  const pct = computeProfileCompletePct(profileFields);
-  const complete = pct === 100;
+  const walletMissing = !user.wallet_address?.trim();
+
+  const earnedPi = stats ? Number(stats.earned ?? 0) : 0;
 
   return (
     <div>
@@ -135,65 +138,51 @@ export default function DashboardPage() {
             )}
           </Link>
         </div>
-
-        <div className={styles.heroCompleteness}>
-          <div className={styles.heroCompletenessTitle}>Profile completeness</div>
-          <div className={styles.heroCompletenessTop}>
-            <span className={styles.heroCompletenessLabel}>Your profile</span>
-            <span
-              className={`${styles.heroCompletenessPct} ${complete ? styles.heroCompletenessPctDone : ""}`}
-            >
-              {loadingProfile ? "…" : `${pct}%`}
-            </span>
-          </div>
-          {loadingProfile ? (
-            <div className={styles.heroCompletenessSkeleton} />
-          ) : (
-            <div className={styles.heroCompletenessBar}>
-              <div
-                className={`${styles.heroCompletenessFill} ${complete ? styles.heroCompletenessFillDone : ""}`}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-          )}
-          {!loadingProfile && !complete && (
-            <p className={styles.heroCompletenessHint}>
-              Complete your profile for faster checkout, buyer trust, and SC rewards (when available) on MySpace.
-            </p>
-          )}
-          {!loadingProfile && complete && (
-            <p className={styles.heroCompletenessHint} style={{ color: "rgba(110,231,168,0.9)" }}>
-              Profile complete — you can still update details on MySpace anytime.
-            </p>
-          )}
-          <Link href={`/supaspace/${user.username}`} className={styles.heroCompletenessLink}>
-            {complete ? "View MySpace →" : "Complete profile →"}
-          </Link>
-        </div>
       </div>
 
       <div className={styles.body}>
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
-            <div className={styles.sectionTitle}>SupaMarket selling</div>
-            <Link href="/supamarket/seller" className={styles.sectionLink}>
-              Seller Hub →
+            <div className={styles.sectionTitle}>Overview</div>
+            <Link href="/wallet" className={styles.sectionLink}>
+              Wallet →
             </Link>
           </div>
-          <Link
-            href="/supamarket/seller"
-            className={styles.whatsNextCard}
-            style={{ textDecoration: "none", color: "inherit", display: "block" }}
-          >
-            <div className={styles.whatsNextIcon}>🏪</div>
-            <div className={styles.whatsNextText}>
-              <strong>Seller Hub</strong> — listing overview, open orders, and shortcuts to My Listings, selling
-              orders, and earnings.
+
+          <div className={styles.infoCards}>
+            <div className={styles.infoCard}>
+              <div className={styles.infoCardIcon}>📦</div>
+              <div className={styles.infoCardInfo}>
+                <div className={styles.infoCardLabel}>Orders</div>
+                <div className={styles.infoCardValue}>{loadingStats ? "…" : stats?.orders ?? 0}</div>
+              </div>
             </div>
-            <span className={styles.whatsNextBtn} style={{ pointerEvents: "none" }}>
-              Open →
-            </span>
-          </Link>
+            <div className={styles.infoCard}>
+              <div className={styles.infoCardIcon}>🛍️</div>
+              <div className={styles.infoCardInfo}>
+                <div className={styles.infoCardLabel}>Listings</div>
+                <div className={styles.infoCardValue}>{loadingStats ? "…" : stats?.listings ?? 0}</div>
+              </div>
+            </div>
+            <div className={styles.infoCard}>
+              <div className={styles.infoCardIcon}>💎</div>
+              <div className={styles.infoCardInfo}>
+                <div className={styles.infoCardLabel}>Earnings</div>
+                <div className={styles.infoCardValue}>
+                  {loadingStats ? "…" : fmtPi(earnedPi)}
+                </div>
+              </div>
+            </div>
+            <div className={styles.infoCard}>
+              <div className={styles.infoCardIcon}>💳</div>
+              <div className={styles.infoCardInfo}>
+                <div className={styles.infoCardLabel}>SC Balance</div>
+                <div className={styles.infoCardValue}>
+                  {loadingStats ? "…" : `${Number(stats?.sc_balance ?? 0).toFixed(2)} SC`}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {isAdmin && (
@@ -209,13 +198,13 @@ export default function DashboardPage() {
           </Link>
         )}
 
-        {!user.wallet_address?.trim() && (
+        {walletMissing && (
           <div className={styles.section}>
             <div className={styles.whatsNextCard} style={{ borderColor: "rgba(245,166,35,0.5)" }}>
               <div className={styles.whatsNextIcon}>π</div>
               <div className={styles.whatsNextText}>
-                Add your <strong>Pi wallet address</strong> to receive payments, tips, and escrow payouts. Edit on
-                MySpace or sign in with Pi again after you activate your wallet.
+                Add your <strong>Pi wallet address</strong> so payments, tips, and escrow payouts can reach you.
+                Edit from <strong>MySpace</strong>.
               </div>
               <Link href={`/supaspace/${user.username}`} className={styles.whatsNextBtn}>
                 Open MySpace →
@@ -223,6 +212,123 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div className={styles.sectionTitle}>Quick Actions</div>
+            <Link href="/rewards" className={styles.sectionLink}>
+              Rewards →
+            </Link>
+          </div>
+
+          <div className={styles.quickGrid}>
+            <Link href="/supamarket/seller" className={styles.quickItem}>
+              <div className={styles.quickEmoji}>🏪</div>
+              <div className={styles.quickLabel}>SupaMarket Seller Hub</div>
+            </Link>
+            <Link href="/supamarket/my-listings" className={styles.quickItem}>
+              <div className={styles.quickEmoji}>🛍️</div>
+              <div className={styles.quickLabel}>My Market Listings</div>
+            </Link>
+            <Link href="/supasifieds/my-listings" className={styles.quickItem}>
+              <div className={styles.quickEmoji}>📋</div>
+              <div className={styles.quickLabel}>My Classified Ads</div>
+            </Link>
+            <Link href="/returns-refunds" className={styles.quickItem}>
+              <div className={styles.quickEmoji}>↩️</div>
+              <div className={styles.quickLabel}>Returns & Refunds</div>
+            </Link>
+            <Link href="/wallet" className={styles.quickItem}>
+              <div className={styles.quickEmoji}>💰</div>
+              <div className={styles.quickLabel}>Pi Wallet</div>
+            </Link>
+            <Link href="/supachat" className={styles.quickItem}>
+              <div className={styles.quickEmoji}>💬</div>
+              <div className={styles.quickLabel}>SupaChat</div>
+            </Link>
+          </div>
+        </div>
+
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div className={styles.sectionTitle}>Recent Activity</div>
+            <Link href="/supamarket/orders" className={styles.sectionLink}>
+              Orders →
+            </Link>
+          </div>
+
+          {loadingStats ? (
+            <div className={styles.empty}>Loading your activity…</div>
+          ) : (
+            <>
+              <div className={styles.profileCard} style={{ marginBottom: 10 }}>
+                <div className={styles.profileAvatar} style={{ width: 52, height: 52, fontSize: 20 }}>
+                  🧾
+                </div>
+                <div className={styles.profileInfo}>
+                  <div className={styles.profileName}>Recent Orders</div>
+                  <div className={styles.profilePiId}>Latest marketplace activity</div>
+                </div>
+              </div>
+
+              {(stats?.recent_orders ?? []).slice(0, 6).length ? (
+                (stats?.recent_orders ?? []).slice(0, 6).map((o) => (
+                  <div key={o.id} className={styles.profileSection} style={{ cursor: "default" }}>
+                    <div className={styles.profileSectionIcon}>📦</div>
+                    <div className={styles.profileSectionInfo}>
+                      <div className={styles.profileSectionTitle}>
+                        {o.id.slice(0, 8)}… · {o.listing?.title ?? "—"}
+                      </div>
+                      <div className={styles.profileSectionDesc}>
+                        Amount: {Number(o.amount_pi ?? 0).toFixed(2)} π
+                      </div>
+                      <div className={styles.profileSectionStatus}>
+                        <span className={o.status === "completed" ? styles.statusDone : styles.statusPending}>
+                          {o.status}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.profileSectionArrow}>→</div>
+                  </div>
+                ))
+              ) : (
+                <div className={styles.empty}>No recent orders yet.</div>
+              )}
+
+              <div className={styles.profileCard} style={{ marginTop: 16 }}>
+                <div className={styles.profileAvatar} style={{ width: 52, height: 52, fontSize: 20 }}>
+                  💳
+                </div>
+                <div className={styles.profileInfo}>
+                  <div className={styles.profileName}>Recent SC Activity</div>
+                  <div className={styles.profilePiId}>Latest credit transactions</div>
+                </div>
+              </div>
+
+              {(stats?.credit_transactions ?? []).slice(0, 6).length ? (
+                (stats?.credit_transactions ?? []).slice(0, 6).map((t) => (
+                  <div key={t.id} className={styles.profileSection} style={{ cursor: "default" }}>
+                    <div className={styles.profileSectionIcon}>🔁</div>
+                    <div className={styles.profileSectionInfo}>
+                      <div className={styles.profileSectionTitle}>{t.activity}</div>
+                      <div className={styles.profileSectionDesc}>
+                        {Number(t.amount).toFixed(2)} SC · {t.type}
+                      </div>
+                      <div className={styles.profileSectionStatus}>
+                        <span className={t.amount >= 0 ? styles.statusDone : styles.statusPending}>
+                          {t.amount >= 0 ? "Earn" : "Spend"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.profileSectionArrow}>→</div>
+                  </div>
+                ))
+              ) : (
+                <div className={styles.empty}>No recent SC transactions yet.</div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

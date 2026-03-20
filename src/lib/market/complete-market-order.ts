@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { creditPresetEarning } from "@/lib/wallet/earnings";
 
 export async function creditSellerEarningsMarket(params: {
   origin: string;
@@ -6,33 +7,49 @@ export async function creditSellerEarningsMarket(params: {
   orderId: string;
   amountPi: number;
 }) {
+  // Primary path: direct DB credit (idempotent by refId/type) to avoid env/header mismatch issues.
+  const direct = await creditPresetEarning("market_order_complete", {
+    userId: params.sellerId,
+    amountPi: params.amountPi,
+    refId: params.orderId,
+    status: "available",
+    note: `Auto payout for completed order ${params.orderId}`,
+  });
+
+  if (direct.ok) return;
+
+  // Fallback path: legacy internal API credit.
   const internalSecret = process.env.INTERNAL_API_SECRET;
   if (!internalSecret) {
-    console.warn("[Earnings Credit] INTERNAL_API_SECRET missing");
+    console.warn(`[Earnings Credit] Direct credit failed for order ${params.orderId}: ${direct.reason ?? "unknown"}`);
     return;
   }
 
-  const response = await fetch(`${params.origin}/api/wallet`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-internal-key": internalSecret,
-    },
-    body: JSON.stringify({
-      action: "credit_earnings",
-      target_user_id: params.sellerId,
-      type: "market_order",
-      source: "Marketplace Order Completion",
-      amount_pi: params.amountPi,
-      status: "available",
-      ref_id: params.orderId,
-      note: `Auto payout for completed order ${params.orderId}`,
-    }),
-  });
+  try {
+    const response = await fetch(`${params.origin}/api/wallet`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-internal-key": internalSecret,
+      },
+      body: JSON.stringify({
+        action: "credit_earnings",
+        target_user_id: params.sellerId,
+        type: "market_order",
+        source: "Marketplace Order Completion",
+        amount_pi: params.amountPi,
+        status: "available",
+        ref_id: params.orderId,
+        note: `Auto payout for completed order ${params.orderId}`,
+      }),
+    });
 
-  if (!response.ok) {
-    const payload = await response.text().catch(() => "");
-    console.warn(`[Earnings Credit] Failed for order ${params.orderId}: ${response.status} ${payload}`);
+    if (!response.ok) {
+      const payload = await response.text().catch(() => "");
+      console.warn(`[Earnings Credit] Fallback failed for order ${params.orderId}: ${response.status} ${payload}`);
+    }
+  } catch (e) {
+    console.warn(`[Earnings Credit] Fallback exception for order ${params.orderId}`, e);
   }
 }
 

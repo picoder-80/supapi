@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   ] = await Promise.all([
     supabase.from("platform_config").select("*").eq("key", "market_commission_pct").maybeSingle(),
     supabase.from("admin_revenue").select("commission_pi, created_at").eq("platform", "market").order("created_at", { ascending: false }).limit(50),
-    supabase.from("admin_revenue").select("commission_pi").eq("platform", "market"),
+    supabase.from("admin_revenue").select("order_id, commission_pi").eq("platform", "market"),
     supabase
       .from("orders")
       .select("id, amount_pi, price_pi, commission_pi, commission_pct")
@@ -41,16 +41,21 @@ export async function GET(req: NextRequest) {
   ]);
 
   const commissionPct = parseFloat(config?.value ?? "5");
-  const totalFromRevenue = allRevenue?.reduce((s, r) => s + Number(r.commission_pi ?? 0), 0) ?? 0;
-  const hasRevenueRows = Boolean((allRevenue ?? []).length);
-  const totalCollected = hasRevenueRows
-    ? totalFromRevenue
-    : (completedOrders ?? []).reduce((s, o) => {
-        const gross = Number(o.amount_pi ?? o.price_pi ?? 0);
-        const c = Number(o.commission_pi ?? 0);
-        const pct = Number(o.commission_pct ?? commissionPct);
-        return s + (c > 0 ? c : gross * (pct / 100));
-      }, 0);
+  // Keep this aligned with /api/admin/supamarket/stats:
+  // sum admin_revenue first, then fallback for completed orders missing admin_revenue row.
+  const revenueOrderIds = new Set(
+    (allRevenue ?? [])
+      .map((r: { order_id?: string }) => String(r.order_id ?? ""))
+      .filter(Boolean)
+  );
+  let totalCollected = (allRevenue ?? []).reduce((s, r) => s + Number(r.commission_pi ?? 0), 0);
+  (completedOrders ?? []).forEach((o) => {
+    if (revenueOrderIds.has(String(o.id))) return;
+    const gross = Number(o.amount_pi ?? o.price_pi ?? 0);
+    const c = Number(o.commission_pi ?? 0);
+    const pct = Number(o.commission_pct ?? commissionPct);
+    totalCollected += c > 0 ? c : gross * (pct / 100);
+  });
   const pendingFromEscrow = (pendingEscrowRows ?? []).reduce((s, r) => s + Number(r.commission_pi ?? 0), 0);
   const totalPending = pendingFromEscrow > 0
     ? pendingFromEscrow

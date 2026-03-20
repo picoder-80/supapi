@@ -19,6 +19,13 @@ function timeAgo(iso: string) {
   return d === 0 ? "Today" : d === 1 ? "Yesterday" : `${d}d ago`;
 }
 
+function formatBoostExpiry(iso: string) {
+  return new Date(iso).toLocaleString([], {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
   active:  { label: "Active",  color: "#276749", bg: "#F0FFF4" },
   paused:  { label: "Paused",  color: "#744210", bg: "#FFFAF0" },
@@ -358,7 +365,7 @@ export default function MyListingsPage() {
                       <span>📦 {listing.stock ?? 0} left</span>
                       {isBoost && (
                         <span className={styles.boostExpiry}>
-                          🚀 until {new Date(listing.boost_expires_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          🚀 until {formatBoostExpiry(String(listing.boost_expires_at))}
                         </span>
                       )}
                     </div>

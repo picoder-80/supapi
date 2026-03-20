@@ -12,6 +12,48 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const BOOST_TIER_WEIGHT: Record<string, number> = {
+  gold: 3,
+  silver: 2,
+  bronze: 1,
+};
+
+function ts(input: unknown): number {
+  if (!input) return 0;
+  const n = new Date(String(input)).getTime();
+  return Number.isFinite(n) ? n : 0;
+}
+
+function boostScore(row: { is_boosted?: boolean | null; boost_tier?: string | null; boost_expires_at?: string | null }): number {
+  if (!row?.is_boosted) return 0;
+  const exp = ts(row.boost_expires_at);
+  if (exp <= Date.now()) return 0;
+  const tierWeight = BOOST_TIER_WEIGHT[String(row.boost_tier ?? "").toLowerCase()] ?? 0;
+  return tierWeight * 10_000_000_000 + exp;
+}
+
+function baseSortDiff(
+  a: { price_pi?: number | null; views?: number | null; created_at?: string | null },
+  b: { price_pi?: number | null; views?: number | null; created_at?: string | null },
+  sort: string
+): number {
+  if (sort === "price_asc") return Number(a.price_pi ?? 0) - Number(b.price_pi ?? 0);
+  if (sort === "price_desc") return Number(b.price_pi ?? 0) - Number(a.price_pi ?? 0);
+  if (sort === "popular") return Number(b.views ?? 0) - Number(a.views ?? 0);
+  return ts(b.created_at) - ts(a.created_at);
+}
+
+function sortByBoostPriority<T extends { is_boosted?: boolean | null; boost_tier?: string | null; boost_expires_at?: string | null; price_pi?: number | null; views?: number | null; created_at?: string | null }>(
+  rows: T[],
+  sort: string
+): T[] {
+  return [...rows].sort((a, b) => {
+    const boostDiff = boostScore(b) - boostScore(a);
+    if (boostDiff !== 0) return boostDiff;
+    return baseSortDiff(a, b, sort);
+  });
+}
+
 function getUserId(req: NextRequest): string | null {
   try {
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
@@ -58,8 +100,10 @@ export async function GET(req: NextRequest) {
     try { await supabase.rpc("expire_listing_boosts"); } catch {}
 
     let query = supabase.from("listings")
-      .select(`id, title, description, price_pi, category, subcategory, category_deep, condition, buying_method, images, stock, status, location, country_code, ship_worldwide, views, likes, created_at, is_boosted, boost_tier, seller:seller_id ( id, username, display_name, avatar_url, kyc_status )`, { count: "exact" })
-      .eq("status", "active").gt("stock", 0);
+      .select(`id, title, description, price_pi, category, subcategory, category_deep, condition, buying_method, images, stock, status, location, country_code, ship_worldwide, views, likes, created_at, is_boosted, boost_tier, boost_expires_at, seller:seller_id ( id, username, display_name, avatar_url, kyc_status )`, { count: "exact" })
+      .eq("status", "active")
+      // Backward compatibility: older rows may have NULL stock; treat as available.
+      .or("stock.gt.0,stock.is.null");
 
     if (category)      query = query.eq("category", category);
     if (subcategory)  query = query.eq("subcategory", subcategory);
@@ -68,7 +112,8 @@ export async function GET(req: NextRequest) {
     if (country === "WORLDWIDE") {
       query = query.eq("ship_worldwide", true);
     } else if (country) {
-      query = query.or(`country_code.eq.${country},ship_worldwide.eq.true`);
+      // Backward compatibility: older rows may have NULL country_code.
+      query = query.or(`country_code.eq.${country},ship_worldwide.eq.true,country_code.is.null`);
     }
     if (method)      query = query.or(`buying_method.eq.${method},buying_method.eq.both`);
     if (q)           query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
@@ -84,10 +129,83 @@ export async function GET(req: NextRequest) {
 
     query = query.range(offset, offset + limit - 1);
 
-    const { data, count, error } = await query;
-    if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    let { data, count, error } = await query;
+    if (error) {
+      const msg = String(error.message ?? "");
+      const missingColumn =
+        msg.includes("does not exist") ||
+        msg.includes("column") ||
+        msg.includes("schema cache");
+      if (!missingColumn) {
+        return NextResponse.json({ success: false, error: msg }, { status: 500 });
+      }
 
-    return NextResponse.json({ success: true, data: { listings: data ?? [], total: count ?? 0, page, limit } });
+      // Legacy schema fallback (without newer columns like category_deep/is_boosted/country_code).
+      let legacyQuery = supabase
+        .from("listings")
+        .select(
+          `id, title, description, price_pi, category, subcategory, condition, buying_method, images, stock, status, location, views, likes, created_at, seller:seller_id ( id, username, display_name, avatar_url, kyc_status )`,
+          { count: "exact" }
+        )
+        .eq("status", "active")
+        .or("stock.gt.0,stock.is.null");
+
+      if (category) legacyQuery = legacyQuery.eq("category", category);
+      if (subcategory) legacyQuery = legacyQuery.eq("subcategory", subcategory);
+      if (condition) legacyQuery = legacyQuery.eq("condition", condition);
+      if (method) legacyQuery = legacyQuery.or(`buying_method.eq.${method},buying_method.eq.both`);
+      if (q) legacyQuery = legacyQuery.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+      if (sellerUser?.trim()) {
+        const { data: u } = await supabase.from("users").select("id").eq("username", sellerUser.trim()).single();
+        if (u) legacyQuery = legacyQuery.eq("seller_id", u.id);
+      }
+
+      if (sort === "price_asc") legacyQuery = legacyQuery.order("price_pi", { ascending: true });
+      else if (sort === "price_desc") legacyQuery = legacyQuery.order("price_pi", { ascending: false });
+      else if (sort === "popular") legacyQuery = legacyQuery.order("views", { ascending: false });
+      else legacyQuery = legacyQuery.order("created_at", { ascending: false });
+
+      const legacyRes = await legacyQuery.range(offset, offset + limit - 1);
+      if (legacyRes.error) {
+        return NextResponse.json({ success: false, error: legacyRes.error.message }, { status: 500 });
+      }
+
+      data = (legacyRes.data ?? []).map((row: any) => ({
+        ...row,
+        category_deep: "",
+        country_code: null,
+        ship_worldwide: false,
+        is_boosted: false,
+        boost_tier: null,
+        boost_expires_at: null,
+      }));
+      count = legacyRes.count ?? 0;
+    }
+
+    // Safety fallback for legacy rows:
+    // if default browse returns empty, retry with relaxed stock/country constraints.
+    const isDefaultBrowse =
+      !category && !subcategory && !categoryDeep && !q && !method && !condition && !sellerUser?.trim();
+    if ((count ?? 0) === 0 && isDefaultBrowse && page === 1) {
+      const relaxed = await supabase
+        .from("listings")
+        .select(
+          `id, title, description, price_pi, category, subcategory, category_deep, condition, buying_method, images, stock, status, location, country_code, ship_worldwide, views, likes, created_at, is_boosted, boost_tier, boost_expires_at, seller:seller_id ( id, username, display_name, avatar_url, kyc_status )`,
+          { count: "exact" }
+        )
+        .eq("status", "active")
+        .order("is_boosted", { ascending: false })
+        .order("created_at", { ascending: false })
+        .range(0, limit - 1);
+      if (!relaxed.error && (relaxed.count ?? 0) > 0) {
+        data = relaxed.data;
+        count = relaxed.count;
+      }
+    }
+
+    const listings = sortByBoostPriority(data ?? [], sort);
+
+    return NextResponse.json({ success: true, data: { listings, total: count ?? 0, page, limit } });
   } catch {
     return NextResponse.json({ success: false, error: "Server error" }, { status: 500 });
   }

@@ -8,6 +8,46 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const BOOST_TIER_WEIGHT: Record<string, number> = {
+  gold: 3,
+  silver: 2,
+  bronze: 1,
+};
+
+function ts(input: unknown): number {
+  if (!input) return 0;
+  const n = new Date(String(input)).getTime();
+  return Number.isFinite(n) ? n : 0;
+}
+
+function boostScore(row: { is_boosted?: boolean | null; boost_tier?: string | null; boost_expires_at?: string | null }): number {
+  if (!row?.is_boosted) return 0;
+  const exp = ts(row.boost_expires_at);
+  if (exp <= Date.now()) return 0;
+  const tierWeight = BOOST_TIER_WEIGHT[String(row.boost_tier ?? "").toLowerCase()] ?? 0;
+  return tierWeight * 10_000_000_000 + exp;
+}
+
+function baseSortDiff(
+  a: { created_at?: string | null; views?: number | null },
+  b: { created_at?: string | null; views?: number | null },
+  sort: string
+): number {
+  if (sort === "popular") return Number(b.views ?? 0) - Number(a.views ?? 0);
+  return ts(b.created_at) - ts(a.created_at);
+}
+
+function sortByBoostPriority<T extends { is_boosted?: boolean | null; boost_tier?: string | null; boost_expires_at?: string | null; created_at?: string | null; views?: number | null }>(
+  rows: T[],
+  sort: string
+): T[] {
+  return [...rows].sort((a, b) => {
+    const boostDiff = boostScore(b) - boostScore(a);
+    if (boostDiff !== 0) return boostDiff;
+    return baseSortDiff(a, b, sort);
+  });
+}
+
 function getUserId(req: NextRequest): string | null {
   try {
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
@@ -45,7 +85,7 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from("classified_listings")
       .select(
-        `id, title, description, price_display, category, subcategory, category_deep, images, status, location, country_code, views, created_at, is_boosted, boost_tier, seller:seller_id ( id, username, display_name, avatar_url, kyc_status )`,
+        `id, title, description, price_display, category, subcategory, category_deep, images, status, location, country_code, views, created_at, is_boosted, boost_tier, boost_expires_at, seller:seller_id ( id, username, display_name, avatar_url, kyc_status )`,
         { count: "exact" }
       )
       .eq("status", "active");
@@ -86,7 +126,7 @@ export async function GET(req: NextRequest) {
     const { data, count, error } = await query;
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
 
-    let listings = data ?? [];
+    let listings = sortByBoostPriority(data ?? [], sort);
     if (category && listings.length > 1) {
       const { data: spotlightRows } = await supabase
         .from("classified_spotlights")
@@ -95,7 +135,13 @@ export async function GET(req: NextRequest) {
         .eq("is_active", true)
         .gte("expires_at", new Date().toISOString());
       const spotlightIds = new Set((spotlightRows ?? []).map((r) => String(r.listing_id)));
-      listings = [...listings].sort((a, b) => Number(spotlightIds.has(String(b.id))) - Number(spotlightIds.has(String(a.id))));
+      listings = [...listings].sort((a, b) => {
+        const spotlightDiff = Number(spotlightIds.has(String(b.id))) - Number(spotlightIds.has(String(a.id)));
+        if (spotlightDiff !== 0) return spotlightDiff;
+        const boostDiff = boostScore(b as any) - boostScore(a as any);
+        if (boostDiff !== 0) return boostDiff;
+        return baseSortDiff(a, b, sort);
+      });
     }
 
     return NextResponse.json({

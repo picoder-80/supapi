@@ -44,6 +44,17 @@ function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
 function fmt(iso: string) {
   return new Date(iso).toLocaleDateString("en-MY", { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
 }
+function extractEvidenceUrls(input: unknown): string[] {
+  if (!input) return [];
+  const list = Array.isArray(input)
+    ? input
+    : typeof input === "string"
+      ? [input]
+      : [];
+  return list
+    .map((v) => String(v ?? "").trim())
+    .filter((v) => /^https?:\/\//i.test(v));
+}
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -405,6 +416,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const isBuyer  = user.id === order.buyer?.id;
   const isSeller = user.id === order.seller?.id;
   const dispute  = order.disputes?.[0];
+  const returnEvidenceUrls = extractEvidenceUrls(order.return_request?.evidence);
   const normalizedStatus = order.status === "escrow" ? "paid" : order.status;
   const stepIdx  = STATUS_STEPS.indexOf(normalizedStatus);
   const isActive = !["completed","refunded","cancelled","disputed"].includes(normalizedStatus);
@@ -709,6 +721,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 <strong style={{ whiteSpace: "pre-wrap", fontWeight: 600 }}>{order.return_request.reason}</strong>
               </div>
             </div>
+            {returnEvidenceUrls.length > 0 && (
+              <div className={styles.resultEvidenceWrap} style={{ marginBottom: 10 }}>
+                <div className={styles.resultEvidenceTitle}>Buyer evidence</div>
+                <div className={styles.resultEvidenceGrid}>
+                  {returnEvidenceUrls.slice(0, 6).map((url) => (
+                    <a key={url} href={url} target="_blank" rel="noopener noreferrer" className={styles.resultEvidenceLink}>
+                      <img src={url} alt="Buyer evidence" className={styles.resultEvidenceImg} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
             <textarea
               className={styles.input}
               rows={2}

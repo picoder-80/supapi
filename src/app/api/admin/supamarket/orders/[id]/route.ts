@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { hasAdminPermission } from "@/lib/admin/permissions";
+import { creditSellerEarningsMarket } from "@/lib/market/complete-market-order";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -50,7 +51,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const supabase = await createAdminClient();
   const { data: currentOrder } = await supabase
     .from("orders")
-    .select("id, status, listing_id")
+    .select("id, status, listing_id, seller_id")
     .eq("id", id)
     .maybeSingle();
   if (!currentOrder?.id) {
@@ -66,9 +67,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   const nextStatus = typeof body.status === "string" ? String(body.status) : null;
   if (nextStatus === "completed" && currentOrder.status !== "completed") {
+    const origin = new URL(req.url).origin;
     const { data: earning } = await supabase
       .from("seller_earnings")
-      .select("id, status, commission_pi, gross_pi, commission_pct, platform")
+      .select("id, status, commission_pi, gross_pi, net_pi, commission_pct, platform")
       .eq("order_id", id)
       .maybeSingle();
 
@@ -92,6 +94,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           gross_pi: earning.gross_pi,
           commission_pi: earning.commission_pi,
           commission_pct: earning.commission_pct,
+        });
+      }
+
+      const sellerAmount = Number(earning.net_pi ?? 0);
+      if (sellerAmount > 0 && currentOrder.seller_id) {
+        await creditSellerEarningsMarket({
+          origin,
+          sellerId: String(currentOrder.seller_id),
+          orderId: id,
+          amountPi: sellerAmount,
         });
       }
     }
