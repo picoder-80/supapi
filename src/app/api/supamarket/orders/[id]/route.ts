@@ -79,7 +79,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       .from("orders")
       .select(`
         *,
-        listing:listing_id ( id, title, images, price_pi, category, subcategory, category_deep, description, location ),
+        listing:listing_id ( id, title, images, price_pi, category, subcategory, description, location ),
         buyer:buyer_id ( id, username, display_name, avatar_url, phone, email ),
         seller:seller_id ( id, username, display_name, avatar_url, phone ),
         disputes ( * )

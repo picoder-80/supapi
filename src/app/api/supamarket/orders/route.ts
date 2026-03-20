@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyToken } from "@/lib/auth/jwt";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { expireMarketPendingOrders } from "@/lib/market/expire-pending-orders";
 
 const normalizePaidStatus = <T extends {
   status?: string | null;
@@ -37,13 +38,16 @@ export async function GET(req: NextRequest) {
     const role = searchParams.get("role") ?? "buyer"; // buyer | seller
 
     const supabase = await createAdminClient();
+    try {
+      await expireMarketPendingOrders({ supabase, limit: 150 });
+    } catch {}
     const field = role === "seller" ? "seller_id" : "buyer_id";
 
     const { data, error } = await supabase
       .from("orders")
       .select(`
         *, 
-        listing:listing_id ( id, title, images, price_pi, category, subcategory, category_deep ),
+        listing:listing_id ( id, title, images, price_pi, category, subcategory ),
         buyer:buyer_id ( id, username, display_name, avatar_url ),
         seller:seller_id ( id, username, display_name, avatar_url )
       `)

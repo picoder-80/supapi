@@ -57,19 +57,14 @@ interface Summary {
   actionRequiredOrders: OrderRowItem[];
 }
 
-/** Status keys shown as pipeline chips (seller-facing labels). */
-const PIPELINE_CHIPS: { key: string; label: string }[] = [
-  { key: "pending", label: "Awaiting payment" },
-  { key: "paid", label: "Paid — fulfill" },
-  { key: "escrow", label: "In escrow" },
-  { key: "shipped", label: "Shipped" },
-  { key: "meetup_set", label: "Meetup set" },
-  { key: "delivered", label: "Delivered" },
-  { key: "disputed", label: "Dispute" },
-  { key: "completed", label: "Completed" },
-  { key: "refunded", label: "Refunded" },
-  { key: "cancelled", label: "Cancelled" },
-];
+const SELLER_ACTION_STATUSES = new Set([
+  "paid",
+  "escrow",
+  "shipped",
+  "meetup_set",
+  "delivered",
+  "disputed",
+]);
 
 function timeAgo(iso: string) {
   const t = Date.now() - new Date(iso).getTime();
@@ -120,6 +115,11 @@ export default function SellerHubPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [recentPage, setRecentPage] = useState(1);
+  const [recentFilter, setRecentFilter] = useState<
+    "all" | "action" | "completed" | "disputed" | "pending" | "refunded"
+  >("all");
+  const [searchOrderId, setSearchOrderId] = useState("");
 
   const token = () => (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "");
 
@@ -163,14 +163,41 @@ export default function SellerHubPage() {
     fetchSummary();
   }, [user, fetchSummary, router]);
 
+  useEffect(() => {
+    setRecentPage(1);
+  }, [summary?.recentOrders?.length, summary?.actionRequiredOrders?.length, loadError, recentFilter, searchOrderId]);
+
   if (!user) return null;
 
-  const pipelineChips = summary
-    ? PIPELINE_CHIPS.map(({ key, label }) => {
-        const n = summary.orders.byStatus[key] ?? 0;
-        return n > 0 ? { key, label, n } : null;
-      }).filter(Boolean) as { key: string; label: string; n: number }[]
-    : [];
+  const RECENT_PAGE_SIZE = 10;
+  const recentRows = summary?.recentOrders ?? [];
+  const filterCounts = {
+    all: recentRows.length,
+    action: recentRows.filter((r) => SELLER_ACTION_STATUSES.has(String(r.status ?? ""))).length,
+    pending: recentRows.filter((r) => String(r.status ?? "") === "pending").length,
+    completed: recentRows.filter((r) => String(r.status ?? "") === "completed").length,
+    disputed: recentRows.filter((r) => String(r.status ?? "") === "disputed").length,
+    refunded: recentRows.filter((r) => String(r.status ?? "") === "refunded").length,
+  };
+  const normalizedQuery = searchOrderId.trim().toLowerCase();
+  const matchesSearch = (id: string) =>
+    !normalizedQuery || id.toLowerCase().includes(normalizedQuery);
+  const matchesFilter = (status: string) => {
+    if (recentFilter === "all") return true;
+    if (recentFilter === "completed") return status === "completed";
+    if (recentFilter === "disputed") return status === "disputed";
+    if (recentFilter === "pending") return status === "pending";
+    if (recentFilter === "refunded") return status === "refunded";
+    if (recentFilter === "action") return SELLER_ACTION_STATUSES.has(status);
+    return true;
+  };
+  const filteredRecentRows = recentRows.filter((row) => {
+    const s = String(row.status ?? "");
+    return matchesFilter(s) && matchesSearch(String(row.id ?? ""));
+  });
+  const recentTotalPages = Math.max(1, Math.ceil(filteredRecentRows.length / RECENT_PAGE_SIZE));
+  const recentPageSafe = Math.min(recentPage, recentTotalPages);
+  const recentPageRows = filteredRecentRows.slice((recentPageSafe - 1) * RECENT_PAGE_SIZE, recentPageSafe * RECENT_PAGE_SIZE);
 
   return (
     <div className={styles.page}>
@@ -211,10 +238,17 @@ export default function SellerHubPage() {
             className={`${styles.heroRefreshing} ${refreshing ? styles.heroRefreshingVisible : ""}`}
             aria-hidden
           />
-          <h2 className={styles.heroTitle}>Sales overview</h2>
-          <p className={styles.heroSub}>
-            Track listings, orders in progress, and jump to actions (tracking, meetup, disputes) from one screen.
-          </p>
+          <div className={styles.heroHead}>
+            <div>
+              <h2 className={styles.heroTitle}>Seller Command Center</h2>
+              <p className={styles.heroSub}>
+                Real-time seller cockpit for inventory, pipeline, and payouts.
+              </p>
+            </div>
+            <Link href="/supamarket/create" className={styles.heroCta}>
+              + New listing
+            </Link>
+          </div>
           {loading || !summary ? (
             <div className={styles.grid2}>
               {[1, 2, 3, 4].map((i) => (
@@ -229,17 +263,17 @@ export default function SellerHubPage() {
               </div>
               <div className={styles.statTile}>
                 <div className={styles.statNum}>{summary.orders.activePipeline}</div>
-                <div className={styles.statLabel}>Open orders</div>
+                <div className={styles.statLabel}>Pipeline live</div>
               </div>
               <div className={styles.statTile}>
                 <div className={styles.statNum}>{summary.orders.attentionHint}</div>
-                <div className={styles.statLabel}>Need follow-up</div>
+                <div className={styles.statLabel}>Action queue</div>
               </div>
               <div className={styles.statTile}>
                 <div className={styles.statNum}>
                   {summary.orders.completedGrossPi.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}π
                 </div>
-                <div className={styles.statLabel}>Completed (gross)</div>
+                <div className={styles.statLabel}>Completed gross</div>
               </div>
             </div>
           )}
@@ -266,124 +300,155 @@ export default function SellerHubPage() {
           </div>
         ) : null}
 
-        {summary && summary.orders.total > 0 && pipelineChips.length > 0 ? (
-          <section className={styles.pipelineSection} aria-label="Order status breakdown">
-            <h3 className={styles.sectionTitle}>Orders by status</h3>
-            <p className={styles.sectionHint}>Counts from your latest orders (up to 80 shown in this summary).</p>
-            <div className={styles.pipelineRow}>
-              {pipelineChips.map(({ key, label, n }) => (
-                <span key={key} className={styles.pipelineChip}>
-                  <span className={styles.pipelineChipN}>{n}</span>
-                  <span className={styles.pipelineChipLabel}>{label}</span>
-                </span>
-              ))}
-            </div>
-          </section>
-        ) : null}
+        <div className={styles.workspace}>
+          <section className={styles.mainCol}>
+            {!loading && summary && summary.actionRequiredOrders.length > 0 && (
+              <>
+                <div>
+                  <h3 className={styles.sectionTitle}>Needs action</h3>
+                  <p className={styles.sectionHint}>
+                    Orders that need seller follow-up (payment, shipping, meetup, or dispute).
+                  </p>
+                </div>
+                <div className={styles.actionBanner}>
+                  <span className={styles.actionBannerIcon}>⚡</span>
+                  <div className={styles.actionBannerText}>
+                    {summary.actionRequiredOrders.length}{" "}
+                    {summary.actionRequiredOrders.length === 1 ? "order needs" : "orders need"} attention now.
+                  </div>
+                </div>
+                {summary.actionRequiredOrders.map((order) => (
+                  <OrderRowLink key={order.id} order={order} variant="action" />
+                ))}
+              </>
+            )}
 
-        <div>
-          <h3 className={styles.sectionTitle}>Listings</h3>
-          <p className={styles.sectionHint}>
-            {loading || !summary
-              ? "…"
-              : `Total ${summary.listings.total} · Paused ${summary.listings.paused} · Sold ${summary.listings.sold}${
-                  summary.listings.other ? ` · Other ${summary.listings.other}` : ""
-                }`}
-          </p>
-        </div>
+            {!loading && summary && summary.orders.total > 0 && summary.actionRequiredOrders.length === 0 ? (
+              <div className={styles.caughtUp}>
+                <span className={styles.caughtUpIcon}>✓</span>
+                <div>
+                  <div className={styles.caughtUpTitle}>Inbox zero</div>
+                  <p className={styles.caughtUpDesc}>No orders need seller action right now.</p>
+                </div>
+              </div>
+            ) : null}
 
-        <div className={styles.actions}>
-          <Link href="/supamarket/create" className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}>
-            ＋ New listing
-          </Link>
-          <Link href="/supamarket/my-listings" className={styles.actionBtn}>
-            📋 My listings
-          </Link>
-          <Link href="/supamarket/orders?tab=selling" className={styles.actionBtn}>
-            🏷️ All selling orders
-          </Link>
-          <Link href="/wallet" className={styles.actionBtn}>
-            💰 Earnings wallet
-          </Link>
-        </div>
-
-        {!loading && summary && summary.actionRequiredOrders.length > 0 && (
-          <>
-            <div>
-              <h3 className={styles.sectionTitle}>Needs action</h3>
-              <p className={styles.sectionHint}>
-                Orders that need seller follow-up (payment received, shipping, meetup, or dispute).
-              </p>
-            </div>
-            <div className={styles.actionBanner}>
-              <span className={styles.actionBannerIcon}>⚡</span>
-              <div className={styles.actionBannerText}>
-                {summary.actionRequiredOrders.length}{" "}
-                {summary.actionRequiredOrders.length === 1 ? "order needs" : "orders need"} attention — tap to update
-                tracking or meetup, or open a dispute.
+            <div className={styles.sectionHeadRow}>
+              <div>
+                <h3 className={styles.sectionTitle}>Recent selling orders</h3>
+                <p className={styles.sectionHint}>
+                  Latest timeline, including completed and refunded entries.
+                </p>
               </div>
             </div>
-            {summary.actionRequiredOrders.map((order) => (
-              <OrderRowLink key={order.id} order={order} variant="action" />
-            ))}
-          </>
-        )}
 
-        {!loading && summary && summary.orders.total > 0 && summary.actionRequiredOrders.length === 0 ? (
-          <div className={styles.caughtUp}>
-            <span className={styles.caughtUpIcon}>✓</span>
-            <div>
-              <div className={styles.caughtUpTitle}>You&apos;re all caught up</div>
-              <p className={styles.caughtUpDesc}>No orders need seller action right now.</p>
-            </div>
-          </div>
-        ) : null}
-
-        <div className={styles.sectionHeadRow}>
-          <div>
-            <h3 className={styles.sectionTitle}>Recent orders (selling)</h3>
-            <p className={styles.sectionHint}>
-              Latest orders (not shown under &quot;Needs action&quot;). Tap for full details.
-            </p>
-          </div>
-          {!loading && summary && summary.orders.total > 0 ? (
-            <Link href="/supamarket/orders?tab=selling" className={styles.sectionLink}>
-              View all
-            </Link>
-          ) : null}
-        </div>
-
-        {loading ? (
-          <>
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className={styles.skeletonRow} />
-            ))}
-          </>
-        ) : loadError ? (
-          <div className={styles.emptyMuted}>
-            <p className={styles.emptyMutedText}>Fix the error above, then tap Retry or refresh.</p>
-          </div>
-        ) : !summary ||
-          (summary.recentOrders.length === 0 && summary.actionRequiredOrders.length === 0) ? (
-          <div className={styles.empty}>
-            <div className={styles.emptyIcon}>🏷️</div>
-            <div className={styles.emptyTitle}>No seller orders yet</div>
-            <div className={styles.emptyDesc}>Create your first listing and share your SupaMarket link.</div>
-            <Link href="/supamarket/create" className={styles.emptyBtn}>
-              Create listing
-            </Link>
-          </div>
-        ) : (
-          <>
-            {summary.recentOrders.length === 0 ? (
-              <p className={styles.sectionHint} style={{ marginTop: 0 }}>
-                No other orders right now — all active orders are listed under &quot;Needs action&quot; above.
-              </p>
-            ) : (
-              summary.recentOrders.map((order) => <OrderRowLink key={order.id} order={order} variant="recent" />)
+            {!loading && summary && summary.recentOrders.length > 0 && (
+              <div className={styles.filterBar}>
+                <div className={styles.filterChips}>
+                  {([
+                    { id: "all", label: "All" },
+                    { id: "action", label: "Action" },
+                    { id: "pending", label: "Pending" },
+                    { id: "completed", label: "Completed" },
+                    { id: "disputed", label: "Disputed" },
+                    { id: "refunded", label: "Refunded" },
+                  ] as const).map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      className={`${styles.filterChip} ${recentFilter === f.id ? styles.filterChipActive : ""}`}
+                      onClick={() => setRecentFilter(f.id)}
+                    >
+                      {f.label} ({filterCounts[f.id] ?? 0})
+                    </button>
+                  ))}
+                </div>
+                <input
+                  className={styles.orderSearch}
+                  placeholder="Search order ID..."
+                  value={searchOrderId}
+                  onChange={(e) => setSearchOrderId(e.target.value)}
+                />
+              </div>
             )}
-          </>
-        )}
+
+            {loading ? (
+              <>
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className={styles.skeletonRow} />
+                ))}
+              </>
+            ) : loadError ? (
+              <div className={styles.emptyMuted}>
+                <p className={styles.emptyMutedText}>Fix the error above, then tap Retry or refresh.</p>
+              </div>
+            ) : !summary ||
+              (summary.recentOrders.length === 0 && summary.actionRequiredOrders.length === 0) ? (
+              <div className={styles.empty}>
+                <div className={styles.emptyIcon}>🏷️</div>
+                <div className={styles.emptyTitle}>No seller orders yet</div>
+                <div className={styles.emptyDesc}>Create your first listing and share your SupaMarket link.</div>
+                <Link href="/supamarket/create" className={styles.emptyBtn}>
+                  Create listing
+                </Link>
+              </div>
+            ) : (
+              <>
+                {summary.recentOrders.length === 0 ? (
+                  <p className={styles.sectionHint} style={{ marginTop: 0 }}>
+                    No other orders right now — all active orders are listed under "Needs action".
+                  </p>
+                ) : filteredRecentRows.length === 0 ? (
+                  <div className={styles.emptyMuted}>
+                    <p className={styles.emptyMutedText}>No orders match current filter/search.</p>
+                  </div>
+                ) : (
+                  <>
+                    {recentPageRows.map((order) => (
+                      <OrderRowLink key={order.id} order={order} variant="recent" />
+                    ))}
+                    {recentTotalPages > 1 && (
+                      <div className={styles.pager}>
+                        <button
+                          type="button"
+                          className={styles.pagerBtn}
+                          disabled={recentPageSafe === 1}
+                          onClick={() => setRecentPage((p) => Math.max(1, p - 1))}
+                        >
+                          ← Prev
+                        </button>
+                        <span className={styles.pagerInfo}>
+                          Page {recentPageSafe} of {recentTotalPages}
+                        </span>
+                        <button
+                          type="button"
+                          className={styles.pagerBtn}
+                          disabled={recentPageSafe === recentTotalPages}
+                          onClick={() => setRecentPage((p) => Math.min(recentTotalPages, p + 1))}
+                        >
+                          Next →
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </section>
+
+          <aside className={styles.sideCol}>
+            <div className={styles.sideCard}>
+              <h3 className={styles.sideTitle}>Inventory snapshot</h3>
+              <p className={styles.sectionHint}>
+                {loading || !summary
+                  ? "…"
+                  : `Total ${summary.listings.total} · Active ${summary.listings.active} · Paused ${summary.listings.paused} · Sold ${summary.listings.sold}${
+                      summary.listings.other ? ` · Other ${summary.listings.other}` : ""
+                    }`}
+              </p>
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
   );

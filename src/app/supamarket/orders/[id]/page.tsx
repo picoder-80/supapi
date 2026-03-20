@@ -5,6 +5,7 @@ import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { ensurePaymentReady, createPiPayment, isPiBrowser, getApiBase } from "@/lib/pi/sdk";
 import styles from "./page.module.css";
 import { formatListingCategoryPath } from "@/lib/market/categories";
 
@@ -90,6 +91,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [resumingPayment, setResumingPayment] = useState(false);
   const [reviewImageUrls, setReviewImageUrls] = useState<string[]>([]);
   const [reviewUploading, setReviewUploading] = useState(false);
   const [reviewUploadProgress, setReviewUploadProgress] = useState<{ done: number; total: number; current: string }>({
@@ -133,6 +135,95 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       else setMsg(d.error ?? "Update failed");
     } catch { setMsg("Something went wrong"); }
     setUpdating(false);
+  };
+
+  const resumePendingPayment = async () => {
+    if (!order || !isBuyer) return;
+    const token = localStorage.getItem("supapi_token");
+    if (!token) return;
+    if (!isPiBrowser()) {
+      setMsg("Open this order in Pi Browser to continue payment.");
+      return;
+    }
+
+    setResumingPayment(true);
+    setMsg("");
+    try {
+      await ensurePaymentReady();
+      const amount = Number(order.amount_pi ?? order.listing?.price_pi ?? 0);
+      if (!(amount > 0)) {
+        setMsg("Invalid order amount.");
+        setResumingPayment(false);
+        return;
+      }
+      createPiPayment(
+        {
+          amount,
+          memo: `Supapi Market: ${order.listing?.title ?? `Order ${order.id.slice(0, 8)}`}`,
+          metadata: {
+            platform: "market",
+            order_id: order.id,
+            listing_id: order.listing?.id ?? null,
+          },
+        },
+        {
+          onReadyForServerApproval: (paymentId: string) => {
+            const base = getApiBase();
+            fetch(`${base || ""}/api/payments/approve`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify({
+                paymentId,
+                type: "listing",
+                referenceId: order.id,
+                amountPi: amount,
+                memo: `Supapi Market: ${order.listing?.title ?? `Order ${order.id.slice(0, 8)}`}`,
+                metadata: {
+                  platform: "market",
+                  order_id: order.id,
+                  listing_id: order.listing?.id ?? null,
+                },
+              }),
+            }).catch(() => {
+              setMsg("Payment approval failed.");
+              setResumingPayment(false);
+            });
+          },
+          onReadyForServerCompletion: async (paymentId: string, txid: string) => {
+            try {
+              const base = getApiBase();
+              const r = await fetch(`${base || ""}/api/payments/complete`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ paymentId, txid }),
+              });
+              const d = await r.json().catch(() => ({}));
+              if (!r.ok || !d?.success) {
+                setMsg(d?.error ?? "Payment completion failed.");
+                setResumingPayment(false);
+                return;
+              }
+              await fetchOrder();
+              setMsg("Payment resumed successfully.");
+            } catch {
+              setMsg("Payment completion failed.");
+            }
+            setResumingPayment(false);
+          },
+          onCancel: () => {
+            setMsg("Payment cancelled.");
+            setResumingPayment(false);
+          },
+          onError: () => {
+            setMsg("Payment error. Please try again.");
+            setResumingPayment(false);
+          },
+        }
+      );
+    } catch {
+      setMsg("Unable to start payment.");
+      setResumingPayment(false);
+    }
   };
 
   const handleDispute = async () => {
@@ -497,6 +588,19 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             {order.notes && <div className={styles.infoRow}><span>Notes</span><strong>{order.notes}</strong></div>}
           </div>
         </div>
+
+        {/* Buyer resume pending payment */}
+        {isBuyer && order.status === "pending" && (
+          <div className={styles.section}>
+            <div className={styles.sectionTitle}>💳 Pending payment</div>
+            <div className={styles.confirmNote}>
+              This order is awaiting payment confirmation. Continue payment to lock funds in escrow and proceed with the order.
+            </div>
+            <button className={styles.actionBtn} disabled={resumingPayment || updating} onClick={resumePendingPayment}>
+              {resumingPayment ? "Opening Pi Payment..." : "Resume Payment"}
+            </button>
+          </div>
+        )}
 
         {/* Seller actions */}
         {isSeller && (order.status === "paid" || order.status === "escrow") && (

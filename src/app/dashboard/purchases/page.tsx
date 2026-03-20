@@ -90,8 +90,11 @@ export default function PurchaseOrdersPage() {
           <>
             {rows.map((order) => {
               const listing = order.listing;
+              const href = order.legacy
+                ? (order.listing_id ? `/supamarket/${order.listing_id}` : "/supamarket")
+                : `/supamarket/orders/${order.id}`;
               return (
-                <Link key={order.id} href={`/supamarket/orders/${order.id}`} className={styles.orderRow}>
+                <Link key={order.id} href={href} className={styles.orderRow}>
                   <div className={styles.orderImg}>
                     {listing?.images?.[0] ? (
                       <img src={listing.images[0]} alt="" className={styles.orderImgEl} />
@@ -109,7 +112,7 @@ export default function PurchaseOrdersPage() {
                       {order.legacy ? "Legacy purchase" : `Seller: @${order.seller?.username ?? "unknown"}`} · {timeAgo(order.created_at)}
                     </div>
                   </div>
-                  <span className={styles.orderArrow}>→</span>
+                  <span className={styles.orderArrow}>{order.legacy ? "↗" : "→"}</span>
                 </Link>
               );
             })}

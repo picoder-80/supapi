@@ -7,6 +7,7 @@ type PurchaseRow = {
   status: string;
   amount_pi: number;
   created_at: string;
+  listing_id?: string | null;
   listing: { title: string; images: string[] } | null;
   seller: { username: string } | null;
   legacy?: boolean;
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest) {
       status: String(o.status ?? "pending"),
       amount_pi: Number(o.amount_pi ?? 0),
       created_at: String(o.created_at),
+      listing_id: o.listing?.id ? String(o.listing.id) : null,
       listing: o.listing
         ? { title: String(o.listing.title ?? "Item"), images: Array.isArray(o.listing.images) ? o.listing.images : [] }
         : null,
@@ -110,6 +112,7 @@ export async function GET(req: NextRequest) {
       status: "completed",
       amount_pi: x.amountPi,
       created_at: x.createdAt,
+      listing_id: x.listingId ?? null,
       listing: x.listingId ? (listingMap.get(x.listingId) ?? null) : null,
       seller: null,
       legacy: true,
