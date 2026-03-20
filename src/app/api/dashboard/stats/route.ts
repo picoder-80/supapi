@@ -14,6 +14,8 @@ export async function GET(req: NextRequest) {
 
     const [
       ordersRes,
+      purchaseOrdersRes,
+      purchaseLegacyTxRes,
       referralsRes,
       earningsRes,
       txRes,
@@ -26,6 +28,12 @@ export async function GET(req: NextRequest) {
     ] = await Promise.all([
       supabase.from("orders").select("id", { count: "exact", head: true })
         .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`),
+      supabase.from("orders").select("id", { count: "exact", head: true })
+        .eq("buyer_id", uid),
+      supabase.from("transactions").select("id", { count: "exact", head: true })
+        .eq("user_id", uid)
+        .eq("status", "completed")
+        .eq("reference_type", "listing"),
       supabase.from("referrals").select("id", { count: "exact", head: true })
         .eq("referrer_id", uid),
       // Earnings for the user are tracked in earnings_wallet/earnings_transactions (seller + platform payouts).
@@ -53,10 +61,16 @@ export async function GET(req: NextRequest) {
     const earned = Number(earningsRes.data?.total_earned ?? 0);
     const scBalance = creditsRes.data?.balance ?? 0;
 
+    const purchaseOrdersCount = Number(purchaseOrdersRes.count ?? 0);
+    const purchaseLegacyCount = Number(purchaseLegacyTxRes.count ?? 0);
+    // Legacy compatibility: old purchases may only exist as completed listing transactions.
+    const purchaseCount = Math.max(purchaseOrdersCount, purchaseLegacyCount);
+
     return NextResponse.json({
       success: true,
       data: {
         orders: ordersRes.count ?? 0,
+        purchase_orders: purchaseCount,
         referrals: referralsRes.count ?? 0,
         earned: earned.toFixed(2),
         transactions: txRes.data ?? [],

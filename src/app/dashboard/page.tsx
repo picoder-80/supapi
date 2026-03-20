@@ -19,6 +19,7 @@ function getGreeting() {
 
 interface DashboardStats {
   orders: number;
+  purchase_orders?: number;
   referrals: number;
   earned: string;
   transactions: Array<{
@@ -68,6 +69,7 @@ export default function DashboardPage() {
     setLoadingStats(true);
     try {
       const r = await fetch("/api/dashboard/stats", {
+        cache: "no-store",
         headers: { Authorization: `Bearer ${t}` },
       });
       const d = await r.json();
@@ -114,8 +116,6 @@ export default function DashboardPage() {
   const isAdmin = isAdminRole(user.role);
   const walletMissing = !user.wallet_address?.trim();
 
-  const earnedPi = stats ? Number(stats.earned ?? 0) : 0;
-
   return (
     <div>
       <div className={styles.hero}>
@@ -138,52 +138,6 @@ export default function DashboardPage() {
             )}
           </Link>
         </div>
-      </div>
-
-      <div className={styles.body}>
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.sectionTitle}>Overview</div>
-            <Link href="/wallet" className={styles.sectionLink}>
-              Wallet →
-            </Link>
-          </div>
-
-          <div className={styles.infoCards}>
-            <div className={styles.infoCard}>
-              <div className={styles.infoCardIcon}>📦</div>
-              <div className={styles.infoCardInfo}>
-                <div className={styles.infoCardLabel}>Orders</div>
-                <div className={styles.infoCardValue}>{loadingStats ? "…" : stats?.orders ?? 0}</div>
-              </div>
-            </div>
-            <div className={styles.infoCard}>
-              <div className={styles.infoCardIcon}>🛍️</div>
-              <div className={styles.infoCardInfo}>
-                <div className={styles.infoCardLabel}>Listings</div>
-                <div className={styles.infoCardValue}>{loadingStats ? "…" : stats?.listings ?? 0}</div>
-              </div>
-            </div>
-            <div className={styles.infoCard}>
-              <div className={styles.infoCardIcon}>💎</div>
-              <div className={styles.infoCardInfo}>
-                <div className={styles.infoCardLabel}>Earnings</div>
-                <div className={styles.infoCardValue}>
-                  {loadingStats ? "…" : fmtPi(earnedPi)}
-                </div>
-              </div>
-            </div>
-            <div className={styles.infoCard}>
-              <div className={styles.infoCardIcon}>💳</div>
-              <div className={styles.infoCardInfo}>
-                <div className={styles.infoCardLabel}>SC Balance</div>
-                <div className={styles.infoCardValue}>
-                  {loadingStats ? "…" : `${Number(stats?.sc_balance ?? 0).toFixed(2)} SC`}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {isAdmin && (
           <Link href="/admin/dashboard" className={styles.adminBanner}>
@@ -198,6 +152,57 @@ export default function DashboardPage() {
           </Link>
         )}
 
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div className={styles.sectionTitle}>Overview</div>
+          </div>
+
+          <div className={styles.infoCards}>
+            <Link href="/wallet" className={styles.infoCardLink}>
+              <div className={styles.infoCard}>
+                <div className={styles.infoCardIcon}>💰</div>
+                <div className={styles.infoCardInfo}>
+                  <div className={styles.infoCardLabel}>My Wallet</div>
+                  <div className={styles.infoCardValue}>Open →</div>
+                </div>
+              </div>
+            </Link>
+            <Link href="/dashboard/purchases" className={styles.infoCardLink}>
+              <div className={styles.infoCard}>
+                <div className={styles.infoCardIcon}>📦</div>
+                <div className={styles.infoCardInfo}>
+                  <div className={styles.infoCardLabel}>Order Purchase</div>
+                  <div className={styles.infoCardValue}>{loadingStats ? "…" : stats?.purchase_orders ?? 0}</div>
+                </div>
+              </div>
+            </Link>
+            <Link href="/referral" className={styles.infoCardLink}>
+              <div className={styles.infoCard}>
+                <div className={styles.infoCardIcon}>🤝</div>
+                <div className={styles.infoCardInfo}>
+                  <div className={styles.infoCardLabel}>Referral</div>
+                  <div className={styles.infoCardValue}>
+                    {loadingStats ? "…" : stats?.referrals ?? 0}
+                  </div>
+                </div>
+              </div>
+            </Link>
+            <Link href={`/supaspace/${user.username}/pets`} className={styles.infoCardLink}>
+              <div className={styles.infoCard}>
+                <div className={styles.infoCardIcon}>🐾</div>
+                <div className={styles.infoCardInfo}>
+                  <div className={styles.infoCardLabel}>My Pets</div>
+                  <div className={styles.infoCardValue}>
+                    {loadingStats ? "…" : stats?.pets ?? 0}
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.body}>
         {walletMissing && (
           <div className={styles.section}>
             <div className={styles.whatsNextCard} style={{ borderColor: "rgba(245,166,35,0.5)" }}>
