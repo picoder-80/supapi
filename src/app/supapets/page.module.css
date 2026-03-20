@@ -312,6 +312,62 @@
   border-color: rgba(245, 166, 35, 0.25);
 }
 
+.buyRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.qtyLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--color-text-light);
+  font-weight: 700;
+}
+
+.qtyInput {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-radius: 8px;
+  padding: 8px 9px;
+  font-size: 12px;
+  font-family: inherit;
+  text-align: center;
+}
+
+.totalCost {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.qtyStepper {
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  gap: 6px;
+  align-items: center;
+}
+
+.stepBtn {
+  height: 30px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.stepBtn:disabled {
+  opacity: 0.5;
+}
+
 /* Realtime visual growth: circle with progress ring, emoji scales by stage */
 .petVisualWrap {
   --growthDeg: 0deg;

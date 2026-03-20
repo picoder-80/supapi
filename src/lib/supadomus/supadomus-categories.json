@@ -1,0 +1,651 @@
+[
+  {
+    "id": 1,
+    "slug": "residential-for-sale",
+    "name": "Residential For Sale",
+    "icon": "🏠",
+    "subcategories": [
+      {
+        "id": 101,
+        "slug": "landed-for-sale",
+        "name": "Landed Property",
+        "deep": [
+          { "id": 10101, "slug": "detached-house-sale", "name": "Detached House" },
+          { "id": 10102, "slug": "semi-detached-sale", "name": "Semi-Detached House" },
+          { "id": 10103, "slug": "terraced-townhouse-sale", "name": "Terraced / Townhouse" },
+          { "id": 10104, "slug": "bungalow-villa-sale", "name": "Bungalow / Villa" },
+          { "id": 10105, "slug": "farmhouse-sale", "name": "Farmhouse" },
+          { "id": 10106, "slug": "chalet-cabin-sale", "name": "Chalet / Cabin" },
+          { "id": 10107, "slug": "mobile-home-sale", "name": "Mobile / Prefab Home" },
+          { "id": 10108, "slug": "gated-community-sale", "name": "Gated Community" }
+        ]
+      },
+      {
+        "id": 102,
+        "slug": "highrise-for-sale",
+        "name": "High-Rise / Strata",
+        "deep": [
+          { "id": 10201, "slug": "apartment-sale", "name": "Apartment" },
+          { "id": 10202, "slug": "condominium-sale", "name": "Condominium" },
+          { "id": 10203, "slug": "studio-sale", "name": "Studio" },
+          { "id": 10204, "slug": "loft-sale", "name": "Loft" },
+          { "id": 10205, "slug": "penthouse-sale", "name": "Penthouse" },
+          { "id": 10206, "slug": "duplex-triplex-sale", "name": "Duplex / Triplex" },
+          { "id": 10207, "slug": "serviced-apartment-sale", "name": "Serviced Apartment" },
+          { "id": 10208, "slug": "co-living-sale", "name": "Co-Living Unit" }
+        ]
+      },
+      {
+        "id": 103,
+        "slug": "luxury-property-sale",
+        "name": "Luxury Property",
+        "deep": [
+          { "id": 10301, "slug": "luxury-villa-sale", "name": "Luxury Villa" },
+          { "id": 10302, "slug": "luxury-penthouse-sale", "name": "Luxury Penthouse" },
+          { "id": 10303, "slug": "luxury-estate-sale", "name": "Luxury Estate / Mansion" },
+          { "id": 10304, "slug": "private-island-sale", "name": "Private Island" },
+          { "id": 10305, "slug": "waterfront-property-sale", "name": "Waterfront Property" },
+          { "id": 10306, "slug": "ski-resort-property-sale", "name": "Ski Resort Property" },
+          { "id": 10307, "slug": "golf-resort-property-sale", "name": "Golf & Resort Property" }
+        ]
+      },
+      {
+        "id": 104,
+        "slug": "affordable-housing-sale",
+        "name": "Affordable Housing",
+        "deep": [
+          { "id": 10401, "slug": "social-housing-sale", "name": "Social Housing" },
+          { "id": 10402, "slug": "subsidised-housing-sale", "name": "Subsidised Housing" },
+          { "id": 10403, "slug": "first-home-buyer-sale", "name": "First Home Buyer" },
+          { "id": 10404, "slug": "shared-ownership-sale", "name": "Shared Ownership" }
+        ]
+      },
+      {
+        "id": 105,
+        "slug": "unique-property-sale",
+        "name": "Unique Property",
+        "deep": [
+          { "id": 10501, "slug": "heritage-property-sale", "name": "Heritage / Historic Property" },
+          { "id": 10502, "slug": "converted-property-sale", "name": "Converted Property" },
+          { "id": 10503, "slug": "eco-home-sale", "name": "Eco / Sustainable Home" },
+          { "id": 10504, "slug": "tiny-house-sale", "name": "Tiny House" },
+          { "id": 10505, "slug": "treehouse-sale", "name": "Treehouse" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "slug": "residential-for-rent",
+    "name": "Residential For Rent",
+    "icon": "🔑",
+    "subcategories": [
+      {
+        "id": 201,
+        "slug": "landed-for-rent",
+        "name": "Landed Property",
+        "deep": [
+          { "id": 20101, "slug": "detached-house-rent", "name": "Detached House" },
+          { "id": 20102, "slug": "semi-detached-rent", "name": "Semi-Detached House" },
+          { "id": 20103, "slug": "townhouse-rent", "name": "Townhouse" },
+          { "id": 20104, "slug": "bungalow-villa-rent", "name": "Bungalow / Villa" },
+          { "id": 20105, "slug": "farmhouse-rent", "name": "Farmhouse" }
+        ]
+      },
+      {
+        "id": 202,
+        "slug": "highrise-for-rent",
+        "name": "High-Rise / Strata",
+        "deep": [
+          { "id": 20201, "slug": "apartment-rent", "name": "Apartment" },
+          { "id": 20202, "slug": "condominium-rent", "name": "Condominium" },
+          { "id": 20203, "slug": "studio-rent", "name": "Studio" },
+          { "id": 20204, "slug": "loft-rent", "name": "Loft" },
+          { "id": 20205, "slug": "penthouse-rent", "name": "Penthouse" },
+          { "id": 20206, "slug": "serviced-apartment-rent", "name": "Serviced Apartment" },
+          { "id": 20207, "slug": "co-living-rent", "name": "Co-Living" }
+        ]
+      },
+      {
+        "id": 203,
+        "slug": "room-for-rent",
+        "name": "Room For Rent",
+        "deep": [
+          { "id": 20301, "slug": "single-room-rent", "name": "Single Room" },
+          { "id": 20302, "slug": "master-room-rent", "name": "Master Room" },
+          { "id": 20303, "slug": "shared-room-rent", "name": "Shared Room" },
+          { "id": 20304, "slug": "ensuite-room-rent", "name": "Ensuite Room" },
+          { "id": 20305, "slug": "flatshare-rent", "name": "Flatshare / Houseshare" },
+          { "id": 20306, "slug": "student-room-rent", "name": "Student Room" },
+          { "id": 20307, "slug": "whole-unit-rent", "name": "Whole Unit" }
+        ]
+      },
+      {
+        "id": 204,
+        "slug": "short-term-rent",
+        "name": "Short-Term & Holiday Rental",
+        "deep": [
+          { "id": 20401, "slug": "daily-rent", "name": "Daily Rental" },
+          { "id": 20402, "slug": "weekly-rent", "name": "Weekly Rental" },
+          { "id": 20403, "slug": "holiday-home-rent", "name": "Holiday Home" },
+          { "id": 20404, "slug": "vacation-villa-rent", "name": "Vacation Villa" },
+          { "id": 20405, "slug": "serviced-suite-rent", "name": "Serviced Suite" },
+          { "id": 20406, "slug": "beach-house-rent", "name": "Beach House" },
+          { "id": 20407, "slug": "mountain-retreat-rent", "name": "Mountain Retreat" }
+        ]
+      },
+      {
+        "id": 205,
+        "slug": "long-term-rent",
+        "name": "Long-Term Rental",
+        "deep": [
+          { "id": 20501, "slug": "unfurnished-rent", "name": "Unfurnished" },
+          { "id": 20502, "slug": "partially-furnished-rent", "name": "Partially Furnished" },
+          { "id": 20503, "slug": "fully-furnished-rent", "name": "Fully Furnished" },
+          { "id": 20504, "slug": "corporate-housing-rent", "name": "Corporate Housing" },
+          { "id": 20505, "slug": "expat-housing-rent", "name": "Expat Housing" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "slug": "commercial-for-sale",
+    "name": "Commercial For Sale",
+    "icon": "🏢",
+    "subcategories": [
+      {
+        "id": 301,
+        "slug": "office-for-sale",
+        "name": "Office",
+        "deep": [
+          { "id": 30101, "slug": "office-unit-sale", "name": "Office Unit / Suite" },
+          { "id": 30102, "slug": "office-floor-sale", "name": "Office Floor" },
+          { "id": 30103, "slug": "office-building-sale", "name": "Office Building" },
+          { "id": 30104, "slug": "business-park-sale", "name": "Business Park Unit" },
+          { "id": 30105, "slug": "co-working-space-sale", "name": "Co-Working Space" }
+        ]
+      },
+      {
+        "id": 302,
+        "slug": "retail-for-sale",
+        "name": "Retail",
+        "deep": [
+          { "id": 30201, "slug": "shop-lot-sale", "name": "Shop / Shop Lot" },
+          { "id": 30202, "slug": "shophouse-sale", "name": "Shophouse" },
+          { "id": 30203, "slug": "retail-space-sale", "name": "Retail Space" },
+          { "id": 30204, "slug": "shopping-mall-lot-sale", "name": "Shopping Mall Unit" },
+          { "id": 30205, "slug": "kiosk-sale", "name": "Kiosk" },
+          { "id": 30206, "slug": "showroom-sale", "name": "Showroom" }
+        ]
+      },
+      {
+        "id": 303,
+        "slug": "industrial-for-sale",
+        "name": "Industrial",
+        "deep": [
+          { "id": 30301, "slug": "factory-sale", "name": "Factory" },
+          { "id": 30302, "slug": "warehouse-sale", "name": "Warehouse" },
+          { "id": 30303, "slug": "light-industrial-sale", "name": "Light Industrial Unit" },
+          { "id": 30304, "slug": "logistics-centre-sale", "name": "Logistics Centre" },
+          { "id": 30305, "slug": "data-centre-sale", "name": "Data Centre" }
+        ]
+      },
+      {
+        "id": 304,
+        "slug": "hospitality-for-sale",
+        "name": "Hospitality",
+        "deep": [
+          { "id": 30401, "slug": "hotel-sale", "name": "Hotel" },
+          { "id": 30402, "slug": "boutique-hotel-sale", "name": "Boutique Hotel" },
+          { "id": 30403, "slug": "resort-sale", "name": "Resort" },
+          { "id": 30404, "slug": "bed-breakfast-sale", "name": "Bed & Breakfast" },
+          { "id": 30405, "slug": "hostel-sale", "name": "Hostel / Guesthouse" }
+        ]
+      },
+      {
+        "id": 305,
+        "slug": "mixed-use-for-sale",
+        "name": "Mixed Use",
+        "deep": [
+          { "id": 30501, "slug": "mixed-development-sale", "name": "Mixed Development" },
+          { "id": 30502, "slug": "live-work-unit-sale", "name": "Live-Work Unit" },
+          { "id": 30503, "slug": "soho-sale", "name": "SOHO / SOFO / SOVO" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "slug": "commercial-for-rent",
+    "name": "Commercial For Rent",
+    "icon": "🏬",
+    "subcategories": [
+      {
+        "id": 401,
+        "slug": "office-for-rent",
+        "name": "Office",
+        "deep": [
+          { "id": 40101, "slug": "office-unit-rent", "name": "Office Unit / Suite" },
+          { "id": 40102, "slug": "office-floor-rent", "name": "Office Floor" },
+          { "id": 40103, "slug": "virtual-office-rent", "name": "Virtual Office" },
+          { "id": 40104, "slug": "co-working-rent", "name": "Co-Working Space" },
+          { "id": 40105, "slug": "hot-desk-rent", "name": "Hot Desk" },
+          { "id": 40106, "slug": "private-office-rent", "name": "Private Office" }
+        ]
+      },
+      {
+        "id": 402,
+        "slug": "retail-for-rent",
+        "name": "Retail",
+        "deep": [
+          { "id": 40201, "slug": "shop-lot-rent", "name": "Shop / Shop Lot" },
+          { "id": 40202, "slug": "shophouse-rent", "name": "Shophouse" },
+          { "id": 40203, "slug": "retail-space-rent", "name": "Retail Space" },
+          { "id": 40204, "slug": "restaurant-space-rent", "name": "Restaurant / F&B Space" },
+          { "id": 40205, "slug": "popup-store-rent", "name": "Pop-Up Store" },
+          { "id": 40206, "slug": "kiosk-rent", "name": "Kiosk" }
+        ]
+      },
+      {
+        "id": 403,
+        "slug": "industrial-for-rent",
+        "name": "Industrial",
+        "deep": [
+          { "id": 40301, "slug": "factory-rent", "name": "Factory" },
+          { "id": 40302, "slug": "warehouse-rent", "name": "Warehouse" },
+          { "id": 40303, "slug": "cold-storage-rent", "name": "Cold Storage" },
+          { "id": 40304, "slug": "light-industrial-rent", "name": "Light Industrial Unit" },
+          { "id": 40305, "slug": "workshop-rent", "name": "Workshop" }
+        ]
+      },
+      {
+        "id": 404,
+        "slug": "event-space-rent",
+        "name": "Event & Function Space",
+        "deep": [
+          { "id": 40401, "slug": "ballroom-rent", "name": "Ballroom" },
+          { "id": 40402, "slug": "meeting-room-rent", "name": "Meeting Room" },
+          { "id": 40403, "slug": "conference-hall-rent", "name": "Conference Hall" },
+          { "id": 40404, "slug": "outdoor-venue-rent", "name": "Outdoor Venue" },
+          { "id": 40405, "slug": "studio-space-rent", "name": "Studio Space" },
+          { "id": 40406, "slug": "sports-hall-rent", "name": "Sports Hall / Court" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "slug": "land",
+    "name": "Land",
+    "icon": "🌏",
+    "subcategories": [
+      {
+        "id": 501,
+        "slug": "land-for-sale",
+        "name": "Land For Sale",
+        "deep": [
+          { "id": 50101, "slug": "residential-land-sale", "name": "Residential Land" },
+          { "id": 50102, "slug": "commercial-land-sale", "name": "Commercial Land" },
+          { "id": 50103, "slug": "industrial-land-sale", "name": "Industrial Land" },
+          { "id": 50104, "slug": "agricultural-land-sale", "name": "Agricultural / Farming Land" },
+          { "id": 50105, "slug": "development-land-sale", "name": "Development Land" },
+          { "id": 50106, "slug": "mixed-use-land-sale", "name": "Mixed Use Land" },
+          { "id": 50107, "slug": "forest-land-sale", "name": "Forest / Woodland" },
+          { "id": 50108, "slug": "island-land-sale", "name": "Island Land" },
+          { "id": 50109, "slug": "beachfront-land-sale", "name": "Beachfront Land" },
+          { "id": 50110, "slug": "plot-land-sale", "name": "Plot / Serviced Land" }
+        ]
+      },
+      {
+        "id": 502,
+        "slug": "land-for-rent",
+        "name": "Land For Rent",
+        "deep": [
+          { "id": 50201, "slug": "agricultural-land-rent", "name": "Agricultural Land" },
+          { "id": 50202, "slug": "commercial-land-rent", "name": "Commercial Land" },
+          { "id": 50203, "slug": "car-park-land-rent", "name": "Car Park Land" },
+          { "id": 50204, "slug": "event-land-rent", "name": "Event / Outdoor Space" },
+          { "id": 50205, "slug": "storage-land-rent", "name": "Storage Land" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "slug": "new-developments",
+    "name": "New Developments",
+    "icon": "🏗️",
+    "subcategories": [
+      {
+        "id": 601,
+        "slug": "new-launch",
+        "name": "New Launch",
+        "deep": [
+          { "id": 60101, "slug": "new-launch-residential", "name": "Residential New Launch" },
+          { "id": 60102, "slug": "new-launch-commercial", "name": "Commercial New Launch" },
+          { "id": 60103, "slug": "new-launch-mixed", "name": "Mixed Development" },
+          { "id": 60104, "slug": "pre-launch", "name": "Pre-Launch / Coming Soon" },
+          { "id": 60105, "slug": "off-plan", "name": "Off-Plan Property" }
+        ]
+      },
+      {
+        "id": 602,
+        "slug": "under-construction",
+        "name": "Under Construction",
+        "deep": [
+          { "id": 60201, "slug": "under-construction-residential", "name": "Residential" },
+          { "id": 60202, "slug": "under-construction-commercial", "name": "Commercial" },
+          { "id": 60203, "slug": "under-construction-mixed", "name": "Mixed Development" }
+        ]
+      },
+      {
+        "id": 603,
+        "slug": "newly-completed",
+        "name": "Newly Completed",
+        "deep": [
+          { "id": 60301, "slug": "newly-completed-residential", "name": "Residential (< 2 years)" },
+          { "id": 60302, "slug": "newly-completed-commercial", "name": "Commercial (< 2 years)" },
+          { "id": 60303, "slug": "ready-to-move-in", "name": "Ready To Move In" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "slug": "special-property-types",
+    "name": "Special Property Types",
+    "icon": "✨",
+    "subcategories": [
+      {
+        "id": 701,
+        "slug": "auction-foreclosure",
+        "name": "Auction & Foreclosure",
+        "deep": [
+          { "id": 70101, "slug": "bank-auction", "name": "Bank Auction" },
+          { "id": 70102, "slug": "court-auction", "name": "Court Auction" },
+          { "id": 70103, "slug": "foreclosure", "name": "Foreclosure" },
+          { "id": 70104, "slug": "receiver-sale", "name": "Receiver / Liquidation Sale" },
+          { "id": 70105, "slug": "distressed-property", "name": "Distressed Property" }
+        ]
+      },
+      {
+        "id": 702,
+        "slug": "investment-property",
+        "name": "Investment Property",
+        "deep": [
+          { "id": 70201, "slug": "rental-yield-property", "name": "High Rental Yield" },
+          { "id": 70202, "slug": "student-accommodation-investment", "name": "Student Accommodation" },
+          { "id": 70203, "slug": "serviced-apartment-investment", "name": "Serviced Apartment (Investment)" },
+          { "id": 70204, "slug": "reit-property", "name": "REIT-Linked Property" },
+          { "id": 70205, "slug": "holiday-let-investment", "name": "Holiday Let Investment" }
+        ]
+      },
+      {
+        "id": 703,
+        "slug": "heritage-conservation",
+        "name": "Heritage & Conservation",
+        "deep": [
+          { "id": 70301, "slug": "listed-building", "name": "Listed / Heritage Building" },
+          { "id": 70302, "slug": "conservation-area", "name": "Conservation Area Property" },
+          { "id": 70303, "slug": "period-property", "name": "Period Property" },
+          { "id": 70304, "slug": "historic-castle", "name": "Castle / Manor House" }
+        ]
+      },
+      {
+        "id": 704,
+        "slug": "eco-sustainable",
+        "name": "Eco & Sustainable",
+        "deep": [
+          { "id": 70401, "slug": "green-building", "name": "Green / Certified Building" },
+          { "id": 70402, "slug": "solar-powered-home", "name": "Solar Powered Home" },
+          { "id": 70403, "slug": "passive-house", "name": "Passive House" },
+          { "id": 70404, "slug": "net-zero-property", "name": "Net Zero Property" }
+        ]
+      },
+      {
+        "id": 705,
+        "slug": "retirement-senior-living",
+        "name": "Retirement & Senior Living",
+        "deep": [
+          { "id": 70501, "slug": "retirement-village", "name": "Retirement Village" },
+          { "id": 70502, "slug": "senior-living-facility", "name": "Senior Living Facility" },
+          { "id": 70503, "slug": "assisted-living", "name": "Assisted Living" },
+          { "id": 70504, "slug": "care-home", "name": "Care Home" }
+        ]
+      },
+      {
+        "id": 706,
+        "slug": "fractional-timeshare",
+        "name": "Fractional & Timeshare",
+        "deep": [
+          { "id": 70601, "slug": "fractional-ownership", "name": "Fractional Ownership" },
+          { "id": 70602, "slug": "timeshare", "name": "Timeshare" },
+          { "id": 70603, "slug": "co-ownership", "name": "Co-Ownership" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "slug": "property-by-region",
+    "name": "Property By Region",
+    "icon": "🌐",
+    "subcategories": [
+      {
+        "id": 801,
+        "slug": "southeast-asia",
+        "name": "Southeast Asia",
+        "deep": [
+          { "id": 80101, "slug": "malaysia-property", "name": "Malaysia" },
+          { "id": 80102, "slug": "singapore-property", "name": "Singapore" },
+          { "id": 80103, "slug": "thailand-property", "name": "Thailand" },
+          { "id": 80104, "slug": "indonesia-property", "name": "Indonesia" },
+          { "id": 80105, "slug": "vietnam-property", "name": "Vietnam" },
+          { "id": 80106, "slug": "philippines-property", "name": "Philippines" },
+          { "id": 80107, "slug": "cambodia-property", "name": "Cambodia" },
+          { "id": 80108, "slug": "myanmar-property", "name": "Myanmar" },
+          { "id": 80109, "slug": "other-sea-property", "name": "Other SEA Countries" }
+        ]
+      },
+      {
+        "id": 802,
+        "slug": "east-asia",
+        "name": "East Asia",
+        "deep": [
+          { "id": 80201, "slug": "japan-property", "name": "Japan" },
+          { "id": 80202, "slug": "china-property", "name": "China" },
+          { "id": 80203, "slug": "hong-kong-property", "name": "Hong Kong" },
+          { "id": 80204, "slug": "taiwan-property", "name": "Taiwan" },
+          { "id": 80205, "slug": "south-korea-property", "name": "South Korea" }
+        ]
+      },
+      {
+        "id": 803,
+        "slug": "south-asia",
+        "name": "South Asia",
+        "deep": [
+          { "id": 80301, "slug": "india-property", "name": "India" },
+          { "id": 80302, "slug": "sri-lanka-property", "name": "Sri Lanka" },
+          { "id": 80303, "slug": "bangladesh-property", "name": "Bangladesh" },
+          { "id": 80304, "slug": "nepal-property", "name": "Nepal" }
+        ]
+      },
+      {
+        "id": 804,
+        "slug": "middle-east",
+        "name": "Middle East",
+        "deep": [
+          { "id": 80401, "slug": "uae-dubai-property", "name": "UAE / Dubai" },
+          { "id": 80402, "slug": "saudi-arabia-property", "name": "Saudi Arabia" },
+          { "id": 80403, "slug": "qatar-property", "name": "Qatar" },
+          { "id": 80404, "slug": "bahrain-property", "name": "Bahrain" },
+          { "id": 80405, "slug": "oman-property", "name": "Oman" },
+          { "id": 80406, "slug": "kuwait-property", "name": "Kuwait" },
+          { "id": 80407, "slug": "turkey-property", "name": "Turkey" }
+        ]
+      },
+      {
+        "id": 805,
+        "slug": "europe",
+        "name": "Europe",
+        "deep": [
+          { "id": 80501, "slug": "uk-property", "name": "United Kingdom" },
+          { "id": 80502, "slug": "germany-property", "name": "Germany" },
+          { "id": 80503, "slug": "france-property", "name": "France" },
+          { "id": 80504, "slug": "spain-property", "name": "Spain" },
+          { "id": 80505, "slug": "portugal-property", "name": "Portugal" },
+          { "id": 80506, "slug": "italy-property", "name": "Italy" },
+          { "id": 80507, "slug": "netherlands-property", "name": "Netherlands" },
+          { "id": 80508, "slug": "switzerland-property", "name": "Switzerland" },
+          { "id": 80509, "slug": "other-europe-property", "name": "Other European Countries" }
+        ]
+      },
+      {
+        "id": 806,
+        "slug": "oceania",
+        "name": "Oceania",
+        "deep": [
+          { "id": 80601, "slug": "australia-property", "name": "Australia" },
+          { "id": 80602, "slug": "new-zealand-property", "name": "New Zealand" },
+          { "id": 80603, "slug": "other-oceania-property", "name": "Other Pacific Islands" }
+        ]
+      },
+      {
+        "id": 807,
+        "slug": "americas",
+        "name": "Americas",
+        "deep": [
+          { "id": 80701, "slug": "usa-property", "name": "United States" },
+          { "id": 80702, "slug": "canada-property", "name": "Canada" },
+          { "id": 80703, "slug": "brazil-property", "name": "Brazil" },
+          { "id": 80704, "slug": "mexico-property", "name": "Mexico" },
+          { "id": 80705, "slug": "caribbean-property", "name": "Caribbean" },
+          { "id": 80706, "slug": "other-americas-property", "name": "Other Americas" }
+        ]
+      },
+      {
+        "id": 808,
+        "slug": "africa",
+        "name": "Africa",
+        "deep": [
+          { "id": 80801, "slug": "south-africa-property", "name": "South Africa" },
+          { "id": 80802, "slug": "egypt-property", "name": "Egypt" },
+          { "id": 80803, "slug": "kenya-property", "name": "Kenya" },
+          { "id": 80804, "slug": "nigeria-property", "name": "Nigeria" },
+          { "id": 80805, "slug": "morocco-property", "name": "Morocco" },
+          { "id": 80806, "slug": "other-africa-property", "name": "Other African Countries" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "slug": "property-services",
+    "name": "Property Services",
+    "icon": "🤝",
+    "subcategories": [
+      {
+        "id": 901,
+        "slug": "agent-valuation",
+        "name": "Agent & Valuation",
+        "deep": [
+          { "id": 90101, "slug": "estate-agent", "name": "Estate Agent / Realtor" },
+          { "id": 90102, "slug": "property-valuer", "name": "Property Valuer / Appraiser" },
+          { "id": 90103, "slug": "buyer-agent", "name": "Buyer's Agent" },
+          { "id": 90104, "slug": "property-consultant", "name": "Property Consultant" }
+        ]
+      },
+      {
+        "id": 902,
+        "slug": "legal-financial-services",
+        "name": "Legal & Financial",
+        "deep": [
+          { "id": 90201, "slug": "conveyancing-lawyer", "name": "Conveyancing / Property Lawyer" },
+          { "id": 90202, "slug": "mortgage-broker", "name": "Mortgage Broker" },
+          { "id": 90203, "slug": "home-loan-service", "name": "Home Loan / Financing" },
+          { "id": 90204, "slug": "refinancing-service", "name": "Refinancing" },
+          { "id": 90205, "slug": "property-tax-advisory", "name": "Property Tax Advisory" },
+          { "id": 90206, "slug": "property-insurance", "name": "Property Insurance" }
+        ]
+      },
+      {
+        "id": 903,
+        "slug": "renovation-interior",
+        "name": "Renovation & Interior Design",
+        "deep": [
+          { "id": 90301, "slug": "renovation-contractor", "name": "Renovation Contractor" },
+          { "id": 90302, "slug": "interior-designer", "name": "Interior Designer" },
+          { "id": 90303, "slug": "architect", "name": "Architect" },
+          { "id": 90304, "slug": "landscape-designer", "name": "Landscape Designer" },
+          { "id": 90305, "slug": "smart-home-installer", "name": "Smart Home Installer" },
+          { "id": 90306, "slug": "home-staging", "name": "Home Staging" }
+        ]
+      },
+      {
+        "id": 904,
+        "slug": "property-management",
+        "name": "Property Management",
+        "deep": [
+          { "id": 90401, "slug": "rental-management", "name": "Rental Management" },
+          { "id": 90402, "slug": "airbnb-management", "name": "Short-Term Rental Management" },
+          { "id": 90403, "slug": "strata-management", "name": "Strata / Building Management" },
+          { "id": 90404, "slug": "facility-management", "name": "Facility Management" },
+          { "id": 90405, "slug": "maintenance-service", "name": "Maintenance & Repair" }
+        ]
+      },
+      {
+        "id": 905,
+        "slug": "moving-relocation",
+        "name": "Moving & Relocation",
+        "deep": [
+          { "id": 90501, "slug": "moving-company", "name": "Moving Company" },
+          { "id": 90502, "slug": "international-relocation", "name": "International Relocation" },
+          { "id": 90503, "slug": "storage-service", "name": "Storage Service" },
+          { "id": 90504, "slug": "packing-service", "name": "Packing Service" }
+        ]
+      },
+      {
+        "id": 906,
+        "slug": "inspection-survey",
+        "name": "Inspection & Survey",
+        "deep": [
+          { "id": 90601, "slug": "building-inspection", "name": "Building Inspection" },
+          { "id": 90602, "slug": "land-survey", "name": "Land Survey" },
+          { "id": 90603, "slug": "structural-engineer", "name": "Structural Engineer" },
+          { "id": 90604, "slug": "home-inspection", "name": "Home Inspection" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "slug": "property-tools-resources",
+    "name": "Tools & Resources",
+    "icon": "🛠️",
+    "subcategories": [
+      {
+        "id": 1001,
+        "slug": "property-calculators",
+        "name": "Calculators & Tools",
+        "deep": [
+          { "id": 100101, "slug": "mortgage-calculator", "name": "Mortgage Calculator" },
+          { "id": 100102, "slug": "rental-yield-calculator", "name": "Rental Yield Calculator" },
+          { "id": 100103, "slug": "stamp-duty-calculator", "name": "Stamp Duty Calculator" },
+          { "id": 100104, "slug": "affordability-calculator", "name": "Affordability Calculator" }
+        ]
+      },
+      {
+        "id": 1002,
+        "slug": "market-reports",
+        "name": "Market Reports & Insights",
+        "deep": [
+          { "id": 100201, "slug": "price-trends", "name": "Price Trends" },
+          { "id": 100202, "slug": "rental-market-report", "name": "Rental Market Report" },
+          { "id": 100203, "slug": "investment-guide", "name": "Investment Guide" },
+          { "id": 100204, "slug": "neighbourhood-guide", "name": "Neighbourhood Guide" }
+        ]
+      }
+    ]
+  }
+]

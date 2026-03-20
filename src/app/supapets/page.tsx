@@ -149,6 +149,7 @@ export default function SupaPetsPage() {
   const [msg, setMsg] = useState("");
   const [data, setData] = useState<SupaPetsPayload | null>(null);
   const [miniGamePetId, setMiniGamePetId] = useState("");
+  const [buyQtyMap, setBuyQtyMap] = useState<Record<string, string>>({});
   const token = () => (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "");
 
   const fetchData = useCallback(async () => {
@@ -267,7 +268,7 @@ export default function SupaPetsPage() {
     }
   };
 
-  const buyItem = async (itemKey: string) => {
+  const buyItem = async (itemKey: string, quantity: number) => {
     if (!user || busy) return;
     setBusy(true);
     setMsg("");
@@ -278,7 +279,7 @@ export default function SupaPetsPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token()}`,
         },
-        body: JSON.stringify({ action: "buy_item", item_key: itemKey, quantity: 1 }),
+        body: JSON.stringify({ action: "buy_item", item_key: itemKey, quantity }),
       });
       const d = await r.json();
       if (d?.success) {
@@ -532,6 +533,18 @@ export default function SupaPetsPage() {
         <div className={styles.grid}>
           {(data?.shop_items ?? []).map((item) => {
             const qty = Number(inventoryMap.get(item.item_key) ?? 0);
+            const qtyInputRaw = buyQtyMap[item.item_key] ?? "1";
+            const parsedQty = Number.parseInt(qtyInputRaw, 10);
+            const buyQty = Number.isFinite(parsedQty) ? Math.max(1, Math.min(999, parsedQty)) : 1;
+            const totalCost = buyQty * Number(item.cost_sc ?? 0);
+            const decreaseQty = () => {
+              const next = Math.max(1, buyQty - 1);
+              setBuyQtyMap((prev) => ({ ...prev, [item.item_key]: String(next) }));
+            };
+            const increaseQty = () => {
+              const next = Math.min(999, buyQty + 1);
+              setBuyQtyMap((prev) => ({ ...prev, [item.item_key]: String(next) }));
+            };
             return (
               <div key={item.item_key} className={styles.card}>
                 <div className={styles.cardHead}>
@@ -545,9 +558,34 @@ export default function SupaPetsPage() {
                   <span>Cost</span>
                   <span>💎 {item.cost_sc} SC</span>
                 </div>
-                <button className={styles.btnSecondary} disabled={busy} onClick={() => buyItem(item.item_key)}>
-                  Buy 1
-                </button>
+                <div className={styles.buyRow}>
+                  <label className={styles.qtyLabel}>
+                    Qty
+                    <div className={styles.qtyStepper}>
+                      <button type="button" className={styles.stepBtn} disabled={busy || buyQty <= 1} onClick={decreaseQty}>
+                        -
+                      </button>
+                      <input
+                        className={styles.qtyInput}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={qtyInputRaw}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, "");
+                          const next = digits ? String(Math.max(1, Math.min(999, Number(digits)))) : "1";
+                          setBuyQtyMap((prev) => ({ ...prev, [item.item_key]: next }));
+                        }}
+                      />
+                      <button type="button" className={styles.stepBtn} disabled={busy || buyQty >= 999} onClick={increaseQty}>
+                        +
+                      </button>
+                    </div>
+                  </label>
+                  <button className={styles.btnSecondary} disabled={busy} onClick={() => buyItem(item.item_key, buyQty)}>
+                    Buy
+                  </button>
+                </div>
+                <div className={styles.totalCost}>Total: 💎 {totalCost} SC</div>
               </div>
             );
           })}

@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import styles from "../../supamarket/my-listings/page.module.css";
 import { formatListingCategoryPath as formatSupasifiedsCategoryPath } from "@/lib/supasifieds/categories";
 import { formatListingCategoryPath as formatSupaautoCategoryPath } from "@/lib/supaauto/categories";
+import { formatListingCategoryPath as formatSupadomusCategoryPath } from "@/lib/supadomus/categories";
 import { CLASSIFIED_BOOST_TIERS } from "@/lib/supasifieds/boost-tiers";
 import { formatPiPriceDisplay } from "@/lib/supasifieds/price";
 
@@ -65,7 +66,11 @@ export default function SupasifiedsMyListingsPage() {
   const isSupadomus = pathname?.startsWith("/supadomus");
   const appBase = isSupaauto ? "/supaauto" : isSupadomus ? "/supadomus" : "/supasifieds";
   const apiBase = isSupaauto ? "/api/supaauto" : isSupadomus ? "/api/supadomus" : "/api/supasifieds";
-  const formatListingCategoryPath = isSupaauto ? formatSupaautoCategoryPath : formatSupasifiedsCategoryPath;
+  const formatListingCategoryPath = isSupaauto
+    ? formatSupaautoCategoryPath
+    : isSupadomus
+      ? formatSupadomusCategoryPath
+      : formatSupasifiedsCategoryPath;
 
   const [listings, setListings] = useState<Record<string, unknown>[]>([]);
   const [archivedListings, setArchivedListings] = useState<Record<string, unknown>[]>([]);

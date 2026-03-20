@@ -230,7 +230,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
 
   try {
-    const { data, error } = await supabase.from("listings").insert({
+    const insertPayload: Record<string, unknown> = {
       seller_id: userId, title: title.trim(), description: description ?? "",
       price_pi: parseFloat(price_pi), category, subcategory: subcategory ?? "",
       category_deep: typeof category_deep === "string" ? category_deep : "",
@@ -239,9 +239,24 @@ export async function POST(req: NextRequest) {
       type: type ?? "physical", status: "active",
       country_code: country_code ?? null, ship_worldwide: Boolean(ship_worldwide),
       created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-    }).select().single();
+    };
 
-    if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    let { data, error } = await supabase.from("listings").insert(insertPayload).select().single();
+    if (error) {
+      const msg = String(error.message ?? "");
+      const missingCategoryDeep =
+        msg.includes("category_deep") &&
+        (msg.includes("schema cache") || msg.includes("does not exist") || msg.includes("column"));
+      if (!missingCategoryDeep) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+      }
+      const fallbackPayload = { ...insertPayload };
+      delete fallbackPayload.category_deep;
+      const retry = await supabase.from("listings").insert(fallbackPayload).select().single();
+      data = retry.data;
+      error = retry.error;
+      if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
 
     const { count } = await supabase.from("listings").select("id", { count: "exact", head: true })
       .eq("seller_id", userId).neq("status", "deleted");

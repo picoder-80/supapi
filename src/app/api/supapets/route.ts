@@ -700,7 +700,7 @@ export async function POST(req: NextRequest) {
   if (action === "buy_item") {
     const itemKey = String(body?.item_key ?? "") as ShopItemKey;
     const qtyRaw = Number(body?.quantity ?? 1);
-    const quantity = Number.isFinite(qtyRaw) ? Math.max(1, Math.min(20, Math.floor(qtyRaw))) : 1;
+    const quantity = Number.isFinite(qtyRaw) ? Math.max(1, Math.min(999, Math.floor(qtyRaw))) : 1;
     const item = SHOP_ITEMS[itemKey];
     if (!item) return NextResponse.json({ success: false, error: "Invalid shop item" }, { status: 400 });
 

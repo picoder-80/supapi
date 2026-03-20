@@ -8,6 +8,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import KycBadge from "@/components/ui/KycBadge";
 import { formatListingCategoryPath as formatSupasifiedsCategoryPath } from "@/lib/supasifieds/categories";
 import { formatListingCategoryPath as formatSupaautoCategoryPath } from "@/lib/supaauto/categories";
+import { formatListingCategoryPath as formatSupadomusCategoryPath } from "@/lib/supadomus/categories";
 import { CLASSIFIED_BOOST_TIERS } from "@/lib/supasifieds/boost-tiers";
 import { formatPiPriceDisplay } from "@/lib/supasifieds/price";
 import styles from "../../supamarket/[id]/page.module.css";
@@ -62,7 +63,11 @@ export default function SupasifiedsDetailPage({ params }: { params: Promise<{ id
   const isSupadomus = pathname?.startsWith("/supadomus");
   const appBase = isSupaauto ? "/supaauto" : isSupadomus ? "/supadomus" : "/supasifieds";
   const apiBase = isSupaauto ? "/api/supaauto" : isSupadomus ? "/api/supadomus" : "/api/supasifieds";
-  const formatListingCategoryPath = isSupaauto ? formatSupaautoCategoryPath : formatSupasifiedsCategoryPath;
+  const formatListingCategoryPath = isSupaauto
+    ? formatSupaautoCategoryPath
+    : isSupadomus
+      ? formatSupadomusCategoryPath
+      : formatSupasifiedsCategoryPath;
 
   const [row, setRow] = useState<Classified | null>(null);
   const [loading, setLoading] = useState(true);

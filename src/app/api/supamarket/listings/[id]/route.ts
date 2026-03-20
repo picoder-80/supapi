@@ -17,6 +17,14 @@ function fallbackStatuses(requested: string): string[] {
   return [requested];
 }
 
+function isMissingCategoryDeepError(error: { message?: string } | null): boolean {
+  const msg = String(error?.message ?? "");
+  return (
+    msg.includes("category_deep") &&
+    (msg.includes("schema cache") || msg.includes("does not exist") || msg.includes("column"))
+  );
+}
+
 // GET — single listing detail (optionally includes liked when Authorization present)
 export async function GET(req: NextRequest, { params }: Params) {
   try {
@@ -104,28 +112,53 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const supabase = await createAdminClient();
     const requestedStatus = typeof updates.status === "string" ? String(updates.status) : null;
     if (!requestedStatus) {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("listings")
         .update(updates)
         .eq("id", id)
         .eq("seller_id", payload.userId) // only own listings
         .select()
         .single();
-
+      if (error && isMissingCategoryDeepError(error as { message?: string })) {
+        const retryUpdates = { ...updates };
+        delete retryUpdates.category_deep;
+        const retry = await supabase
+          .from("listings")
+          .update(retryUpdates)
+          .eq("id", id)
+          .eq("seller_id", payload.userId)
+          .select()
+          .single();
+        data = retry.data;
+        error = retry.error;
+      }
       if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
       return NextResponse.json({ success: true, data: { ...data, status: normalizeListingStatusForUi(data?.status) } });
     }
 
     let lastError: { message?: string; code?: string } | null = null;
     for (const statusCandidate of fallbackStatuses(requestedStatus)) {
-      const nextUpdates = { ...updates, status: statusCandidate };
-      const { data, error } = await supabase
+      let nextUpdates = { ...updates, status: statusCandidate };
+      let { data, error } = await supabase
         .from("listings")
         .update(nextUpdates)
         .eq("id", id)
         .eq("seller_id", payload.userId)
         .select()
         .single();
+      if (error && isMissingCategoryDeepError(error as { message?: string })) {
+        nextUpdates = { ...nextUpdates };
+        delete nextUpdates.category_deep;
+        const retry = await supabase
+          .from("listings")
+          .update(nextUpdates)
+          .eq("id", id)
+          .eq("seller_id", payload.userId)
+          .select()
+          .single();
+        data = retry.data;
+        error = retry.error;
+      }
 
       if (!error && data) {
         return NextResponse.json({

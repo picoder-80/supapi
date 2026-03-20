@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { CATEGORIES as SUPASIFIEDS_CATEGORIES, getSubcategory as getSupasifiedsSubcategory } from "@/lib/supasifieds/categories";
 import { CATEGORIES as SUPAAUTO_CATEGORIES, getSubcategory as getSupaautoSubcategory } from "@/lib/supaauto/categories";
+import { CATEGORIES as SUPADOMUS_CATEGORIES, getSubcategory as getSupadomusSubcategory } from "@/lib/supadomus/categories";
 import { formatPiPriceDisplay } from "@/lib/supasifieds/price";
 import { ALL_COUNTRIES, getCountry } from "@/lib/market/countries";
 import styles from "../../supamarket/create/page.module.css";
@@ -77,8 +78,16 @@ export default function SupasifiedsCreatePage() {
   const isSupadomus = pathname?.startsWith("/supadomus");
   const appBase = isSupaauto ? "/supaauto" : isSupadomus ? "/supadomus" : "/supasifieds";
   const apiBase = isSupaauto ? "/api/supaauto" : isSupadomus ? "/api/supadomus" : "/api/supasifieds";
-  const CATEGORIES = isSupaauto ? SUPAAUTO_CATEGORIES : SUPASIFIEDS_CATEGORIES;
-  const getSubcategory = isSupaauto ? getSupaautoSubcategory : getSupasifiedsSubcategory;
+  const CATEGORIES = isSupaauto
+    ? SUPAAUTO_CATEGORIES
+    : isSupadomus
+      ? SUPADOMUS_CATEGORIES
+      : SUPASIFIEDS_CATEGORIES;
+  const getSubcategory = isSupaauto
+    ? getSupaautoSubcategory
+    : isSupadomus
+      ? getSupadomusSubcategory
+      : getSupasifiedsSubcategory;
 
   const [form, setForm] = useState({
     title: "",
