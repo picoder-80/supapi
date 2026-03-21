@@ -34,6 +34,7 @@ const SUPAPETS: AdminNavItem = { href: "/admin/platforms/supapets", icon: "🐾"
 const SUPACHAT: AdminNavItem = { href: "/admin/platforms/supachat", icon: "💬", label: "SupaChat", status: "live" };
 const SUPASCROW: AdminNavItem = { href: "/admin/platforms/supascrow", icon: "🛡️", label: "SupaScrow", status: "live" };
 const SUPAPOD: AdminNavItem = { href: "/admin/platforms/supapod", icon: "🎙️", label: "SupaPod", status: "soon" };
+const SUPAMINDS: AdminNavItem = { href: "/admin/platforms/supaminds", icon: "🧠", label: "SupaMinds", status: "live" };
 
 export const SIDEBAR_ADMIN_NAV: AdminNavItem[] = [DASHBOARD, TREASURY, SC_WALLET, EMAIL_BROADCAST, USERS, SETTINGS, MY_PI_DASHBOARD];
 
@@ -56,6 +57,7 @@ export const SIDEBAR_PLATFORM_NAV: AdminNavItem[] = [
   SUPACHAT,
   SUPASCROW,
   SUPAPOD,
+  SUPAMINDS,
 ];
 
 export const DASHBOARD_ADMIN_TOOLS: AdminNavItem[] = [
@@ -85,6 +87,7 @@ export const DASHBOARD_PLATFORM_LINKS: AdminNavItem[] = [
   SUPACHAT,
   SUPASCROW,
   SUPAPOD,
+  SUPAMINDS,
 ];
 
 export const MOBILE_QUICK_NAV: AdminNavItem[] = [

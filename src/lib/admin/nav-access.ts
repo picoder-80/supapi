@@ -10,6 +10,7 @@ const NAV_PERMISSION_RULES: Array<{ prefix: string; permission: AdminPermission 
   { prefix: "/admin/platforms/referral", permission: "admin.referral.read" },
   { prefix: "/admin/platforms/locator", permission: "admin.locator.read" },
   { prefix: "/admin/platforms/supascrow", permission: "admin.supascrow.read" },
+  { prefix: "/admin/platforms/supaminds", permission: "admin.market.read" },
   // SupaChat: no nav rule — always visible in sidebar; API protects commission data
 ];
 

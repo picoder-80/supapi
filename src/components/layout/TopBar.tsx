@@ -13,6 +13,7 @@ const navLinks = [
   { href: "/dashboard",   label: "👤 Dashboard"     },
   { href: "/supamarket",      label: "🛍️ SupaMarket"    },
   { href: "/supaskil",        label: "💼 SupaSkil"      },
+  { href: "/supaminds",       label: "🧠 SupaMinds"     },
   { href: "/supademy",     label: "📚 SupaDemy"      },
   { href: "/stay",        label: "🏡 SupaStay"      },
   { href: "/supanova",      label: "🎮 SupaNova"       },

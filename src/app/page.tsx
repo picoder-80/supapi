@@ -41,6 +41,7 @@ const platformCategories: { id: string; title: string; modules: ModuleItem[] }[]
     id: "learn-play",
     title: "Learn & Play",
     modules: [
+      { href: "/supaminds", emoji: "🧠", label: "SupaMinds", desc: "AI assistant — free & Pro subscription" },
       { href: "/supademy",  emoji: "📚", label: "SupaDemy",      desc: "Learn & teach" },
       { href: "/supanova",   emoji: "🎮", label: "SupaNova",       desc: "Play & earn Pi" },
       { href: "/rewards",  emoji: "🎁", label: "Daily Rewards", desc: "Check-in & earn Pi daily" },

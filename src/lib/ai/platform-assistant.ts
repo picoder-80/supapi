@@ -107,8 +107,8 @@ const MODE_GUIDANCE: Record<AssistantMode, string> = {
 
 const MODE_QUICK_PROMPTS: Record<AssistantMode, string[]> = {
   assistant: [
-    "Give me the next 3 best actions right now",
-    "Summarize this workflow simply",
+    "Help me prioritize my next steps",
+    "Explain this workflow in plain language",
     "What should I verify before submit?",
   ],
   growth: [
@@ -216,8 +216,8 @@ export function getPlatformAIPreset(platform: PlatformKey): PlatformAIPreset {
   const fallback: PlatformAIPreset = {
     quick_prompts: [
       `How to start with ${platform} step-by-step?`,
-      "Show me a quick checklist before submit",
-      "What are common mistakes to avoid here?",
+      "Give me a compact pre-submit checklist",
+      "What pitfalls should I avoid first?",
     ],
     focus_areas: ["core flow", "quality checks", "error prevention"],
     guardrails: ["No policy bypass", "No unsafe or abusive actions"],
@@ -235,9 +235,9 @@ export function normalizeAssistantMode(input: unknown): AssistantMode {
 }
 
 export function getQuickPromptsForMode(platform: PlatformKey, mode: AssistantMode): string[] {
-  const platformPrompts = getPlatformAIPreset(platform).quick_prompts;
-  const modePrompts = MODE_QUICK_PROMPTS[mode] ?? MODE_QUICK_PROMPTS.assistant;
-  return [...platformPrompts, ...modePrompts].slice(0, 4);
+  void platform;
+  void mode;
+  return [];
 }
 
 function getProviderOrder(): AIProviderName[] {
@@ -249,7 +249,7 @@ function getProviderOrder(): AIProviderName[] {
   return valid;
 }
 
-async function callAnthropic(prompt: string): Promise<string | null> {
+async function callAnthropic(prompt: string, maxTokens?: number): Promise<string | null> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return null;
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -261,7 +261,7 @@ async function callAnthropic(prompt: string): Promise<string | null> {
     },
     body: JSON.stringify({
       model: process.env.ANTHROPIC_MODEL ?? "claude-3-5-sonnet-20241022",
-      max_tokens: 420,
+      max_tokens: Math.max(80, Math.floor(Number(maxTokens ?? 420))),
       temperature: 0.2,
       messages: [{ role: "user", content: prompt }],
     }),
@@ -271,7 +271,7 @@ async function callAnthropic(prompt: string): Promise<string | null> {
   return data?.content?.[0]?.text ?? null;
 }
 
-async function callOpenAI(prompt: string): Promise<string | null> {
+async function callOpenAI(prompt: string, maxTokens?: number): Promise<string | null> {
   const key = process.env.OPENAI_API_KEY;
   if (!key) return null;
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -284,6 +284,7 @@ async function callOpenAI(prompt: string): Promise<string | null> {
       model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
       temperature: 0.2,
       messages: [{ role: "user", content: prompt }],
+      max_tokens: Math.max(80, Math.floor(Number(maxTokens ?? 420))),
       response_format: { type: "json_object" },
     }),
   });
@@ -412,9 +413,15 @@ export async function runPlatformAssistant(params: {
   mode?: AssistantMode;
   message: string;
   context?: string;
+  maxTokens?: number;
+  answerWordLimit?: number;
+  generic?: boolean;
 }) {
   const { platform, message, context } = params;
   const mode = normalizeAssistantMode(params.mode);
+  const maxTokens = Math.max(80, Math.floor(Number(params.maxTokens ?? 420)));
+  const answerWordLimit = Math.max(40, Math.floor(Number(params.answerWordLimit ?? 120)));
+  const generic = Boolean(params.generic);
   if (!platformEnabled(platform)) {
     return {
       ok: false,
@@ -425,7 +432,25 @@ export async function runPlatformAssistant(params: {
   }
 
   const preset = getPlatformAIPreset(platform);
-  const prompt = `You are Supapi AI assistant for "${platform}".
+  const prompt = generic
+    ? `You are a highly capable general AI assistant for SupaMinds users.
+Assistant mode: ${mode}
+Mode guidance: ${MODE_GUIDANCE[mode]}
+User message: ${message}
+Optional context: ${context ?? ""}
+
+Return strict JSON only:
+{
+  "answer": "short practical answer",
+  "suggestions": ["3 short next actions max"]
+}
+
+Rules:
+- Keep answer under ${answerWordLimit} words.
+- Actionable, clear, and broadly useful.
+- No markdown.
+`
+    : `You are Supapi AI assistant for "${platform}".
 Assistant mode: ${mode}
 Mode guidance: ${MODE_GUIDANCE[mode]}
 Platform summary: ${PLATFORM_HELP[platform]}
@@ -441,7 +466,7 @@ Return strict JSON only:
 }
 
 Rules:
-- Keep answer under 120 words.
+- Keep answer under ${answerWordLimit} words.
 - Actionable and product-focused.
 - No markdown.
 `;
@@ -450,7 +475,7 @@ Rules:
   for (const provider of order) {
     try {
       if (provider === "anthropic") {
-        const text = await callAnthropic(prompt);
+        const text = await callAnthropic(prompt, maxTokens);
         if (text) {
           const parsed = JSON.parse(String(text).replace(/```json|```/g, "").trim());
           return {
@@ -463,7 +488,7 @@ Rules:
       }
 
       if (provider === "openai") {
-        const text = await callOpenAI(prompt);
+        const text = await callOpenAI(prompt, maxTokens);
         if (text) {
           const parsed = JSON.parse(String(text).replace(/```json|```/g, "").trim());
           return {
@@ -476,7 +501,12 @@ Rules:
       }
 
       if (provider === "heuristic") {
-        const h = heuristicReply(platform, mode, message);
+        const h = generic
+          ? {
+              answer: "I can help with writing, planning, troubleshooting, and general questions. Tell me your goal and constraints, and I will give a clear step-by-step answer.",
+              suggestions: [],
+            }
+          : heuristicReply(platform, mode, message);
         return {
           ok: true,
           provider,
@@ -489,7 +519,12 @@ Rules:
     }
   }
 
-  const fallback = heuristicReply(platform, mode, message);
+  const fallback = generic
+    ? {
+        answer: "I can help with writing, planning, troubleshooting, and general questions. Share what you want to achieve, and I will guide you step by step.",
+        suggestions: [],
+      }
+    : heuristicReply(platform, mode, message);
   return {
     ok: true,
     provider: "heuristic" as AIProviderName,
