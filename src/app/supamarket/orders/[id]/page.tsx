@@ -894,16 +894,23 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <div className={styles.confirmNote}>
               Happy with your purchase? Mark as complete to finalise payment to the seller. If you do nothing, the order
               may auto-complete after a short period unless a return request is open.
-              {order.return_request?.status === "pending_seller" ? (
+              {["pending_seller", "seller_approved_return", "buyer_return_shipped"].includes(
+                String(order.return_request?.status ?? "")
+              ) ? (
                 <span className={styles.returnWarning}>
                   {" "}
-                  You have an open return request — complete the order only after you withdraw it or the seller responds.
+                  You have an active return flow — complete the order only after return/refund is resolved.
                 </span>
               ) : null}
             </div>
             <button
               className={styles.confirmBtn}
-              disabled={updating || order.return_request?.status === "pending_seller"}
+              disabled={
+                updating ||
+                ["pending_seller", "seller_approved_return", "buyer_return_shipped"].includes(
+                  String(order.return_request?.status ?? "")
+                )
+              }
               onClick={() => updateStatus("completed")}
             >
               {updating ? "Updating..." : "Complete Order 🎉"}
