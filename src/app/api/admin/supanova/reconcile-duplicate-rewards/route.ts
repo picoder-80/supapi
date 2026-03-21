@@ -1,4 +1,4 @@
-// GET/POST — find & reverse duplicate SupArcade reward credits (same session ref_id).
+// GET/POST — find & reverse duplicate SupaNova reward credits (same session ref_id).
 // GET or POST { execute: false } — list only. POST { execute: true } — apply fixes.
 
 import { NextRequest, NextResponse } from "next/server";

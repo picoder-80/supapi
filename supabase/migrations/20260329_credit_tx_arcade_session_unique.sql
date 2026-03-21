@@ -1,4 +1,4 @@
--- SupArcade: prevent duplicate earn rows for the same session (race-safe at DB level).
+-- SupaNova: prevent duplicate earn rows for the same session (race-safe at DB level).
 -- 1) Fix wallet totals for historical duplicates (keep earliest earn row per session).
 -- 2) Remove duplicate earn rows.
 -- 3) Unique partial index so concurrent /complete cannot insert twice.

@@ -1,0 +1,149 @@
+/* Leaderboard-only: game chips + table shell */
+
+.chipsWrap {
+  max-width: 800px;
+  margin: 0 auto var(--space-5);
+  width: 100%;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip,
+.chipActive {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: #1a1a2e;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition), box-shadow var(--transition),
+    transform var(--transition);
+  white-space: nowrap;
+}
+
+.chip:hover {
+  border-color: rgba(245, 166, 35, 0.45);
+  transform: translateY(-1px);
+}
+
+.chipActive {
+  border-color: var(--color-gold);
+  background: rgba(245, 166, 35, 0.12);
+  color: #1a1a2e;
+  box-shadow: 0 2px 10px rgba(245, 166, 35, 0.12);
+}
+
+.shell {
+  background: var(--color-surface);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  width: 100%;
+  min-width: 320px;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-family: var(--font-sans);
+}
+
+.table thead th {
+  text-align: left;
+  padding: 14px 14px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.table thead th:nth-child(n + 3) {
+  text-align: right;
+}
+
+.thSc {
+  text-align: right !important;
+}
+
+.scHead {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  width: 100%;
+}
+
+.table tbody td {
+  padding: 14px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:nth-child(even) {
+  background: rgba(248, 249, 253, 0.85);
+}
+
+.table tbody tr:hover td {
+  background: rgba(245, 166, 35, 0.06);
+}
+
+.rank {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  width: 3.25rem;
+  color: #1a1a2e;
+}
+
+.rankMedal {
+  font-size: 1.15em;
+}
+
+.user {
+  font-weight: 600;
+  color: #1a1a2e;
+  min-width: 100px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #334155;
+}
+
+.numHighlight {
+  color: #b45309;
+  font-weight: 700;
+}
+
+.cellSc .scHead {
+  justify-content: flex-end;
+  gap: 5px;
+}

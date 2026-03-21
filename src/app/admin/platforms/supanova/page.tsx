@@ -38,7 +38,7 @@ export default function PlatformAdminPage() {
   };
 
   const fixDupRewards = async () => {
-    if (!confirm("Reverse duplicate SupArcade reward SC for all affected sessions? This cannot be undone automatically.")) return;
+    if (!confirm("Reverse duplicate SupaNova reward SC for all affected sessions? This cannot be undone automatically.")) return;
     const t = adminToken();
     if (!t) {
       setDupPreview("Admin token missing.");
@@ -84,8 +84,8 @@ export default function PlatformAdminPage() {
 
   return (
     <main className={styles.page}>
-      <p className={styles.crumb}>Admin → Platforms → SupArcade</p>
-      <h1>🎮 SupArcade Overview</h1>
+      <p className={styles.crumb}>Admin → Platforms → SupaNova</p>
+      <h1>🎮 SupaNova Overview</h1>
       <section className={styles.grid}>
         <article className={styles.card}><h3>SC Spent</h3><p>{scSpent.toFixed(2)}</p></article>
         <article className={styles.card}><h3>Platform Earned</h3><p>{platformEarned.toFixed(2)}</p></article>

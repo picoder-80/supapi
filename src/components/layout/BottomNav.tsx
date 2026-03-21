@@ -12,7 +12,7 @@ const SCROLL_ITEMS = [
   { href: "/supaskil",        emoji: "💼",  label: "SupaSkil"   },
   { href: "/supademy",     emoji: "📚",  label: "SupaDemy"   },
   { href: "/supastay",        emoji: "🏡",  label: "SupaStay"   },
-  { href: "/arcade",      emoji: "🎮",  label: "SupaNova"   },
+  { href: "/supanova",    emoji: "🎮",  label: "SupaNova"   },
   { href: "/newsfeed",    emoji: "📰",  label: "Newsfeed"   },
   { href: "/supafeeds", emoji: "📱",  label: "SupaFeeds"  },
   { href: "/wallet",      emoji: "💰",  label: "Wallet"     },

@@ -1,6 +1,6 @@
 # π Supapi
 
-> The Pi Network Super App — Marketplace, Gigs, Academy, Stay, Arcade & more.
+> The Pi Network Super App — Marketplace, Gigs, Academy, Stay, SupaNova & more.
 
 ---
 
@@ -93,7 +93,7 @@ src/
 │   ├── supamarket/           # Marketplace pages
 │   ├── gigs/                 # Gigs pages
 │   ├── academy/              # Academy pages
-│   ├── arcade/               # Arcade pages
+│   ├── supanova/             # SupaNova (games) pages
 │   ├── stay/                 # Stay pages
 │   ├── wallet/               # Wallet pages
 │   ├── referral/             # Referral pages

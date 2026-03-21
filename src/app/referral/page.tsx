@@ -38,7 +38,9 @@ const RANKS = [
 
 const PLATFORMS: Record<string, string> = {
   marketplace: "🛍️", academy: "📚", stay: "🏡", gigs: "💼",
-  arcade: "🎮", wallet: "💰",
+  supanova: "🎮",
+  arcade: "🎮", // legacy platform key
+  wallet: "💰",
 };
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }

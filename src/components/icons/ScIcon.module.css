@@ -1,0 +1,8 @@
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: -0.12em;
+  line-height: 1;
+  flex-shrink: 0;
+}

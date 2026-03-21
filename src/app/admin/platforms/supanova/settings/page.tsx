@@ -27,7 +27,7 @@ export default function AdminSettingsPage() {
 
   return (
     <main className={styles.page}>
-      <h1>SupArcade Commission Settings</h1>
+      <h1>SupaNova Commission Settings</h1>
       <p>Changes take effect immediately on the next game session</p>
       <section className={styles.card}>
         <label>Game Play Cut (%)

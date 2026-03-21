@@ -1,50 +1,562 @@
+/* SupaNova lobby — universal Supapi theme (aligned with homepage) */
+
 .page {
-  --primary: #1a1a2e;
-  --primary-mid: #0f3460;
-  --accent-gold: #f5a623;
-  --bg: #f8f9fd;
-  --surface: #ffffff;
-  --border: #e2e8f0;
-  --text-dark: #1a1a2e;
-  --text-muted: #718096;
-  --success: #22c55e;
   min-height: 100vh;
-  background: var(--bg);
-  color: var(--text-dark);
-  padding: 72px 16px 24px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip; /* full-bleed hero uses 100vw — avoid stray horizontal scroll */
+  background: #f8f9fd;
+  color: #1a1a2e;
+  font-family: var(--font-sans);
+  /*
+   * TopBar is sticky but still in document flow — it already sits above <main>.
+   * Do NOT add --app-header-height here (that duplicates the bar and shows a light “gap”).
+   * Same pattern as homepage + SupaMarket hero pages.
+   */
+  padding: 0 var(--space-4) var(--space-10);
+  box-sizing: border-box;
 }
-.topbar {
-  position: sticky;
-  top: 0;
-  height: 60px;
-  background: linear-gradient(135deg, var(--primary), var(--primary-mid));
-  border-radius: 14px;
-  color: #fff;
+
+.inner {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-top: var(--space-6);
+}
+
+/* ── Hero (gradient, homepage-style) — full-bleed so it’s obvious above the grey lobby ── */
+.hero {
+  /* Break out of .page horizontal padding (space-4 / space-6) */
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  box-sizing: border-box;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  color: var(--color-white);
+  text-align: center;
+  padding: var(--space-10) var(--space-4) var(--space-12);
+  margin-bottom: var(--space-4);
+  min-height: min(42vh, 320px);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 14px;
+  justify-content: center;
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 12px 40px rgba(26, 26, 46, 0.25);
 }
-.balance { background: #f5a623; color: #1a1a2e; padding: 8px 12px; border-radius: 999px; font-weight: 700; }
-.chips { display: flex; gap: 8px; margin: 14px 0; flex-wrap: wrap; }
-.chip,.chipActive { border-radius: 999px; padding: 8px 12px; border: 1px solid var(--border); background: #fff; }
-.chipActive { border-color: var(--accent-gold); color: var(--accent-gold); }
-.grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 12px; transition: .2s ease; }
-.card:hover { border-color: var(--accent-gold); transform: translateY(-2px); }
-.banner { border-radius: 12px; min-height: 80px; display: grid; place-items: center; margin-bottom: 10px; }
-.icon { font-size: 48px; }
-.card h3 { margin: 0 0 6px; font-size: 16px; }
-.card p { margin: 0 0 10px; color: var(--text-muted); font-size: 13px; min-height: 36px; }
-.meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
-.free,.paid { padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
-.free { background: #e8faef; color: #138f3f; }
-.paid { background: #fff7e8; color: #976104; }
-.playBtn { display: block; width: 100%; text-align: center; background: var(--accent-gold); color: #1a1a2e; border-radius: 999px; padding: 10px; font-weight: 700; text-decoration: none; }
-.featured { margin-top: 16px; background: linear-gradient(135deg, #1a1a2e, #2a2a4d); color: #fff; border-radius: 16px; padding: 16px; border: 1px solid #2f3958; }
-.featured span { color: #f5a623; font-size: 12px; }
-.featured h2 { margin: 6px 0 2px; }
-.featured p { margin: 0 0 10px; color: #c6d0e3; }
-.featured strong { color: #f5a623; font-size: 20px; }
-.countdown { margin: 8px 0 10px; font-weight: 700; }
-@media (min-width: 900px) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .page { padding: 72px 24px; } }
+
+.heroInner {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.heroBadge {
+  display: inline-block;
+  background: rgba(245, 166, 35, 0.2);
+  border: 1px solid var(--color-gold);
+  color: var(--color-gold);
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: var(--space-6);
+  letter-spacing: 0.5px;
+}
+
+.heroTitle {
+  font-size: clamp(28px, 6vw, 40px);
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 0 0 var(--space-4);
+  letter-spacing: -0.03em;
+}
+
+.heroGold {
+  color: var(--color-gold);
+}
+
+.heroScInTitle {
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+.heroScInline {
+  vertical-align: -0.22em;
+  margin: 0 1px;
+}
+
+.topUpLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.balanceLeadingIcon {
+  margin-right: 6px;
+}
+
+.heroSub {
+  font-size: clamp(15px, 2vw, 17px);
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin: 0 0 var(--space-8);
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.heroActions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-6);
+}
+
+.heroBtnPrimary {
+  font-family: var(--font-sans);
+  background: var(--color-gold);
+  color: #1a1a2e;
+  font-weight: 700;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-full);
+  font-size: 15px;
+  text-decoration: none;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.heroBtnPrimary:hover {
+  background: var(--color-gold-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(245, 166, 35, 0.35);
+}
+
+.heroBtnOutline {
+  font-family: var(--font-sans);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  color: var(--color-white);
+  font-weight: 600;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-full);
+  font-size: 15px;
+  text-decoration: none;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.heroBtnOutline:hover {
+  border-color: var(--color-white);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.heroBalanceRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.heroLinkSubtle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.heroLinkSubtle:hover {
+  color: var(--color-white);
+}
+
+.heroLinkBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+/* ── Buy SC modal (BuyCreditsWidget) ── */
+.buyScOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.buyScBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.buyScSheet {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  max-height: min(92vh, 760px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--color-surface);
+  border-radius: 20px 20px 0 0;
+  padding: var(--space-5) var(--space-4);
+  padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -8px 40px rgba(26, 26, 46, 0.2);
+}
+
+.buyScClose {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgba(26, 26, 46, 0.06);
+  color: var(--color-text);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.buyScClose:hover {
+  background: rgba(26, 26, 46, 0.1);
+}
+
+.buyScSheetTitle {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 0 40px var(--space-4) 0;
+  letter-spacing: -0.02em;
+}
+
+.buyScWidget {
+  margin-top: 0;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 260;
+  max-width: min(340px, calc(100vw - 32px));
+  padding: var(--space-3) var(--space-4);
+  background: #1a1a2e;
+  color: var(--color-white);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+}
+
+@media (min-width: 600px) {
+  .buyScOverlay {
+    align-items: center;
+    padding: var(--space-4);
+  }
+
+  .buyScSheet {
+    border-radius: var(--radius-lg);
+    max-height: min(88vh, 720px);
+  }
+}
+
+.balance {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: #f5a623;
+  color: #1a1a2e;
+  padding: var(--space-3) var(--space-5);
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 4px 14px rgba(245, 166, 35, 0.28);
+}
+
+/* ── Filter chips ── */
+.chipWrap {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.chip,
+.chipActive {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: #1a1a2e;
+  transition: border-color var(--transition), color var(--transition), box-shadow var(--transition),
+    transform var(--transition);
+}
+
+.chip:hover {
+  border-color: #f5a623;
+  transform: translateY(-1px);
+}
+
+.chipActive {
+  border-color: #f5a623;
+  color: #1a1a2e;
+  background: rgba(245, 166, 35, 0.12);
+  box-shadow: 0 2px 8px rgba(245, 166, 35, 0.15);
+}
+
+/* ── Game grid ── */
+.grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.card:hover {
+  border-color: #f5a623;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.banner {
+  border-radius: var(--radius-md);
+  min-height: 88px;
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--space-3);
+  background: linear-gradient(145deg, rgba(26, 26, 46, 0.06) 0%, rgba(15, 52, 96, 0.08) 100%);
+}
+
+.icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.cardTitle {
+  font-family: var(--font-sans);
+  margin: 0 0 var(--space-2);
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.cardDesc {
+  margin: 0 0 var(--space-3);
+  color: #718096;
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 2.6em;
+  flex: 1;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.meta small {
+  font-size: 12px;
+  color: #718096;
+}
+
+.free,
+.paid {
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.free {
+  background: #e8faef;
+  color: #138f3f;
+}
+
+.paid {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(245, 166, 35, 0.14);
+  color: #1a1a2e;
+}
+
+.earnLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.buyScBtnInner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.playBtn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-sans);
+  background: #f5a623;
+  color: #1a1a2e;
+  border-radius: 999px;
+  padding: var(--space-3) var(--space-4);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  border: none;
+  box-sizing: border-box;
+}
+
+.playBtn:hover {
+  background: var(--color-gold-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(245, 166, 35, 0.35);
+}
+
+/* ── Featured tournament (surface shell + gradient panel) ── */
+.featuredWrap {
+  margin-top: var(--space-8);
+}
+
+.featured {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: var(--space-4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.featured:hover {
+  border-color: #f5a623;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.featuredInner {
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+  color: var(--color-white);
+  border-radius: var(--radius-md);
+  padding: var(--space-5) var(--space-5);
+}
+
+.featuredLabel {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #f5a623;
+  margin-bottom: var(--space-2);
+}
+
+.featuredTitle {
+  margin: 0 0 var(--space-1);
+  font-size: clamp(18px, 3vw, 22px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.featuredSub {
+  margin: 0 0 var(--space-4);
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.featuredPrize {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #f5a623;
+  margin-bottom: var(--space-2);
+}
+
+.countdown {
+  margin: 0 0 var(--space-4);
+  font-weight: 700;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.featured .playBtn {
+  max-width: 280px;
+}
+
+#games {
+  scroll-margin-top: calc(var(--app-header-height, 72px) + var(--space-4));
+}
+
+@media (max-width: 640px) {
+  .hero {
+    padding: var(--space-8) var(--space-4) var(--space-10);
+  }
+
+  .heroActions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .heroBtnPrimary,
+  .heroBtnOutline {
+    width: 100%;
+    max-width: 280px;
+    text-align: center;
+  }
+}
+
+@media (min-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .page {
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+}

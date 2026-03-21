@@ -136,7 +136,7 @@ export default function GameSlugPage() {
             <div className={styles.actions}>
               <button className={styles.primaryBtn} onClick={() => setResult(null)}>Play Again</button>
               <button className={styles.secondaryBtn} onClick={() => setSelected(levels[Math.min(levels.length - 1, (levels.findIndex((x) => x.id === selected?.id) + 1))] ?? selected)}>Next Level</button>
-              <Link href="/supanova" className={styles.secondaryBtn}>Back to Arcade</Link>
+              <Link href="/supanova" className={styles.secondaryBtn}>Back to SupaNova</Link>
             </div>
           </div>
         </div>
