@@ -659,6 +659,149 @@
   display: block;
 }
 
+/* ── Return / Refund hub (Shopee-style steps) ── */
+.returnHubWrap {
+  width: min(960px, 100%);
+  margin: 0 auto;
+  padding: 0 12px 14px;
+}
+
+.returnHub {
+  background: linear-gradient(145deg, #fff 0%, #fffaf0 100%);
+  border: 1px solid rgba(245, 166, 35, 0.35);
+  border-radius: 16px;
+  padding: 16px 14px;
+  box-shadow: 0 4px 18px rgba(245, 166, 35, 0.08);
+}
+
+.returnHubTitle {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.returnHubSub {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.returnRefundAmount {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+
+.returnRefundAmount strong {
+  font-size: 15px;
+  color: #1a1a2e;
+}
+
+.returnSteps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.returnStepRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.returnStepRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.returnStepIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+  background: #edf2f7;
+  color: #64748b;
+}
+
+.returnStepRowDone .returnStepIcon {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.returnStepRowActive .returnStepIcon {
+  background: #f5a623;
+  color: #1a1a2e;
+  box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.25);
+}
+
+.returnStepBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.returnStepLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 2px;
+}
+
+.returnStepHint {
+  font-size: 12px;
+  color: #718096;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.returnCountdown {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #c05621;
+}
+
+.returnHubCta {
+  margin-top: 12px;
+  width: 100%;
+  min-height: 44px;
+  border-radius: 999px;
+  border: none;
+  background: #1a1a2e;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.returnHubCta:hover {
+  opacity: 0.92;
+}
+
+.returnHubSeller {
+  border-left: 4px solid #f5a623;
+}
+
 @media (min-width: 768px) {
   .body {
     padding: 16px;

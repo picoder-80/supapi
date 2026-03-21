@@ -64,11 +64,11 @@ export async function POST(req: NextRequest) {
       if (!rr || rr.order_id !== order_id || rr.buyer_id !== payload.userId) {
         return NextResponse.json({ success: false, error: "Invalid return request" }, { status: 400 });
       }
-      if (rr.status !== "seller_rejected") {
+      if (!["seller_rejected", "buyer_return_shipped"].includes(String(rr.status))) {
         return NextResponse.json(
           {
             success: false,
-            error: "The seller must decline your return request before you can ask for platform review.",
+            error: "Ask seller first. You can escalate after decline or after return shipment if stuck.",
           },
           { status: 400 }
         );

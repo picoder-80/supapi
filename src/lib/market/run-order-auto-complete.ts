@@ -33,7 +33,7 @@ async function hasPendingReturnRequest(supabase: SupabaseClient, orderId: string
     .from("market_return_requests")
     .select("id")
     .eq("order_id", orderId)
-    .eq("status", "pending_seller")
+    .in("status", ["pending_seller", "seller_approved_return", "buyer_return_shipped"])
     .limit(1)
     .maybeSingle();
   if (error) return false;

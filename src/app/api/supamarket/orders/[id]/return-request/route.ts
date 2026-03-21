@@ -110,6 +110,24 @@ export async function POST(req: NextRequest, { params }: Params) {
       return withCors(NextResponse.json({ success: false, error: "This order already has an open case" }, { status: 400 }), req);
     }
 
+    const { data: activeRequest } = await supabase
+      .from("market_return_requests")
+      .select("id, status")
+      .eq("order_id", orderId)
+      .in("status", ["pending_seller", "seller_approved_return", "buyer_return_shipped"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (activeRequest) {
+      return withCors(
+        NextResponse.json(
+          { success: false, error: "An active return request already exists for this order" },
+          { status: 400 }
+        ),
+        req
+      );
+    }
+
     const { data: inserted, error: insErr } = await supabase
       .from("market_return_requests")
       .insert({

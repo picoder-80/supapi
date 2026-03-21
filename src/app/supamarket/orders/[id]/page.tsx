@@ -8,6 +8,12 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { ensurePaymentReady, createPiPayment, isPiBrowser, getApiBase } from "@/lib/pi/sdk";
 import styles from "./page.module.css";
 import { formatListingCategoryPath } from "@/lib/market/categories";
+import {
+  formatBuyerReturnCountdown,
+  formatSellerResponseCountdown,
+  getReturnPhaseWithDispute,
+  returnCategoryLabel,
+} from "@/lib/market/return-flow";
 
 interface Order {
   id: string; status: string; buying_method: string; amount_pi: number;
@@ -31,6 +37,12 @@ interface Order {
     seller_note?: string | null;
     seller_response_deadline: string;
     seller_responded_at?: string | null;
+    buyer_return_tracking_number?: string | null;
+    buyer_return_tracking_carrier?: string | null;
+    buyer_return_note?: string | null;
+    buyer_return_shipped_at?: string | null;
+    buyer_return_deadline?: string | null;
+    seller_confirmed_return_at?: string | null;
   } | null;
 }
 
@@ -87,6 +99,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [showEscalateForm, setShowEscalateForm] = useState(false);
   const [returnSubmitting, setReturnSubmitting] = useState(false);
   const [sellerReturnNote, setSellerReturnNote] = useState("");
+  const [buyerReturnTrackingNumber, setBuyerReturnTrackingNumber] = useState("");
+  const [buyerReturnTrackingCarrier, setBuyerReturnTrackingCarrier] = useState("");
+  const [buyerReturnNote, setBuyerReturnNote] = useState("");
   const [msg, setMsg]             = useState("");
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
@@ -239,7 +254,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     ];
 
     const returnRequestId =
-      order?.return_request?.status === "seller_rejected" ? order.return_request.id : undefined;
+      order?.return_request && ["seller_rejected", "buyer_return_shipped"].includes(order.return_request.status)
+        ? order.return_request.id
+        : undefined;
 
     try {
       const r = await fetch("/api/supamarket/dispute", {
@@ -435,10 +452,66 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       });
       const d = await r.json();
       if (d.success) {
-        setMsg(accept ? "You agreed to refund this order." : "You declined the return request.");
+        setMsg(accept ? "Return approved. Waiting for buyer return shipment." : "You declined the return request.");
         setSellerReturnNote("");
         await fetchOrder();
       } else setMsg(d.error ?? "Could not respond");
+    } catch {
+      setMsg("Something went wrong");
+    }
+    setReturnSubmitting(false);
+  };
+
+  const submitBuyerReturnShipment = async () => {
+    const token = localStorage.getItem("supapi_token");
+    if (!token) return;
+    if (!buyerReturnTrackingNumber.trim()) {
+      setMsg("Enter return tracking number first.");
+      return;
+    }
+    setReturnSubmitting(true);
+    setMsg("");
+    try {
+      const r = await fetch(`/api/supamarket/orders/${id}/return-request/ship`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          tracking_number: buyerReturnTrackingNumber.trim(),
+          tracking_carrier: buyerReturnTrackingCarrier.trim(),
+          note: buyerReturnNote.trim(),
+        }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        setMsg("Return shipment submitted. Seller will confirm receipt.");
+        setBuyerReturnTrackingNumber("");
+        setBuyerReturnTrackingCarrier("");
+        setBuyerReturnNote("");
+        await fetchOrder();
+      } else setMsg(d.error ?? "Could not submit return shipment");
+    } catch {
+      setMsg("Something went wrong");
+    }
+    setReturnSubmitting(false);
+  };
+
+  const confirmReturnReceived = async () => {
+    const token = localStorage.getItem("supapi_token");
+    if (!token) return;
+    setReturnSubmitting(true);
+    setMsg("");
+    try {
+      const r = await fetch(`/api/supamarket/orders/${id}/return-request/confirm-received`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ note: sellerReturnNote.trim() }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        setMsg("Return confirmed and refund completed.");
+        setSellerReturnNote("");
+        await fetchOrder();
+      } else setMsg(d.error ?? "Could not confirm return receipt");
     } catch {
       setMsg("Something went wrong");
     }
@@ -507,6 +580,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const isBuyer  = user.id === order.buyer?.id;
   const isSeller = user.id === order.seller?.id;
   const dispute  = order.disputes?.[0];
+  const hasOpenDispute = !!(dispute && String(dispute.status) !== "resolved");
+  const returnPhase = getReturnPhaseWithDispute(order, hasOpenDispute);
+  const refundPiDisplay = Number(order.amount_pi ?? 0).toFixed(2);
   const returnEvidenceUrls = extractEvidenceUrls(order.return_request?.evidence);
   const normalizedStatus = order.status === "escrow" ? "paid" : order.status;
   const stepIdx  = STATUS_STEPS.indexOf(normalizedStatus);
@@ -537,6 +613,154 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               <div className={styles.progressLabel}>{["Pending","Paid","Shipped","Delivered","Done"][i]}</div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Shopee-style return / refund progress (buyer, before platform case) */}
+      {isBuyer && order.status === "delivered" && !hasOpenDispute && (
+        <div className={styles.returnHubWrap}>
+          <div className={styles.returnHub}>
+            <div className={styles.returnHubTitle}>
+              <span aria-hidden>↩️</span> Return &amp; Refund
+            </div>
+            <p className={styles.returnHubSub}>
+              Request a refund from the seller first. If they agree, your π is released from escrow back to you. If they
+              decline, you can ask for platform review below.
+            </p>
+            <div className={styles.returnRefundAmount}>
+              <span>Refund amount (if approved)</span>
+              <strong>{refundPiDisplay} π</strong>
+            </div>
+            <div className={styles.returnSteps}>
+              <div
+                className={`${styles.returnStepRow} ${returnPhase !== "none" ? styles.returnStepRowDone : ""} ${
+                  returnPhase === "none" ? styles.returnStepRowActive : ""
+                }`}
+              >
+                <div className={styles.returnStepIcon}>{returnPhase === "none" ? "1" : "✓"}</div>
+                <div className={styles.returnStepBody}>
+                  <div className={styles.returnStepLabel}>Request refund</div>
+                  <p className={styles.returnStepHint}>Describe the issue and add photos. We&apos;ll notify the seller.</p>
+                </div>
+              </div>
+              <div
+                className={`${styles.returnStepRow} ${["approved_waiting_buyer_ship", "buyer_shipped_waiting_seller_confirm", "rejected", "escalated", "refunded_rr"].includes(returnPhase) ? styles.returnStepRowDone : ""} ${
+                  returnPhase === "submitted" ? styles.returnStepRowActive : ""
+                }`}
+              >
+                <div className={styles.returnStepIcon}>
+                  {["approved_waiting_buyer_ship", "buyer_shipped_waiting_seller_confirm", "rejected", "escalated", "refunded_rr"].includes(returnPhase) ? "✓" : "2"}
+                </div>
+                <div className={styles.returnStepBody}>
+                  <div className={styles.returnStepLabel}>Seller review</div>
+                  <p className={styles.returnStepHint}>
+                    The seller can agree to refund or decline. Please wait for their reply.
+                  </p>
+                  {returnPhase === "submitted" && order.return_request?.seller_response_deadline ? (
+                    <div className={styles.returnCountdown}>
+                      {formatSellerResponseCountdown(order.return_request.seller_response_deadline)}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              <div
+                className={`${styles.returnStepRow} ${["buyer_shipped_waiting_seller_confirm", "refunded_rr"].includes(returnPhase) ? styles.returnStepRowDone : ""} ${
+                  returnPhase === "approved_waiting_buyer_ship" ? styles.returnStepRowActive : ""
+                }`}
+              >
+                <div className={styles.returnStepIcon}>
+                  {["buyer_shipped_waiting_seller_confirm", "refunded_rr"].includes(returnPhase) ? "✓" : "3"}
+                </div>
+                <div className={styles.returnStepBody}>
+                  <div className={styles.returnStepLabel}>Ship return item</div>
+                  <p className={styles.returnStepHint}>
+                    {returnPhase === "approved_waiting_buyer_ship"
+                      ? "Seller approved. Send item back and upload return tracking."
+                      : returnPhase === "buyer_shipped_waiting_seller_confirm"
+                        ? "Return shipment submitted. Waiting for seller confirmation."
+                        : "If seller approves, upload your return tracking in the section below."}
+                  </p>
+                  {returnPhase === "approved_waiting_buyer_ship" && order.return_request?.buyer_return_deadline ? (
+                    <div className={styles.returnCountdown}>
+                      {formatBuyerReturnCountdown(order.return_request.buyer_return_deadline)}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              <div
+                className={`${styles.returnStepRow} ${["refunded_rr"].includes(returnPhase) ? styles.returnStepRowDone : ""} ${
+                  returnPhase === "buyer_shipped_waiting_seller_confirm" || returnPhase === "rejected" ? styles.returnStepRowActive : ""
+                }`}
+              >
+                <div className={styles.returnStepIcon}>{returnPhase === "refunded_rr" ? "✓" : "4"}</div>
+                <div className={styles.returnStepBody}>
+                  <div className={styles.returnStepLabel}>Refund or platform review</div>
+                  <p className={styles.returnStepHint}>
+                    {returnPhase === "rejected"
+                      ? "Seller declined — use “Ask for platform review” in the section below."
+                      : returnPhase === "buyer_shipped_waiting_seller_confirm"
+                        ? "Seller should confirm receiving your return, then refund is released."
+                        : returnPhase === "refunded_rr"
+                          ? "Refund completed."
+                          : "Final refund step after return shipment is verified."}
+                  </p>
+                </div>
+              </div>
+            </div>
+            {returnPhase === "none" ? (
+              <button
+                type="button"
+                className={styles.returnHubCta}
+                onClick={() => document.getElementById("return-refund-section")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                Start return / refund request
+              </button>
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      {isBuyer && order.status === "disputed" && hasOpenDispute && (
+        <div className={styles.returnHubWrap}>
+          <div className={`${styles.returnHub} ${styles.returnHubSeller}`}>
+            <div className={styles.returnHubTitle}>
+              <span aria-hidden>⚖️</span> Return / refund case
+            </div>
+            <p className={styles.returnHubSub}>
+              A case is open for this order. Our team will review and resolve it shortly — see the dispute section below for
+              status and suggested resolution.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isSeller &&
+        order.status === "delivered" &&
+        (order.return_request?.status === "pending_seller" || order.return_request?.status === "buyer_return_shipped") && (
+        <div className={styles.returnHubWrap}>
+          <div className={`${styles.returnHub} ${styles.returnHubSeller}`}>
+            <div className={styles.returnHubTitle}>
+              <span aria-hidden>🔔</span> Action required: return / refund
+            </div>
+            <p className={styles.returnHubSub}>
+              {order.return_request?.status === "pending_seller"
+                ? "The buyer requested a return. Approve or decline this request first."
+                : "Buyer marked return as shipped. Confirm item receipt to release refund."}
+            </p>
+            {order.return_request?.status === "pending_seller" && order.return_request?.seller_response_deadline ? (
+              <div className={styles.returnCountdown} style={{ marginTop: 0 }}>
+                {formatSellerResponseCountdown(order.return_request.seller_response_deadline)}
+              </div>
+            ) : null}
+            <button
+              type="button"
+              className={styles.returnHubCta}
+              style={{ marginTop: 14 }}
+              onClick={() => document.getElementById("seller-return-section")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              Review request
+            </button>
+          </div>
         </div>
       )}
 
@@ -807,18 +1031,26 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         </div>
 
         {/* Seller: respond to return / refund request */}
-        {isSeller && order.status === "delivered" && order.return_request?.status === "pending_seller" && (
-          <div className={styles.section}>
+        {isSeller &&
+          order.status === "delivered" &&
+          (order.return_request?.status === "pending_seller" || order.return_request?.status === "buyer_return_shipped") && (
+          <div className={styles.section} id="seller-return-section">
             <div className={styles.sectionTitle}>↩️ Return / refund request</div>
-            <div className={styles.disputeNote}>
-              The buyer asked for a refund. Respond within{" "}
-              <strong>{new Date(order.return_request.seller_response_deadline).toLocaleString()}</strong>
-              . Agreeing will cancel escrow and mark the order refunded.
-            </div>
+            {order.return_request?.status === "pending_seller" ? (
+              <div className={styles.disputeNote}>
+                The buyer asked for a return. Respond within{" "}
+                <strong>{new Date(order.return_request.seller_response_deadline).toLocaleString()}</strong>.
+                Approve to ask buyer for return shipment, or decline to allow platform review.
+              </div>
+            ) : (
+              <div className={styles.disputeNote}>
+                Buyer submitted return shipment details. Confirm once you have received the returned item.
+              </div>
+            )}
             <div className={styles.infoBox} style={{ marginBottom: 10 }}>
               <div className={styles.infoRow}>
                 <span>Category</span>
-                <strong>{order.return_request.category}</strong>
+                <strong>{returnCategoryLabel(order.return_request.category)}</strong>
               </div>
               <div className={styles.infoRow}>
                 <span>Details</span>
@@ -837,38 +1069,71 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
             )}
+            {order.return_request?.status === "buyer_return_shipped" && (
+              <div className={styles.infoBox} style={{ marginBottom: 10 }}>
+                <div className={styles.infoRow}>
+                  <span>Return courier</span>
+                  <strong>{order.return_request.buyer_return_tracking_carrier || "Not provided"}</strong>
+                </div>
+                <div className={styles.infoRow}>
+                  <span>Return tracking</span>
+                  <strong>{order.return_request.buyer_return_tracking_number || "—"}</strong>
+                </div>
+                {order.return_request.buyer_return_note ? (
+                  <div className={styles.infoRow}>
+                    <span>Buyer note</span>
+                    <strong>{order.return_request.buyer_return_note}</strong>
+                  </div>
+                ) : null}
+              </div>
+            )}
             <textarea
               className={styles.input}
               rows={2}
-              placeholder="Note to buyer (required if you decline)"
+              placeholder={
+                order.return_request?.status === "pending_seller"
+                  ? "Note to buyer (required if you decline)"
+                  : "Optional note while confirming receipt"
+              }
               value={sellerReturnNote}
               onChange={(e) => setSellerReturnNote(e.target.value)}
               disabled={returnSubmitting}
             />
-            <div className={styles.btnRow}>
+            {order.return_request?.status === "pending_seller" ? (
+              <div className={styles.btnRow}>
+                <button
+                  type="button"
+                  className={styles.confirmBtn}
+                  disabled={returnSubmitting}
+                  onClick={() => void respondReturn(true)}
+                >
+                  {returnSubmitting ? "…" : "Approve return request"}
+                </button>
+                <button
+                  type="button"
+                  className={styles.disputeOpenBtn}
+                  disabled={returnSubmitting}
+                  onClick={() => void respondReturn(false)}
+                >
+                  {returnSubmitting ? "…" : "Decline"}
+                </button>
+              </div>
+            ) : (
               <button
                 type="button"
                 className={styles.confirmBtn}
                 disabled={returnSubmitting}
-                onClick={() => void respondReturn(true)}
+                onClick={() => void confirmReturnReceived()}
               >
-                {returnSubmitting ? "…" : "Agree & refund buyer"}
+                {returnSubmitting ? "Confirming..." : "Confirm item received & refund"}
               </button>
-              <button
-                type="button"
-                className={styles.disputeOpenBtn}
-                disabled={returnSubmitting}
-                onClick={() => void respondReturn(false)}
-              >
-                {returnSubmitting ? "…" : "Decline"}
-              </button>
-            </div>
+            )}
           </div>
         )}
 
         {/* Buyer: return / refund first (replaces direct dispute while delivered) */}
         {isBuyer && order.status === "delivered" && !dispute && (
-          <div className={styles.section}>
+          <div className={styles.section} id="return-refund-section">
             <div className={styles.sectionTitle}>↩️ Return / refund</div>
             {order.return_request?.status === "pending_seller" ? (
               <>
@@ -884,6 +1149,60 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 >
                   {returnSubmitting ? "Withdrawing..." : "↩ Withdraw request"}
                 </button>
+              </>
+            ) : order.return_request?.status === "seller_approved_return" ? (
+              <>
+                <div className={styles.disputeNote}>
+                  Seller approved your return request. Ship item back and submit return tracking below
+                  {order.return_request.buyer_return_deadline
+                    ? ` before ${new Date(order.return_request.buyer_return_deadline).toLocaleString()}`
+                    : ""}.
+                </div>
+                <div className={styles.trackingInputWrap}>
+                  <input
+                    className={styles.input}
+                    placeholder="Return courier (e.g. J&T, PosLaju, DHL)"
+                    value={buyerReturnTrackingCarrier}
+                    onChange={(e) => setBuyerReturnTrackingCarrier(e.target.value)}
+                  />
+                  <input
+                    className={styles.input}
+                    placeholder="Return tracking number"
+                    value={buyerReturnTrackingNumber}
+                    onChange={(e) => setBuyerReturnTrackingNumber(e.target.value)}
+                  />
+                </div>
+                <textarea
+                  className={styles.input}
+                  rows={2}
+                  placeholder="Optional note to seller"
+                  value={buyerReturnNote}
+                  onChange={(e) => setBuyerReturnNote(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className={styles.confirmBtn}
+                  disabled={returnSubmitting || !buyerReturnTrackingNumber.trim()}
+                  onClick={() => void submitBuyerReturnShipment()}
+                >
+                  {returnSubmitting ? "Submitting..." : "Submit return shipment"}
+                </button>
+              </>
+            ) : order.return_request?.status === "buyer_return_shipped" ? (
+              <>
+                <div className={styles.disputeNote}>
+                  Return shipment submitted. Seller will confirm receipt, then refund is released from escrow.
+                </div>
+                <div className={styles.infoBox} style={{ marginBottom: 10 }}>
+                  <div className={styles.infoRow}>
+                    <span>Return courier</span>
+                    <strong>{order.return_request.buyer_return_tracking_carrier || "Not provided"}</strong>
+                  </div>
+                  <div className={styles.infoRow}>
+                    <span>Return tracking</span>
+                    <strong>{order.return_request.buyer_return_tracking_number || "—"}</strong>
+                  </div>
+                </div>
               </>
             ) : order.return_request?.status === "seller_rejected" ? (
               <>
@@ -903,21 +1222,21 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     </div>
                     <div className={styles.disputeMetaGrid}>
                       <div className={styles.formField}>
-                        <label className={styles.formLabel}>Issue Category</label>
+                        <label className={styles.formLabel}>Reason for refund</label>
                         <select
                           className={styles.input}
                           value={disputeCategory}
                           onChange={(e) => setDisputeCategory(e.target.value)}
                         >
-                          <option value="delivery_issue">Delivery issue</option>
-                          <option value="item_not_as_described">Item not as described</option>
-                          <option value="damaged_item">Damaged item</option>
-                          <option value="wrong_item">Wrong item</option>
+                          <option value="delivery_issue">Did not receive / delivery problem</option>
+                          <option value="damaged_item">Item arrived damaged</option>
+                          <option value="wrong_item">Wrong item sent</option>
+                          <option value="item_not_as_described">Not as described</option>
                           <option value="other">Other</option>
                         </select>
                       </div>
                       <div className={styles.formField}>
-                        <label className={styles.formLabel}>Preferred Outcome</label>
+                        <label className={styles.formLabel}>Preferred resolution</label>
                         <select
                           className={styles.input}
                           value={disputeExpectedOutcome}
@@ -931,7 +1250,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       </div>
                     </div>
                     <div className={styles.formField}>
-                      <label className={styles.formLabel}>Incident Date (optional)</label>
+                      <label className={styles.formLabel}>Incident date (optional)</label>
                       <input
                         className={styles.input}
                         type="date"
@@ -947,7 +1266,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       onChange={(e) => setDisputeReason(e.target.value)}
                     />
                     <div className={styles.formField}>
-                      <label className={styles.formLabel}>Evidence Photos (up to 6)</label>
+                      <label className={styles.formLabel}>Photos (up to 6 — strongly recommended)</label>
                       <div
                         className={`${styles.dropZone} ${dragOverEvidence ? styles.dropZoneActive : ""}`}
                         onDragOver={(e) => {
@@ -1010,33 +1329,33 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             ) : (
               <>
                 <div className={styles.disputeNote}>
-                  Ask the seller for a refund first. If they decline, you can request platform review. This helps
-                  resolve issues quickly and reduces mistaken claims.
+                  Use the steps above as a guide: submit your request here, wait for the seller, then escalate only if
+                  needed. Clear photos speed up decisions.
                 </div>
                 {!showReturnForm ? (
                   <button type="button" className={styles.disputeOpenBtn} onClick={() => setShowReturnForm(true)}>
-                    Request return / refund
+                    Fill in return / refund form
                   </button>
                 ) : (
                   <>
                     <div className={styles.disputeMetaGrid}>
                       <div className={styles.formField}>
-                        <label className={styles.formLabel}>Issue Category</label>
+                        <label className={styles.formLabel}>Reason for refund</label>
                         <select
                           className={styles.input}
                           value={disputeCategory}
                           onChange={(e) => setDisputeCategory(e.target.value)}
                         >
-                          <option value="delivery_issue">Delivery issue</option>
-                          <option value="item_not_as_described">Item not as described</option>
-                          <option value="damaged_item">Damaged item</option>
-                          <option value="wrong_item">Wrong item</option>
+                          <option value="delivery_issue">Did not receive / delivery problem</option>
+                          <option value="damaged_item">Item arrived damaged</option>
+                          <option value="wrong_item">Wrong item sent</option>
+                          <option value="item_not_as_described">Not as described</option>
                           <option value="other">Other</option>
                         </select>
                       </div>
                     </div>
                     <div className={styles.formField}>
-                      <label className={styles.formLabel}>Incident Date (optional)</label>
+                      <label className={styles.formLabel}>Incident date (optional)</label>
                       <input
                         className={styles.input}
                         type="date"
@@ -1047,12 +1366,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     <textarea
                       className={styles.input}
                       rows={4}
-                      placeholder="Describe the problem clearly..."
+                      placeholder="Describe the problem clearly (product condition, what you expected, etc.)..."
                       value={disputeReason}
                       onChange={(e) => setDisputeReason(e.target.value)}
                     />
                     <div className={styles.formField}>
-                      <label className={styles.formLabel}>Photos (up to 6, recommended)</label>
+                      <label className={styles.formLabel}>Photos (up to 6 — strongly recommended)</label>
                       <div
                         className={`${styles.dropZone} ${dragOverEvidence ? styles.dropZoneActive : ""}`}
                         onDragOver={(e) => {
@@ -1126,7 +1445,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         {(order.status === "delivered" || order.status === "disputed") &&
           isSeller &&
           !dispute &&
-          order.return_request?.status !== "pending_seller" && (
+          !["pending_seller", "seller_approved_return", "buyer_return_shipped"].includes(
+            String(order.return_request?.status ?? "")
+          ) && (
           <div className={styles.section}>
             <div className={styles.sectionTitle}>⚠️ Open a case</div>
             <div className={styles.disputeNote}>If you need platform help on this order, open a case with details.</div>
@@ -1138,17 +1459,17 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               <>
                 <div className={styles.disputeMetaGrid}>
                   <div className={styles.formField}>
-                    <label className={styles.formLabel}>Issue Category</label>
+                    <label className={styles.formLabel}>Reason</label>
                     <select className={styles.input} value={disputeCategory} onChange={(e) => setDisputeCategory(e.target.value)}>
-                      <option value="delivery_issue">Delivery issue</option>
-                      <option value="item_not_as_described">Item not as described</option>
-                      <option value="damaged_item">Damaged item</option>
-                      <option value="wrong_item">Wrong item</option>
+                      <option value="delivery_issue">Did not receive / delivery problem</option>
+                      <option value="damaged_item">Item arrived damaged</option>
+                      <option value="wrong_item">Wrong item sent</option>
+                      <option value="item_not_as_described">Not as described</option>
                       <option value="other">Other</option>
                     </select>
                   </div>
                   <div className={styles.formField}>
-                    <label className={styles.formLabel}>Preferred Outcome</label>
+                    <label className={styles.formLabel}>Preferred resolution</label>
                     <select
                       className={styles.input}
                       value={disputeExpectedOutcome}
@@ -1160,7 +1481,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   </div>
                 </div>
                 <div className={styles.formField}>
-                  <label className={styles.formLabel}>Incident Date (optional)</label>
+                  <label className={styles.formLabel}>Incident date (optional)</label>
                   <input
                     className={styles.input}
                     type="date"
@@ -1256,8 +1577,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     : "✅ Payment Released to Seller"}
               </div>
               <div className={styles.disputeReasoning}>{disputeResult?.reasoning ?? dispute?.ai_reasoning}</div>
-              {(disputeResult?.confidence ?? dispute?.ai_confidence) && (
-                <div className={styles.disputeConfidence}>Confidence: {Math.round((disputeResult?.confidence ?? dispute?.ai_confidence) * 100)}%</div>
+              {(disputeResult?.confidence ?? dispute?.ai_confidence) != null && (
+                <div className={styles.disputeConfidence}>
+                  Estimated clarity: {Math.round((disputeResult?.confidence ?? dispute?.ai_confidence) * 100)}%
+                </div>
               )}
               {!!dispute?.evidence?.length && (
                 <div className={styles.resultEvidenceWrap}>

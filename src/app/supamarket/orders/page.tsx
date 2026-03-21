@@ -26,6 +26,21 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string }> 
 };
 
 const PAGE_SIZE = 10;
+
+function returnBadgeCopy(
+  badge: { status?: string } | null | undefined,
+  tab: "buying" | "selling"
+): string | null {
+  if (!badge?.status) return null;
+  const s = badge.status;
+  if (s === "pending_seller") return tab === "selling" ? "Review return" : "Return pending";
+  if (s === "seller_approved_return") return tab === "selling" ? "Wait buyer return" : "Ship return item";
+  if (s === "buyer_return_shipped") return tab === "selling" ? "Confirm return received" : "Return in transit";
+  if (s === "seller_rejected") return tab === "selling" ? "Return declined" : "Next: platform review";
+  if (s === "escalated") return "Case in review";
+  return null;
+}
+
 const STATUS_CLASS: Record<string, string> = {
   pending: "statusPending",
   escrow: "statusPaid",
@@ -131,6 +146,7 @@ export default function OrdersPage() {
               const listing = order.listing;
               const other   = tab === "buying" ? order.seller : order.buyer;
               const statusClass = STATUS_CLASS[order.status] ?? STATUS_CLASS.pending;
+              const returnNote = returnBadgeCopy(order.return_badge, tab);
               return (
                 <Link key={order.id} href={`/supamarket/orders/${order.id}`} className={styles.orderRow}>
                   <div className={styles.orderImg}>
@@ -146,6 +162,11 @@ export default function OrdersPage() {
                       <span className={`${styles.orderStatus} ${styles[statusClass]}`} aria-label={`Status ${meta.label}`}>
                         {meta.label}
                       </span>
+                      {returnNote ? (
+                        <span className={styles.returnBadge} aria-label={returnNote}>
+                          {returnNote}
+                        </span>
+                      ) : null}
                     </div>
                     <div className={styles.orderSub}>
                       {tab === "buying" ? "Seller" : "Buyer"}: @{other?.username} · {timeAgo(order.created_at)}

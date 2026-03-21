@@ -56,7 +56,33 @@ export async function GET(req: NextRequest) {
 
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     const normalized = (data ?? []).map((o) => normalizePaidStatus(o));
-    return NextResponse.json({ success: true, data: normalized });
+
+    const orderIds = normalized.map((o: { id: string }) => String(o.id)).filter(Boolean);
+    const returnByOrder = new Map<string, { status: string; created_at: string }>();
+    if (orderIds.length) {
+      const { data: rrs } = await supabase
+        .from("market_return_requests")
+        .select("order_id, status, created_at")
+        .in("order_id", orderIds);
+      for (const rr of rrs ?? []) {
+        const oid = String((rr as { order_id: string }).order_id);
+        const prev = returnByOrder.get(oid);
+        const created = String((rr as { created_at: string }).created_at);
+        if (!prev || new Date(created) > new Date(prev.created_at)) {
+          returnByOrder.set(oid, { status: String((rr as { status: string }).status), created_at: created });
+        }
+      }
+    }
+
+    const withReturn = normalized.map((o: Record<string, unknown> & { id: string }) => {
+      const rr = returnByOrder.get(String(o.id));
+      return {
+        ...o,
+        return_badge: rr && ["pending_seller", "seller_approved_return", "buyer_return_shipped", "seller_rejected", "escalated"].includes(rr.status) ? rr : null,
+      };
+    });
+
+    return NextResponse.json({ success: true, data: withReturn });
   } catch {
     return NextResponse.json({ success: false }, { status: 500 });
   }

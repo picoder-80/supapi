@@ -3,7 +3,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyToken } from "@/lib/auth/jwt";
-import { refundMarketOrderEscrow } from "@/lib/market/refund-market-order";
 import * as R from "@/lib/api";
 
 type Params = { params: Promise<{ id: string }> };
@@ -53,26 +52,27 @@ export async function POST(req: NextRequest, { params }: Params) {
     const now = new Date().toISOString();
 
     if (accept) {
-      const refund = await refundMarketOrderEscrow(supabase, orderId);
-      if (!refund.ok) {
-        return withCors(NextResponse.json({ success: false, error: refund.error }, { status: 500 }), req);
-      }
+      const buyerReturnHours = Math.min(
+        336,
+        Math.max(24, parseInt(process.env.MARKET_RETURN_BUYER_SHIP_HOURS ?? "120", 10) || 120)
+      );
+      const buyerDeadlineIso = new Date(Date.now() + buyerReturnHours * 3600_000).toISOString();
       const { error: rErr } = await supabase
         .from("market_return_requests")
         .update({
-          status: "refunded",
+          status: "seller_approved_return",
           seller_note: note || null,
           seller_responded_at: now,
+          buyer_return_deadline: buyerDeadlineIso,
           updated_at: now,
         })
         .eq("id", rr.id);
       if (rErr) return withCors(NextResponse.json({ success: false, error: rErr.message }, { status: 500 }), req);
 
-      const { data: orderRow } = await supabase.from("orders").select("*").eq("id", orderId).single();
       return withCors(
         NextResponse.json({
           success: true,
-          data: { order: orderRow, return_request_status: "refunded" },
+          data: { return_request_status: "seller_approved_return", buyer_return_deadline: buyerDeadlineIso },
         }),
         req
       );

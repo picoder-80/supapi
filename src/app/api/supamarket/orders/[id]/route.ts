@@ -149,19 +149,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         return withCors(NextResponse.json({ success: false, error: `Cannot move from ${effectiveStatus} to ${newStatus}` }, { status: 400 }), req);
 
       if (newStatus === "completed" && isBuyer) {
-        const { data: pendRr, error: pendErr } = await supabase
+        const { data: activeRr, error: activeErr } = await supabase
           .from("market_return_requests")
-          .select("id")
+          .select("id, status")
           .eq("order_id", id)
-          .eq("status", "pending_seller")
+          .in("status", ["pending_seller", "seller_approved_return", "buyer_return_shipped"])
           .maybeSingle();
-        if (!pendErr && pendRr) {
+        if (!activeErr && activeRr) {
           return withCors(
             NextResponse.json(
               {
                 success: false,
                 error:
-                  "Withdraw or wait for the seller to respond to your return request before completing the order.",
+                  "Finish your active return request before completing this order.",
               },
               { status: 400 }
             ),
