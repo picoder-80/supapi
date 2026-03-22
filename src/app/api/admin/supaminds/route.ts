@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { hasAdminPermission } from "@/lib/admin/permissions";
+import { getAIProviderRuntimeAlerts } from "@/lib/ai/platform-assistant";
 
 export async function GET(req: NextRequest) {
   const auth = await verifyAdmin(req.headers.get("authorization"));
@@ -78,6 +79,24 @@ export async function GET(req: NextRequest) {
     const topupRows = topups ?? [];
     const topupPromptsSold = topupRows.reduce((acc: number, t: any) => acc + Number(t.prompts_total ?? 0), 0);
     const topupPromptsRemaining = topupRows.reduce((acc: number, t: any) => acc + Number(t.prompts_remaining ?? 0), 0);
+    const { data: dbAlerts } = await supabase
+      .from("mind_ai_provider_alerts")
+      .select("provider, level, message, remaining_requests, request_limit, remaining_pct, reset_at, created_at")
+      .order("created_at", { ascending: false })
+      .limit(40);
+    const runtimeAlerts = getAIProviderRuntimeAlerts();
+    const aiRuntimeAlerts = (dbAlerts ?? []).length
+      ? (dbAlerts ?? []).map((a: any) => ({
+          provider: String(a.provider ?? "unknown"),
+          level: String(a.level ?? "warn"),
+          message: String(a.message ?? ""),
+          remaining_requests: a.remaining_requests ?? null,
+          request_limit: a.request_limit ?? null,
+          remaining_pct: a.remaining_pct ?? null,
+          reset_at: a.reset_at ?? null,
+          last_seen_at: a.created_at,
+        }))
+      : runtimeAlerts;
 
     return NextResponse.json({
       success: true,
@@ -100,6 +119,7 @@ export async function GET(req: NextRequest) {
         plans: plans ?? [],
         usage: usageCurrent.slice(0, 200),
         topups: topupRows.slice(0, 120),
+        ai_runtime_alerts: aiRuntimeAlerts,
       },
     });
   } catch (e: any) {

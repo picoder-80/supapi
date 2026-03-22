@@ -4,6 +4,7 @@ import { verifyToken } from "@/lib/auth/jwt";
 import { analyzeDispute, shouldAutoResolveDispute } from "@/lib/market/ai";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { logDisputeEvent } from "@/lib/security/dispute-audit";
+import { issueBuyerRefundFromTreasury } from "@/lib/pi/refund";
 
 // POST — open dispute and run AI auto-check
 export async function POST(req: NextRequest) {
@@ -144,17 +145,42 @@ export async function POST(req: NextRequest) {
     });
 
     const autoPolicy = shouldAutoResolveDispute(analysis.confidence, Number(order.amount_pi ?? 0));
-    const autoResolve = autoPolicy.ok;
     const newOrderStatus = analysis.decision === "refund" ? "refunded" : "completed";
+
+    let effectiveAutoResolve = autoPolicy.ok;
+    if (effectiveAutoResolve && newOrderStatus === "refunded") {
+      const amountPi = Number(order.amount_pi ?? 0);
+      const { data: buyerRow } = await supabase.from("users").select("pi_uid").eq("id", order.buyer_id).maybeSingle();
+      const buyerUid = String(buyerRow?.pi_uid ?? "").trim();
+      if (!buyerUid || !Number.isFinite(amountPi) || amountPi <= 0) {
+        effectiveAutoResolve = false;
+      } else {
+        try {
+          await issueBuyerRefundFromTreasury({
+            buyerUid,
+            amountPi,
+            memo: `Supapi dispute auto-refund #${String(dispute?.id).slice(0, 8)}`,
+            metadata: {
+              dispute_id: String(dispute?.id ?? ""),
+              order_id: order_id,
+              reason: "dispute_auto_refund",
+            },
+          });
+        } catch (e) {
+          console.error("[market dispute] Auto refund payout failed; keeping dispute open:", e);
+          effectiveAutoResolve = false;
+        }
+      }
+    }
 
     const { error: disputeAiUpdateErr } = await supabase
       .from("disputes")
       .update({
-        status: autoResolve ? "resolved" : "open",
+        status: effectiveAutoResolve ? "resolved" : "open",
         ai_decision: analysis.decision,
         ai_reasoning: analysis.reasoning,
         ai_confidence: analysis.confidence,
-        resolved_at: autoResolve ? new Date().toISOString() : null,
+        resolved_at: effectiveAutoResolve ? new Date().toISOString() : null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", dispute?.id);
@@ -169,14 +195,14 @@ export async function POST(req: NextRequest) {
       actorId: null,
       eventType: "analysis_updated",
       fromStatus: "disputed",
-      toStatus: autoResolve ? "resolved" : "open",
+      toStatus: effectiveAutoResolve ? "resolved" : "open",
       decision: analysis.decision,
       confidence: analysis.confidence,
       reasonExcerpt: analysis.reasoning,
       metadata: { auto_resolve_reason: autoPolicy.reason },
     });
 
-    if (autoResolve) {
+    if (effectiveAutoResolve) {
       const { error: autoOrderUpdateErr } = await supabase.from("orders").update({
         status: newOrderStatus,
         updated_at: new Date().toISOString(),
@@ -198,6 +224,14 @@ export async function POST(req: NextRequest) {
         reasonExcerpt: analysis.reasoning,
         metadata: { auto_resolve_reason: autoPolicy.reason },
       });
+
+      if (newOrderStatus === "refunded") {
+        await supabase
+          .from("transactions")
+          .update({ status: "refunded" })
+          .eq("reference_id", order_id)
+          .eq("status", "completed");
+      }
 
       // Escrow handling when auto-resolved
       if (newOrderStatus === "completed") {
@@ -249,9 +283,9 @@ export async function POST(req: NextRequest) {
         decision: analysis.decision,
         reasoning: analysis.reasoning,
         confidence: analysis.confidence,
-        auto_resolved: autoResolve,
+        auto_resolved: effectiveAutoResolve,
         auto_resolve_reason: autoPolicy.reason,
-        order_status: autoResolve ? newOrderStatus : "disputed",
+        order_status: effectiveAutoResolve ? newOrderStatus : "disputed",
       }
     });
   } catch {

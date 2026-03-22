@@ -176,6 +176,56 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         return withCors(NextResponse.json({ success: false, error: "Only buyer can perform this action" }, { status: 403 }), req);
       if (actor === "seller" && !isSeller)
         return withCors(NextResponse.json({ success: false, error: "Only seller can perform this action" }, { status: 403 }), req);
+
+      // Shipping: courier + tracking required before "shipped" (ship / both — not meetup-only)
+      if (newStatus === "shipped" && isSeller) {
+        const method = String((order as { buying_method?: string }).buying_method ?? "");
+        if (method === "ship" || method === "both") {
+          const mergedTn =
+            typeof tracking_number === "string" && tracking_number.trim()
+              ? tracking_number.trim()
+              : String((order as { tracking_number?: string | null }).tracking_number ?? "").trim();
+          const mergedTc =
+            typeof tracking_carrier === "string" && tracking_carrier.trim()
+              ? tracking_carrier.trim()
+              : String((order as { tracking_carrier?: string | null }).tracking_carrier ?? "").trim();
+          if (!mergedTn || !mergedTc) {
+            return withCors(
+              NextResponse.json(
+                {
+                  success: false,
+                  error:
+                    "Courier company and tracking number are required before marking this order as shipped.",
+                },
+                { status: 400 }
+              ),
+              req
+            );
+          }
+        }
+      }
+
+      if (newStatus === "meetup_set" && isSeller) {
+        const method = String((order as { buying_method?: string }).buying_method ?? "");
+        if (method === "meetup" || method === "both") {
+          const mergedLoc =
+            typeof meetup_location === "string" && meetup_location.trim()
+              ? meetup_location.trim()
+              : String((order as { meetup_location?: string | null }).meetup_location ?? "").trim();
+          if (!mergedLoc) {
+            return withCors(
+              NextResponse.json(
+                {
+                  success: false,
+                  error: "Meetup location is required before confirming meetup.",
+                },
+                { status: 400 }
+              ),
+              req
+            );
+          }
+        }
+      }
     }
 
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };

@@ -57,6 +57,27 @@ function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
 function fmt(iso: string) {
   return new Date(iso).toLocaleDateString("en-MY", { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
 }
+function CopyPasteIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
 function extractEvidenceUrls(input: unknown): string[] {
   if (!input) return [];
   const list = Array.isArray(input)
@@ -103,6 +124,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [buyerReturnTrackingCarrier, setBuyerReturnTrackingCarrier] = useState("");
   const [buyerReturnNote, setBuyerReturnNote] = useState("");
   const [msg, setMsg]             = useState("");
+  const [copiedTrackingKey, setCopiedTrackingKey] = useState<string | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
@@ -134,6 +156,20 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   };
 
   useEffect(() => { if (user) fetchOrder(); }, [user, id]);
+
+  const copyTrackingToClipboard = async (text: string, key: string) => {
+    const t = String(text ?? "").trim();
+    if (!t) return;
+    try {
+      await navigator.clipboard.writeText(t);
+      setCopiedTrackingKey(key);
+      window.setTimeout(() => {
+        setCopiedTrackingKey((k) => (k === key ? null : k));
+      }, 1800);
+    } catch {
+      setMsg("Could not copy to clipboard");
+    }
+  };
 
   const updateStatus = async (newStatus: string, extra?: Record<string, string>) => {
     const token = localStorage.getItem("supapi_token");
@@ -798,7 +834,23 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     <span>Tracking</span>
                     <span className={styles.trackingCell}>
                       {order.tracking_carrier && <span className={styles.trackingCarrier}>{order.tracking_carrier}</span>}
-                      <strong className={styles.tracking}>{order.tracking_number}</strong>
+                      <span className={styles.trackingWithCopy}>
+                        <strong className={styles.tracking}>{order.tracking_number}</strong>
+                        <button
+                          type="button"
+                          className={styles.copyTrackingBtn}
+                          onClick={() => void copyTrackingToClipboard(order.tracking_number, "outbound")}
+                          aria-label="Copy tracking number"
+                          title="Copy tracking number"
+                        >
+                          <CopyPasteIcon />
+                        </button>
+                        {copiedTrackingKey === "outbound" ? (
+                          <span className={styles.copiedHint} role="status">
+                            Copied
+                          </span>
+                        ) : null}
+                      </span>
                     </span>
                   </div>
                 )}
@@ -829,8 +881,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         {/* Seller actions */}
         {isSeller && (order.status === "paid" || order.status === "escrow") && (
           <div className={styles.section}>
-            <div className={styles.sectionTitle}>{order.buying_method === "ship" ? "📦 Ship This Order" : "📍 Arrange Meetup"}</div>
-            {order.buying_method === "ship" ? (
+            <div className={styles.sectionTitle}>
+              {order.buying_method === "ship"
+                ? "📦 Ship This Order"
+                : order.buying_method === "both"
+                  ? "📦 Delivery or meetup"
+                  : "📍 Arrange Meetup"}
+            </div>
+            {(order.buying_method === "ship" || order.buying_method === "both") ? (
               <>
                 <div className={styles.trackingInputWrap}>
                   <input
@@ -838,38 +896,70 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     placeholder="Courier company (e.g. DHL, FedEx, J&T Express, Ninja Van)"
                     value={courierInput}
                     onChange={e => setCourierInput(e.target.value)}
+                    required
+                    aria-required
                   />
                   <input
                     className={styles.input}
                     placeholder="Tracking number"
                     value={trackingInput}
                     onChange={e => setTrackingInput(e.target.value)}
+                    required
+                    aria-required
                   />
                   <div className={styles.trackingHint}>
-                    Add the courier name if you know it — the buyer will use it with the tracking number on the carrier&apos;s site.
+                    Both courier name and tracking number are required — the buyer will use them on the carrier&apos;s site.
                   </div>
                 </div>
                 <button className={styles.actionBtn} disabled={updating}
                   onClick={() => {
-                    const extra: Record<string, string> = {
-                      tracking_number: trackingInput.trim(),
-                    };
-                    if (courierInput.trim()) extra.tracking_carrier = courierInput.trim();
-                    updateStatus("shipped", extra);
+                    const tn = trackingInput.trim();
+                    const tc = courierInput.trim();
+                    if (!tn || !tc) {
+                      setMsg("Please enter courier company and tracking number.");
+                      return;
+                    }
+                    updateStatus("shipped", { tracking_number: tn, tracking_carrier: tc });
                   }}>
                   {updating ? "Updating..." : "Mark as Shipped 📦"}
                 </button>
               </>
-            ) : (
+            ) : null}
+            {order.buying_method === "meetup" ? (
               <>
                 <input className={styles.input} placeholder="Confirm meetup location"
                   value={meetupInput} onChange={e => setMeetupInput(e.target.value)} />
                 <button className={styles.actionBtn} disabled={updating}
-                  onClick={() => updateStatus("meetup_set", { meetup_location: meetupInput })}>
+                  onClick={() => {
+                    const loc = meetupInput.trim();
+                    if (!loc) {
+                      setMsg("Please enter a meetup location.");
+                      return;
+                    }
+                    updateStatus("meetup_set", { meetup_location: loc });
+                  }}>
                   {updating ? "Updating..." : "Confirm Meetup 📍"}
                 </button>
               </>
-            )}
+            ) : null}
+            {order.buying_method === "both" ? (
+              <>
+                <div className={styles.sectionTitle} style={{ marginTop: 16 }}>📍 Or arrange meetup</div>
+                <input className={styles.input} placeholder="Confirm meetup location"
+                  value={meetupInput} onChange={e => setMeetupInput(e.target.value)} />
+                <button className={styles.actionBtn} disabled={updating}
+                  onClick={() => {
+                    const loc = meetupInput.trim();
+                    if (!loc) {
+                      setMsg("Please enter a meetup location.");
+                      return;
+                    }
+                    updateStatus("meetup_set", { meetup_location: loc });
+                  }}>
+                  {updating ? "Updating..." : "Confirm Meetup 📍"}
+                </button>
+              </>
+            ) : null}
           </div>
         )}
 
@@ -1084,7 +1174,32 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
                 <div className={styles.infoRow}>
                   <span>Return tracking</span>
-                  <strong>{order.return_request.buyer_return_tracking_number || "—"}</strong>
+                  <span className={styles.trackingWithCopy}>
+                    <strong className={styles.tracking}>
+                      {order.return_request.buyer_return_tracking_number || "—"}
+                    </strong>
+                    {order.return_request.buyer_return_tracking_number ? (
+                      <>
+                        <button
+                          type="button"
+                          className={styles.copyTrackingBtn}
+                          onClick={() => {
+                            const n = order.return_request?.buyer_return_tracking_number;
+                            if (n) void copyTrackingToClipboard(n, "return-seller");
+                          }}
+                          aria-label="Copy return tracking number"
+                          title="Copy return tracking number"
+                        >
+                          <CopyPasteIcon />
+                        </button>
+                        {copiedTrackingKey === "return-seller" ? (
+                          <span className={styles.copiedHint} role="status">
+                            Copied
+                          </span>
+                        ) : null}
+                      </>
+                    ) : null}
+                  </span>
                 </div>
                 {order.return_request.buyer_return_note ? (
                   <div className={styles.infoRow}>
@@ -1207,7 +1322,32 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   </div>
                   <div className={styles.infoRow}>
                     <span>Return tracking</span>
-                    <strong>{order.return_request.buyer_return_tracking_number || "—"}</strong>
+                    <span className={styles.trackingWithCopy}>
+                      <strong className={styles.tracking}>
+                        {order.return_request.buyer_return_tracking_number || "—"}
+                      </strong>
+                      {order.return_request.buyer_return_tracking_number ? (
+                        <>
+                          <button
+                            type="button"
+                            className={styles.copyTrackingBtn}
+                            onClick={() => {
+                              const n = order.return_request?.buyer_return_tracking_number;
+                              if (n) void copyTrackingToClipboard(n, "return-buyer");
+                            }}
+                            aria-label="Copy return tracking number"
+                            title="Copy return tracking number"
+                          >
+                            <CopyPasteIcon />
+                          </button>
+                          {copiedTrackingKey === "return-buyer" ? (
+                            <span className={styles.copiedHint} role="status">
+                              Copied
+                            </span>
+                          ) : null}
+                        </>
+                      ) : null}
+                    </span>
                   </div>
                 </div>
               </>

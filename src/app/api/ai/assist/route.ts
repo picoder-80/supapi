@@ -9,6 +9,8 @@ import {
   getPlatformAIStatus,
   normalizeAssistantMode,
   runPlatformAssistant,
+  getAIProviderRuntimeAlert,
+  type AIProviderName,
   type AssistantMode,
   type PlatformKey,
 } from "@/lib/ai/platform-assistant";
@@ -44,6 +46,7 @@ type GuardrailProfile = {
   maxTokens: number;
   answerWordLimit: number;
 };
+const lastPersistedAlertAt: Partial<Record<AIProviderName, string>> = {};
 
 function stripProviderTag(text: string): string {
   return String(text ?? "")
@@ -254,6 +257,29 @@ async function writeMemory(params: {
   }
 }
 
+async function persistProviderAlertIfAny(provider: string) {
+  const p = String(provider ?? "").toLowerCase() as AIProviderName;
+  if (!["anthropic", "openai", "heuristic"].includes(p)) return;
+  const alert = getAIProviderRuntimeAlert(p);
+  if (!alert?.last_seen_at || lastPersistedAlertAt[p] === alert.last_seen_at) return;
+  lastPersistedAlertAt[p] = alert.last_seen_at;
+  try {
+    await supabase.from("mind_ai_provider_alerts").insert({
+      provider: alert.provider,
+      level: alert.level,
+      message: alert.message,
+      remaining_requests: alert.remaining_requests ?? null,
+      request_limit: alert.request_limit ?? null,
+      remaining_pct: alert.remaining_pct ?? null,
+      reset_at: alert.reset_at ?? null,
+      source: "runtime",
+      created_at: alert.last_seen_at,
+    });
+  } catch {
+    // ignore alert persistence failure
+  }
+}
+
 export async function GET(req: NextRequest) {
   const userId = getUserId(req);
   const status = getPlatformAIStatus();
@@ -337,6 +363,7 @@ export async function POST(req: NextRequest) {
     const cleanAnswer = stripProviderTag(result.answer);
     const preset = getPlatformAIPreset(platform);
     const memoryPlatform = isSupaMindsChat ? "supaminds" : platform;
+    await persistProviderAlertIfAny(result.provider);
 
     if (userId && result.ok && cleanAnswer) {
       await writeMemory({

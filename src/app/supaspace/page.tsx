@@ -220,7 +220,7 @@ export default function MySpacePage() {
   };
 
   const handleOpenInbox = () => {
-    router.push("/supachat");
+    router.push("/supachat/dm");
   };
 
   if (isHydrating) return (

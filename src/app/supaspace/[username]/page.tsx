@@ -283,12 +283,6 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
-      {isOwnProfile && !profile?.can_receive_pi && (
-        <div className={styles.piReceiveBanner} role="alert">
-          <strong>Add your Pi wallet to receive payments.</strong> Go to <Link href="/dashboard" className={styles.piReceiveBannerLink}>Dashboard</Link> → Pi Wallet Address and add your address, or sign in with Pi again after activating your wallet.
-        </div>
-      )}
-
       {/* Profile Header — Online & @username bawah cover; actions, name, KYC, wallet, stats */}
       <div className={styles.profileHeader}>
         <div className={styles.headerBarRow}>

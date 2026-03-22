@@ -271,6 +271,44 @@
   gap: 8px;
   max-width: 70%;
 }
+.trackingWithCopy {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  max-width: 100%;
+}
+.copyTrackingBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.copyTrackingBtn:hover {
+  border-color: rgba(245, 166, 35, 0.55);
+  color: #1a1a2e;
+  background: #fffbf5;
+}
+.copyTrackingBtn:focus-visible {
+  box-shadow: var(--supa-focus-ring);
+}
+.copiedHint {
+  font-size: 10px;
+  font-weight: 700;
+  color: #059669;
+  letter-spacing: 0.02em;
+}
 .trackingCarrier {
   font-size: 10px;
   font-weight: 700;

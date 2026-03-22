@@ -126,7 +126,6 @@ export default function DashboardPage() {
     );
 
   const isAdmin = isAdminRole(user.role);
-  const walletMissing = !user.wallet_address?.trim();
   const profileDisplayName = profileSnapshot?.display_name ?? user.display_name;
   const profileBio = profileSnapshot?.bio ?? user.bio;
   const profileAvatar = profileSnapshot?.avatar_url ?? user.avatar_url;
@@ -260,21 +259,6 @@ export default function DashboardPage() {
       </div>
 
       <div className={styles.body}>
-        {walletMissing && (
-          <div className={styles.section}>
-            <div className={styles.whatsNextCard} style={{ borderColor: "rgba(245,166,35,0.5)" }}>
-              <div className={styles.whatsNextIcon}>π</div>
-              <div className={styles.whatsNextText}>
-                Add your <strong>Pi wallet address</strong> so payments, tips, and escrow payouts can reach you.
-                Edit from <strong>MySpace</strong>.
-              </div>
-              <Link href={`/supaspace/${user.username}`} className={styles.whatsNextBtn}>
-                Open MySpace →
-              </Link>
-            </div>
-          </div>
-        )}
-
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <div className={styles.sectionTitle}>Profile Completeness</div>

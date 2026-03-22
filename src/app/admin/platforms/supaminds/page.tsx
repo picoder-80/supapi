@@ -24,6 +24,13 @@ type PlanRow = {
 type InvoiceRow = { id: string; status: string; amount_usd: number; amount_pi: number; created_at: string; paid_at?: string | null };
 type UsageRow = { user_id: string; period_ym: string; plan_code: string; requests_count: number; updated_at: string };
 type TopupRow = { user_id: string; prompts_total: number; prompts_used: number; prompts_remaining: number; status: string; created_at: string };
+type ProviderAlert = {
+  provider: string;
+  level: "warn" | "info";
+  message: string;
+  last_seen_at: string;
+  remaining_pct?: number | null;
+};
 
 function toPlanLabel(code?: string): string {
   const v = String(code ?? "").trim().toLowerCase();
@@ -42,6 +49,7 @@ export default function SupaMindsAdminPage() {
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [usageRows, setUsageRows] = useState<UsageRow[]>([]);
   const [topupRows, setTopupRows] = useState<TopupRow[]>([]);
+  const [providerAlerts, setProviderAlerts] = useState<ProviderAlert[]>([]);
   const [stats, setStats] = useState<{
     total_subscriptions: number;
     active_subscriptions: number;
@@ -79,6 +87,7 @@ export default function SupaMindsAdminPage() {
       setInvoices(d.data.invoices ?? []);
       setUsageRows(d.data.usage ?? []);
       setTopupRows(d.data.topups ?? []);
+      setProviderAlerts(d.data.ai_runtime_alerts ?? []);
       setPlanPriceDraft(Object.fromEntries((d.data.plans ?? []).map((p: PlanRow) => [p.id, String(p.price_usd ?? "")])));
       setPlanLimitDraft(Object.fromEntries((d.data.plans ?? []).map((p: PlanRow) => [p.id, String(p.features?.monthly_limit ?? "")])));
     }
@@ -135,6 +144,24 @@ export default function SupaMindsAdminPage() {
           <div className={styles.card}><div className={styles.v}>${Number(stats?.est_profit_usd_current_month ?? 0).toFixed(2)} ({Number(stats?.est_margin_pct_current_month ?? 0).toFixed(1)}%)</div><div className={styles.k}>Estimated gross margin</div></div>
           <div className={styles.card}><div className={styles.v}>{Number(stats?.topup_prompts_sold ?? 0).toLocaleString()}</div><div className={styles.k}>Topup prompts sold</div></div>
           <div className={styles.card}><div className={styles.v}>{Number(stats?.topup_prompts_remaining ?? 0).toLocaleString()}</div><div className={styles.k}>Topup prompts remaining</div></div>
+        </div>
+        <div className={styles.card}>
+          <div className={styles.sectionTitle}>Provider Runtime Alerts</div>
+          {providerAlerts.length ? (
+            <div className={styles.alertList}>
+              {providerAlerts.map((a) => (
+                <div key={`${a.provider}-${a.last_seen_at}`} className={styles.alertRow}>
+                  <span className={styles.badge}>{a.provider}</span>
+                  <span className={a.level === "warn" ? styles.warnText : styles.k}>{a.message}</span>
+                  <span className={styles.k}>
+                    {a.remaining_pct != null ? `(${Number(a.remaining_pct).toFixed(1)}%)` : ""} {new Date(a.last_seen_at).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.k}>No runtime provider alerts yet.</div>
+          )}
         </div>
 
         <div className={styles.card}>

@@ -266,19 +266,6 @@
 /* ═══════════════════════════════════
    PROFILE HEADER
 ═══════════════════════════════════ */
-.piReceiveBanner {
-  background: linear-gradient(135deg, rgba(245, 166, 35, 0.15) 0%, rgba(245, 166, 35, 0.08) 100%);
-  border: 1px solid rgba(245, 166, 35, 0.4);
-  border-radius: 12px;
-  padding: 12px 16px;
-  margin: 12px 20px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #92400e;
-}
-.piReceiveBanner strong { color: #78350f; }
-.piReceiveBannerLink { color: #92400e; font-weight: 700; text-decoration: underline; }
-.piReceiveBannerLink:hover { color: #78350f; }
 
 .profileHeader {
   background: #FFFFFF;

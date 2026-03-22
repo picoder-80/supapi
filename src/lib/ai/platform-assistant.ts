@@ -1,5 +1,23 @@
 export type AIProviderName = "anthropic" | "openai" | "heuristic";
 export type AssistantMode = "assistant" | "growth" | "support" | "ops";
+type ProviderCallResult = {
+  text: string;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    total_tokens?: number;
+  };
+};
+export type AIProviderRuntimeAlert = {
+  provider: AIProviderName;
+  level: "warn" | "info";
+  message: string;
+  last_seen_at: string;
+  remaining_requests?: number | null;
+  request_limit?: number | null;
+  remaining_pct?: number | null;
+  reset_at?: string | null;
+};
 
 export type PlatformKey =
   | "about"
@@ -249,7 +267,67 @@ function getProviderOrder(): AIProviderName[] {
   return valid;
 }
 
-async function callAnthropic(prompt: string, maxTokens?: number): Promise<string | null> {
+const rateLimitWarnedState: Partial<Record<AIProviderName, string>> = {};
+const runtimeProviderAlerts: Partial<Record<AIProviderName, AIProviderRuntimeAlert>> = {};
+
+function parsePositiveNumber(input: string | null): number | null {
+  if (!input) return null;
+  const n = Number(input);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+function getWarnThresholds(): number[] {
+  const raw = process.env.AI_RATE_LIMIT_WARN_PERCENT ?? "20,10,5";
+  const parsed = raw
+    .split(",")
+    .map((s) => Number(s.trim()))
+    .filter((n) => Number.isFinite(n) && n > 0 && n < 100)
+    .sort((a, b) => b - a);
+  return parsed.length ? parsed : [20, 10, 5];
+}
+
+function maybeWarnRateLimit(params: {
+  provider: AIProviderName;
+  limitHeader: string | null;
+  remainingHeader: string | null;
+  resetHeader: string | null;
+}) {
+  const limit = parsePositiveNumber(params.limitHeader);
+  const remaining = parsePositiveNumber(params.remainingHeader);
+  if (!(limit && limit > 0) || remaining === null) return;
+  const pct = (remaining / limit) * 100;
+  const hit = getWarnThresholds().find((t) => pct <= t);
+  if (!hit) return;
+  const key = `${Math.floor(hit)}`;
+  if (rateLimitWarnedState[params.provider] === key) return;
+  rateLimitWarnedState[params.provider] = key;
+  const nowIso = new Date().toISOString();
+  const resetText = params.resetHeader ? ` reset=${params.resetHeader}` : "";
+  runtimeProviderAlerts[params.provider] = {
+    provider: params.provider,
+    level: "warn",
+    message: `Rate limit low: ${remaining}/${limit} requests left (${pct.toFixed(1)}%).`,
+    last_seen_at: nowIso,
+    remaining_requests: remaining,
+    request_limit: limit,
+    remaining_pct: Number(pct.toFixed(1)),
+    reset_at: params.resetHeader ?? null,
+  };
+  console.warn(
+    `[AI][${params.provider}] rate limit low: remaining=${remaining}/${limit} (${pct.toFixed(1)}%)${resetText}`
+  );
+}
+
+export function getAIProviderRuntimeAlerts(): AIProviderRuntimeAlert[] {
+  const list = Object.values(runtimeProviderAlerts).filter(Boolean) as AIProviderRuntimeAlert[];
+  return list.sort((a, b) => String(b.last_seen_at).localeCompare(String(a.last_seen_at)));
+}
+
+export function getAIProviderRuntimeAlert(provider: AIProviderName): AIProviderRuntimeAlert | null {
+  return runtimeProviderAlerts[provider] ?? null;
+}
+
+async function callAnthropic(prompt: string, maxTokens?: number): Promise<ProviderCallResult | null> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return null;
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -266,12 +344,38 @@ async function callAnthropic(prompt: string, maxTokens?: number): Promise<string
       messages: [{ role: "user", content: prompt }],
     }),
   });
-  if (!res.ok) return null;
+  maybeWarnRateLimit({
+    provider: "anthropic",
+    limitHeader: res.headers.get("anthropic-ratelimit-requests-limit"),
+    remainingHeader: res.headers.get("anthropic-ratelimit-requests-remaining"),
+    resetHeader: res.headers.get("anthropic-ratelimit-requests-reset"),
+  });
+  if (!res.ok) {
+    if (res.status === 429) {
+      runtimeProviderAlerts.anthropic = {
+        provider: "anthropic",
+        level: "warn",
+        message: "Provider rate limited (429). Check billing/limits.",
+        last_seen_at: new Date().toISOString(),
+      };
+      console.warn("[AI][anthropic] rate limited (429). Check usage/billing dashboard.");
+    }
+    return null;
+  }
   const data = await res.json();
-  return data?.content?.[0]?.text ?? null;
+  const text = String(data?.content?.[0]?.text ?? "");
+  if (!text) return null;
+  return {
+    text,
+    usage: {
+      input_tokens: Number(data?.usage?.input_tokens ?? 0),
+      output_tokens: Number(data?.usage?.output_tokens ?? 0),
+      total_tokens: Number(data?.usage?.input_tokens ?? 0) + Number(data?.usage?.output_tokens ?? 0),
+    },
+  };
 }
 
-async function callOpenAI(prompt: string, maxTokens?: number): Promise<string | null> {
+async function callOpenAI(prompt: string, maxTokens?: number): Promise<ProviderCallResult | null> {
   const key = process.env.OPENAI_API_KEY;
   if (!key) return null;
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -288,9 +392,35 @@ async function callOpenAI(prompt: string, maxTokens?: number): Promise<string | 
       response_format: { type: "json_object" },
     }),
   });
-  if (!res.ok) return null;
+  maybeWarnRateLimit({
+    provider: "openai",
+    limitHeader: res.headers.get("x-ratelimit-limit-requests"),
+    remainingHeader: res.headers.get("x-ratelimit-remaining-requests"),
+    resetHeader: res.headers.get("x-ratelimit-reset-requests"),
+  });
+  if (!res.ok) {
+    if (res.status === 429) {
+      runtimeProviderAlerts.openai = {
+        provider: "openai",
+        level: "warn",
+        message: "Provider rate limited (429). Check billing/limits.",
+        last_seen_at: new Date().toISOString(),
+      };
+      console.warn("[AI][openai] rate limited (429). Check usage/billing dashboard.");
+    }
+    return null;
+  }
   const data = await res.json();
-  return data?.choices?.[0]?.message?.content ?? null;
+  const text = String(data?.choices?.[0]?.message?.content ?? "");
+  if (!text) return null;
+  return {
+    text,
+    usage: {
+      input_tokens: Number(data?.usage?.prompt_tokens ?? 0),
+      output_tokens: Number(data?.usage?.completion_tokens ?? 0),
+      total_tokens: Number(data?.usage?.total_tokens ?? 0),
+    },
+  };
 }
 
 function heuristicReply(
@@ -475,27 +605,29 @@ Rules:
   for (const provider of order) {
     try {
       if (provider === "anthropic") {
-        const text = await callAnthropic(prompt, maxTokens);
-        if (text) {
-          const parsed = JSON.parse(String(text).replace(/```json|```/g, "").trim());
+        const result = await callAnthropic(prompt, maxTokens);
+        if (result?.text) {
+          const parsed = JSON.parse(String(result.text).replace(/```json|```/g, "").trim());
           return {
             ok: true,
             provider,
             answer: String(parsed?.answer ?? ""),
             suggestions: Array.isArray(parsed?.suggestions) ? parsed.suggestions.map(String).slice(0, 3) : [],
+            usage: result.usage,
           };
         }
       }
 
       if (provider === "openai") {
-        const text = await callOpenAI(prompt, maxTokens);
-        if (text) {
-          const parsed = JSON.parse(String(text).replace(/```json|```/g, "").trim());
+        const result = await callOpenAI(prompt, maxTokens);
+        if (result?.text) {
+          const parsed = JSON.parse(String(result.text).replace(/```json|```/g, "").trim());
           return {
             ok: true,
             provider,
             answer: String(parsed?.answer ?? ""),
             suggestions: Array.isArray(parsed?.suggestions) ? parsed.suggestions.map(String).slice(0, 3) : [],
+            usage: result.usage,
           };
         }
       }

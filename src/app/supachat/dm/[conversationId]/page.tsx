@@ -332,7 +332,9 @@ export default function SupaChatDMPage() {
         <ToastBanner type={toast.type} message={toast.message} />
       )}
       <header className={styles.topBar}>
-        <Link href="/supachat" className={styles.backBtn}>←</Link>
+        <Link href="/supachat/dm" className={styles.backBtn} aria-label="Back to messages">
+          ←
+        </Link>
         <div className={styles.topBarUser}>
           <UserAvatar username={otherUser?.username} avatarUrl={otherUser?.avatar_url} online={isOtherOnline} verified={Boolean(otherUser?.verified)} />
           <div className={styles.topBarText}>

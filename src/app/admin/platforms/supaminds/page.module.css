@@ -12,4 +12,7 @@
 .sectionTitle { font-size: 14px; font-weight: 800; margin: 2px 0 8px; }
 .grid2 { display: grid; grid-template-columns: 1fr; gap: 10px; }
 .actionBtns { display: flex; gap: 6px; flex-wrap: wrap; }
+.alertList { display: grid; gap: 8px; }
+.alertRow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.warnText { font-size: 12px; color: #b45309; font-weight: 700; }
 @media (min-width: 980px) { .grid2 { grid-template-columns: 1fr 1fr; } }

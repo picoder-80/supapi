@@ -26,38 +26,45 @@ function parseA2UResponse(payload: any): { paymentId: string; txid: string | nul
   return { paymentId, txid };
 }
 
-export async function issueA2URefund(
-  buyerUid: string,
-  amount: number,
-  disputeId: string,
-  orderId: string
-): Promise<RefundResult> {
+export type BuyerTreasuryRefundParams = {
+  buyerUid: string;
+  amountPi: number;
+  memo: string;
+  /** Extra fields for direct Pi API metadata (optional) */
+  metadata?: {
+    dispute_id?: string;
+    order_id?: string;
+    reason?: string;
+  };
+};
+
+/**
+ * Send Pi from platform treasury to buyer (A2U). Same plumbing as dispute refunds.
+ */
+export async function issueBuyerRefundFromTreasury(params: BuyerTreasuryRefundParams): Promise<RefundResult> {
+  const { buyerUid, amountPi, memo, metadata } = params;
   if (!buyerUid?.trim()) throw new Error("Buyer Pi UID is required");
-  if (!Number.isFinite(amount) || amount <= 0) throw new Error("Invalid refund amount");
+  if (!Number.isFinite(amountPi) || amountPi <= 0) throw new Error("Invalid refund amount");
 
-  const amountRounded = Number(amount.toFixed(7));
-  const note = `Supapi dispute refund #${disputeId.slice(0, 8)}`;
-
+  const amountRounded = Number(amountPi.toFixed(7));
   const payoutConfigured = isOwnerTransferConfigured();
 
-  // Prefer payout service (same as SupaChat, SupaScrow) — no PI_TREASURY_UID needed
   if (payoutConfigured) {
     const tx = await executeOwnerTransfer({
       amountPi: amountRounded,
       recipientUid: buyerUid.trim(),
-      note,
+      note: memo,
     });
     if (!tx.ok) {
       throw new Error(tx.message ?? "Payout service refund failed");
     }
     return {
       success: true,
-      paymentId: tx.txid ?? `refund-${disputeId}-${Date.now()}`,
+      paymentId: tx.txid ?? `refund-${Date.now()}`,
       txid: tx.txid ?? null,
     };
   }
 
-  // Fallback: direct Pi API (requires PI_API_KEY + PI_TREASURY_UID)
   const apiKey = process.env.PI_API_KEY;
   if (!apiKey) throw new Error("PI_API_KEY is not configured");
   if (!process.env.PI_TREASURY_UID) {
@@ -70,13 +77,11 @@ export async function issueA2URefund(
     payment: {
       amount: amountRounded,
       uid: buyerUid.trim(),
-      memo: note,
+      memo,
       metadata: {
         platform: "supamarket",
-        dispute_id: disputeId,
-        order_id: orderId,
         treasury_uid: process.env.PI_TREASURY_UID,
-        reason: "buyer_favour_refund",
+        ...metadata,
       },
     },
   };
@@ -102,3 +107,20 @@ export async function issueA2URefund(
   return { success: true, paymentId, txid };
 }
 
+export async function issueA2URefund(
+  buyerUid: string,
+  amount: number,
+  disputeId: string,
+  orderId: string
+): Promise<RefundResult> {
+  return issueBuyerRefundFromTreasury({
+    buyerUid,
+    amountPi: amount,
+    memo: `Supapi dispute refund #${disputeId.slice(0, 8)}`,
+    metadata: {
+      dispute_id: disputeId,
+      order_id: orderId,
+      reason: "buyer_favour_refund",
+    },
+  });
+}

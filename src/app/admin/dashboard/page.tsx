@@ -64,6 +64,12 @@ interface SupaChatRevenueData {
   active_verified_badges: number;
   active_promotions: number;
 }
+interface AIProviderAlert {
+  provider: string;
+  level: "warn" | "info";
+  message: string;
+  last_seen_at: string;
+}
 function fmtDate(iso?: string | null) {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("en-MY", { day:"numeric", month:"short" });
@@ -87,6 +93,7 @@ export default function AdminDashboardPage() {
   const [scWallet, setScWallet] = useState<SCWalletData | null>(null);
   const [referralStats, setReferralStats] = useState<ReferralStatsData | null>(null);
   const [supaChatRevenue, setSupaChatRevenue] = useState<SupaChatRevenueData | null>(null);
+  const [aiProviderAlerts, setAiProviderAlerts] = useState<AIProviderAlert[]>([]);
   const [period, setPeriod] = useState<"all" | "month" | "week">("all");
   const [loading,    setLoading]    = useState(true);
   const [msg, setMsg] = useState("");
@@ -126,13 +133,15 @@ export default function AdminDashboardPage() {
       safeFetch("/api/admin/sc-wallet?limit=8", token),
       safeFetch("/api/admin/referral?type=stats", token),
       safeFetch(`/api/admin/supachat/revenue?period=${period}`, token),
+      safeFetch("/api/admin/supaminds", token),
     ])
-      .then(([t, sc, rs, sr]) => {
+      .then(([t, sc, rs, sr, sm]) => {
       if (t?.success) setTreasury(t.data);
       else setMsg("Failed to load treasury.");
       if (sc?.success) setScWallet(sc.data);
       if (rs?.success) setReferralStats(rs.data);
       if (sr?.success) setSupaChatRevenue(sr.data);
+      if (sm?.success) setAiProviderAlerts(sm.data?.ai_runtime_alerts ?? []);
       })
       .finally(() => setLoading(false));
   }, [period]);
@@ -183,6 +192,30 @@ export default function AdminDashboardPage() {
           <span className={styles.heroBadgeDot} />
           Live
         </div>
+      </div>
+
+      <div className={styles.section}>
+        <div className={styles.sectionRow}>
+          <h2 className={styles.sectionTitle}><span className={styles.sectionIcon}>🧠</span> AI Provider Alerts</h2>
+          <Link href="/admin/platforms/supaminds" className={styles.sectionLink}>Open SupaMinds Admin →</Link>
+        </div>
+        {aiProviderAlerts.length ? (
+          <div className={styles.panel}>
+            {aiProviderAlerts.map((a) => (
+              <div key={`${a.provider}-${a.last_seen_at}`} className={styles.row}>
+                <div className={styles.rowInfo}>
+                  <div className={styles.rowTitle}>{a.provider}</div>
+                  <div className={styles.rowSub}>{a.message}</div>
+                </div>
+                <span className={`${styles.badge} ${a.level === "warn" ? styles.badgeWarn : styles.badgeOk}`}>
+                  {new Date(a.last_seen_at).toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.empty}>No runtime provider alerts yet</div>
+        )}
       </div>
 
       <div className={styles.section}>
