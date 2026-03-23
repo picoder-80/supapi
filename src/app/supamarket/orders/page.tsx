@@ -96,6 +96,10 @@ export default function OrdersPage() {
   const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
   const pageSafe = Math.min(ordersPage, totalPages);
   const pageOrders = orders.slice((pageSafe - 1) * PAGE_SIZE, pageSafe * PAGE_SIZE);
+  const pendingReviewOrders = tab === "buying"
+    ? orders.filter((o) => String(o.status ?? "") === "completed" && !o.has_review)
+    : [];
+  const pendingReviewCount = pendingReviewOrders.length;
   const handleShare = async () => {
     if (typeof window === "undefined") return;
     const url = window.location.href;
@@ -120,12 +124,24 @@ export default function OrdersPage() {
 
       <div className={styles.tabsCard}>
         <button className={`${styles.tab} ${tab === "buying" ? styles.tabActive : ""}`}
-          onClick={() => setTab("buying")}>🛒 Buying</button>
+          onClick={() => setTab("buying")}>
+          🛒 Buying
+          {pendingReviewCount > 0 ? <span className={styles.tabBadge}>{pendingReviewCount}</span> : null}
+        </button>
         <button className={`${styles.tab} ${tab === "selling" ? styles.tabActive : ""}`}
           onClick={() => setTab("selling")}>🏷️ Selling</button>
       </div>
 
       <div className={styles.body}>
+        {!loading && tab === "buying" && pendingReviewCount > 0 && (
+          <div className={styles.pendingReviewCard}>
+            <div className={styles.pendingReviewTitle}>Pending reviews: {pendingReviewCount}</div>
+            <div className={styles.pendingReviewSub}>Rate seller to claim your SC reward and help other buyers.</div>
+            <Link href={`/supamarket/orders/${pendingReviewOrders[0].id}`} className={styles.pendingReviewBtn}>
+              Rate now
+            </Link>
+          </div>
+        )}
         {loading ? (
           [...Array(4)].map((_, i) => <div key={i} className={styles.skeletonRow} />)
         ) : orders.length === 0 ? (
@@ -147,6 +163,7 @@ export default function OrdersPage() {
               const other   = tab === "buying" ? order.seller : order.buyer;
               const statusClass = STATUS_CLASS[order.status] ?? STATUS_CLASS.pending;
               const returnNote = returnBadgeCopy(order.return_badge, tab);
+              const showReviewReward = tab === "buying" && String(order.status ?? "") === "completed" && !order.has_review;
               return (
                 <Link key={order.id} href={`/supamarket/orders/${order.id}`} className={styles.orderRow}>
                   <div className={styles.orderImg}>
@@ -165,6 +182,11 @@ export default function OrdersPage() {
                       {returnNote ? (
                         <span className={styles.returnBadge} aria-label={returnNote}>
                           {returnNote}
+                        </span>
+                      ) : null}
+                      {showReviewReward ? (
+                        <span className={styles.reviewRewardBadge} aria-label="SC reward available">
+                          SC reward available
                         </span>
                       ) : null}
                     </div>

@@ -128,6 +128,57 @@
 .statusLabel { font-size: 16px; font-weight: 800; }
 .statusTime { margin-top: 2px; font-size: 11px; opacity: 0.82; }
 
+.wizardWrap {
+  width: min(960px, calc(100% - 24px));
+  margin: 10px auto 0;
+}
+.wizardCard {
+  border-radius: 16px;
+  border: 1px solid rgba(245, 166, 35, 0.45);
+  background: linear-gradient(135deg, #fff9ee 0%, #ffffff 100%);
+  padding: 14px;
+}
+.wizardTitle {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a1a2e;
+}
+.wizardSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #744210;
+}
+.wizardActions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.wizardPrimaryBtn,
+.wizardGhostBtn {
+  min-height: 38px;
+  border-radius: 999px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+}
+.wizardPrimaryBtn {
+  border: none;
+  background: #f5a623;
+  color: #1a1a2e;
+}
+.wizardPrimaryBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.wizardGhostBtn {
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #1a1a2e;
+}
+
 .progress {
   width: min(960px, calc(100% - 24px));
   margin: 10px auto 0;
@@ -237,6 +288,36 @@
 }
 .listingCat { font-size: 12px; color: #718096; }
 .removedNote { font-size: 13px; color: #718096; font-style: italic; }
+.removedWrap {
+  border: 1px dashed #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  background: #f8f9fd;
+}
+.removedSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #718096;
+}
+.removedToggleBtn,
+.removedJumpBtn {
+  margin-top: 8px;
+  min-height: 36px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  padding: 0 12px;
+  background: #fff;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.removedJumpBtn {
+  margin-left: 8px;
+  border-color: #f5a623;
+  background: #fff9ee;
+}
 
 .infoBox { display: flex; flex-direction: column; }
 .infoRow {
@@ -333,6 +414,9 @@
   gap: 12px;
   text-decoration: none;
 }
+.personCardMuted {
+  cursor: default;
+}
 .personAvatar {
   width: 44px;
   height: 44px;
@@ -410,6 +494,45 @@
   display: flex;
   gap: 4px;
   margin-bottom: 12px;
+}
+.reviewNudgeCard {
+  border-radius: 14px;
+  border: 1px solid rgba(245, 166, 35, 0.45);
+  background: linear-gradient(135deg, #fff9ee 0%, #ffffff 100%);
+  padding: 12px;
+}
+.reviewNudgeTitle {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a1a2e;
+}
+.reviewNudgeSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #744210;
+}
+.reviewNudgeBtn {
+  margin-top: 10px;
+  min-height: 38px;
+  border-radius: 999px;
+  border: none;
+  padding: 0 14px;
+  background: #f5a623;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+}
+.reviewRewardBanner {
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 166, 35, 0.45);
+  background: #fff9ee;
+  color: #744210;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 10px;
 }
 .reviewStarBtn {
   width: 44px;
@@ -831,6 +954,10 @@
   cursor: pointer;
   font-family: inherit;
 }
+.returnHubCta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 
 .returnHubCta:hover {
   opacity: 0.92;
@@ -838,6 +965,60 @@
 
 .returnHubSeller {
   border-left: 4px solid #f5a623;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.modalCard {
+  width: min(420px, 100%);
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 14px;
+}
+.modalTitle {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1a1a2e;
+}
+.modalSub {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.45;
+}
+.modalActions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.modalGhostBtn,
+.modalPrimaryBtn {
+  min-height: 38px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+}
+.modalGhostBtn {
+  background: #fff;
+  color: #1a1a2e;
+}
+.modalPrimaryBtn {
+  background: #f5a623;
+  border-color: #f5a623;
+  color: #1a1a2e;
 }
 
 @media (min-width: 768px) {

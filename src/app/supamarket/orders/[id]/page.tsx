@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -47,6 +47,7 @@ interface Order {
 }
 
 const STATUS_STEPS = ["pending","paid","shipped","delivered","completed"];
+const REVIEW_REWARD_LABEL = "SC reward";
 const STATUS_LABELS: Record<string,string> = {
   pending:"Pending Payment", escrow:"Payment Confirmed", paid:"Payment Confirmed", shipped:"Shipped",
   meetup_set:"Meetup Arranged", delivered:"Delivered", completed:"Completed",
@@ -131,11 +132,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [resumingPayment, setResumingPayment] = useState(false);
   const [reviewImageUrls, setReviewImageUrls] = useState<string[]>([]);
   const [reviewUploading, setReviewUploading] = useState(false);
+  const [showReviewPromptModal, setShowReviewPromptModal] = useState(false);
+  const [itemCollapsed, setItemCollapsed] = useState(false);
+  const [showSecondaryDetails, setShowSecondaryDetails] = useState(false);
   const [reviewUploadProgress, setReviewUploadProgress] = useState<{ done: number; total: number; current: string }>({
     done: 0,
     total: 0,
     current: "",
   });
+  const autoJumpDoneRef = useRef(false);
   const MAX_REVIEW_PHOTOS = 4;
 
   const fetchOrder = async () => {
@@ -182,7 +187,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         body: JSON.stringify({ status: newStatus, ...extra }),
       });
       const d = await r.json();
-      if (d.success) { setOrder(d.data); setMsg("Updated!"); setTimeout(() => setMsg(""), 2500); }
+      if (d.success) {
+        setOrder(d.data);
+        if (newStatus === "completed" && user?.id === d.data?.buyer?.id && !d.data?.has_review) {
+          setShowReviewPromptModal(true);
+        }
+        setMsg("Updated!");
+        setTimeout(() => setMsg(""), 2500);
+      }
       else setMsg(d.error ?? "Update failed");
     } catch { setMsg("Something went wrong"); }
     setUpdating(false);
@@ -568,6 +580,44 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     }
   };
 
+  const scrollToSection = (sectionId: string) => {
+    if (typeof window === "undefined") return;
+    const el = document.getElementById(sectionId);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const getPrimaryActionSectionId = () => {
+    if (!order || !user) return "";
+    const buyerSide = user.id === order.buyer?.id;
+    const sellerSide = user.id === order.seller?.id;
+    if (buyerSide && order.status === "completed" && !order.has_review) return "review-section";
+    if (buyerSide && order.status === "delivered") return "return-refund-section";
+    if (sellerSide && order.status === "delivered" && ["pending_seller", "buyer_return_shipped"].includes(String(order.return_request?.status ?? ""))) {
+      return "seller-return-section";
+    }
+    return "";
+  };
+
+  useEffect(() => {
+    if (!order || !user) return;
+    if (autoJumpDoneRef.current) return;
+    autoJumpDoneRef.current = true;
+    const target = getPrimaryActionSectionId();
+    if (!target) return;
+    window.setTimeout(() => {
+      scrollToSection(target);
+    }, 180);
+  }, [order, user]);
+
+  useEffect(() => {
+    if (!order) return;
+    setItemCollapsed(!order.listing);
+  }, [order?.id, order?.listing]);
+
+  useEffect(() => {
+    autoJumpDoneRef.current = false;
+  }, [id]);
+
   const renderTopBar = () => (
     <header className={styles.topBar}>
       <button className={styles.iconBtn} onClick={() => router.push("/supamarket/orders")} aria-label="Back to orders">←</button>
@@ -623,10 +673,81 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const normalizedStatus = order.status === "escrow" ? "paid" : order.status;
   const stepIdx  = STATUS_STEPS.indexOf(normalizedStatus);
   const isActive = !["completed","refunded","cancelled","disputed"].includes(normalizedStatus);
+  const sellerNeedsReturnAction =
+    isSeller &&
+    order.status === "delivered" &&
+    ["pending_seller", "buyer_return_shipped"].includes(String(order.return_request?.status ?? ""));
+  const buyerNeedsReturnAction = isBuyer && order.status === "delivered" && !hasOpenDispute;
+  const buyerNeedsReview = isBuyer && order.status === "completed" && !order.has_review;
+  const wizardMode = buyerNeedsReturnAction || sellerNeedsReturnAction || buyerNeedsReview;
+  const buyerReturnCta = (() => {
+    if (!(isBuyer && order.status === "delivered" && !hasOpenDispute)) return null;
+    if (returnPhase === "none") return { label: "Start return / refund request", target: "return-refund-section", disabled: false };
+    if (returnPhase === "submitted") return { label: "View seller response status", target: "return-refund-section", disabled: false };
+    if (returnPhase === "approved_waiting_buyer_ship") return { label: "Submit return tracking now", target: "return-refund-section", disabled: false };
+    if (returnPhase === "buyer_shipped_waiting_seller_confirm") return { label: "Waiting seller confirmation", target: "return-refund-section", disabled: true };
+    if (returnPhase === "rejected") return { label: "Ask for platform review", target: "return-refund-section", disabled: false };
+    return null;
+  })();
+  const wizardStep = (() => {
+    if (buyerNeedsReview) {
+      return {
+        title: "Final step: Rate seller",
+        sub: `Submit review now to claim your ${REVIEW_REWARD_LABEL}.`,
+        target: "review-section",
+        cta: "Rate now",
+        disabled: false,
+      };
+    }
+    if (sellerNeedsReturnAction) {
+      return {
+        title: "Action required",
+        sub: "Review the return/refund request to proceed.",
+        target: "seller-return-section",
+        cta: "Continue",
+        disabled: false,
+      };
+    }
+    if (buyerNeedsReturnAction && buyerReturnCta) {
+      return {
+        title: "Current return/refund step",
+        sub: "Continue the guided flow below.",
+        target: buyerReturnCta.target,
+        cta: buyerReturnCta.label,
+        disabled: buyerReturnCta.disabled,
+      };
+    }
+    return null;
+  })();
 
   return (
     <div className={styles.page}>
       {renderTopBar()}
+      {wizardStep ? (
+        <div className={styles.wizardWrap}>
+          <div className={styles.wizardCard}>
+            <div className={styles.wizardTitle}>{wizardStep.title}</div>
+            <div className={styles.wizardSub}>{wizardStep.sub}</div>
+            <div className={styles.wizardActions}>
+              <button
+                type="button"
+                className={styles.wizardPrimaryBtn}
+                disabled={wizardStep.disabled}
+                onClick={() => scrollToSection(wizardStep.target)}
+              >
+                {wizardStep.cta}
+              </button>
+              <button
+                type="button"
+                className={styles.wizardGhostBtn}
+                onClick={() => setShowSecondaryDetails((v) => !v)}
+              >
+                {showSecondaryDetails ? "Hide extra details" : "View full order details"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Status Banner */}
       <div className={styles.statusBanner} data-status={order.status}>
@@ -743,13 +864,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
             </div>
-            {returnPhase === "none" ? (
+            {buyerReturnCta ? (
               <button
                 type="button"
                 className={styles.returnHubCta}
-                onClick={() => document.getElementById("return-refund-section")?.scrollIntoView({ behavior: "smooth" })}
+                disabled={buyerReturnCta.disabled}
+                onClick={() => scrollToSection(buyerReturnCta.target)}
               >
-                Start return / refund request
+                {buyerReturnCta.label}
               </button>
             ) : null}
           </div>
@@ -803,7 +925,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       <div className={styles.body}>
         {msg && <div className={`${styles.msg} ${msg === "Updated!" ? styles.msgSuccess : styles.msgError}`}>{msg}</div>}
 
+        {isBuyer && order.status === "completed" && !order.has_review && (
+          <div className={styles.reviewNudgeCard}>
+            <div className={styles.reviewNudgeTitle}>🎁 {REVIEW_REWARD_LABEL} available</div>
+            <div className={styles.reviewNudgeSub}>Submit a quick review now to claim your reward and help the community.</div>
+            <button type="button" className={styles.reviewNudgeBtn} onClick={() => scrollToSection("review-section")}>
+              Rate seller now
+            </button>
+          </div>
+        )}
+
         {/* Listing */}
+        {(!wizardMode || showSecondaryDetails) && (
         <div className={styles.section}>
           <div className={styles.sectionTitle}>Item</div>
           {order.listing ? (
@@ -815,10 +948,36 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 <div className={styles.listingCat}>{formatListingCategoryPath(order.listing.category, order.listing.subcategory ?? "", order.listing.category_deep)} · {order.buying_method === "ship" ? "📦 Shipping" : "📍 Meetup"}</div>
               </div>
             </Link>
-          ) : <div className={styles.removedNote}>Listing has been removed</div>}
+          ) : (
+            <div className={styles.removedWrap}>
+              <div className={styles.removedNote}>Listing has been removed or archived.</div>
+              <div className={styles.removedSub}>This does not block your order flow.</div>
+              <button
+                type="button"
+                className={styles.removedToggleBtn}
+                onClick={() => setItemCollapsed((v) => !v)}
+              >
+                {itemCollapsed ? "Show order item details" : "Hide order item details"}
+              </button>
+              {itemCollapsed ? (
+                <button
+                  type="button"
+                  className={styles.removedJumpBtn}
+                  onClick={() => {
+                    const target = getPrimaryActionSectionId();
+                    if (target) scrollToSection(target);
+                  }}
+                >
+                  Go to current step
+                </button>
+              ) : null}
+            </div>
+          )}
         </div>
+        )}
 
         {/* Delivery / Meetup Info */}
+        {(!wizardMode || showSecondaryDetails) && (
         <div className={styles.section}>
           <div className={styles.sectionTitle}>{order.buying_method === "ship" ? "Delivery Info" : "Meetup Info"}</div>
           <div className={styles.infoBox}>
@@ -864,6 +1023,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             {order.notes && <div className={styles.infoRow}><span>Notes</span><strong>{order.notes}</strong></div>}
           </div>
         </div>
+        )}
 
         {/* Buyer resume pending payment */}
         {isBuyer && order.status === "pending" && (
@@ -1010,8 +1170,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         {/* Buyer rate seller (completed, not yet reviewed) */}
         {isBuyer && order.status === "completed" && !order.has_review && (
-          <div className={styles.section}>
+          <div className={styles.section} id="review-section">
             <div className={styles.sectionTitle}>⭐ Rate Seller</div>
+            <div className={styles.reviewRewardBanner}>🎁 Earn {REVIEW_REWARD_LABEL} when you submit this review.</div>
             <div className={styles.confirmNote}>How was your experience? Your rating helps other buyers.</div>
             <div className={styles.reviewStars}>
               {[1, 2, 3, 4, 5].map((s) => (
@@ -1105,27 +1266,48 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 setReviewSubmitting(false);
               }}
             >
-              {reviewSubmitting ? "Submitting..." : "Submit Review"}
+              {reviewSubmitting ? "Submitting..." : `Submit Review + Claim ${REVIEW_REWARD_LABEL}`}
             </button>
           </div>
         )}
 
         {/* Counterpart info */}
+        {(!wizardMode || showSecondaryDetails) && (
         <div className={styles.section}>
           <div className={styles.sectionTitle}>{isBuyer ? "Seller" : "Buyer"}</div>
-          <Link href={`/supaspace/${isBuyer ? order.seller?.username : order.buyer?.username}`} className={styles.personCard}>
-            <div className={styles.personAvatar}>
-              {(isBuyer ? order.seller : order.buyer)?.avatar_url
-                ? <img src={(isBuyer ? order.seller : order.buyer)!.avatar_url!} alt="" className={styles.personAvatarImg} />
-                : <span>{getInitial((isBuyer ? order.seller : order.buyer)?.username ?? "?")}</span>
-              }
-            </div>
-            <div>
-              <div className={styles.personName}>{(isBuyer ? order.seller : order.buyer)?.display_name ?? (isBuyer ? order.seller : order.buyer)?.username}</div>
-              <div className={styles.personSub}>@{(isBuyer ? order.seller : order.buyer)?.username} · View Profile →</div>
-            </div>
-          </Link>
+          {(() => {
+            const other = isBuyer ? order.seller : order.buyer;
+            const uname = String(other?.username ?? "").trim();
+            const displayName = (other?.display_name ?? uname) || "Unknown user";
+            const profileHref = uname ? `/supaspace/${uname}` : "";
+            const personBody = (
+              <>
+                <div className={styles.personAvatar}>
+                  {other?.avatar_url
+                    ? <img src={other.avatar_url} alt="" className={styles.personAvatarImg} />
+                    : <span>{getInitial(uname || "?")}</span>
+                  }
+                </div>
+                <div>
+                  <div className={styles.personName}>{displayName}</div>
+                  <div className={styles.personSub}>
+                    {uname ? `@${uname} · View Profile →` : "Profile unavailable"}
+                  </div>
+                </div>
+              </>
+            );
+            return profileHref ? (
+              <Link href={profileHref} className={styles.personCard}>
+                {personBody}
+              </Link>
+            ) : (
+              <div className={`${styles.personCard} ${styles.personCardMuted}`}>
+                {personBody}
+              </div>
+            );
+          })()}
         </div>
+        )}
 
         {/* Seller: respond to return / refund request */}
         {isSeller &&
@@ -1746,6 +1928,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         )}
 
         {/* Order metadata */}
+        {(!wizardMode || showSecondaryDetails) && (
         <div className={styles.section}>
           <div className={styles.sectionTitle}>Order Info</div>
           <div className={styles.infoBox}>
@@ -1755,7 +1938,32 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <div className={styles.infoRow}><span>Escrow</span><strong>🔒 Pi Network Escrow</strong></div>
           </div>
         </div>
+        )}
       </div>
+
+      {showReviewPromptModal && isBuyer && order.status === "completed" && !order.has_review ? (
+        <div className={styles.modalOverlay} onClick={() => setShowReviewPromptModal(false)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalTitle}>🎉 Order completed</div>
+            <div className={styles.modalSub}>Rate the seller now and claim your {REVIEW_REWARD_LABEL}.</div>
+            <div className={styles.modalActions}>
+              <button type="button" className={styles.modalGhostBtn} onClick={() => setShowReviewPromptModal(false)}>
+                Later
+              </button>
+              <button
+                type="button"
+                className={styles.modalPrimaryBtn}
+                onClick={() => {
+                  setShowReviewPromptModal(false);
+                  scrollToSection("review-section");
+                }}
+              >
+                Rate now
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -82,6 +82,30 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    if (role === "buyer") {
+      const listingIds = withReturn
+        .map((o) => String((o as { listing_id?: string | null }).listing_id ?? ""))
+        .filter(Boolean);
+      const reviewed = new Set<string>();
+      if (listingIds.length) {
+        const { data: revs } = await supabase
+          .from("reviews")
+          .select("target_id")
+          .eq("reviewer_id", payload.userId)
+          .eq("target_type", "listing")
+          .in("target_id", listingIds);
+        for (const r of revs ?? []) {
+          const tid = String((r as { target_id?: string | null }).target_id ?? "");
+          if (tid) reviewed.add(tid);
+        }
+      }
+      const withReview = withReturn.map((o) => ({
+        ...o,
+        has_review: reviewed.has(String((o as { listing_id?: string | null }).listing_id ?? "")),
+      }));
+      return NextResponse.json({ success: true, data: withReview });
+    }
+
     return NextResponse.json({ success: true, data: withReturn });
   } catch {
     return NextResponse.json({ success: false }, { status: 500 });

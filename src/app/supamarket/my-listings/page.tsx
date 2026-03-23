@@ -215,15 +215,23 @@ export default function MyListingsPage() {
         <div className={styles.topBarCenter}>
           <h1 className={styles.title}>My Listings</h1>
           <p className={styles.subtitle}>Manage, boost, and track your products</p>
-          <Link href="/supamarket/seller" className={styles.sellerHubLink}>
-            📊 Seller Hub
-          </Link>
         </div>
         <Link href="/supamarket/create" className={styles.iconBtn} aria-label="Create listing">＋</Link>
       </div>
 
       <div className={styles.content}>
         <div className={styles.statsCard}>
+          <div className={styles.statsIntro}>
+            <div className={styles.statsIntroHead}>
+              <h2 className={styles.statsIntroTitle}>My Market Listings</h2>
+              <Link href="/supamarket/seller" className={styles.statsIntroCta}>
+                Seller Hub
+              </Link>
+            </div>
+            <p className={styles.statsIntroSub}>
+              Manage your active, paused, sold, archived, and boost listings in one place.
+            </p>
+          </div>
           {(["all","active","paused","sold"] as const).map(s => {
             const count = s === "all" ? listings.length : listings.filter(l => l.status === s).length;
             return (

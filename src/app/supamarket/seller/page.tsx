@@ -117,7 +117,7 @@ export default function SellerHubPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [recentPage, setRecentPage] = useState(1);
   const [recentFilter, setRecentFilter] = useState<
-    "all" | "action" | "completed" | "disputed" | "pending" | "refunded"
+    "all" | "action" | "completed" | "disputed" | "pending" | "refunded" | "cancelled"
   >("all");
   const [searchOrderId, setSearchOrderId] = useState("");
 
@@ -171,13 +171,15 @@ export default function SellerHubPage() {
 
   const RECENT_PAGE_SIZE = 10;
   const recentRows = summary?.recentOrders ?? [];
+  const actionRows = summary?.actionRequiredOrders ?? [];
   const filterCounts = {
     all: recentRows.length,
-    action: recentRows.filter((r) => SELLER_ACTION_STATUSES.has(String(r.status ?? ""))).length,
+    action: actionRows.length,
     pending: recentRows.filter((r) => String(r.status ?? "") === "pending").length,
     completed: recentRows.filter((r) => String(r.status ?? "") === "completed").length,
     disputed: recentRows.filter((r) => String(r.status ?? "") === "disputed").length,
     refunded: recentRows.filter((r) => String(r.status ?? "") === "refunded").length,
+    cancelled: recentRows.filter((r) => String(r.status ?? "") === "cancelled").length,
   };
   const normalizedQuery = searchOrderId.trim().toLowerCase();
   const matchesSearch = (id: string) =>
@@ -188,10 +190,12 @@ export default function SellerHubPage() {
     if (recentFilter === "disputed") return status === "disputed";
     if (recentFilter === "pending") return status === "pending";
     if (recentFilter === "refunded") return status === "refunded";
+    if (recentFilter === "cancelled") return status === "cancelled";
     if (recentFilter === "action") return SELLER_ACTION_STATUSES.has(status);
     return true;
   };
-  const filteredRecentRows = recentRows.filter((row) => {
+  const sourceRows = recentFilter === "action" ? actionRows : recentRows;
+  const filteredRecentRows = sourceRows.filter((row) => {
     const s = String(row.status ?? "");
     return matchesFilter(s) && matchesSearch(String(row.id ?? ""));
   });
@@ -245,9 +249,14 @@ export default function SellerHubPage() {
                 Real-time seller cockpit for inventory, pipeline, and payouts.
               </p>
             </div>
-            <Link href="/supamarket/create" className={styles.heroCta}>
-              + New listing
-            </Link>
+            <div className={styles.heroCtaStack}>
+              <Link href="/supamarket/create" className={styles.heroCta}>
+                + New listing
+              </Link>
+              <Link href="/supamarket/my-listings" className={styles.heroCta}>
+                My listings
+              </Link>
+            </div>
           </div>
           {loading || !summary ? (
             <div className={styles.grid2}>
@@ -352,6 +361,7 @@ export default function SellerHubPage() {
                     { id: "completed", label: "Completed" },
                     { id: "disputed", label: "Disputed" },
                     { id: "refunded", label: "Refunded" },
+                    { id: "cancelled", label: "Cancelled" },
                   ] as const).map((f) => (
                     <button
                       key={f.id}
