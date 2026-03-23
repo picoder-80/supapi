@@ -106,6 +106,24 @@ export async function GET(req: NextRequest, { params }: Params) {
       hasReview = !!rev;
     }
     (normalized as Record<string, unknown>).has_review = hasReview;
+    const reviewRewardRefId = `market_order_review:${id}`;
+    let reviewRewardClaimed = false;
+    if ((data as { buyer_id?: string }).buyer_id === payload.userId) {
+      const { data: rewardTx } = await supabase
+        .from("credit_transactions")
+        .select("id")
+        .eq("user_id", payload.userId)
+        .eq("activity", "market_review")
+        .eq("ref_id", reviewRewardRefId)
+        .limit(1)
+        .maybeSingle();
+      reviewRewardClaimed = Boolean(rewardTx);
+    }
+    (normalized as Record<string, unknown>).review_reward_claimed = reviewRewardClaimed;
+    (normalized as Record<string, unknown>).review_reward_amount = Math.max(
+      0,
+      Number(process.env.MARKET_REVIEW_SC_REWARD ?? "20")
+    );
 
     const { data: rrList, error: rrErr } = await supabase
       .from("market_return_requests")

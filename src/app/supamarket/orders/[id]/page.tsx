@@ -24,6 +24,8 @@ interface Order {
   notes: string; pi_payment_id: string;
   created_at: string; updated_at: string;
   has_review?: boolean;
+  review_reward_claimed?: boolean;
+  review_reward_amount?: number;
   listing: { id: string; title: string; images: string[]; price_pi: number; description: string; location: string; category: string; subcategory?: string; category_deep?: string | null } | null;
   buyer:  { id: string; username: string; display_name: string | null; avatar_url: string | null; phone: string; email: string };
   seller: { id: string; username: string; display_name: string | null; avatar_url: string | null; phone: string };
@@ -47,7 +49,6 @@ interface Order {
 }
 
 const STATUS_STEPS = ["pending","paid","shipped","delivered","completed"];
-const REVIEW_REWARD_LABEL = "SC reward";
 const STATUS_LABELS: Record<string,string> = {
   pending:"Pending Payment", escrow:"Payment Confirmed", paid:"Payment Confirmed", shipped:"Shipped",
   meetup_set:"Meetup Arranged", delivered:"Delivered", completed:"Completed",
@@ -132,6 +133,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [resumingPayment, setResumingPayment] = useState(false);
   const [reviewImageUrls, setReviewImageUrls] = useState<string[]>([]);
   const [reviewUploading, setReviewUploading] = useState(false);
+  const [claimingReviewReward, setClaimingReviewReward] = useState(false);
   const [showReviewPromptModal, setShowReviewPromptModal] = useState(false);
   const [itemCollapsed, setItemCollapsed] = useState(false);
   const [showSecondaryDetails, setShowSecondaryDetails] = useState(false);
@@ -586,6 +588,35 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const claimReviewReward = async () => {
+    const token = localStorage.getItem("supapi_token");
+    if (!token || !order) return;
+    setClaimingReviewReward(true);
+    setMsg("");
+    try {
+      const r = await fetch(`/api/supamarket/orders/${id}/review/reward`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const d = await r.json();
+      if (d.success) {
+        if (d?.data?.already_claimed) {
+          setMsg("Review reward already claimed.");
+        } else if (d?.data?.sc_rewarded) {
+          setMsg(`+${Number(d?.data?.sc_amount ?? 0)} SC credited from review reward.`);
+        } else {
+          setMsg("Review reward status updated.");
+        }
+        await fetchOrder();
+      } else {
+        setMsg(d.error ?? "Unable to claim review reward.");
+      }
+    } catch {
+      setMsg("Unable to claim review reward.");
+    }
+    setClaimingReviewReward(false);
+  };
+
   const getPrimaryActionSectionId = () => {
     if (!order || !user) return "";
     const buyerSide = user.id === order.buyer?.id;
@@ -673,6 +704,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const normalizedStatus = order.status === "escrow" ? "paid" : order.status;
   const stepIdx  = STATUS_STEPS.indexOf(normalizedStatus);
   const isActive = !["completed","refunded","cancelled","disputed"].includes(normalizedStatus);
+  const reviewRewardAmount = Number(order.review_reward_amount ?? 20);
+  const reviewRewardLabel = `${reviewRewardAmount} SC`;
   const sellerNeedsReturnAction =
     isSeller &&
     order.status === "delivered" &&
@@ -693,7 +726,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     if (buyerNeedsReview) {
       return {
         title: "Final step: Rate seller",
-        sub: `Submit review now to claim your ${REVIEW_REWARD_LABEL}.`,
+        sub: `Submit review now to claim your ${reviewRewardLabel}.`,
         target: "review-section",
         cta: "Rate now",
         disabled: false,
@@ -927,12 +960,24 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         {isBuyer && order.status === "completed" && !order.has_review && (
           <div className={styles.reviewNudgeCard}>
-            <div className={styles.reviewNudgeTitle}>🎁 {REVIEW_REWARD_LABEL} available</div>
+            <div className={styles.reviewNudgeTitle}>🎁 {reviewRewardLabel} available</div>
             <div className={styles.reviewNudgeSub}>Submit a quick review now to claim your reward and help the community.</div>
             <button type="button" className={styles.reviewNudgeBtn} onClick={() => scrollToSection("review-section")}>
               Rate seller now
             </button>
           </div>
+        )}
+        {isBuyer && order.status === "completed" && order.has_review && !order.review_reward_claimed && (
+          <div className={styles.reviewNudgeCard}>
+            <div className={styles.reviewNudgeTitle}>🎁 Claim your {reviewRewardLabel}</div>
+            <div className={styles.reviewNudgeSub}>Review is submitted. Tap below to claim your SC reward.</div>
+            <button type="button" className={styles.reviewNudgeBtn} onClick={claimReviewReward} disabled={claimingReviewReward}>
+              {claimingReviewReward ? "Claiming..." : "Claim reward"}
+            </button>
+          </div>
+        )}
+        {isBuyer && order.status === "completed" && order.has_review && order.review_reward_claimed && (
+          <div className={styles.reviewClaimedBadge}>✅ Review reward claimed</div>
         )}
 
         {/* Listing */}
@@ -1172,7 +1217,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         {isBuyer && order.status === "completed" && !order.has_review && (
           <div className={styles.section} id="review-section">
             <div className={styles.sectionTitle}>⭐ Rate Seller</div>
-            <div className={styles.reviewRewardBanner}>🎁 Earn {REVIEW_REWARD_LABEL} when you submit this review.</div>
+            <div className={styles.reviewRewardBanner}>🎁 Earn {reviewRewardLabel} when you submit this review.</div>
             <div className={styles.confirmNote}>How was your experience? Your rating helps other buyers.</div>
             <div className={styles.reviewStars}>
               {[1, 2, 3, 4, 5].map((s) => (
@@ -1256,7 +1301,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   });
                   const d = await r.json();
                   if (d.success) {
-                    setMsg("Thanks for your review!");
+                    const scAmount = Number(d?.data?.sc_amount ?? 0);
+                    const scRewarded = Boolean(d?.data?.sc_rewarded) && scAmount > 0;
+                    setMsg(scRewarded ? `Thanks for your review! +${scAmount} SC credited.` : "Thanks for your review!");
                     setReviewImageUrls([]);
                     await fetchOrder();
                   } else setMsg(d.error ?? "Failed to submit review");
@@ -1266,7 +1313,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 setReviewSubmitting(false);
               }}
             >
-              {reviewSubmitting ? "Submitting..." : `Submit Review + Claim ${REVIEW_REWARD_LABEL}`}
+              {reviewSubmitting ? "Submitting..." : `Submit Review + Claim ${reviewRewardLabel}`}
             </button>
           </div>
         )}
@@ -1945,7 +1992,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         <div className={styles.modalOverlay} onClick={() => setShowReviewPromptModal(false)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalTitle}>🎉 Order completed</div>
-            <div className={styles.modalSub}>Rate the seller now and claim your {REVIEW_REWARD_LABEL}.</div>
+            <div className={styles.modalSub}>Rate the seller now and claim your {reviewRewardLabel}.</div>
             <div className={styles.modalActions}>
               <button type="button" className={styles.modalGhostBtn} onClick={() => setShowReviewPromptModal(false)}>
                 Later

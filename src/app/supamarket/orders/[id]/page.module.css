@@ -524,6 +524,15 @@
   font-family: inherit;
   cursor: pointer;
 }
+.reviewClaimedBadge {
+  border-radius: 12px;
+  border: 1px solid #9ae6b4;
+  background: #f0fff4;
+  color: #22543d;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 10px 12px;
+}
 .reviewRewardBanner {
   margin-bottom: 10px;
   border-radius: 10px;

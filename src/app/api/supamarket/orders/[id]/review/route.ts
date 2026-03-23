@@ -88,7 +88,73 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json({ success: false, error: insertErr.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    // Reward SC once per order review submission
+    const REVIEW_SC_REWARD = Math.max(0, Number(process.env.MARKET_REVIEW_SC_REWARD ?? "20"));
+    let scRewarded = false;
+    let scAmount = 0;
+    let scBalance: number | null = null;
+
+    if (REVIEW_SC_REWARD > 0) {
+      const rewardActivity = "market_review";
+      const rewardRefId = `market_order_review:${orderId}`;
+      const { data: existingReward } = await supabase
+        .from("credit_transactions")
+        .select("id")
+        .eq("user_id", payload.userId)
+        .eq("activity", rewardActivity)
+        .eq("ref_id", rewardRefId)
+        .limit(1)
+        .maybeSingle();
+
+      if (!existingReward) {
+        await supabase.from("supapi_credits").upsert(
+          { user_id: payload.userId },
+          { onConflict: "user_id", ignoreDuplicates: true }
+        );
+        const { data: wallet } = await supabase
+          .from("supapi_credits")
+          .select("balance, total_earned")
+          .eq("user_id", payload.userId)
+          .single();
+
+        const nextBalance = Number(wallet?.balance ?? 0) + REVIEW_SC_REWARD;
+        const nextEarned = Number(wallet?.total_earned ?? 0) + REVIEW_SC_REWARD;
+        const { error: walletErr } = await supabase
+          .from("supapi_credits")
+          .update({
+            balance: nextBalance,
+            total_earned: nextEarned,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", payload.userId);
+
+        if (!walletErr) {
+          const { error: txErr } = await supabase.from("credit_transactions").insert({
+            user_id: payload.userId,
+            type: "earn",
+            activity: rewardActivity,
+            amount: REVIEW_SC_REWARD,
+            balance_after: nextBalance,
+            ref_id: rewardRefId,
+            note: `SupaMarket review reward · order ${orderId.slice(0, 8)}`,
+          });
+          if (!txErr) {
+            scRewarded = true;
+            scAmount = REVIEW_SC_REWARD;
+            scBalance = nextBalance;
+          }
+        }
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        sc_rewarded: scRewarded,
+        sc_amount: scAmount,
+        sc_balance: scBalance,
+      },
+    });
   } catch {
     return NextResponse.json({ success: false, error: "Server error" }, { status: 500 });
   }
