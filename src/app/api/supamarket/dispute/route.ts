@@ -40,6 +40,12 @@ export async function POST(req: NextRequest) {
     if (!order) return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
     if (order.buyer_id !== payload.userId && order.seller_id !== payload.userId)
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });
+    if (order.buyer_id !== payload.userId) {
+      return NextResponse.json(
+        { success: false, error: "Only buyer can open a case for this order." },
+        { status: 403 }
+      );
+    }
     if (order.status !== "delivered" && order.status !== "disputed")
       return NextResponse.json({ success: false, error: "Order not eligible for dispute" }, { status: 400 });
 

@@ -141,6 +141,32 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: "Shipping address required for ship orders" }, { status: 400 });
       }
     }
+    if (buyingMethod === "digital") {
+      const noteLine = String(notes ?? "")
+        .split("\n")
+        .map((l) => l.trim())
+        .find((l) => l.toLowerCase().startsWith("digital contact:"));
+      const contactVal = noteLine?.replace(/^digital contact:\s*/i, "").trim() ?? "";
+      if (!contactVal) {
+        return NextResponse.json(
+          { success: false, error: "Delivery contact is required for digital orders" },
+          { status: 400 }
+        );
+      }
+    }
+    if (buyingMethod === "meetup") {
+      const noteLine = String(notes ?? "")
+        .split("\n")
+        .map((l) => l.trim())
+        .find((l) => l.toLowerCase().startsWith("meetup buyer phone:"));
+      const phoneVal = noteLine?.replace(/^meetup buyer phone:\s*/i, "").trim() ?? "";
+      if (!phoneVal) {
+        return NextResponse.json(
+          { success: false, error: "Phone number is required for meetup orders" },
+          { status: 400 }
+        );
+      }
+    }
 
     const supabase = await createAdminClient();
 

@@ -22,6 +22,14 @@ interface Listing {
 
 function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
 
+/** Ensure maps / share links are valid hrefs (add https if missing). */
+function normalizeOptionalUrl(raw: string): string {
+  const t = raw.trim();
+  if (!t) return "";
+  if (/^https?:\/\//i.test(t)) return t;
+  return `https://${t.replace(/^\/+/, "")}`;
+}
+
 export default function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user } = useAuth();
@@ -31,9 +39,20 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
   const [loading, setLoading]     = useState(true);
   const [imgIndex, setImgIndex]   = useState(0);
   const [showCheckout, setShowCheckout] = useState(false);
-  const [buyMethod, setBuyMethod] = useState<"meetup" | "ship">("meetup");
+  const [buyMethod, setBuyMethod] = useState<"meetup" | "ship" | "digital">("meetup");
   const [checkoutStep, setCheckoutStep] = useState<"method" | "details" | "confirm">("method");
-  const [form, setForm]           = useState({ shipping_name: "", shipping_address: "", shipping_city: "", shipping_postcode: "", shipping_country: "United States", meetup_location: "", notes: "" });
+  const [form, setForm]           = useState({
+    shipping_name: "",
+    shipping_address: "",
+    shipping_city: "",
+    shipping_postcode: "",
+    shipping_country: "United States",
+    meetup_location: "",
+    meetup_phone: "",
+    meetup_directions_url: "",
+    digital_contact: "",
+    notes: "",
+  });
   const [placing, setPlacing]     = useState(false);
   const [error, setError]         = useState("");
   const [showBoost, setShowBoost] = useState(false);
@@ -54,6 +73,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
         if (d.success) {
           setListing(d.data);
           if (d.data.buying_method === "ship") setBuyMethod("ship");
+          else if (d.data.buying_method === "digital" || d.data.type === "digital") setBuyMethod("digital");
         }
       } catch {}
       setLoading(false);
@@ -122,13 +142,42 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
         setError("Please fill in all shipping details");
         return;
       }
-    } else if (buyMethod === "meetup" && !form.meetup_location?.trim()) {
-      setError("Please enter meetup location");
+    } else if (buyMethod === "meetup") {
+      if (!form.meetup_location?.trim()) {
+        setError("Please enter meetup location");
+        return;
+      }
+      if (!form.meetup_phone?.trim()) {
+        setError("Please enter your phone number");
+        return;
+      }
+    } else if (buyMethod === "digital" && !form.digital_contact?.trim()) {
+      setError("Please enter your delivery contact for digital delivery");
       return;
     }
     setPlacing(true); setError("");
     try {
       // 1. Create order
+      const composedNotes = (() => {
+        if (buyMethod === "digital") {
+          return [`Digital contact: ${form.digital_contact.trim()}`, form.notes?.trim() ?? ""]
+            .map((v) => String(v ?? "").trim())
+            .filter(Boolean)
+            .join("\n");
+        }
+        if (buyMethod === "meetup") {
+          const parts = [
+            `Meetup buyer phone: ${form.meetup_phone.trim()}`,
+            form.meetup_directions_url.trim()
+              ? `Directions: ${normalizeOptionalUrl(form.meetup_directions_url)}`
+              : "",
+            form.notes?.trim() ?? "",
+          ];
+          return parts.map((v) => String(v ?? "").trim()).filter(Boolean).join("\n");
+        }
+        return String(form.notes ?? "").trim();
+      })();
+
       const r = await fetch("/api/supamarket/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -141,7 +190,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
             shipping_postcode: form.shipping_postcode,
             shipping_country: form.shipping_country,
           } : { meetup_location: form.meetup_location }),
-          notes: form.notes,
+          notes: composedNotes,
         }),
       });
       const d = await r.json();
@@ -328,6 +377,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
   const methodLabel    = BUYING_METHODS.find(m => m.id === listing.buying_method);
   const isOwnListing   = user?.id === listing.seller.id;
   const images         = listing.images?.length ? listing.images : [];
+  const isDigitalListing = listing.buying_method === "digital" || listing.type === "digital";
 
   return (
     <div className={styles.page}>
@@ -455,7 +505,19 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
             <div className={styles.stickyLabel}>Total</div>
             <div className={styles.stickyPrice}>{Number(listing.price_pi).toFixed(2)} π</div>
           </div>
-          <button className={styles.buyBtn} onClick={() => setShowCheckout(true)}>
+          <button
+            className={styles.buyBtn}
+            onClick={() => {
+              setError("");
+              if (isDigitalListing) {
+                setBuyMethod("digital");
+                setCheckoutStep("details");
+              } else {
+                setCheckoutStep("method");
+              }
+              setShowCheckout(true);
+            }}
+          >
             Buy Now 🛒
           </button>
         </div>
@@ -518,7 +580,10 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                   <button
                     className={`${styles.nextBtn} ${styles.singleActionBtn}`}
-                    onClick={() => { setError(""); setCheckoutStep("details"); }}
+                    onClick={() => {
+                      setError("");
+                      setCheckoutStep("details");
+                    }}
                   >
                     Continue →
                   </button>
@@ -527,7 +592,9 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
 
               {checkoutStep === "details" && (
                 <>
-                  <div className={styles.stepTitle}>{buyMethod === "ship" ? "Shipping Details" : "Meetup Details"}</div>
+                  <div className={styles.stepTitle}>
+                    {buyMethod === "ship" ? "Shipping Details" : buyMethod === "meetup" ? "Meetup Details" : "Digital Delivery Details"}
+                  </div>
                   {buyMethod === "ship" ? (
                     <>
                       {[
@@ -545,14 +612,53 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                         </div>
                       ))}
                     </>
+                  ) : buyMethod === "meetup" ? (
+                    <>
+                      <div className={styles.formField}>
+                        <label className={styles.formLabel}>Preferred Meetup Location</label>
+                        <input
+                          className={styles.formInput}
+                          placeholder="e.g. Times Square, New York"
+                          value={form.meetup_location}
+                          onChange={e => setForm(prev => ({ ...prev, meetup_location: e.target.value }))}
+                        />
+                      </div>
+                      <div className={styles.formField}>
+                        <label className={styles.formLabel}>Phone No. <span aria-hidden>*</span></label>
+                        <input
+                          className={styles.formInput}
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
+                          placeholder="e.g. +60 12-345 6789"
+                          value={form.meetup_phone}
+                          onChange={e => setForm(prev => ({ ...prev, meetup_phone: e.target.value }))}
+                          required
+                          aria-required
+                        />
+                      </div>
+                      <div className={styles.formField}>
+                        <label className={styles.formLabel}>Direction to share (optional)</label>
+                        <input
+                          className={styles.formInput}
+                          type="url"
+                          inputMode="url"
+                          placeholder="https://maps.app.goo.gl/…"
+                          value={form.meetup_directions_url}
+                          onChange={e => setForm(prev => ({ ...prev, meetup_directions_url: e.target.value }))}
+                        />
+                      </div>
+                    </>
                   ) : (
                     <div className={styles.formField}>
-                      <label className={styles.formLabel}>Preferred Meetup Location</label>
+                      <label className={styles.formLabel}>Delivery contact <span aria-hidden>*</span></label>
                       <input
                         className={styles.formInput}
-                        placeholder="e.g. Times Square, New York"
-                        value={form.meetup_location}
-                        onChange={e => setForm(prev => ({ ...prev, meetup_location: e.target.value }))}
+                        placeholder="Email / username / handle for digital delivery"
+                        value={form.digital_contact}
+                        onChange={e => setForm(prev => ({ ...prev, digital_contact: e.target.value }))}
+                        required
+                        aria-required
                       />
                     </div>
                   )}
@@ -563,7 +669,19 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                   {error && <div className={styles.errorMsg}>{error}</div>}
                   <div className={styles.btnRow}>
-                    <button className={styles.backStep} onClick={() => { setError(""); setCheckoutStep("method"); }}>← Back</button>
+                    <button
+                      className={styles.backStep}
+                      onClick={() => {
+                        setError("");
+                        if (buyMethod === "digital") {
+                          setShowCheckout(false);
+                          return;
+                        }
+                        setCheckoutStep("method");
+                      }}
+                    >
+                      ← Back
+                    </button>
                     <button
                       className={styles.nextBtn}
                       onClick={() => {
@@ -573,9 +691,18 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                             setError("Please enter your preferred meetup location");
                             return;
                           }
-                        } else {
+                          if (!form.meetup_phone?.trim()) {
+                            setError("Please enter your phone number");
+                            return;
+                          }
+                        } else if (buyMethod === "ship") {
                           if (!form.shipping_name?.trim() || !form.shipping_address?.trim() || !form.shipping_city?.trim() || !form.shipping_postcode?.trim()) {
                             setError("Please fill in all shipping details (name, address, city, postcode)");
+                            return;
+                          }
+                        } else if (buyMethod === "digital") {
+                          if (!form.digital_contact?.trim()) {
+                            setError("Please enter your delivery contact for digital delivery");
                             return;
                           }
                         }
@@ -592,7 +719,12 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                 <>
                   <div className={styles.stepTitle}>Review & Pay</div>
                   <div className={styles.confirmBox}>
-                    <div className={styles.confirmRow}><span>Method</span><strong>{buyMethod === "ship" ? "📦 Shipping" : "📍 Meetup"}</strong></div>
+                    <div className={styles.confirmRow}>
+                      <span>Method</span>
+                      <strong>
+                        {buyMethod === "ship" ? "📦 Shipping" : buyMethod === "meetup" ? "📍 Meetup" : "💻 Digital Delivery"}
+                      </strong>
+                    </div>
                     {buyMethod === "ship" && <>
                       <div className={styles.confirmRow}><span>Deliver to</span><strong>{form.shipping_name}</strong></div>
                       <div className={styles.confirmRow}><span>Address</span><strong>{form.shipping_address}, {form.shipping_city} {form.shipping_postcode}</strong></div>
@@ -600,6 +732,25 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                     {buyMethod === "meetup" && form.meetup_location && (
                       <div className={styles.confirmRow}><span>Location</span><strong>{form.meetup_location}</strong></div>
                     )}
+                    {buyMethod === "meetup" && form.meetup_phone.trim() ? (
+                      <div className={styles.confirmRow}><span>Phone</span><strong>{form.meetup_phone.trim()}</strong></div>
+                    ) : null}
+                    {buyMethod === "meetup" && form.meetup_directions_url.trim() ? (
+                      <div className={styles.confirmRow}>
+                        <span>Directions</span>
+                        <a
+                          href={normalizeOptionalUrl(form.meetup_directions_url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.confirmLink}
+                        >
+                          Open map link
+                        </a>
+                      </div>
+                    ) : null}
+                    {buyMethod === "digital" && form.digital_contact.trim() ? (
+                      <div className={styles.confirmRow}><span>Delivery contact</span><strong>{form.digital_contact.trim()}</strong></div>
+                    ) : null}
                     <div className={styles.confirmRow}><span>Payment</span><strong>Pi Escrow</strong></div>
                     <div className={`${styles.confirmRow} ${styles.confirmTotal}`}>
                       <span>Total</span><strong>{Number(listing.price_pi).toFixed(2)} π</strong>
@@ -610,7 +761,15 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                   {error && <div className={styles.errorMsg}>{error}</div>}
                   <div className={styles.btnRow}>
-                    <button className={styles.backStep} onClick={() => { setError(""); setCheckoutStep("details"); }}>← Back</button>
+                    <button
+                      className={styles.backStep}
+                      onClick={() => {
+                        setError("");
+                        setCheckoutStep("details");
+                      }}
+                    >
+                      ← Back
+                    </button>
                     <button className={styles.payBtn} onClick={handleCheckout} disabled={placing}>
                       {placing ? "Processing..." : `Pay ${Number(listing.price_pi).toFixed(2)} π`}
                     </button>

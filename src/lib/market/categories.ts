@@ -94,5 +94,6 @@ export const CONDITIONS = [
 export const BUYING_METHODS = [
   { id: "meetup", label: "Meetup Only", emoji: "📍" },
   { id: "ship", label: "Shipping Only", emoji: "📦" },
+  { id: "digital", label: "Digital Delivery", emoji: "💻" },
   { id: "both", label: "Meetup or Ship", emoji: "🤝" },
 ];

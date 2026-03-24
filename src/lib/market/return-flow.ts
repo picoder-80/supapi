@@ -10,7 +10,11 @@ export const RETURN_CATEGORY_LABELS: Record<string, string> = {
 
 export function returnCategoryLabel(category: string | undefined | null): string {
   const k = String(category ?? "").trim();
-  return RETURN_CATEGORY_LABELS[k] || k || "Issue";
+  if (RETURN_CATEGORY_LABELS[k]) return RETURN_CATEGORY_LABELS[k];
+  if (!k) return "Issue";
+  const normalized = k.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+  if (!normalized) return "Issue";
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
 /** Time left until seller deadline; Shopee-style copy */

@@ -186,13 +186,20 @@ function MarketPageContent() {
           </div>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flexShrink: 0, marginTop: 4 }}>
             {user && (
-              <Link href="/supamarket/seller" className={styles.hubBtn}>
-                📊 Seller
+              <Link href="/supamarket/buying" className={styles.hubBtn}>
+                🛒 Buying
               </Link>
             )}
-            <Link href="/supamarket/create" className={styles.sellBtn} style={{ marginLeft: 0 }}>
-              + Sell
-            </Link>
+            {user && (
+              <Link href="/supamarket/selling" className={styles.hubBtn}>
+                🏷️ Selling
+              </Link>
+            )}
+            {user && (
+              <Link href="/supamarket/seller" className={styles.hubBtn}>
+                📊 Seller Hub
+              </Link>
+            )}
           </div>
         </div>
 
@@ -405,7 +412,9 @@ function MarketPageContent() {
                         {l.country_code && l.country_code !== "WORLDWIDE" && (
                           <span className={styles.cardIcon} title={getCountry(l.country_code).name}>{getCountry(l.country_code).flag}</span>
                         )}
-                        <span className={styles.cardIcon} title={l.buying_method === "meetup" ? "Meet up" : l.buying_method === "ship" ? "Shipping" : "Both"}>{l.buying_method === "meetup" ? "📍" : l.buying_method === "ship" ? "📦" : "🤝"}</span>
+                        <span className={styles.cardIcon} title={l.buying_method === "meetup" ? "Meet up" : l.buying_method === "ship" ? "Shipping" : l.buying_method === "digital" ? "Digital delivery" : "Both"}>
+                          {l.buying_method === "meetup" ? "📍" : l.buying_method === "ship" ? "📦" : l.buying_method === "digital" ? "💻" : "🤝"}
+                        </span>
                       </div>
                       {l.location && <span className={styles.cardLocation}>📍 {l.location}</span>}
                     </div>

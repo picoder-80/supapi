@@ -59,6 +59,42 @@ function getInitial(u: string) { return u?.charAt(0).toUpperCase() ?? "?"; }
 function fmt(iso: string) {
   return new Date(iso).toLocaleDateString("en-MY", { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
 }
+
+function normalizeNoteUrl(raw: string): string {
+  const t = raw.trim();
+  if (!t) return "";
+  if (/^https?:\/\//i.test(t)) return t;
+  return `https://${t.replace(/^\/+/, "")}`;
+}
+
+/** Pulls structured lines from order notes; remaining lines are buyer freeform. */
+function parseOrderNotes(notes: string) {
+  const lines = String(notes ?? "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  let meetupBuyerPhone = "";
+  let directionsUrl = "";
+  let digitalContact = "";
+  const freeform: string[] = [];
+  for (const line of lines) {
+    if (/^meetup buyer phone:/i.test(line)) {
+      meetupBuyerPhone = line.replace(/^meetup buyer phone:\s*/i, "").trim();
+    } else if (/^directions:/i.test(line)) {
+      directionsUrl = normalizeNoteUrl(line.replace(/^directions:\s*/i, "").trim());
+    } else if (/^digital contact:/i.test(line)) {
+      digitalContact = line.replace(/^digital contact:\s*/i, "").trim();
+    } else {
+      freeform.push(line);
+    }
+  }
+  return {
+    meetupBuyerPhone,
+    directionsUrl,
+    digitalContact,
+    freeformText: freeform.join("\n"),
+  };
+}
 function CopyPasteIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -621,12 +657,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     if (!order || !user) return "";
     const buyerSide = user.id === order.buyer?.id;
     const sellerSide = user.id === order.seller?.id;
+    if (buyerSide && order.status === "pending") return "pending-payment-section";
+    if (sellerSide && (order.status === "paid" || order.status === "escrow")) return "seller-fulfillment-section";
+    if (buyerSide && (order.status === "shipped" || order.status === "meetup_set")) return "confirm-receipt-section";
+    if (buyerSide && order.status === "delivered") return "complete-order-section";
     if (buyerSide && order.status === "completed" && !order.has_review) return "review-section";
-    if (buyerSide && order.status === "delivered") return "return-refund-section";
     if (sellerSide && order.status === "delivered" && ["pending_seller", "buyer_return_shipped"].includes(String(order.return_request?.status ?? ""))) {
       return "seller-return-section";
     }
-    return "";
+    if (buyerSide && order.status === "delivered") return "return-refund-section";
+    return "status-banner";
   };
 
   useEffect(() => {
@@ -651,7 +691,29 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   const renderTopBar = () => (
     <header className={styles.topBar}>
-      <button className={styles.iconBtn} onClick={() => router.push("/supamarket/orders")} aria-label="Back to orders">←</button>
+      <button
+        className={styles.iconBtn}
+        onClick={() => {
+          if (order && user?.id === order.seller?.id) {
+            router.push("/supamarket/selling");
+            return;
+          }
+          if (order && user?.id === order.buyer?.id) {
+            router.push("/supamarket/buying");
+            return;
+          }
+          router.push("/supamarket/orders");
+        }}
+        aria-label={
+          order && user?.id === order.seller?.id
+            ? "Back to selling"
+            : order && user?.id === order.buyer?.id
+              ? "Back to buying orders"
+              : "Back to orders"
+        }
+      >
+        ←
+      </button>
       <h1 className={styles.title}>Order Detail</h1>
       <button className={styles.iconBtn} onClick={handleShare} aria-label="Share">⤴</button>
     </header>
@@ -706,13 +768,24 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const isActive = !["completed","refunded","cancelled","disputed"].includes(normalizedStatus);
   const reviewRewardAmount = Number(order.review_reward_amount ?? 20);
   const reviewRewardLabel = `${reviewRewardAmount} SC`;
+  const isDigitalOrder = order.buying_method === "digital";
+  const parsedNotes = parseOrderNotes(order.notes ?? "");
+  const sellerNeedsFulfillment = isSeller && (order.status === "paid" || order.status === "escrow");
+  const buyerWaitingFulfillment = isBuyer && (order.status === "paid" || order.status === "escrow");
+  const buyerNeedsReceiptConfirm = isBuyer && (order.status === "shipped" || order.status === "meetup_set");
   const sellerNeedsReturnAction =
     isSeller &&
     order.status === "delivered" &&
     ["pending_seller", "buyer_return_shipped"].includes(String(order.return_request?.status ?? ""));
   const buyerNeedsReturnAction = isBuyer && order.status === "delivered" && !hasOpenDispute;
   const buyerNeedsReview = isBuyer && order.status === "completed" && !order.has_review;
-  const wizardMode = buyerNeedsReturnAction || sellerNeedsReturnAction || buyerNeedsReview;
+  const wizardMode =
+    buyerNeedsReturnAction ||
+    sellerNeedsReturnAction ||
+    buyerNeedsReview ||
+    sellerNeedsFulfillment ||
+    buyerWaitingFulfillment ||
+    buyerNeedsReceiptConfirm;
   const buyerReturnCta = (() => {
     if (!(isBuyer && order.status === "delivered" && !hasOpenDispute)) return null;
     if (returnPhase === "none") return { label: "Start return / refund request", target: "return-refund-section", disabled: false };
@@ -723,6 +796,33 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     return null;
   })();
   const wizardStep = (() => {
+    if (sellerNeedsFulfillment) {
+      return {
+        title: "Action required",
+        sub: "Ship this order or set meetup details to continue.",
+        target: "seller-fulfillment-section",
+        cta: "Open fulfillment actions",
+        disabled: false,
+      };
+    }
+    if (buyerWaitingFulfillment) {
+      return {
+        title: "Current order step",
+        sub: "Waiting for seller to ship or arrange meetup.",
+        target: "status-banner",
+        cta: "View status",
+        disabled: false,
+      };
+    }
+    if (buyerNeedsReceiptConfirm) {
+      return {
+        title: "Current order step",
+        sub: "Confirm receipt once item arrives.",
+        target: "confirm-receipt-section",
+        cta: "Go to confirm receipt",
+        disabled: false,
+      };
+    }
     if (buyerNeedsReview) {
       return {
         title: "Final step: Rate seller",
@@ -783,7 +883,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       ) : null}
 
       {/* Status Banner */}
-      <div className={styles.statusBanner} data-status={order.status}>
+      <div className={styles.statusBanner} data-status={order.status} id="status-banner">
         <div className={styles.statusEmoji}>
           {order.status === "completed" ? "🎉" : order.status === "disputed" ? "⚠️" : order.status === "refunded" ? "↩️" : order.status === "cancelled" ? "❌" : "📦"}
         </div>
@@ -990,7 +1090,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               <div className={styles.listingInfo}>
                 <div className={styles.listingTitle}>{order.listing.title}</div>
                 <div className={styles.listingPrice}>{Number(order.amount_pi).toFixed(2)} π</div>
-                <div className={styles.listingCat}>{formatListingCategoryPath(order.listing.category, order.listing.subcategory ?? "", order.listing.category_deep)} · {order.buying_method === "ship" ? "📦 Shipping" : "📍 Meetup"}</div>
+                <div className={styles.listingCat}>
+                  {formatListingCategoryPath(order.listing.category, order.listing.subcategory ?? "", order.listing.category_deep)} ·{" "}
+                  {order.buying_method === "ship"
+                    ? "📦 Shipping"
+                    : order.buying_method === "digital"
+                      ? "💻 Digital delivery"
+                      : "📍 Meetup"}
+                </div>
               </div>
             </Link>
           ) : (
@@ -1004,13 +1111,41 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               >
                 {itemCollapsed ? "Show order item details" : "Hide order item details"}
               </button>
+              {!itemCollapsed ? (
+                <div className={styles.removedDetails}>
+                  <div className={styles.removedDetailRow}>
+                    <span>Order ID</span>
+                    <strong>{order.id.slice(0, 8).toUpperCase()}</strong>
+                  </div>
+                  <div className={styles.removedDetailRow}>
+                    <span>Amount</span>
+                    <strong>{Number(order.amount_pi ?? 0).toFixed(2)} pi</strong>
+                  </div>
+                  <div className={styles.removedDetailRow}>
+                    <span>Method</span>
+                    <strong>
+                      {order.buying_method === "ship"
+                        ? "Shipping"
+                        : order.buying_method === "meetup"
+                          ? "Meetup"
+                          : order.buying_method === "digital"
+                            ? "Digital delivery"
+                            : "Shipping or meetup"}
+                    </strong>
+                  </div>
+                  <div className={styles.removedDetailRow}>
+                    <span>Placed</span>
+                    <strong>{fmt(order.created_at)}</strong>
+                  </div>
+                </div>
+              ) : null}
               {itemCollapsed ? (
                 <button
                   type="button"
                   className={styles.removedJumpBtn}
                   onClick={() => {
                     const target = getPrimaryActionSectionId();
-                    if (target) scrollToSection(target);
+                    scrollToSection(target);
                   }}
                 >
                   Go to current step
@@ -1024,7 +1159,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         {/* Delivery / Meetup Info */}
         {(!wizardMode || showSecondaryDetails) && (
         <div className={styles.section}>
-          <div className={styles.sectionTitle}>{order.buying_method === "ship" ? "Delivery Info" : "Meetup Info"}</div>
+          <div className={styles.sectionTitle}>
+            {order.buying_method === "ship" ? "Delivery Info" : order.buying_method === "digital" ? "Digital Delivery Info" : "Meetup Info"}
+          </div>
           <div className={styles.infoBox}>
             {order.buying_method === "ship" ? (
               <>
@@ -1059,20 +1196,50 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   </div>
                 )}
               </>
+            ) : order.buying_method === "digital" ? (
+              <>
+                <div className={styles.infoRow}><span>Delivery</span><strong>Digital item</strong></div>
+                <div className={styles.infoRow}><span>Status</span><strong>{order.status === "shipped" ? "Sent by seller" : "Pending seller delivery"}</strong></div>
+                {parsedNotes.digitalContact ? (
+                  <div className={styles.infoRow}>
+                    <span>Delivery contact</span>
+                    <strong>{parsedNotes.digitalContact}</strong>
+                  </div>
+                ) : null}
+              </>
             ) : (
               <>
                 <div className={styles.infoRow}><span>Location</span><strong>{order.meetup_location || "TBD"}</strong></div>
                 {order.meetup_time && <div className={styles.infoRow}><span>Time</span><strong>{fmt(order.meetup_time)}</strong></div>}
+                <div className={styles.infoRow}>
+                  <span>Phone</span>
+                  <strong>{parsedNotes.meetupBuyerPhone || "—"}</strong>
+                </div>
+                {parsedNotes.directionsUrl ? (
+                  <div className={styles.infoRow}>
+                    <span>Directions</span>
+                    <a
+                      href={parsedNotes.directionsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.infoRowLink}
+                    >
+                      Open map link
+                    </a>
+                  </div>
+                ) : null}
               </>
             )}
-            {order.notes && <div className={styles.infoRow}><span>Notes</span><strong>{order.notes}</strong></div>}
+            {parsedNotes.freeformText ? (
+              <div className={styles.infoRow}><span>Notes</span><strong>{parsedNotes.freeformText}</strong></div>
+            ) : null}
           </div>
         </div>
         )}
 
         {/* Buyer resume pending payment */}
         {isBuyer && order.status === "pending" && (
-          <div className={styles.section}>
+          <div className={styles.section} id="pending-payment-section">
             <div className={styles.sectionTitle}>💳 Pending payment</div>
             <div className={styles.confirmNote}>
               This order is awaiting payment confirmation. Continue payment to lock funds in escrow and proceed with the order.
@@ -1085,14 +1252,26 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         {/* Seller actions */}
         {isSeller && (order.status === "paid" || order.status === "escrow") && (
-          <div className={styles.section}>
+          <div className={styles.section} id="seller-fulfillment-section">
             <div className={styles.sectionTitle}>
-              {order.buying_method === "ship"
+              {order.buying_method === "digital"
+                ? "💻 Deliver digital item"
+                : order.buying_method === "ship"
                 ? "📦 Ship This Order"
                 : order.buying_method === "both"
                   ? "📦 Delivery or meetup"
                   : "📍 Arrange Meetup"}
             </div>
+            {order.buying_method === "digital" ? (
+              <>
+                <div className={styles.confirmNote}>
+                  Share access/download details with buyer first, then mark this order as digitally delivered.
+                </div>
+                <button className={styles.actionBtn} disabled={updating} onClick={() => updateStatus("shipped")}>
+                  {updating ? "Updating..." : "Mark digital item delivered 💻"}
+                </button>
+              </>
+            ) : null}
             {(order.buying_method === "ship" || order.buying_method === "both") ? (
               <>
                 <div className={styles.trackingInputWrap}>
@@ -1170,25 +1349,27 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         {/* Buyer confirm delivery */}
         {isBuyer && (order.status === "shipped" || order.status === "meetup_set") && (
-          <div className={styles.section}>
-            <div className={styles.sectionTitle}>✅ Confirm Receipt</div>
+          <div className={styles.section} id="confirm-receipt-section">
+            <div className={styles.sectionTitle}>{isDigitalOrder ? "✅ Confirm Digital Delivery" : "✅ Confirm Receipt"}</div>
             <div className={styles.confirmNote}>
-              Once confirmed, you can complete the order to release payment to the seller. If you take no action, receipt
-              may be auto-confirmed after several days (see Return &amp; Refund policy).
+              {isDigitalOrder
+                ? "Once confirmed, you can complete the order and then rate seller to claim your reward."
+                : "Once confirmed, you can complete the order to release payment to the seller. If you take no action, receipt may be auto-confirmed after several days (see Return & Refund policy)."}
             </div>
             <button className={styles.confirmBtn} disabled={updating} onClick={() => updateStatus("delivered")}>
-              {updating ? "Updating..." : "I've Received This Item ✅"}
+              {updating ? "Updating..." : isDigitalOrder ? "I've received digital delivery ✅" : "I've Received This Item ✅"}
             </button>
           </div>
         )}
 
         {/* Buyer complete */}
         {isBuyer && order.status === "delivered" && (
-          <div className={styles.section}>
-            <div className={styles.sectionTitle}>🎉 Complete Order</div>
+          <div className={styles.section} id="complete-order-section">
+            <div className={styles.sectionTitle}>{isDigitalOrder ? "🎉 Complete Digital Order" : "🎉 Complete Order"}</div>
             <div className={styles.confirmNote}>
-              Happy with your purchase? Mark as complete to finalise payment to the seller. If you do nothing, the order
-              may auto-complete after a short period unless a return request is open.
+              {isDigitalOrder
+                ? "Happy with your digital purchase? Mark as complete, then rate seller to claim your reward."
+                : "Happy with your purchase? Mark as complete to finalise payment to the seller. If you do nothing, the order may auto-complete after a short period unless a return request is open."}
               {["pending_seller", "seller_approved_return", "buyer_return_shipped"].includes(
                 String(order.return_request?.status ?? "")
               ) ? (
@@ -1817,9 +1998,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           </div>
         )}
 
-        {/* Seller: platform case (no pending return request on this order) */}
+        {/* Buyer: platform case (no pending return request on this order) */}
         {(order.status === "delivered" || order.status === "disputed") &&
-          isSeller &&
+          isBuyer &&
           !dispute &&
           !["pending_seller", "seller_approved_return", "buyer_return_shipped"].includes(
             String(order.return_request?.status ?? "")

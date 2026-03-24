@@ -670,7 +670,7 @@ export default function WalletPage() {
                 <div className={styles.scCardIconWrap}>💎</div>
                 <div>
                   <div className={styles.scCardTitle}>SupaCredits</div>
-                  <div className={styles.scCardSub}>1 SC = $0.01 USD</div>
+                  <div className={styles.scCardSub}>In-platform credits</div>
                 </div>
               </div>
               <div className={styles.scCardBalance}>{formatSc(scWallet.balance)}</div>

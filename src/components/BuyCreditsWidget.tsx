@@ -137,7 +137,6 @@ export default function BuyCreditsWidget({
               {pkg.popular && <div className={styles.packagePopularBadge}>⭐ Popular</div>}
               <div className={styles.packageSc}>{pkg.sc.toLocaleString()}</div>
               <div className={styles.packageScLabel}>SC</div>
-              <div className={styles.packageUsd}>${pkg.usd.toFixed(2)} USD</div>
               <div className={styles.packagePi}>π {piNeeded} Pi</div>
               <span className={styles.packageBtn}>Buy Now</span>
             </button>
@@ -145,7 +144,7 @@ export default function BuyCreditsWidget({
         })}
       </div>
       <div className={styles.packageNote}>
-        💡 1 SC = $0.01 USD · Rate updates live · Pay with Pi in Pi Browser
+        💡 Rate updates live · Pay with Pi in Pi Browser
       </div>
 
       {buyPkg && (
@@ -159,10 +158,6 @@ export default function BuyCreditsWidget({
               <div className={styles.buyModalRow}>
                 <span className={styles.buyModalRowLabel}>Package</span>
                 <span className={styles.buyModalRowVal}>{buyPkg.label} — {buyPkg.sc.toLocaleString()} SC</span>
-              </div>
-              <div className={styles.buyModalRow}>
-                <span className={styles.buyModalRowLabel}>USD Value</span>
-                <span className={styles.buyModalRowVal}>${buyPkg.usd.toFixed(2)}</span>
               </div>
               <div className={styles.buyModalRow}>
                 <span className={styles.buyModalRowLabel}>Pi Rate</span>

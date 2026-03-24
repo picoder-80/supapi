@@ -714,6 +714,15 @@
 }
 .confirmRow:last-child { border-bottom: none; }
 .confirmRow strong { color: #1a1a2e; text-align: right; max-width: 60%; }
+.confirmLink {
+  color: #0f3460;
+  font-weight: 700;
+  text-decoration: underline;
+  text-align: right;
+  max-width: 60%;
+  word-break: break-all;
+}
+.confirmLink:hover { color: #f5a623; }
 .confirmTotal strong { color: #f5a623; font-size: 20px; }
 
 .escrowNote {

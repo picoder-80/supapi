@@ -206,7 +206,7 @@ export default function SellerHubPage() {
   return (
     <div className={styles.page}>
       <header className={styles.topBar}>
-        <button type="button" className={styles.iconBtn} onClick={() => router.back()} aria-label="Go back">
+        <button type="button" className={styles.iconBtn} onClick={() => router.push("/dashboard")} aria-label="Back to dashboard">
           ←
         </button>
         <div className={styles.topBarCenter}>

@@ -135,10 +135,10 @@ export default function OrdersPage() {
       <div className={styles.body}>
         {!loading && tab === "buying" && pendingReviewCount > 0 && (
           <div className={styles.pendingReviewCard}>
-            <div className={styles.pendingReviewTitle}>Pending reviews: {pendingReviewCount}</div>
-            <div className={styles.pendingReviewSub}>Rate seller to claim your SC reward and help other buyers.</div>
-            <Link href={`/supamarket/orders/${pendingReviewOrders[0].id}`} className={styles.pendingReviewBtn}>
-              Rate now
+            <div className={styles.pendingReviewTitle}>🎁 Earn SC reward now · {pendingReviewCount} pending</div>
+            <div className={styles.pendingReviewSub}>Rate seller now to claim your SC reward and help other buyers.</div>
+            <Link href={`/supamarket/orders/${pendingReviewOrders[0].id}#review-section`} className={styles.pendingReviewBtn}>
+              Rate now + claim SC
             </Link>
           </div>
         )}
@@ -164,8 +164,15 @@ export default function OrdersPage() {
               const statusClass = STATUS_CLASS[order.status] ?? STATUS_CLASS.pending;
               const returnNote = returnBadgeCopy(order.return_badge, tab);
               const showReviewReward = tab === "buying" && String(order.status ?? "") === "completed" && !order.has_review;
+              const orderHref = showReviewReward
+                ? `/supamarket/orders/${order.id}#review-section`
+                : `/supamarket/orders/${order.id}`;
               return (
-                <Link key={order.id} href={`/supamarket/orders/${order.id}`} className={styles.orderRow}>
+                <Link
+                  key={order.id}
+                  href={orderHref}
+                  className={`${styles.orderRow} ${showReviewReward ? styles.orderRowReward : ""}`}
+                >
                   <div className={styles.orderImg}>
                     {listing?.images?.[0]
                       ? <img src={listing.images[0]} alt="" className={styles.orderImgEl} />
@@ -192,6 +199,7 @@ export default function OrdersPage() {
                     </div>
                     <div className={styles.orderSub}>
                       {tab === "buying" ? "Seller" : "Buyer"}: @{other?.username} · {timeAgo(order.created_at)}
+                      {showReviewReward ? " · Tap to rate seller" : ""}
                     </div>
                   </div>
                   <span className={styles.orderArrow}>→</span>

@@ -342,9 +342,6 @@ export default function RewardsPage() {
               <div className={styles.introCoin}>💎</div>
               <h1 className={styles.introTitle}>Supapi Credits</h1>
               <p className={styles.introSub}>The exclusive reward currency for Pi Network Pioneers</p>
-              <div className={styles.introValueRow}>
-                <div className={styles.introValueTag}>💎 1 SC = $0.01 USD</div>
-              </div>
               <p className={styles.introHeroNote}>Earn · Spend · Gift — across the Pi ecosystem</p>
             </div>
           </div>
@@ -353,9 +350,8 @@ export default function RewardsPage() {
           <div className={styles.introWhatBox}>
             <div className={styles.introWhatTitle}>💡 What are Supapi Credits (SC)?</div>
             <p className={styles.introWhatDesc}>
-              SC is Supapi's in-platform currency that you can earn for free through daily activities,
+              SC is Supapi&apos;s in-platform currency that you can earn for free through daily activities,
               buy with Pi, gift to fellow Pioneers, and use across all Supapi platforms.
-              SC value is pegged to USD — stable and trustworthy.
             </p>
           </div>
 
@@ -424,7 +420,7 @@ export default function RewardsPage() {
           <div className={styles.introWhyBox}>
             <div className={styles.introWhyTitle}>🌟 Why SC is better than ordinary loyalty points</div>
             <div className={styles.introWhyList}>
-              <div className={styles.introWhyItem}><span className={styles.introWhyCheck}>✅</span><span>Value pegged to USD — not empty numbers</span></div>
+              <div className={styles.introWhyItem}><span className={styles.introWhyCheck}>✅</span><span>Spend across Supapi with one balance</span></div>
               <div className={styles.introWhyItem}><span className={styles.introWhyCheck}>✅</span><span>Send to any Pioneer anytime</span></div>
               <div className={styles.introWhyItem}><span className={styles.introWhyCheck}>✅</span><span>Creators receive 70% of every Gift sent to them</span></div>
               <div className={styles.introWhyItem}><span className={styles.introWhyCheck}>✅</span><span>Buy directly using Pi</span></div>
@@ -571,7 +567,6 @@ export default function RewardsPage() {
                   {pkg.popular && <div className={styles.packagePopularBadge}>⭐ Popular</div>}
                   <div className={styles.packageSc}>{pkg.sc.toLocaleString()}</div>
                   <div className={styles.packageScLabel}>SC</div>
-                  <div className={styles.packageUsd}>${pkg.usd.toFixed(2)} USD</div>
                   <div className={styles.packagePi}>π {piNeeded} Pi</div>
                   <button className={styles.packageBtn}>Buy Now</button>
                 </div>
@@ -579,7 +574,7 @@ export default function RewardsPage() {
             })}
           </div>
           <div className={styles.packageNote}>
-            💡 1 SC = $0.01 USD · Rate updates live · Pi paid goes to Supapi treasury
+            💡 Rate updates live · Pay with Pi in Pi Browser
           </div>
         </div>
 
@@ -769,10 +764,6 @@ export default function RewardsPage() {
               <div className={styles.buyModalRow}>
                 <span className={styles.buyModalRowLabel}>Package</span>
                 <span className={styles.buyModalRowVal}>{buyPkg.label} — {buyPkg.sc.toLocaleString()} SC</span>
-              </div>
-              <div className={styles.buyModalRow}>
-                <span className={styles.buyModalRowLabel}>USD Value</span>
-                <span className={styles.buyModalRowVal}>${buyPkg.usd.toFixed(2)}</span>
               </div>
               <div className={styles.buyModalRow}>
                 <span className={styles.buyModalRowLabel}>Pi Rate</span>

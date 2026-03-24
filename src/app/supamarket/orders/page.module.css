@@ -111,9 +111,10 @@
 
 .pendingReviewCard {
   border-radius: 14px;
-  border: 1px solid rgba(245, 166, 35, 0.45);
-  background: linear-gradient(135deg, #fff9ee 0%, #ffffff 100%);
+  border: 1px solid rgba(245, 166, 35, 0.6);
+  background: linear-gradient(135deg, #fff9ee 0%, #fff3d6 40%, #ffffff 100%);
   padding: 12px;
+  box-shadow: 0 8px 18px rgba(245, 166, 35, 0.14);
 }
 .pendingReviewTitle {
   font-size: 13px;
@@ -138,6 +139,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 6px 14px rgba(245, 166, 35, 0.24);
 }
 
 .skeletonRow {
@@ -208,6 +210,15 @@
   transform: translateY(-2px);
   box-shadow: var(--supa-card-shadow-hover);
 }
+.orderRowReward {
+  border-color: rgba(245, 166, 35, 0.65);
+  background: linear-gradient(180deg, #fffdf6 0%, #ffffff 60%);
+  box-shadow: 0 10px 22px rgba(245, 166, 35, 0.14);
+}
+.orderRowReward:hover {
+  border-color: #f5a623;
+  box-shadow: 0 12px 24px rgba(245, 166, 35, 0.2);
+}
 
 .orderImg {
   width: 62px;
@@ -262,6 +273,13 @@
   color: #1a1a2e;
   background: #fef3c7;
   border: 1px solid #f5a623;
+  box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.35);
+  animation: rewardPulse 1.9s ease-out infinite;
+}
+@keyframes rewardPulse {
+  0% { box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.35); }
+  70% { box-shadow: 0 0 0 8px rgba(245, 166, 35, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 166, 35, 0); }
 }
 .statusPending { color: #744210; background: #fffaf0; }
 .statusPaid { color: #276749; background: #f0fff4; }
@@ -326,4 +344,5 @@
   .emptyBtn:hover,
   .orderRow:hover,
   .pagerBtn:hover { transform: none !important; }
+  .reviewRewardBadge { animation: none !important; }
 }

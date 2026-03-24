@@ -223,7 +223,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </Link>
-            <Link href="/dashboard/purchases" className={styles.infoCardLink}>
+            <Link href="/supamarket/buying" className={styles.infoCardLink}>
               <div className={styles.infoCard}>
                 <div className={styles.infoCardIcon}>📦</div>
                 <div className={styles.infoCardInfo}>

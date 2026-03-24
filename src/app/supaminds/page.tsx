@@ -32,6 +32,23 @@ const DEFAULT_LIMITS: Record<string, number> = {
   power_monthly: 1800,
 };
 
+function PlanCheckoutHints({ priceUsd, piRate }: { priceUsd: number; piRate: number }) {
+  const usd = Number(priceUsd ?? 0);
+  return (
+    <>
+      <div className={styles.planPiPrice}>
+        {piRate > 0 ? `≈ π ${(usd / piRate).toFixed(3)} at current rate` : "Checking live Pi price..."}
+      </div>
+      <div className={styles.planPiRateLine}>
+        {piRate > 0 ? `1 Pi ≈ $${piRate.toFixed(2)} USD · Live rate` : "Fetching live Pi rate..."}
+      </div>
+      <div className={styles.planPackageNote}>
+        💡 Rate updates live · Pay with Pi in Pi Browser
+      </div>
+    </>
+  );
+}
+
 export default function SupaMindsPage() {
   const { user } = useAuth();
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -365,13 +382,7 @@ export default function SupaMindsPage() {
               <div className={styles.planName}>{p.name}</div>
               <div className={styles.planPrice}>${Number(p.price_usd ?? 0).toFixed(2)} <span className={styles.muted}>/ month</span></div>
               <div className={styles.muted}>Monthly prompts: {getMonthlyLimit(p).toLocaleString()}</div>
-              {p.code !== "free" && (
-                <div className={styles.planPiPrice}>
-                  {piRate > 0
-                    ? `≈ π ${(Number(p.price_usd ?? 0) / piRate).toFixed(3)} at current rate`
-                    : "Checking live Pi price..."}
-                </div>
-              )}
+              <PlanCheckoutHints priceUsd={Number(p.price_usd ?? 0)} piRate={piRate} />
               <div className={styles.muted}>
                 {p.code === "free"
                   ? "Starter tier for everyday use with free monthly prompts"
@@ -396,6 +407,7 @@ export default function SupaMindsPage() {
                 <div className={styles.planName}>{pack.name}</div>
                 <div className={styles.planPrice}>${Number(pack.price_usd ?? 0).toFixed(2)}</div>
                 <div className={styles.muted}>+{Number(pack.prompts ?? 0).toLocaleString()} prompts</div>
+                <PlanCheckoutHints priceUsd={Number(pack.price_usd ?? 0)} piRate={piRate} />
                 <button className={styles.btn} disabled={busyPlan !== null} onClick={() => void buyTopup(pack.code)}>
                   {busyPlan === `topup:${pack.code}` ? "Opening Pi..." : `Buy ${pack.name}`}
                 </button>
