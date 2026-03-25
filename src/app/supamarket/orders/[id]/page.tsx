@@ -139,7 +139,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [trackingInput, setTrackingInput] = useState("");
   const [courierInput, setCourierInput] = useState("");
   const [meetupInput, setMeetupInput]     = useState("");
-  const [showDispute, setShowDispute]     = useState(false);
   const [disputeReason, setDisputeReason] = useState("");
   const [disputeCategory, setDisputeCategory] = useState("delivery_issue");
   const [disputeExpectedOutcome, setDisputeExpectedOutcome] = useState<"refund" | "manual_review">("refund");
@@ -1886,8 +1885,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             ) : (
               <>
                 <div className={styles.disputeNote}>
-                  Use the steps above as a guide: submit your request here, wait for the seller, then escalate only if
-                  needed. Clear photos speed up decisions.
+                  Start here: send a return or refund request to the seller first. If they decline, you can ask for
+                  platform review in this same section. Clear photos speed up decisions.
                 </div>
                 {!showReturnForm ? (
                   <button type="button" className={styles.disputeOpenBtn} onClick={() => setShowReturnForm(true)}>
@@ -1993,123 +1992,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     </div>
                   </>
                 )}
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Buyer: platform case (no pending return request on this order) */}
-        {(order.status === "delivered" || order.status === "disputed") &&
-          isBuyer &&
-          !dispute &&
-          !["pending_seller", "seller_approved_return", "buyer_return_shipped"].includes(
-            String(order.return_request?.status ?? "")
-          ) && (
-          <div className={styles.section}>
-            <div className={styles.sectionTitle}>⚠️ Open a case</div>
-            <div className={styles.disputeNote}>If you need platform help on this order, open a case with details.</div>
-            {!showDispute ? (
-              <button className={styles.disputeOpenBtn} onClick={() => setShowDispute(true)}>
-                Open case
-              </button>
-            ) : (
-              <>
-                <div className={styles.disputeMetaGrid}>
-                  <div className={styles.formField}>
-                    <label className={styles.formLabel}>Reason</label>
-                    <select className={styles.input} value={disputeCategory} onChange={(e) => setDisputeCategory(e.target.value)}>
-                      <option value="delivery_issue">Did not receive / delivery problem</option>
-                      <option value="damaged_item">Item arrived damaged</option>
-                      <option value="wrong_item">Wrong item sent</option>
-                      <option value="item_not_as_described">Not as described</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <div className={styles.formField}>
-                    <label className={styles.formLabel}>Preferred resolution</label>
-                    <select
-                      className={styles.input}
-                      value={disputeExpectedOutcome}
-                      onChange={(e) => setDisputeExpectedOutcome(e.target.value as "refund" | "manual_review")}
-                    >
-                      <option value="refund">Refund</option>
-                      <option value="manual_review">Manual review</option>
-                    </select>
-                  </div>
-                </div>
-                <div className={styles.formField}>
-                  <label className={styles.formLabel}>Incident date (optional)</label>
-                  <input
-                    className={styles.input}
-                    type="date"
-                    value={incidentDate}
-                    onChange={(e) => setIncidentDate(e.target.value)}
-                  />
-                </div>
-                <textarea
-                  className={styles.input}
-                  rows={4}
-                  placeholder="Describe the situation..."
-                  value={disputeReason}
-                  onChange={(e) => setDisputeReason(e.target.value)}
-                />
-                <div className={styles.formField}>
-                  <label className={styles.formLabel}>Evidence Photos (up to 6)</label>
-                  <div
-                    className={`${styles.dropZone} ${dragOverEvidence ? styles.dropZoneActive : ""}`}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDragOverEvidence(true);
-                    }}
-                    onDragLeave={() => setDragOverEvidence(false)}
-                    onDrop={handleEvidenceDrop}
-                  >
-                    <div className={styles.dropZoneTitle}>Drop images here or choose files</div>
-                    <div className={styles.dropZoneSub}>Accepted: JPEG, PNG, WEBP</div>
-                    <input
-                      className={styles.fileInput}
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png,image/webp"
-                      multiple
-                      onChange={(e) => uploadEvidenceFiles(e.target.files)}
-                      disabled={uploadingEvidence || evidenceUrls.length >= 6}
-                    />
-                  </div>
-                  {uploadingEvidence && (
-                    <div className={styles.uploading}>
-                      Uploading {uploadProgress.done}/{uploadProgress.total}
-                      {uploadProgress.current ? ` · ${uploadProgress.current}` : ""}
-                    </div>
-                  )}
-                  {evidenceUrls.length > 0 && (
-                    <div className={styles.evidenceGrid}>
-                      {evidenceUrls.map((url) => (
-                        <div key={url} className={styles.evidenceItem}>
-                          <img src={url} alt="" className={styles.evidenceImg} />
-                          <button
-                            type="button"
-                            className={styles.removeEvidenceBtn}
-                            onClick={() => setEvidenceUrls((prev) => prev.filter((v) => v !== url))}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className={styles.btnRow}>
-                  <button className={styles.cancelBtn} onClick={() => setShowDispute(false)}>
-                    Cancel
-                  </button>
-                  <button
-                    className={styles.disputeBtn}
-                    disabled={disputing || uploadingEvidence || !disputeReason.trim()}
-                    onClick={() => void handleDispute()}
-                  >
-                    {disputing ? "Submitting..." : "Submit"}
-                  </button>
-                </div>
               </>
             )}
           </div>

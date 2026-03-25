@@ -17,6 +17,7 @@ const sections = [
     title: "Eligibility",
     content: [
       "You must be at least 13 years of age to use Supapi. If you are under 18, you should have parental or guardian consent. You must have the legal capacity to enter into binding agreements in your jurisdiction.",
+      "Access to Supapi requires a verified Pi Network account. Pi Network's own KYC process serves as identity and age verification.",
       "You must comply with all applicable laws in your country or region when using Supapi. We may restrict access from certain jurisdictions where our services are not permitted.",
     ],
   },
@@ -144,7 +145,7 @@ export default function TermsPage() {
       <section className={styles.section}>
         <div className="container">
           <p className={styles.bodyText} style={{ marginBottom: 32 }}>
-            <strong>Last updated:</strong> {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+            <strong>Last updated:</strong> 25 March 2026
           </p>
           <div className={styles.privacyNav}>
             {sections.map((s) => (
