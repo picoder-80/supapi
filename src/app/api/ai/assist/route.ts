@@ -78,6 +78,16 @@ function ymOfNow(): string {
   return `${d.getFullYear()}-${m}`;
 }
 
+// Map model name to column for cost tracking
+function modelToColumn(model: string): string {
+  const m = String(model ?? "").toLowerCase();
+  if (m.includes("haiku"))  return "haiku_requests";
+  if (m.includes("opus"))   return "opus_requests";
+  if (m.includes("sonnet") || m.includes("claude")) return "sonnet_requests";
+  if (m.includes("gpt") || m.includes("openai"))    return "other_requests";
+  return "other_requests";
+}
+
 function asObj(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" ? (v as Record<string, unknown>) : {};
 }
@@ -364,6 +374,33 @@ export async function POST(req: NextRequest) {
     const preset = getPlatformAIPreset(platform);
     const memoryPlatform = isSupaMindsChat ? "supaminds" : platform;
     await persistProviderAlertIfAny(result.provider);
+
+    // Track model used for accurate cost reporting
+    if (userId && isSupaMindsChat && result.model) {
+      const modelCol = modelToColumn(result.model);
+      const periodYm = ymOfNow();
+      try {
+        await supabase
+          .from("mind_usage_monthly")
+          .update({ [modelCol]: supabase.rpc("raw_sql" as any, {}) as any })
+          .eq("user_id", userId)
+          .eq("period_ym", periodYm);
+        // Simple approach: just do a raw increment via separate update
+        const { data: usageRow } = await supabase
+          .from("mind_usage_monthly")
+          .select(`id, ${modelCol}`)
+          .eq("user_id", userId)
+          .eq("period_ym", periodYm)
+          .maybeSingle();
+        if (usageRow?.id) {
+          const current = Number((usageRow as any)[modelCol] ?? 0);
+          await supabase
+            .from("mind_usage_monthly")
+            .update({ [modelCol]: current + 1 })
+            .eq("id", (usageRow as any).id);
+        }
+      } catch { /* non-critical */ }
+    }
 
     if (userId && result.ok && cleanAnswer) {
       await writeMemory({

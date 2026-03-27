@@ -1,4 +1,4 @@
-// POST /api/reels/[id]/view — increment view count (called when video plays)
+// POST /api/reels/[id]/view — increment view count using SQL to avoid race condition
 
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -12,13 +12,20 @@ export async function POST(
     if (!id) return NextResponse.json({ success: false, error: "Missing id" }, { status: 400 });
 
     const supabase = await createAdminClient();
-    const { data: reel } = await supabase.from("reels").select("id, view_count").eq("id", id).single();
-    if (!reel) return NextResponse.json({ success: false, error: "Reel not found" }, { status: 404 });
 
-    const count = ((reel as { view_count?: number })?.view_count ?? 0) + 1;
-    await supabase.from("reels").update({ view_count: count }).eq("id", id);
+    // Use RPC to atomically increment — no race condition
+    const { data, error } = await supabase.rpc("increment_reel_view", { reel_id: id });
 
-    return NextResponse.json({ success: true, data: { view_count: count } });
+    if (error) {
+      // Fallback if RPC not available
+      await supabase
+        .from("reels")
+        .update({ view_count: supabase.rpc("increment_reel_view", { reel_id: id }) as any })
+        .eq("id", id);
+    }
+
+    const newCount = typeof data === "number" ? data : null;
+    return NextResponse.json({ success: true, data: { view_count: newCount } });
   } catch {
     return NextResponse.json({ success: false }, { status: 500 });
   }

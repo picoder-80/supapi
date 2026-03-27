@@ -86,12 +86,17 @@ function OrderRowLink({ order, variant }: { order: OrderRowItem; variant: "actio
     variant === "action" && order.updated_at && order.updated_at !== order.created_at
       ? `Updated ${timeAgo(order.updated_at)} · ${timeAgo(order.created_at)}`
       : timeAgo(order.created_at);
+
+  const isDisputed = order.status === "disputed";
+  const isRefunded = order.status === "refunded";
+
   return (
     <Link
       href={`/supamarket/orders/${order.id}`}
-      className={`${styles.orderRow} ${variant === "action" ? styles.orderRowAction : ""}`}
+      className={`${styles.orderRow} ${variant === "action" ? styles.orderRowAction : ""} ${isDisputed ? styles.orderRowDisputed : ""} ${isRefunded ? styles.orderRowRefunded : ""}`}
     >
       <div className={styles.orderImg}>
+        {isDisputed && <div className={styles.disputeDot} />}
         {order.image ? <img src={order.image} alt="" className={styles.orderImgEl} /> : <span>🛍️</span>}
       </div>
       <div className={styles.orderInfo}>
@@ -99,6 +104,7 @@ function OrderRowLink({ order, variant }: { order: OrderRowItem; variant: "actio
         <div className={styles.orderMeta}>
           <span className={styles.orderPrice}>{order.amount_pi.toFixed(2)} π</span>
           <span className={`${styles.orderStatus} ${sc}`}>{label}</span>
+          {isDisputed && <span className={styles.disputeUrgent}>Action required</span>}
         </div>
         {order.hint ? <div className={styles.orderHint}>{order.hint}</div> : null}
         <div className={styles.orderSub}>{sub}</div>
@@ -296,6 +302,61 @@ export default function SellerHubPage() {
             </button>
           </div>
         ) : null}
+
+        {/* ── Dispute / Refund Alert Banner ── */}
+        {!loading && summary && (() => {
+          const disputedOrders = summary.actionRequiredOrders.filter(o => o.status === "disputed");
+          const refundedOrders = summary.recentOrders.filter(o => o.status === "refunded");
+          if (disputedOrders.length === 0 && refundedOrders.length === 0) return null;
+          return (
+            <div className={styles.disputeAlertWrap}>
+              {disputedOrders.length > 0 && (
+                <div className={styles.disputeAlert}>
+                  <div className={styles.disputeAlertIcon}>⚠️</div>
+                  <div className={styles.disputeAlertBody}>
+                    <div className={styles.disputeAlertTitle}>
+                      {disputedOrders.length === 1
+                        ? "1 order is under dispute"
+                        : `${disputedOrders.length} orders are under dispute`}
+                    </div>
+                    <div className={styles.disputeAlertSub}>
+                      Buyer has raised a dispute. Review and respond immediately to avoid automatic refund.
+                    </div>
+                    <div className={styles.disputeAlertLinks}>
+                      {disputedOrders.map(o => (
+                        <Link key={o.id} href={`/supamarket/orders/${o.id}`} className={styles.disputeAlertLink}>
+                          {o.title} →
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {refundedOrders.length > 0 && (
+                <div className={styles.refundAlert}>
+                  <div className={styles.disputeAlertIcon}>🔄</div>
+                  <div className={styles.disputeAlertBody}>
+                    <div className={styles.disputeAlertTitle}>
+                      {refundedOrders.length === 1
+                        ? "1 order has been refunded"
+                        : `${refundedOrders.length} orders have been refunded`}
+                    </div>
+                    <div className={styles.disputeAlertSub}>
+                      These orders were refunded to the buyer. Review if follow-up is needed.
+                    </div>
+                    <div className={styles.disputeAlertLinks}>
+                      {refundedOrders.slice(0, 3).map(o => (
+                        <Link key={o.id} href={`/supamarket/orders/${o.id}`} className={styles.refundAlertLink}>
+                          {o.title} →
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {!loading && summary && summary.listings.total === 0 ? (
           <div className={styles.tipCard}>

@@ -180,8 +180,8 @@
 
 .actionRow {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  flex-wrap: wrap;
   margin-top: 8px;
 }
 
@@ -253,6 +253,33 @@
 .btnGhost:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.btnOutlineDanger {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 999px;
+  border: 1.5px solid #e53e3e;
+  background: #fff;
+  color: #e53e3e;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: transform var(--supa-motion-fast) var(--supa-ease), background var(--supa-motion-fast) ease;
+}
+
+.btnOutlineDanger:hover:not(:disabled) {
+  background: #fff5f5;
+  transform: translateY(-1px);
+}
+
+.btnOutlineDanger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btnFullWidth {
+  width: 100%;
 }
 
 .msg {
@@ -368,6 +395,158 @@
 .openChatBtn:hover {
   transform: translateY(-1px);
   filter: brightness(1.02);
+}
+
+/* Billing toggle */
+.billingToggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.toggleWrap {
+  display: flex;
+  background: #f1f5f9;
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.toggleBtn {
+  min-height: 32px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: #718096;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 0 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.toggleActive {
+  background: #fff;
+  color: #1a1a2e;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.saveBadge {
+  background: #f5a623;
+  color: #1a1a2e;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.annualNote {
+  font-size: 12px;
+  color: #744210;
+  background: #fff7e6;
+  border: 1px solid #f5d9a2;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.annualSaving {
+  font-size: 12px;
+  font-weight: 700;
+  color: #276749;
+  background: #f0fff4;
+  border: 1px solid #9ae6b4;
+  border-radius: 999px;
+  padding: 3px 10px;
+  width: fit-content;
+}
+
+/* Plan highlight (Pro) */
+.planHighlight {
+  border-color: #f5a623 !important;
+  box-shadow: 0 0 0 2px rgba(245,166,35,0.2), var(--supa-card-shadow) !important;
+}
+
+.popularBadge {
+  font-size: 11px;
+  font-weight: 800;
+  color: #f5a623;
+  background: rgba(245,166,35,0.1);
+  border: 1px solid rgba(245,166,35,0.3);
+  border-radius: 999px;
+  padding: 3px 10px;
+  width: fit-content;
+}
+
+.btnHighlight {
+  background: linear-gradient(135deg, #f5a623, #e8940f);
+  box-shadow: 0 2px 8px rgba(245,166,35,0.35);
+}
+
+/* Boost packs */
+.boostGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.boostCard {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 14px;
+  display: grid;
+  gap: 6px;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.boostCard:hover {
+  border-color: #f5a623;
+  transform: translateY(-2px);
+}
+
+.boostEmoji {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.boostName {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a1a2e;
+}
+
+.boostPrompts {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f3460;
+}
+
+.boostPrice {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1a1a2e;
+}
+
+.boostNote {
+  font-size: 12px;
+  color: #718096;
+  background: rgba(245,166,35,0.06);
+  border: 1px solid rgba(245,166,35,0.15);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .boostGrid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .assistToolbar {

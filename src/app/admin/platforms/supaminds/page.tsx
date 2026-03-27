@@ -32,12 +32,19 @@ type ProviderAlert = {
   remaining_pct?: number | null;
 };
 
+// Updated to handle all plan codes including new starter + annual plans
 function toPlanLabel(code?: string): string {
   const v = String(code ?? "").trim().toLowerCase();
-  if (v === "pro_monthly") return "Pro Monthly";
-  if (v === "power_monthly") return "Power Monthly";
-  if (v === "free") return "Free";
-  return v ? v.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "-";
+  const map: Record<string, string> = {
+    free:            "Free",
+    starter_monthly: "Starter (Monthly)",
+    starter_annual:  "Starter (Annual)",
+    pro_monthly:     "Pro (Monthly)",
+    pro_annual:      "Pro (Annual)",
+    power_monthly:   "Power (Monthly)",
+    power_annual:    "Power (Annual)",
+  };
+  return map[v] ?? (v ? v.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "-");
 }
 
 export default function SupaMindsAdminPage() {
@@ -54,12 +61,14 @@ export default function SupaMindsAdminPage() {
     total_subscriptions: number;
     active_subscriptions: number;
     total_revenue_usd: number;
+    current_month_revenue_usd: number;
     usage_period_ym?: string | null;
     usage_requests_current_month?: number;
     usage_requests_by_plan?: Record<string, number>;
     est_ai_cost_usd_current_month?: number;
     est_profit_usd_current_month?: number;
     est_margin_pct_current_month?: number;
+    model_breakdown?: { haiku?: number; sonnet?: number; opus?: number; other?: number };
     topup_prompts_sold?: number;
     topup_prompts_remaining?: number;
   } | null>(null);
@@ -123,6 +132,14 @@ export default function SupaMindsAdminPage() {
     await load();
   };
 
+  const togglePlanActive = async (id: string, currentActive: boolean) => {
+    await adminFetch("/api/admin/supaminds", {
+      method: "PATCH",
+      body: JSON.stringify({ mode: "plan_active", id, active: !currentActive }),
+    });
+    await load();
+  };
+
   const runCron = async () => {
     setCronMsg("Running...");
     const r = await adminFetch("/api/admin/supaminds", { method: "PATCH", body: JSON.stringify({ mode: "run_cron" }) });
@@ -135,18 +152,27 @@ export default function SupaMindsAdminPage() {
     <div className="adminPage">
       <AdminPageHero icon="🧠" title="SupaMinds Admin" subtitle="Subscription operations and billing overview" showBadge />
       <div className={styles.wrap}>
+
+        {/* Stats */}
         <div className={styles.stats}>
           <div className={styles.card}><div className={styles.v}>{stats?.total_subscriptions ?? 0}</div><div className={styles.k}>Total subscriptions</div></div>
           <div className={styles.card}><div className={styles.v}>{stats?.active_subscriptions ?? 0}</div><div className={styles.k}>Active subscriptions</div></div>
-          <div className={styles.card}><div className={styles.v}>${Number(stats?.total_revenue_usd ?? 0).toFixed(2)}</div><div className={styles.k}>Total paid revenue</div></div>
+          <div className={styles.card}><div className={styles.v}>${Number(stats?.total_revenue_usd ?? 0).toFixed(2)}</div><div className={styles.k}>All-time revenue</div></div>
+          <div className={styles.card}><div className={styles.v}>${Number(stats?.current_month_revenue_usd ?? 0).toFixed(2)}</div><div className={styles.k}>Revenue ({stats?.usage_period_ym ?? "-"})</div></div>
           <div className={styles.card}><div className={styles.v}>{Number(stats?.usage_requests_current_month ?? 0).toLocaleString()}</div><div className={styles.k}>AI requests ({stats?.usage_period_ym ?? "-"})</div></div>
-          <div className={styles.card}><div className={styles.v}>${Number(stats?.est_ai_cost_usd_current_month ?? 0).toFixed(2)}</div><div className={styles.k}>Estimated AI cost ({stats?.usage_period_ym ?? "-"})</div></div>
-          <div className={styles.card}><div className={styles.v}>${Number(stats?.est_profit_usd_current_month ?? 0).toFixed(2)} ({Number(stats?.est_margin_pct_current_month ?? 0).toFixed(1)}%)</div><div className={styles.k}>Estimated gross margin</div></div>
-          <div className={styles.card}><div className={styles.v}>{Number(stats?.topup_prompts_sold ?? 0).toLocaleString()}</div><div className={styles.k}>Topup prompts sold</div></div>
-          <div className={styles.card}><div className={styles.v}>{Number(stats?.topup_prompts_remaining ?? 0).toLocaleString()}</div><div className={styles.k}>Topup prompts remaining</div></div>
+          <div className={styles.card}><div className={styles.v}>${Number(stats?.est_ai_cost_usd_current_month ?? 0).toFixed(2)}</div><div className={styles.k}>Est. AI cost ({stats?.usage_period_ym ?? "-"})</div></div>
+          <div className={styles.card}><div className={styles.v}>${Number(stats?.est_profit_usd_current_month ?? 0).toFixed(2)}</div><div className={styles.k}>Est. profit ({stats?.usage_period_ym ?? "-"})</div></div>
+          <div className={styles.card}><div className={styles.v}>{Number(stats?.est_margin_pct_current_month ?? 0).toFixed(1)}%</div><div className={styles.k}>Gross margin ({stats?.usage_period_ym ?? "-"})</div></div>
+          <div className={styles.card}><div className={styles.v}>{Number(stats?.topup_prompts_sold ?? 0).toLocaleString()}</div><div className={styles.k}>Boost prompts sold</div></div>
+          <div className={styles.card}><div className={styles.v}>{Number(stats?.topup_prompts_remaining ?? 0).toLocaleString()}</div><div className={styles.k}>Boost prompts remaining</div></div>
         </div>
+
+        {/* AI Provider Quota Alerts */}
         <div className={styles.card}>
-          <div className={styles.sectionTitle}>Provider Runtime Alerts</div>
+          <div className={styles.sectionTitle}>🔔 AI Provider Quota Alerts</div>
+          <div className={styles.k} style={{ marginBottom: 8 }}>
+            Triggered when Anthropic or OpenAI API quota is running low. Top up at the provider dashboard before users experience errors.
+          </div>
           {providerAlerts.length ? (
             <div className={styles.alertList}>
               {providerAlerts.map((a) => (
@@ -154,16 +180,51 @@ export default function SupaMindsAdminPage() {
                   <span className={styles.badge}>{a.provider}</span>
                   <span className={a.level === "warn" ? styles.warnText : styles.k}>{a.message}</span>
                   <span className={styles.k}>
-                    {a.remaining_pct != null ? `(${Number(a.remaining_pct).toFixed(1)}%)` : ""} {new Date(a.last_seen_at).toLocaleString()}
+                    {a.remaining_pct != null ? `(${Number(a.remaining_pct).toFixed(1)}% remaining)` : ""}
+                    {" · "}{new Date(a.last_seen_at).toLocaleString()}
                   </span>
+                  <a
+                    href={a.provider === "anthropic" ? "https://console.anthropic.com" : "https://platform.openai.com"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={styles.btn}
+                  >
+                    Top up →
+                  </a>
                 </div>
               ))}
             </div>
           ) : (
-            <div className={styles.k}>No runtime provider alerts yet.</div>
+            <div className={styles.k}>✅ No quota alerts — all providers healthy.</div>
           )}
         </div>
 
+        {/* Model breakdown */}
+        {stats?.model_breakdown && (
+          <div className={styles.card}>
+            <div className={styles.sectionTitle}>Model Usage Breakdown ({stats?.usage_period_ym ?? "-"})</div>
+            <div className={styles.stats}>
+              <div className={styles.card}>
+                <div className={styles.v}>{Number(stats.model_breakdown.haiku ?? 0).toLocaleString()}</div>
+                <div className={styles.k}>Haiku requests (~$0.001/req)</div>
+              </div>
+              <div className={styles.card}>
+                <div className={styles.v}>{Number(stats.model_breakdown.sonnet ?? 0).toLocaleString()}</div>
+                <div className={styles.k}>Sonnet requests (~$0.003/req)</div>
+              </div>
+              <div className={styles.card}>
+                <div className={styles.v}>{Number(stats.model_breakdown.opus ?? 0).toLocaleString()}</div>
+                <div className={styles.k}>Opus requests (~$0.015/req)</div>
+              </div>
+              <div className={styles.card}>
+                <div className={styles.v}>{Number(stats.model_breakdown.other ?? 0).toLocaleString()}</div>
+                <div className={styles.k}>Other/OpenAI requests</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Subscriptions table */}
         <div className={styles.card}>
           <div className={styles.filters}>
             <input className={styles.input} placeholder="Search username/email" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -173,9 +234,8 @@ export default function SupaMindsAdminPage() {
             </select>
             <button className={styles.btn} onClick={() => void load()}>{loading ? "Loading..." : "Refresh"}</button>
             <button className={styles.btn} onClick={() => void runCron()}>Run lifecycle cron</button>
-            {cronMsg ? <span>{cronMsg}</span> : null}
+            {cronMsg ? <span className={styles.k}>{cronMsg}</span> : null}
           </div>
-
           <table className={styles.table}>
             <thead>
               <tr>
@@ -183,7 +243,7 @@ export default function SupaMindsAdminPage() {
                 <th>Plan</th>
                 <th>Status</th>
                 <th>Period End</th>
-                <th>Cancel End</th>
+                <th>Auto-renew off</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -191,7 +251,7 @@ export default function SupaMindsAdminPage() {
               {rows.map((r) => (
                 <tr key={r.id}>
                   <td>@{r.user?.username ?? "unknown"}<br />{r.user?.email ?? "-"}</td>
-                  <td>{r.plan?.name ?? r.plan?.code ?? "-"}</td>
+                  <td>{toPlanLabel(r.plan?.code)}</td>
                   <td><span className={styles.badge}>{r.status}</span></td>
                   <td>{r.current_period_end ? new Date(r.current_period_end).toLocaleString() : "-"}</td>
                   <td>{r.cancel_at_period_end ? "yes" : "no"}</td>
@@ -207,14 +267,23 @@ export default function SupaMindsAdminPage() {
         </div>
 
         <div className={styles.grid2}>
+          {/* Plans management */}
           <div className={styles.card}>
             <div className={styles.sectionTitle}>Plans</div>
             <table className={styles.table}>
-              <thead><tr><th>Plan</th><th>USD</th><th>Monthly Limit</th><th>Action</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Plan</th>
+                  <th>USD</th>
+                  <th>Prompts/mo</th>
+                  <th>Active</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
               <tbody>
                 {plans.map((p) => (
                   <tr key={p.id}>
-                    <td>{p.name} ({p.code})</td>
+                    <td>{p.name}<br /><span className={styles.k}>{p.code}</span></td>
                     <td>
                       <input
                         className={styles.input}
@@ -230,9 +299,20 @@ export default function SupaMindsAdminPage() {
                       />
                     </td>
                     <td>
+                      <span className={p.active ? styles.activeBadge : styles.inactiveBadge}>
+                        {p.active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td>
                       <div className={styles.actionBtns}>
                         <button className={styles.btn} onClick={() => void savePlanPrice(p.id)}>Save Price</button>
                         <button className={styles.btn} onClick={() => void savePlanLimit(p.id)}>Save Limit</button>
+                        <button
+                          className={p.active ? styles.btnDanger : styles.btn}
+                          onClick={() => void togglePlanActive(p.id, p.active)}
+                        >
+                          {p.active ? "Disable" : "Enable"}
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -240,6 +320,8 @@ export default function SupaMindsAdminPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Recent invoices */}
           <div className={styles.card}>
             <div className={styles.sectionTitle}>Recent Invoices</div>
             <table className={styles.table}>
@@ -258,6 +340,7 @@ export default function SupaMindsAdminPage() {
           </div>
         </div>
 
+        {/* Usage analytics */}
         <div className={styles.card}>
           <div className={styles.sectionTitle}>Usage Analytics ({stats?.usage_period_ym ?? "-"})</div>
           <div className={styles.k} style={{ marginBottom: 8 }}>
@@ -286,8 +369,9 @@ export default function SupaMindsAdminPage() {
           </table>
         </div>
 
+        {/* Boost packs ledger */}
         <div className={styles.card}>
-          <div className={styles.sectionTitle}>Topup Ledger</div>
+          <div className={styles.sectionTitle}>Boost Pack Ledger</div>
           <table className={styles.table}>
             <thead>
               <tr>
@@ -313,6 +397,7 @@ export default function SupaMindsAdminPage() {
             </tbody>
           </table>
         </div>
+
       </div>
     </div>
   );

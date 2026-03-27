@@ -2,6 +2,7 @@ export type AIProviderName = "anthropic" | "openai" | "heuristic";
 export type AssistantMode = "assistant" | "growth" | "support" | "ops";
 type ProviderCallResult = {
   text: string;
+  model?: string;
   usage?: {
     input_tokens?: number;
     output_tokens?: number;
@@ -327,22 +328,51 @@ export function getAIProviderRuntimeAlert(provider: AIProviderName): AIProviderR
   return runtimeProviderAlerts[provider] ?? null;
 }
 
+// Route to cheap Haiku for simple/short queries, Sonnet for complex ones
+function selectAnthropicModel(prompt: string): string {
+  const customModel = process.env.ANTHROPIC_MODEL;
+  if (customModel) return customModel;
+  const wordCount = prompt.trim().split(/\s+/).length;
+  const isSimple = wordCount < 60 && !/analyz|explain|summar|compare|strateg|detail|step.by.step/i.test(prompt);
+  return isSimple ? "claude-haiku-4-5" : "claude-sonnet-4-5";
+}
+
 async function callAnthropic(prompt: string, maxTokens?: number): Promise<ProviderCallResult | null> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return null;
+
+  const model = selectAnthropicModel(prompt);
+
+  // Split prompt into cached system part + dynamic user message for cost savings
+  const systemEnd = prompt.indexOf("User message:");
+  const systemPart = systemEnd > 0 ? prompt.slice(0, systemEnd).trim() : "";
+  const userPart = systemEnd > 0 ? prompt.slice(systemEnd).trim() : prompt;
+
+  const messages = systemPart
+    ? [{ role: "user", content: userPart }]
+    : [{ role: "user", content: prompt }];
+
+  const body: Record<string, unknown> = {
+    model,
+    max_tokens: Math.max(80, Math.floor(Number(maxTokens ?? 420))),
+    temperature: 0.2,
+    messages,
+  };
+
+  // Add prompt caching on system part if available (saves ~90% on repeated system prompts)
+  if (systemPart) {
+    body.system = [{ type: "text", text: systemPart, cache_control: { type: "ephemeral" } }];
+  }
+
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "x-api-key": key,
       "anthropic-version": "2023-06-01",
+      "anthropic-beta": "prompt-caching-2024-07-31",
     },
-    body: JSON.stringify({
-      model: process.env.ANTHROPIC_MODEL ?? "claude-3-5-sonnet-20241022",
-      max_tokens: Math.max(80, Math.floor(Number(maxTokens ?? 420))),
-      temperature: 0.2,
-      messages: [{ role: "user", content: prompt }],
-    }),
+    body: JSON.stringify(body),
   });
   maybeWarnRateLimit({
     provider: "anthropic",
@@ -367,6 +397,7 @@ async function callAnthropic(prompt: string, maxTokens?: number): Promise<Provid
   if (!text) return null;
   return {
     text,
+    model: String(data?.model ?? model),
     usage: {
       input_tokens: Number(data?.usage?.input_tokens ?? 0),
       output_tokens: Number(data?.usage?.output_tokens ?? 0),
@@ -611,6 +642,7 @@ Rules:
           return {
             ok: true,
             provider,
+            model: result.model ?? "claude-sonnet-4-5",
             answer: String(parsed?.answer ?? ""),
             suggestions: Array.isArray(parsed?.suggestions) ? parsed.suggestions.map(String).slice(0, 3) : [],
             usage: result.usage,
@@ -625,6 +657,7 @@ Rules:
           return {
             ok: true,
             provider,
+            model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
             answer: String(parsed?.answer ?? ""),
             suggestions: Array.isArray(parsed?.suggestions) ? parsed.suggestions.map(String).slice(0, 3) : [],
             usage: result.usage,
@@ -642,6 +675,7 @@ Rules:
         return {
           ok: true,
           provider,
+          model: "heuristic",
           answer: h.answer,
           suggestions: h.suggestions,
         };
@@ -660,6 +694,7 @@ Rules:
   return {
     ok: true,
     provider: "heuristic" as AIProviderName,
+    model: "heuristic",
     answer: fallback.answer,
     suggestions: fallback.suggestions,
   };

@@ -19,13 +19,18 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
     if (!sub) return NextResponse.json({ success: false, error: "Subscription not found" }, { status: 404 });
 
+    // Only flag for cancellation at period end — keep status active so user retains access
+    if (!["active", "grace"].includes(sub.status)) {
+      return NextResponse.json({ success: false, error: "No active subscription to cancel" }, { status: 400 });
+    }
+
     const nowIso = new Date().toISOString();
     const { error } = await supabase
       .from("mind_subscriptions")
-      .update({ cancel_at_period_end: true, status: "canceled", canceled_at: nowIso, updated_at: nowIso })
+      .update({ cancel_at_period_end: true, canceled_at: nowIso, updated_at: nowIso })
       .eq("id", sub.id);
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: "Subscription will cancel at period end. Access continues until then." });
   } catch {
     return NextResponse.json({ success: false }, { status: 500 });
   }

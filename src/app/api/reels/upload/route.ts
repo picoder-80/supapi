@@ -2,8 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyToken } from "@/lib/auth/jwt";
 
+export const config = {
+  api: { bodyParser: false },
+};
+
+// Disable Next.js body size limit for video uploads
+export const maxDuration = 60;
+
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+const BUCKET = "reels"; // dedicated reels bucket
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,21 +30,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Max 50MB" }, { status: 400 });
 
     const supabase = await createAdminClient();
+
+    // Ensure reels bucket exists, create if not
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const bucketExists = (buckets ?? []).some((b: { name: string }) => b.name === BUCKET);
+    if (!bucketExists) {
+      await supabase.storage.createBucket(BUCKET, {
+        public: true,
+        fileSizeLimit: MAX_VIDEO_SIZE,
+        allowedMimeTypes: ALLOWED_TYPES,
+      });
+    }
+
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "mp4";
-    const path = `reels/${payload.userId}/${Date.now()}.${ext}`;
+    const path = `${payload.userId}/${Date.now()}.${ext}`;
     const bytes = await file.arrayBuffer();
 
-    // Uses "covers" bucket with reels/ path (create "reels" bucket in Supabase if preferred)
-    const bucket = "covers";
     const { error: uploadError } = await supabase.storage
-      .from(bucket)
+      .from(BUCKET)
       .upload(path, bytes, { contentType: file.type, upsert: false });
 
     if (uploadError) return NextResponse.json({ success: false, error: uploadError.message }, { status: 500 });
 
-    const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path);
+    const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path);
     return NextResponse.json({ success: true, data: { url: publicUrl, path } });
-  } catch {
+  } catch (err) {
+    console.error("[Reels Upload]", err);
     return NextResponse.json({ success: false, error: "Server error" }, { status: 500 });
   }
 }

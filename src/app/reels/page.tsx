@@ -138,12 +138,32 @@ export default function ReelsPage() {
                       src={r.video_url}
                       controls
                       playsInline
+                      preload="metadata"
                       className={styles.reelVideo}
                       onPlay={(e) => {
                         const v = e.currentTarget;
                         if (v.dataset.viewed) return;
                         v.dataset.viewed = "1";
-                        fetch(`/api/reels/${r.id}/view`, { method: "POST" }).then(() => fetchFeed());
+                        // Update count locally — no full page refetch
+                        fetch(`/api/reels/${r.id}/view`, { method: "POST" })
+                          .then((res) => res.json())
+                          .then((d) => {
+                            if (d?.data?.view_count != null) {
+                              setFeed((prev) =>
+                                prev.map((x) =>
+                                  x.id === r.id ? { ...x, view_count: d.data.view_count } : x
+                                )
+                              );
+                            } else {
+                              // Fallback: increment locally
+                              setFeed((prev) =>
+                                prev.map((x) =>
+                                  x.id === r.id ? { ...x, view_count: x.view_count + 1 } : x
+                                )
+                              );
+                            }
+                          })
+                          .catch(() => {});
                       }}
                     />
                   </div>

@@ -10,6 +10,16 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: { allowedOrigins: ["localhost:3000", "supapi-mocha.vercel.app"] },
   },
+  // Allow large video uploads up to 55MB
+  serverExternalPackages: [],
+  async headers() {
+    return [
+      {
+        source: "/api/reels/upload",
+        headers: [{ key: "x-middleware-preflight", value: "1" }],
+      },
+    ];
+  },
   async redirects() {
     const slugs: [string, string][] = [
       ["/market", "/supamarket"],

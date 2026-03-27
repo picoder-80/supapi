@@ -185,3 +185,159 @@
   margin-top: 24px;
   padding: 0 16px 16px;
 }
+
+/* ── Pinned Products (TikTok Shop style) ── */
+.pinnedSection {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.pinnedTitle {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 10px;
+}
+
+.pinnedList { display: grid; gap: 8px; }
+
+.pinnedCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8f9fd;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+.pinnedImg {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.pinnedInfo { flex: 1; min-width: 0; }
+.pinnedName {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pinnedPrice { font-size: 12px; color: #f5a623; font-weight: 700; }
+
+.pinnedBuyBtn {
+  min-height: 32px;
+  padding: 0 14px;
+  background: #f5a623;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.pinnedRemoveBtn {
+  min-height: 28px;
+  padding: 0 10px;
+  background: #fff;
+  color: #e53e3e;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid #e53e3e;
+  cursor: pointer;
+}
+
+/* Pin product panel for host */
+.pinSection {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.pinToggleBtn {
+  width: 100%;
+  min-height: 40px;
+  background: #0f3460;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.pinPanel { margin-top: 12px; }
+.pinPanelTitle { font-size: 13px; font-weight: 800; color: #1a1a2e; margin-bottom: 8px; }
+.pinEmpty { font-size: 12px; color: #718096; }
+.pinList { display: grid; gap: 6px; }
+
+.pinItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.pinItem:last-child { border-bottom: none; }
+.pinItemInfo { flex: 1; min-width: 0; }
+.pinItemName { font-size: 13px; font-weight: 600; color: #1a1a2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pinItemPrice { font-size: 11px; color: #f5a623; font-weight: 700; }
+
+.pinItemBtn {
+  min-height: 30px;
+  padding: 0 14px;
+  background: #f5a623;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+}
+
+.pinnedTag {
+  min-height: 30px;
+  padding: 0 14px;
+  background: #f0fff4;
+  color: #276749;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid #9ae6b4;
+  cursor: pointer;
+}
+
+.endLiveBtn {
+  width: 100%;
+  padding: 12px;
+  background: #fff;
+  border: 2px solid #e53e3e;
+  color: #e53e3e;
+  font-weight: 700;
+  font-size: 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+
+.placeholderText {
+  color: rgba(255,255,255,0.6);
+  font-size: 14px;
+  font-weight: 600;
+}

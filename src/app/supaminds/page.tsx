@@ -26,11 +26,22 @@ type Invoice = {
   paid_at?: string | null;
 };
 type TopupPack = { id: string; code: string; name: string; prompts: number; price_usd: number };
-const DEFAULT_LIMITS: Record<string, number> = {
-  free: 12,
-  pro_monthly: 600,
-  power_monthly: 1800,
+
+const ANNUAL_DISCOUNT = 0.20;
+
+const PLAN_META: Record<string, { prompts: number; description: string; highlight?: boolean }> = {
+  free:           { prompts: 50,    description: "Try SupaMinds with 50 free prompts every month." },
+  starter_monthly:{ prompts: 300,   description: "Great for casual users and light daily use." },
+  pro_monthly:    { prompts: 1000,  description: "Higher limits, priority responses, pro experience.", highlight: true },
+  power_monthly:  { prompts: 3000,  description: "Heavy usage tier with the highest priority and expanded limits." },
+  starter_annual: { prompts: 300,   description: "Great for casual users and light daily use." },
+  pro_annual:     { prompts: 1000,  description: "Higher limits, priority responses, pro experience.", highlight: true },
+  power_annual:   { prompts: 3000,  description: "Heavy usage tier with the highest priority and expanded limits." },
 };
+
+function annualMonthly(price: number) {
+  return Number((price * (1 - ANNUAL_DISCOUNT)).toFixed(2));
+}
 
 function PlanCheckoutHints({ priceUsd, piRate }: { priceUsd: number; piRate: number }) {
   const usd = Number(priceUsd ?? 0);
@@ -60,6 +71,7 @@ export default function SupaMindsPage() {
   const [busyPlan, setBusyPlan] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
+  const [isAnnual, setIsAnnual] = useState(false);
 
   const token = useMemo(() => (typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : ""), []);
 
@@ -87,18 +99,13 @@ export default function SupaMindsPage() {
       } catch {}
     };
     void loadPiRate();
-    const timer = window.setInterval(() => {
-      void loadPiRate();
-    }, 60_000);
+    const timer = window.setInterval(() => { void loadPiRate(); }, 60_000);
     return () => window.clearInterval(timer);
   }, []);
 
   const subscribe = async (planCode: string) => {
     if (!user || !token) return;
-    if (!isPiBrowser()) {
-      setMsg("Open in Pi Browser to subscribe.");
-      return;
-    }
+    if (!isPiBrowser()) { setMsg("Open in Pi Browser to subscribe."); return; }
     setBusyPlan(planCode);
     setMsg("");
     try {
@@ -108,11 +115,7 @@ export default function SupaMindsPage() {
         body: JSON.stringify({ plan_code: planCode }),
       });
       const quote = await quoteRes.json().catch(() => ({}));
-      if (!quote?.success) {
-        setMsg(quote?.error ?? "Failed to create quote");
-        setBusyPlan(null);
-        return;
-      }
+      if (!quote?.success) { setMsg(quote?.error ?? "Failed to create quote"); setBusyPlan(null); return; }
       const invoice = quote.data.invoice as Invoice;
       await ensurePaymentReady();
       createPiPayment(
@@ -137,31 +140,16 @@ export default function SupaMindsPage() {
                 body: JSON.stringify({ action: "complete", invoice_id: invoice.id, paymentId, txid }),
               });
               const d = await r.json().catch(() => ({}));
-              if (!d?.success) {
-                setMsg(d?.error ?? "Payment completion failed.");
-              } else {
-                setMsg("Subscription activated.");
-                await fetchState();
-              }
-            } catch {
-              setMsg("Payment completion failed.");
-            }
+              if (!d?.success) setMsg(d?.error ?? "Payment completion failed.");
+              else { setMsg("Subscription activated."); await fetchState(); }
+            } catch { setMsg("Payment completion failed."); }
             setBusyPlan(null);
           },
-          onCancel: () => {
-            setMsg("Payment cancelled.");
-            setBusyPlan(null);
-          },
-          onError: () => {
-            setMsg("Payment error.");
-            setBusyPlan(null);
-          },
+          onCancel: () => { setMsg("Payment cancelled."); setBusyPlan(null); },
+          onError: () => { setMsg("Payment error."); setBusyPlan(null); },
         }
       );
-    } catch {
-      setMsg("Unable to start checkout.");
-      setBusyPlan(null);
-    }
+    } catch { setMsg("Unable to start checkout."); setBusyPlan(null); }
   };
 
   const postAction = async (action: "cancel" | "resume", successMsg: string) => {
@@ -181,35 +169,20 @@ export default function SupaMindsPage() {
           body: endpoint.endsWith("/subscription") ? JSON.stringify({ action }) : undefined,
         });
         const d = await r.json().catch(() => ({}));
-        if (r.status === 404) {
-          lastErr = "Endpoint not found";
-          continue;
-        }
-        if (!d?.success) {
-          lastErr = String(d?.error ?? "Action failed");
-          break;
-        }
+        if (r.status === 404) { lastErr = "Endpoint not found"; continue; }
+        if (!d?.success) { lastErr = String(d?.error ?? "Action failed"); break; }
         done = true;
         break;
       }
-      if (!done) {
-        setMsg(lastErr);
-      } else {
-        setMsg(successMsg);
-        await fetchState();
-      }
-    } catch {
-      setMsg("Action failed");
-    }
+      if (!done) setMsg(lastErr);
+      else { setMsg(successMsg); await fetchState(); }
+    } catch { setMsg("Action failed"); }
     setBusyAction(null);
   };
 
   const buyTopup = async (packCode: string) => {
     if (!user || !token) return;
-    if (!isPiBrowser()) {
-      setMsg("Open in Pi Browser to buy topup.");
-      return;
-    }
+    if (!isPiBrowser()) { setMsg("Open in Pi Browser to buy a boost pack."); return; }
     setBusyPlan(`topup:${packCode}`);
     setMsg("");
     try {
@@ -219,17 +192,13 @@ export default function SupaMindsPage() {
         body: JSON.stringify({ pack_code: packCode }),
       });
       const quote = await quoteRes.json().catch(() => ({}));
-      if (!quote?.success) {
-        setMsg(quote?.error ?? "Failed to create topup quote");
-        setBusyPlan(null);
-        return;
-      }
+      if (!quote?.success) { setMsg(quote?.error ?? "Failed to create quote"); setBusyPlan(null); return; }
       const invoice = quote.data.invoice as Invoice;
       await ensurePaymentReady();
       createPiPayment(
         {
           amount: Number(invoice.amount_pi),
-          memo: `SupaMinds topup ${packCode}`,
+          memo: `SupaMinds boost pack ${packCode}`,
           metadata: { platform: "supaminds", invoice_id: invoice.id, kind: "topup", pack_code: packCode },
         },
         {
@@ -248,44 +217,28 @@ export default function SupaMindsPage() {
                 body: JSON.stringify({ action: "complete", kind: "topup", pack_code: packCode, invoice_id: invoice.id, paymentId, txid }),
               });
               const d = await r.json().catch(() => ({}));
-              if (!d?.success) setMsg(d?.error ?? "Topup completion failed.");
-              else {
-                setMsg("Topup added successfully.");
-                await fetchState();
-              }
-            } catch {
-              setMsg("Topup completion failed.");
-            }
+              if (!d?.success) setMsg(d?.error ?? "Boost pack purchase failed.");
+              else { setMsg("Boost prompts added successfully."); await fetchState(); }
+            } catch { setMsg("Boost pack purchase failed."); }
             setBusyPlan(null);
           },
-          onCancel: () => {
-            setMsg("Topup payment cancelled.");
-            setBusyPlan(null);
-          },
-          onError: () => {
-            setMsg("Topup payment error.");
-            setBusyPlan(null);
-          },
+          onCancel: () => { setMsg("Payment cancelled."); setBusyPlan(null); },
+          onError: () => { setMsg("Payment error."); setBusyPlan(null); },
         }
       );
-    } catch {
-      setMsg("Unable to start topup checkout.");
-      setBusyPlan(null);
-    }
+    } catch { setMsg("Unable to start checkout."); setBusyPlan(null); }
   };
 
-  const planByCode = useMemo(() => {
-    const m = new Map<string, Plan>();
-    for (const p of plans) m.set(p.code, p);
-    return m;
-  }, [plans]);
-  const proPlan = planByCode.get("pro_monthly");
-  const powerPlan = planByCode.get("power_monthly");
-  const freePlan = planByCode.get("free");
-  const getMonthlyLimit = (plan: Plan | undefined): number => {
-    const raw = Number(plan?.features?.monthly_limit ?? NaN);
-    if (Number.isFinite(raw) && raw > 0) return Math.floor(raw);
-    return DEFAULT_LIMITS[String(plan?.code ?? "free")] ?? 0;
+  const staticPlans = [
+    { code: "free",    name: "Free",    monthly: 0,     annual: 0 },
+    { code: "starter", name: "Starter", monthly: 4.99,  annual: annualMonthly(4.99) },
+    { code: "pro",     name: "Pro",     monthly: 12.99, annual: annualMonthly(12.99) },
+    { code: "power",   name: "Power",   monthly: 24.99, annual: annualMonthly(24.99) },
+  ];
+
+  const getPlanCode = (base: string) => {
+    if (base === "free") return "free";
+    return isAnnual ? `${base}_annual` : `${base}_monthly`;
   };
 
   const overview = (
@@ -294,17 +247,17 @@ export default function SupaMindsPage() {
         <div className={styles.heroTopRow}>
           <div className={styles.heroBadge}>🧠 SUPAMINDS</div>
         </div>
-        <h1 className={styles.title}>Think Smarter. Move Faster. Do More.</h1>
+        <h1 className={styles.title}>Your Mind, Supercharged.</h1>
         <p className={styles.sub}>
-          Your personal AI co-pilot, built exclusively for Pi pioneers inside Supapi. Ask anything, write anything, plan anything — all without leaving your workspace.
+          The AI built for Pi Pioneers. Ask boldly. Build faster. Think bigger — all inside Supapi.
         </p>
         <div className={styles.heroPoints}>
+          <span>🧠 Pioneer AI</span>
           <span>⚡ Instant answers</span>
-          <span>🧩 Supapi-aware</span>
-          <span>🔒 Pioneer-bound</span>
-          <span>🌐 Always on</span>
+          <span>🚀 Built for builders</span>
+          <span>🔒 Pi-native</span>
         </div>
-        <div className={styles.heroTagline}>The smartest thing in your Pi Browser.</div>
+        <div className={styles.heroTagline}>Where Pi Pioneers come to think.</div>
         <div className={styles.heroCtaRow}>
           <Link href="/supaminds/chat" className={styles.openChatBtn}>
             Open SupaMinds Chat →
@@ -315,22 +268,84 @@ export default function SupaMindsPage() {
       <div className={styles.infoSection}>
         <div className={styles.infoTitle}>What is SupaMinds?</div>
         <p className={styles.infoText}>
-          SupaMinds is an assistant platform for Pioneers and builders. Use it for drafting content, planning product work,
-          summarizing data, and solving tasks across your Supapi journey.
+          SupaMinds is the AI that thinks with you, not for you. Ask hard questions, get sharp answers, move faster than everyone else — all inside your Pi ecosystem.
         </p>
       </div>
 
+      {/* Billing toggle */}
       <div className={styles.infoSection}>
-        <div className={styles.infoTitle}>How subscription billing works</div>
-          <div className={styles.rateHint}>
-            {piRate > 0 ? `1 Pi ≈ $${piRate.toFixed(2)} · Live rate` : "Fetching live Pi rate..."}
+        <div className={styles.billingToggleRow}>
+          <span className={styles.infoTitle}>Choose your plan</span>
+          <div className={styles.toggleWrap}>
+            <button
+              className={`${styles.toggleBtn} ${!isAnnual ? styles.toggleActive : ""}`}
+              onClick={() => setIsAnnual(false)}
+            >
+              Monthly
+            </button>
+            <button
+              className={`${styles.toggleBtn} ${isAnnual ? styles.toggleActive : ""}`}
+              onClick={() => setIsAnnual(true)}
+            >
+              Annual
+              <span className={styles.saveBadge}>Save 20%</span>
+            </button>
           </div>
+        </div>
+        {isAnnual && (
+          <div className={styles.annualNote}>
+            💡 Annual plans are billed as a single upfront payment. Pi amount is calculated at checkout using the live rate.
+          </div>
+        )}
+        <div className={styles.rateHint}>
+          {piRate > 0 ? `1 Pi ≈ $${piRate.toFixed(2)} · Live rate` : "Fetching live Pi rate..."}
+        </div>
+      </div>
+
+      {/* Plans grid */}
+      <div className={styles.plans}>
+        {staticPlans.map((p) => {
+          const displayPrice = isAnnual ? p.annual : p.monthly;
+          const planCode = getPlanCode(p.code);
+          const meta = PLAN_META[planCode] ?? PLAN_META[`${p.code}_monthly`];
+          const isFree = p.code === "free";
+          const isHighlight = meta?.highlight;
+          return (
+            <div key={p.code} className={`${styles.plan} ${isHighlight ? styles.planHighlight : ""}`}>
+              {isHighlight && <div className={styles.popularBadge}>⭐ Most Popular</div>}
+              <div className={styles.planName}>{p.name}</div>
+              <div className={styles.planPrice}>
+                {isFree ? "Free" : `$${displayPrice.toFixed(2)}`}
+                {!isFree && <span className={styles.muted}> / {isAnnual ? "mo, billed annually" : "month"}</span>}
+              </div>
+              {!isFree && isAnnual && (
+                <div className={styles.annualSaving}>
+                  Save ${((p.monthly - p.annual) * 12).toFixed(0)}/year vs monthly
+                </div>
+              )}
+              <div className={styles.muted}>{meta?.prompts.toLocaleString()} prompts / month</div>
+              {!isFree && <PlanCheckoutHints priceUsd={isAnnual ? p.annual * 12 : displayPrice} piRate={piRate} />}
+              <div className={styles.muted}>{meta?.description}</div>
+              <button
+                className={`${styles.btn} ${isHighlight ? styles.btnHighlight : ""}`}
+                disabled={busyPlan !== null || isFree}
+                onClick={() => void subscribe(planCode)}
+              >
+                {busyPlan === planCode ? "Opening Pi..." : isFree ? "Current plan" : `Get ${p.name}`}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className={styles.infoSection}>
+        <div className={styles.infoTitle}>How billing works</div>
         <ul className={styles.bulletList}>
-          <li>Free plan includes 12 prompts per month.</li>
-          <li>Plan price is anchored to USD (stable pricing).</li>
-          <li>Checkout happens in Pi using realtime Pi/USD rate.</li>
-          <li>You can cancel anytime; access continues until period end.</li>
-          <li>Renewal can be resumed anytime before period ends.</li>
+          <li>Free plan includes 50 prompts per month — no payment required.</li>
+          <li>Plan prices are anchored to USD for stable, predictable pricing.</li>
+          <li>Checkout is completed in Pi using the real-time Pi/USD rate.</li>
+          <li>Annual plans are billed as one upfront payment — 20% cheaper than monthly.</li>
+          <li>You can cancel anytime; access continues until the end of your billing period.</li>
         </ul>
       </div>
     </>
@@ -339,15 +354,7 @@ export default function SupaMindsPage() {
   if (!user) {
     return (
       <div className={styles.page}>
-        <div className={styles.wrap}>
-          {overview}
-          <div className={styles.status}>
-            <div className={styles.row}><span>Free plan</span><strong>${Number(freePlan?.price_usd ?? 0).toFixed(2)}</strong></div>
-            <div className={styles.row}><span>Pro monthly</span><strong>${Number(proPlan?.price_usd ?? 12.99).toFixed(2)} {piRate > 0 ? `· π ${(Number(proPlan?.price_usd ?? 12.99) / piRate).toFixed(3)}` : ""}</strong></div>
-            <div className={styles.row}><span>Power monthly</span><strong>${Number(powerPlan?.price_usd ?? 24.99).toFixed(2)} {piRate > 0 ? `· π ${(Number(powerPlan?.price_usd ?? 24.99) / piRate).toFixed(3)}` : ""}</strong></div>
-            <div className={styles.muted}>Sign in to activate and manage your subscription.</div>
-          </div>
-        </div>
+        <div className={styles.wrap}>{overview}</div>
       </div>
     );
   }
@@ -363,74 +370,69 @@ export default function SupaMindsPage() {
             <div className={styles.row}><span>Current plan</span><strong>{subscription?.plan?.name ?? "Free"}</strong></div>
             <div className={styles.row}><span>Status</span><strong className={styles.statusPill}>{subscription?.status ?? "free"}</strong></div>
             <div className={styles.row}><span>Renews / ends</span><strong>{subscription?.current_period_end ? new Date(subscription.current_period_end).toLocaleString() : "-"}</strong></div>
-            <div className={styles.row}><span>Cancel at period end</span><strong>{subscription?.cancel_at_period_end ? "Yes" : "No"}</strong></div>
-            <div className={styles.row}><span>Topup prompt balance</span><strong>{Number(topupBalance).toLocaleString()}</strong></div>
+            <div className={styles.row}><span>Auto-renew off</span><strong>{subscription?.cancel_at_period_end ? "Yes" : "No"}</strong></div>
+            <div className={styles.row}><span>Boost prompt balance</span><strong>{Number(topupBalance).toLocaleString()}</strong></div>
           </div>
           <div className={styles.actionRow}>
-            <button className={styles.btn} disabled={busyAction !== null} onClick={() => void postAction("cancel", "Subscription will cancel at period end.")}> {busyAction === "cancel" ? "Working..." : "Cancel anytime"} </button>
-            <button className={styles.btn} disabled={busyAction !== null} onClick={() => void postAction("resume", "Auto-renew resumed.")}> {busyAction === "resume" ? "Working..." : "Resume renewal"} </button>
+            <button className={styles.btnOutlineDanger} disabled={busyAction !== null} onClick={() => void postAction("cancel", "Subscription will cancel at period end.")}>
+              {busyAction === "cancel" ? "Working..." : "Cancel anytime"}
+            </button>
+            <button className={`${styles.btn} ${styles.btnFullWidth}`} disabled={busyAction !== null} onClick={() => void postAction("resume", "Auto-renewal resumed.")}>
+              {busyAction === "resume" ? "Working..." : "Resume renewal"}
+            </button>
           </div>
-        </div>
-
-        <div className={styles.infoSection}>
-          <div className={styles.infoTitle}>Plans</div>
-          <div className={styles.muted}>Choose the package that fits your usage. Monthly limits are managed dynamically by current plan settings.</div>
-        </div>
-        <div className={styles.plans}>
-          {plans.map((p) => (
-            <div key={p.id} className={styles.plan}>
-              <div className={styles.planName}>{p.name}</div>
-              <div className={styles.planPrice}>${Number(p.price_usd ?? 0).toFixed(2)} <span className={styles.muted}>/ month</span></div>
-              <div className={styles.muted}>Monthly prompts: {getMonthlyLimit(p).toLocaleString()}</div>
-              <PlanCheckoutHints priceUsd={Number(p.price_usd ?? 0)} piRate={piRate} />
-              <div className={styles.muted}>
-                {p.code === "free"
-                  ? "Starter tier for everyday use with free monthly prompts"
-                  : p.code === "power_monthly"
-                    ? "Heavy usage tier with the highest priority and expanded limits"
-                    : "Higher limits, priority responses, pro experience"}
-              </div>
-              <button className={styles.btn} disabled={busyPlan !== null || p.code === "free"} onClick={() => void subscribe(p.code)}>
-                {busyPlan === p.code ? "Opening Pi..." : `Subscribe ${p.name}`}
-              </button>
-            </div>
-          ))}
         </div>
 
         {msg && <div className={styles.msg}>{msg}</div>}
+
         <div className={styles.infoSection}>
-          <div className={styles.infoTitle}>Topup prompts</div>
-          <div className={styles.muted}>Need more prompts this month? Buy add-on packs instantly.</div>
-          <div className={styles.plans}>
-            {topupPacks.map((pack) => (
-              <div key={pack.id} className={styles.plan}>
-                <div className={styles.planName}>{pack.name}</div>
-                <div className={styles.planPrice}>${Number(pack.price_usd ?? 0).toFixed(2)}</div>
-                <div className={styles.muted}>+{Number(pack.prompts ?? 0).toLocaleString()} prompts</div>
-                <PlanCheckoutHints priceUsd={Number(pack.price_usd ?? 0)} piRate={piRate} />
-                <button className={styles.btn} disabled={busyPlan !== null} onClick={() => void buyTopup(pack.code)}>
-                  {busyPlan === `topup:${pack.code}` ? "Opening Pi..." : `Buy ${pack.name}`}
-                </button>
-              </div>
-            ))}
+          <div className={styles.infoTitle}>⚡ Prompt Boost Packs</div>
+          <p className={styles.infoText}>
+            Running low on prompts? Top up instantly — no subscription needed. Available for all plans including Free.
+          </p>
+          <div className={styles.boostGrid}>
+            {topupPacks.map((pack) => {
+              const priceUsd = Number(pack.price_usd ?? 0);
+              const prompts = Number(pack.prompts ?? 0);
+              const centsPerPrompt = prompts > 0 ? ((priceUsd / prompts) * 100).toFixed(1) : "0";
+              const emoji = pack.code === "boost_mini" ? "🔋" : pack.code === "boost_smart" ? "⚡" : "🚀";
+              return (
+                <div key={pack.id} className={styles.boostCard}>
+                  <div className={styles.boostEmoji}>{emoji}</div>
+                  <div className={styles.boostName}>{pack.name}</div>
+                  <div className={styles.boostPrompts}>+{prompts.toLocaleString()} prompts</div>
+                  <div className={styles.boostPrice}>${priceUsd.toFixed(2)}</div>
+                  <div className={styles.muted}>{centsPerPrompt}¢ per prompt</div>
+                  <PlanCheckoutHints priceUsd={priceUsd} piRate={piRate} />
+                  <button
+                    className={styles.btn}
+                    disabled={busyPlan !== null}
+                    onClick={() => void buyTopup(pack.code)}
+                  >
+                    {busyPlan === `topup:${pack.code}` ? "Opening Pi..." : `Get ${pack.name}`}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          <div className={styles.boostNote}>
+            💡 Boost prompts never expire and stack on top of your monthly allowance.
           </div>
         </div>
+
         <div className={styles.infoSection}>
           <div className={styles.infoTitle}>Assistant workspace</div>
-          <p className={styles.infoText}>
-            Keep billing and subscription details here, and use the dedicated workspace for prompts and chat history.
-          </p>
-          <Link href="/supaminds/chat" className={styles.openChatBtn}>
-            Open SupaMinds Chat →
-          </Link>
+          <p className={styles.infoText}>Manage your billing here, and head to the chat workspace for prompts and conversation history.</p>
+          <Link href="/supaminds/chat" className={styles.openChatBtn}>Open SupaMinds Chat →</Link>
         </div>
 
         <div className={styles.infoSection}>
           <div className={styles.infoTitle}>FAQ</div>
-          <div className={styles.faqItem}><strong>Can I cancel anytime?</strong><span>Yes. Cancel now and keep access until your current paid cycle ends.</span></div>
-          <div className={styles.faqItem}><strong>Is free plan usable?</strong><span>Yes. Free plan includes 12 prompts per month.</span></div>
-          <div className={styles.faqItem}><strong>How is Pi amount calculated?</strong><span>We convert USD plan price to Pi using live Pi/USD rate at checkout quote time.</span></div>
-          <div className={styles.faqItem}><strong>Do I need Pi Browser?</strong><span>Yes, Pi payment flow requires Pi Browser for secure checkout.</span></div>
+          <div className={styles.faqItem}><strong>Can I cancel anytime?</strong><span>Yes. Cancel now and keep access until your current billing period ends.</span></div>
+          <div className={styles.faqItem}><strong>Is the free plan usable?</strong><span>Yes. The free plan includes 50 prompts per month at no cost.</span></div>
+          <div className={styles.faqItem}><strong>How is the Pi amount calculated?</strong><span>We convert the USD plan price to Pi using the live Pi/USD rate at the time of checkout.</span></div>
+          <div className={styles.faqItem}><strong>Do I need Pi Browser?</strong><span>Yes. Pi payments require the Pi Browser for a secure checkout experience.</span></div>
+          <div className={styles.faqItem}><strong>What is the annual plan?</strong><span>Pay for 12 months upfront and save 20% compared to the monthly rate. Same features, better value.</span></div>
         </div>
 
         <div className={styles.list}>

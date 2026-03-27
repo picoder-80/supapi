@@ -647,3 +647,135 @@
   .orderRow:hover, .actionBtn:hover, .iconBtn:hover { transform: none !important; }
   .iconBtnBusy { animation: none !important; }
 }
+
+/* ── Dispute / Refund Alert Banner ── */
+.disputeAlertWrap {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.disputeAlert {
+  display: flex;
+  gap: 12px;
+  background: #fff5f5;
+  border: 1.5px solid #e53e3e;
+  border-radius: 14px;
+  padding: 14px;
+  animation: pulseAlert 2s ease-in-out infinite;
+}
+
+.refundAlert {
+  display: flex;
+  gap: 12px;
+  background: #fffbeb;
+  border: 1.5px solid #d69e2e;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+@keyframes pulseAlert {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.15); }
+  50% { box-shadow: 0 0 0 6px rgba(229, 62, 62, 0); }
+}
+
+.disputeAlertIcon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.disputeAlertBody {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.disputeAlertTitle {
+  font-size: 14px;
+  font-weight: 800;
+  color: #c53030;
+}
+
+.refundAlert .disputeAlertTitle {
+  color: #744210;
+}
+
+.disputeAlertSub {
+  font-size: 12px;
+  color: #718096;
+  line-height: 1.5;
+}
+
+.disputeAlertLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.disputeAlertLink {
+  font-size: 12px;
+  font-weight: 700;
+  color: #e53e3e;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.disputeAlertLink:hover { text-decoration: underline; }
+
+.refundAlertLink {
+  font-size: 12px;
+  font-weight: 700;
+  color: #744210;
+  text-decoration: none;
+}
+
+.refundAlertLink:hover { text-decoration: underline; }
+
+/* ── Disputed order row visual distinction ── */
+.orderRowDisputed {
+  border-left: 3px solid #e53e3e !important;
+  background: #fff5f5 !important;
+}
+
+.orderRowRefunded {
+  border-left: 3px solid #d69e2e !important;
+  background: #fffbeb !important;
+  opacity: 0.85;
+}
+
+.disputeDot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  background: #e53e3e;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  animation: blinkDot 1.5s ease-in-out infinite;
+}
+
+@keyframes blinkDot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.orderImg {
+  position: relative;
+}
+
+.disputeUrgent {
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  background: #e53e3e;
+  border-radius: 999px;
+  padding: 2px 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

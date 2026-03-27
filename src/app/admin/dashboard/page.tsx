@@ -196,7 +196,7 @@ export default function AdminDashboardPage() {
 
       <div className={styles.section}>
         <div className={styles.sectionRow}>
-          <h2 className={styles.sectionTitle}><span className={styles.sectionIcon}>🧠</span> AI Provider Alerts</h2>
+          <h2 className={styles.sectionTitle}><span className={styles.sectionIcon}>🔔</span> AI Provider Quota Alerts</h2>
           <Link href="/admin/platforms/supaminds" className={styles.sectionLink}>Open SupaMinds Admin →</Link>
         </div>
         {aiProviderAlerts.length ? (
@@ -204,17 +204,33 @@ export default function AdminDashboardPage() {
             {aiProviderAlerts.map((a) => (
               <div key={`${a.provider}-${a.last_seen_at}`} className={styles.row}>
                 <div className={styles.rowInfo}>
-                  <div className={styles.rowTitle}>{a.provider}</div>
-                  <div className={styles.rowSub}>{a.message}</div>
+                  <div className={styles.rowTitle}>
+                    {a.provider === "anthropic" ? "🤖 Anthropic" : a.provider === "openai" ? "🧠 OpenAI" : a.provider}
+                    {" · "}
+                    <span style={{ color: a.level === "warn" ? "#b45309" : "#276749", fontWeight: 700 }}>
+                      {a.level === "warn" ? "⚠️ Quota Low" : "ℹ️ Info"}
+                    </span>
+                  </div>
+                  <div className={styles.rowSub}>
+                    {a.message}
+                    {" · "}
+                    {new Date(a.last_seen_at).toLocaleString()}
+                  </div>
                 </div>
-                <span className={`${styles.badge} ${a.level === "warn" ? styles.badgeWarn : styles.badgeOk}`}>
-                  {new Date(a.last_seen_at).toLocaleString()}
-                </span>
+                <a
+                  href={a.provider === "anthropic" ? "https://console.anthropic.com" : "https://platform.openai.com"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={styles.okBtn}
+                  style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+                >
+                  Top up →
+                </a>
               </div>
             ))}
           </div>
         ) : (
-          <div className={styles.empty}>No runtime provider alerts yet</div>
+          <div className={styles.empty}>✅ All AI providers healthy — no quota alerts.</div>
         )}
       </div>
 

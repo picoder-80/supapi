@@ -60,7 +60,7 @@ export default function SupaMindsChatPage() {
         seed.push({ id: `${m.created_at}-q`, role: "user", text: m.question, meta: m.mode });
         seed.push({ id: `${m.created_at}-a`, role: "assistant", text: m.answer, meta: m.platform });
       }
-      setChatMessages(seed.slice(-36));
+      setChatMessages(seed.slice(-10));
     } catch {}
   }, [token]);
 

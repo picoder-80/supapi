@@ -1,0 +1,25 @@
+.wrap { display: grid; gap: 12px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px; }
+.v { font-size: 22px; font-weight: 800; color: #1a1a2e; }
+.k { font-size: 12px; color: #718096; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.input, .select { min-height: 38px; border-radius: 10px; border: 1px solid #e2e8f0; padding: 0 10px; background: #fff; font-size: 12px; }
+.table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.table th, .table td { border-bottom: 1px solid #f1f5f9; padding: 8px; text-align: left; vertical-align: middle; }
+.table th { font-weight: 700; color: #4a5568; background: #f8fafc; }
+.badge { display: inline-flex; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #edf2f7; color: #2d3748; }
+.liveBadge { display: inline-flex; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #fff5f5; color: #c53030; border: 1px solid #feb2b2; }
+.activeBadge { display: inline-flex; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #f0fff4; color: #276749; border: 1px solid #9ae6b4; }
+.inactiveBadge { display: inline-flex; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #fff5f5; color: #c53030; border: 1px solid #feb2b2; }
+.sectionTitle { font-size: 14px; font-weight: 800; margin: 2px 0 8px; color: #1a1a2e; }
+.grid2 { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.actionBtns { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn { min-height: 30px; border-radius: 999px; border: 1px solid #e2e8f0; background: #fff; padding: 0 10px; cursor: pointer; font-size: 11px; white-space: nowrap; }
+.btn:hover { border-color: #f5a623; }
+.btnGold { min-height: 30px; border-radius: 999px; border: 1px solid #f5a623; background: #f5a623; color: #1a1a2e; padding: 0 12px; cursor: pointer; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.btnGold:hover { filter: brightness(1.05); }
+.btnDanger { min-height: 30px; border-radius: 999px; border: 1px solid #e53e3e; background: #fff; color: #e53e3e; padding: 0 10px; cursor: pointer; font-size: 11px; white-space: nowrap; }
+.btnDanger:hover { background: #fff5f5; }
+.msgBox { background: #f0fff4; border: 1px solid #9ae6b4; color: #276749; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; }
+@media (min-width: 980px) { .grid2 { grid-template-columns: 1fr 1fr; } }
