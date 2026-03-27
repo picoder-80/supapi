@@ -388,16 +388,17 @@ export async function POST(req: NextRequest) {
         // Simple approach: just do a raw increment via separate update
         const { data: usageRow } = await supabase
           .from("mind_usage_monthly")
-          .select(`id, ${modelCol}`)
+          .select("*")
           .eq("user_id", userId)
           .eq("period_ym", periodYm)
           .maybeSingle();
-        if (usageRow?.id) {
-          const current = Number((usageRow as any)[modelCol] ?? 0);
+        const usage = usageRow as ({ id?: string } & Record<string, unknown>) | null;
+        if (usage?.id) {
+          const current = Number(usage[modelCol] ?? 0);
           await supabase
             .from("mind_usage_monthly")
             .update({ [modelCol]: current + 1 })
-            .eq("id", (usageRow as any).id);
+            .eq("id", usage.id);
         }
       } catch { /* non-critical */ }
     }
