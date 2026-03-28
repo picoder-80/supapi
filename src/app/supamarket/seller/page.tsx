@@ -44,6 +44,20 @@ interface OrderRowItem {
   hint?: string | null;
 }
 
+interface ReturnRequestItem {
+  id: string;
+  order_id: string;
+  status: string;
+  category: string;
+  title: string;
+  image: string | null;
+  amount_pi: number;
+  seller_response_deadline: string;
+  hours_left: number;
+  urgent: boolean;
+  created_at: string;
+}
+
 interface Summary {
   listings: { total: number; active: number; paused: number; sold: number; other: number };
   orders: {
@@ -55,6 +69,8 @@ interface Summary {
   };
   recentOrders: OrderRowItem[];
   actionRequiredOrders: OrderRowItem[];
+  refundedOrders: OrderRowItem[];
+  pendingReturnRequests: ReturnRequestItem[];
 }
 
 const SELLER_ACTION_STATUSES = new Set([
@@ -144,8 +160,10 @@ export default function SellerHubPage() {
         if (d.success && d.data) {
           setSummary({
             ...d.data,
-            actionRequiredOrders: Array.isArray(d.data.actionRequiredOrders) ? d.data.actionRequiredOrders : [],
-            recentOrders:         Array.isArray(d.data.recentOrders) ? d.data.recentOrders : [],
+            actionRequiredOrders:   Array.isArray(d.data.actionRequiredOrders) ? d.data.actionRequiredOrders : [],
+            recentOrders:           Array.isArray(d.data.recentOrders) ? d.data.recentOrders : [],
+            refundedOrders:         Array.isArray(d.data.refundedOrders) ? d.data.refundedOrders : [],
+            pendingReturnRequests:  Array.isArray(d.data.pendingReturnRequests) ? d.data.pendingReturnRequests : [],
           });
         } else {
           if (!silent) setSummary(null);
@@ -303,10 +321,46 @@ export default function SellerHubPage() {
           </div>
         ) : null}
 
+        {/* ── Return Request Alert — most urgent ── */}
+        {!loading && summary && summary.pendingReturnRequests.length > 0 && (
+          <div className={styles.disputeAlertWrap}>
+            {summary.pendingReturnRequests.map((rr) => (
+              <div key={rr.id} className={`${styles.returnAlert} ${rr.urgent ? styles.returnAlertUrgent : ""}`}>
+                <div className={styles.disputeAlertIcon}>{rr.urgent ? "🚨" : "📦"}</div>
+                <div className={styles.disputeAlertBody}>
+                  <div className={styles.returnAlertTitle}>
+                    {rr.status === "pending_seller"
+                      ? rr.urgent
+                        ? `Urgent: Return request needs your response (${rr.hours_left}h left)`
+                        : `Return request — respond within ${rr.hours_left}h`
+                      : rr.status === "seller_approved_return"
+                      ? "Waiting for buyer to ship return"
+                      : "Buyer has shipped return — confirm receipt"}
+                  </div>
+                  <div className={styles.disputeAlertSub}>
+                    {rr.title} · {rr.amount_pi.toFixed(2)} π · {rr.category}
+                  </div>
+                  {rr.status === "pending_seller" && (
+                    <div className={styles.disputeAlertSub} style={{ color: rr.urgent ? "#c53030" : "#718096" }}>
+                      Deadline: {new Date(rr.seller_response_deadline).toLocaleString()}
+                    </div>
+                  )}
+                  <Link
+                    href={`/supamarket/orders/${rr.order_id}`}
+                    className={styles.disputeAlertLink}
+                  >
+                    View order & respond →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* ── Dispute / Refund Alert Banner ── */}
         {!loading && summary && (() => {
           const disputedOrders = summary.actionRequiredOrders.filter(o => o.status === "disputed");
-          const refundedOrders = summary.recentOrders.filter(o => o.status === "refunded");
+          const refundedOrders = summary.refundedOrders ?? [];
           if (disputedOrders.length === 0 && refundedOrders.length === 0) return null;
           return (
             <div className={styles.disputeAlertWrap}>
@@ -338,11 +392,11 @@ export default function SellerHubPage() {
                   <div className={styles.disputeAlertBody}>
                     <div className={styles.disputeAlertTitle}>
                       {refundedOrders.length === 1
-                        ? "1 order has been refunded"
-                        : `${refundedOrders.length} orders have been refunded`}
+                        ? "1 order was just refunded"
+                        : `${refundedOrders.length} orders were recently refunded`}
                     </div>
                     <div className={styles.disputeAlertSub}>
-                      These orders were refunded to the buyer. Review if follow-up is needed.
+                      A buyer dispute was resolved — funds refunded to buyer within the last 48 hours.
                     </div>
                     <div className={styles.disputeAlertLinks}>
                       {refundedOrders.slice(0, 3).map(o => (

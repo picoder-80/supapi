@@ -779,3 +779,29 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+/* ── Return Request Alert ── */
+.returnAlert {
+  display: flex;
+  gap: 12px;
+  background: #fffff0;
+  border: 1.5px solid #d69e2e;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.returnAlertUrgent {
+  background: #fff5f5;
+  border-color: #e53e3e;
+  animation: pulseAlert 2s ease-in-out infinite;
+}
+
+.returnAlertTitle {
+  font-size: 14px;
+  font-weight: 800;
+  color: #744210;
+}
+
+.returnAlertUrgent .returnAlertTitle {
+  color: #c53030;
+}

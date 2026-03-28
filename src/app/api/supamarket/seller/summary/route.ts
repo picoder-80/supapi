@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
     const userId = payload.userId;
     const supabase = await createAdminClient();
 
-    const [{ data: listingRows, error: le }, { data: orderRows, error: oe }] = await Promise.all([
+    const [{ data: listingRows, error: le }, { data: orderRows, error: oe }, { data: returnRows }] = await Promise.all([
       supabase.from("listings").select("id, status, price_pi, stock, created_at").eq("seller_id", userId),
       supabase
         .from("orders")
@@ -70,6 +70,16 @@ export async function GET(req: NextRequest) {
         .eq("seller_id", userId)
         .order("created_at", { ascending: false })
         .limit(80),
+      supabase
+        .from("market_return_requests")
+        .select(`
+          id, order_id, status, category, reason, seller_response_deadline, created_at, updated_at,
+          order:order_id ( id, amount_pi, listing:listing_id ( title, images ) )
+        `)
+        .eq("seller_id", userId)
+        .in("status", ["pending_seller", "seller_approved_return", "buyer_return_shipped"])
+        .order("created_at", { ascending: false })
+        .limit(10),
     ]);
 
     if (le) return NextResponse.json({ success: false, error: le.message }, { status: 500 });
@@ -111,14 +121,44 @@ export async function GET(req: NextRequest) {
       };
     };
 
+    // Sort: disputed first, then by updated_at
     const actionRequiredOrders = orders
       .filter((o) => SELLER_ACTION_STATUSES.has(String(o.status ?? "")))
-      .sort(
-        (a, b) =>
-          new Date(b.updated_at ?? b.created_at).getTime() - new Date(a.updated_at ?? a.created_at).getTime()
-      )
-      .slice(0, 14)
+      .sort((a, b) => {
+        const aDisputed = String(a.status ?? "") === "disputed" ? 0 : 1;
+        const bDisputed = String(b.status ?? "") === "disputed" ? 0 : 1;
+        if (aDisputed !== bDisputed) return aDisputed - bDisputed;
+        return new Date(b.updated_at ?? b.created_at).getTime() - new Date(a.updated_at ?? a.created_at).getTime();
+      })
+      .slice(0, 20)
       .map((o) => toSummary(o, true));
+
+    // Pending return requests — seller needs to respond
+    const pendingReturnRequests = (returnRows ?? []).map((rr: any) => {
+      const order = rr.order ?? {};
+      const listing = Array.isArray(order.listing) ? order.listing[0] : order.listing;
+      const deadlineMs = new Date(rr.seller_response_deadline ?? "").getTime();
+      const hoursLeft = Math.max(0, Math.floor((deadlineMs - Date.now()) / 3600_000));
+      return {
+        id: rr.id,
+        order_id: rr.order_id,
+        status: rr.status,
+        category: rr.category,
+        reason: rr.reason,
+        title: listing?.title ?? "Item",
+        image: listing?.images?.[0] ?? null,
+        amount_pi: Number(order.amount_pi ?? 0),
+        seller_response_deadline: rr.seller_response_deadline,
+        hours_left: hoursLeft,
+        created_at: rr.created_at,
+        urgent: hoursLeft < 24,
+      };
+    });
+    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    const refundedOrders = orders
+      .filter((o) => String(o.status ?? "") === "refunded" && String(o.updated_at ?? o.created_at) >= fortyEightHoursAgo)
+      .slice(0, 5)
+      .map((o) => toSummary(o, false));
     const ordersByStatus: Record<string, number> = {};
     let activePipeline = 0;
     let completedPi = 0;
@@ -137,8 +177,9 @@ export async function GET(req: NextRequest) {
     }
 
     const actionIds = new Set(actionRequiredOrders.map((x) => x.id));
+    const refundIds = new Set(refundedOrders.map((x) => x.id));
     const recentOrders = orders
-      .filter((o) => !actionIds.has(o.id))
+      .filter((o) => !actionIds.has(o.id) && !refundIds.has(o.id))
       .slice(0, 12)
       .map((o) => toSummary(o, false));
 
@@ -161,6 +202,8 @@ export async function GET(req: NextRequest) {
         },
         recentOrders,
         actionRequiredOrders,
+        refundedOrders,
+        pendingReturnRequests,
       },
     });
   } catch (e) {
