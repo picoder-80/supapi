@@ -83,8 +83,7 @@ const SELLER_ACTION_STATUSES = new Set([
   "disputed",
 ]);
 
-
-
+function timeAgo(iso: string): string {
   const t = Date.now() - new Date(iso).getTime();
   if (t < 0) return "Just now";
   const mins = Math.floor(t / 60000);
