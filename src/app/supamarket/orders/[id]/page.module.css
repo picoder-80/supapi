@@ -179,6 +179,23 @@
   color: #1a1a2e;
 }
 
+.wizardCompleteBtn {
+  min-height: 38px;
+  border-radius: 999px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  border: 2px solid #f5a623;
+  background: #fff;
+  color: #1a1a2e;
+}
+.wizardCompleteBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .progress {
   width: min(960px, calc(100% - 24px));
   margin: 10px auto 0;
@@ -954,6 +971,11 @@
   background: #f5a623;
   color: #1a1a2e;
   box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.25);
+}
+
+.returnStepRowOptional .returnStepIcon {
+  background: #f1f5f9;
+  color: #64748b;
 }
 
 .returnStepBody {

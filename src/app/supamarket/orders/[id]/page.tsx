@@ -659,12 +659,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     if (buyerSide && order.status === "pending") return "pending-payment-section";
     if (sellerSide && (order.status === "paid" || order.status === "escrow")) return "seller-fulfillment-section";
     if (buyerSide && (order.status === "shipped" || order.status === "meetup_set")) return "confirm-receipt-section";
-    if (buyerSide && order.status === "delivered") return "complete-order-section";
+    if (buyerSide && order.status === "delivered") {
+      const disc = order.disputes?.[0];
+      const openDisc = !!(disc && String(disc.status) !== "resolved");
+      if (!openDisc) return "return-refund-section";
+      return "status-banner";
+    }
     if (buyerSide && order.status === "completed" && !order.has_review) return "review-section";
     if (sellerSide && order.status === "delivered" && ["pending_seller", "buyer_return_shipped"].includes(String(order.return_request?.status ?? ""))) {
       return "seller-return-section";
     }
-    if (buyerSide && order.status === "delivered") return "return-refund-section";
     return "status-banner";
   };
 
@@ -841,12 +845,21 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       };
     }
     if (buyerNeedsReturnAction && buyerReturnCta) {
+      const returnFlowActive = ["pending_seller", "seller_approved_return", "buyer_return_shipped"].includes(
+        String(order.return_request?.status ?? "")
+      );
       return {
-        title: "Current return/refund step",
-        sub: "Continue the guided flow below.",
+        title: "Return / refund or complete",
+        sub:
+          "If there is a problem, continue return or refund below. If you are satisfied with your order, use Complete to finalise payment and move on to rating — Complete is paused while a return is in progress.",
         target: buyerReturnCta.target,
         cta: buyerReturnCta.label,
         disabled: buyerReturnCta.disabled,
+        secondary: {
+          label: "Complete order 🎉",
+          target: "complete-order-section",
+          disabled: returnFlowActive,
+        },
       };
     }
     return null;
@@ -869,6 +882,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               >
                 {wizardStep.cta}
               </button>
+              {"secondary" in wizardStep && wizardStep.secondary ? (
+                <button
+                  type="button"
+                  className={styles.wizardCompleteBtn}
+                  disabled={wizardStep.secondary.disabled}
+                  onClick={() => scrollToSection(wizardStep.secondary!.target)}
+                >
+                  {wizardStep.secondary.label}
+                </button>
+              ) : null}
               <button
                 type="button"
                 className={styles.wizardGhostBtn}
@@ -899,7 +922,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <div key={s} className={styles.progressStep}>
               <div className={`${styles.progressDot} ${i <= stepIdx ? styles.progressDotDone : ""}`} />
               {i < 4 && <div className={`${styles.progressLine} ${i < stepIdx ? styles.progressLineDone : ""}`} />}
-              <div className={styles.progressLabel}>{["Pending","Paid","Shipped","Delivered","Done"][i]}</div>
+              <div className={styles.progressLabel}>{["Pending","Paid","Shipped","Delivered","Complete"][i]}</div>
             </div>
           ))}
         </div>
@@ -992,6 +1015,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         : returnPhase === "refunded_rr"
                           ? "Refund completed."
                           : "Final refund step after return shipment is verified."}
+                  </p>
+                </div>
+              </div>
+              <div className={`${styles.returnStepRow} ${styles.returnStepRowOptional}`}>
+                <div className={styles.returnStepIcon}>5</div>
+                <div className={styles.returnStepBody}>
+                  <div className={styles.returnStepLabel}>Complete order (if no return needed)</div>
+                  <p className={styles.returnStepHint}>
+                    Satisfied with your purchase? Mark complete to finalise payment to the seller, then rate your experience.
+                    Not available while a return or refund request is in progress.
                   </p>
                 </div>
               </div>
