@@ -30,6 +30,8 @@ interface Order {
   buyer:  { id: string; username: string; display_name: string | null; avatar_url: string | null; phone: string; email: string };
   seller: { id: string; username: string; display_name: string | null; avatar_url: string | null; phone: string };
   disputes: { id: string; reason: string; evidence?: string[]; status: string; ai_decision: string; ai_reasoning: string; ai_confidence: number; created_at: string }[];
+  /** True when seller_earnings row still holds π in escrow for this order (refund path available). */
+  has_market_escrow?: boolean;
   return_request?: {
     id: string;
     status: string;
@@ -1078,7 +1080,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <p className={styles.returnHubSub}>
               {order.return_request?.status === "pending_seller"
                 ? "The buyer requested a return. Approve or decline this request first."
-                : "Buyer marked return as shipped. Confirm item receipt to release refund."}
+                : order.has_market_escrow === false
+                  ? "Buyer marked the return as shipped, but no payment is held in escrow for this order anymore (it may already have been released or refunded). See the return section below."
+                  : "Buyer marked return as shipped. Confirm item receipt to release refund."}
             </p>
             {order.return_request?.status === "pending_seller" && order.return_request?.seller_response_deadline ? (
               <div className={styles.returnCountdown} style={{ marginTop: 0 }}>
@@ -1618,6 +1622,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
             )}
+            {order.return_request?.status === "buyer_return_shipped" && order.has_market_escrow === false ? (
+              <div className={`${styles.msg} ${styles.msgError}`} style={{ marginBottom: 12 }}>
+                No π is held in escrow for this order (funds may already have been released to you or refunded). An
+                automatic buyer refund cannot be sent from this screen. If this looks wrong, contact support with your
+                order ID.
+              </div>
+            ) : null}
             {order.return_request?.status === "buyer_return_shipped" && (
               <div className={styles.infoBox} style={{ marginBottom: 10 }}>
                 <div className={styles.infoRow}>
@@ -1696,7 +1707,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               <button
                 type="button"
                 className={styles.confirmBtn}
-                disabled={returnSubmitting}
+                disabled={returnSubmitting || order.has_market_escrow === false}
                 onClick={() => void confirmReturnReceived()}
               >
                 {returnSubmitting ? "Confirming..." : "Confirm item received & refund"}

@@ -210,7 +210,7 @@ export default function DashboardPage() {
 
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
-            <div className={styles.sectionTitle}>Overview</div>
+            <div className={`${styles.sectionTitle} ${styles.sectionTitleHero}`}>Overview</div>
           </div>
 
           <div className={styles.infoCards}>

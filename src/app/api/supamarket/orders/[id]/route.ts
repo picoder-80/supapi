@@ -133,6 +133,14 @@ export async function GET(req: NextRequest, { params }: Params) {
       .limit(1);
     (normalized as Record<string, unknown>).return_request = !rrErr ? (rrList?.[0] ?? null) : null;
 
+    const { data: escrowRow } = await supabase
+      .from("seller_earnings")
+      .select("id")
+      .eq("order_id", id)
+      .eq("status", "escrow")
+      .maybeSingle();
+    (normalized as Record<string, unknown>).has_market_escrow = Boolean(escrowRow);
+
     return withCors(NextResponse.json({ success: true, data: normalized }), req);
   } catch {
     return withCors(NextResponse.json({ success: false }, { status: 500 }), req);

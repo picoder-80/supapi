@@ -106,7 +106,6 @@ async function markOrderPaid(params: {
   orderId: string;
   paymentId: string;
   userId: string;
-  listingId?: string | null;
   commissionPct: number;
   commissionPi: number;
   netPi: number;
@@ -219,27 +218,9 @@ async function markOrderPaid(params: {
 
   if (await tryUpdateById(orderId)) return true;
 
-  // Secondary repair path: try to resolve by buyer + listing if direct order id update missed.
-  if (params.listingId) {
-    const fallbackOrder = await params.supabase
-      .from("orders")
-      .select("id, status, created_at")
-      .eq("buyer_id", params.userId)
-      .eq("listing_id", params.listingId)
-      .in("status", ["pending", "escrow", "paid"])
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (fallbackOrder.data?.id) {
-      console.warn("[Complete] Using fallback order resolution:", {
-        fromOrderId: orderId,
-        toOrderId: fallbackOrder.data.id,
-        listingId: params.listingId,
-      });
-      return tryUpdateById(String(fallbackOrder.data.id));
-    }
-  }
+  // Do NOT resolve a different order by listing — that desyncs seller_earnings (keyed by
+  // metadata order_id) from orders.status/pi_payment_id and breaks return refunds ("no escrow").
+  console.error("[Complete] markOrderPaid failed for exact order id (no listing fallback):", orderId);
 
   return false;
 }
@@ -379,7 +360,6 @@ export async function POST(req: NextRequest) {
   // ── Create ESCROW record (locked — not yet released to seller) ──
   const meta = (transaction.metadata ?? {}) as Record<string, unknown>;
   const metaOrderId = typeof meta.order_id === "string" ? meta.order_id.trim() : null;
-  const metaListingId = typeof meta.listing_id === "string" ? meta.listing_id.trim() : null;
   const refOrderId =
     typeof transaction.reference_id === "string" ? transaction.reference_id.trim() : transaction.reference_id;
   const orderId = metaOrderId ?? (transaction.reference_type === "listing" ? refOrderId : null);
@@ -409,36 +389,61 @@ export async function POST(req: NextRequest) {
       .eq("id", orderId)
       .single();
 
-    if (order?.seller_id) {
-      // Create escrow — status "escrow" means Pi received but NOT released yet
-      await supabase.from("seller_earnings").upsert({
-        seller_id:      order.seller_id,
-        order_id:       orderId,
-        platform:       platform,
-        gross_pi:       grossPi,
-        commission_pct: commissionPct,
-        commission_pi:  commissionPi,
-        net_pi:         netPi,
-        status:         "escrow", // locked until buyer confirms
-      }, { onConflict: "order_id" });
-
-      console.log(`[Complete] Escrow created — gross:${grossPi}π commission:${commissionPct}% net:${netPi}π seller:${order.seller_id}`);
+    if (!order?.seller_id) {
+      console.error("[Complete] Order missing seller_id — cannot create escrow:", orderId);
+      return R.withCors(
+        R.serverError("Order record is invalid (missing seller). Payment completed on Pi but escrow was not recorded. Contact support."),
+        cors(req)
+      );
     }
 
-    // Always sync order as paid when payment is completed,
-    // even if seller row fetch/upsert path had transient issues.
+    // Create escrow — status "escrow" means Pi received but NOT released yet
+    const { error: escrowErr } = await supabase.from("seller_earnings").upsert(
+      {
+        seller_id: order.seller_id,
+        order_id: orderId,
+        platform: platform,
+        gross_pi: grossPi,
+        commission_pct: commissionPct,
+        commission_pi: commissionPi,
+        net_pi: netPi,
+        status: "escrow", // locked until buyer confirms
+      },
+      { onConflict: "order_id" }
+    );
+
+    if (escrowErr) {
+      console.error("[Complete] seller_earnings upsert failed — order cannot be marked paid without escrow:", orderId, escrowErr);
+      return R.withCors(
+        R.serverError("Could not lock escrow for this order. Do not retry payment; contact support with your payment id."),
+        cors(req)
+      );
+    }
+
+    const { data: escrowVerify } = await supabase
+      .from("seller_earnings")
+      .select("id")
+      .eq("order_id", orderId)
+      .eq("status", "escrow")
+      .maybeSingle();
+    if (!escrowVerify?.id) {
+      console.error("[Complete] Escrow row missing after upsert:", orderId);
+      return R.withCors(R.serverError("Escrow verification failed. Contact support."), cors(req));
+    }
+
+    console.log(`[Complete] Escrow created — gross:${grossPi}π commission:${commissionPct}% net:${netPi}π seller:${order.seller_id}`);
+
     const paidSynced = await markOrderPaid({
       supabase,
       orderId,
       paymentId,
       userId: payload.userId,
-      listingId: metaListingId,
       commissionPct,
       commissionPi,
       netPi,
     });
     if (!paidSynced) {
-      console.error("[Complete] Unable to mark order as paid after fallback attempts:", { orderId, paymentId });
+      console.error("[Complete] Unable to mark order as paid after escrow OK:", { orderId, paymentId });
     }
 
     // Referral commission is based on platform fee and should be tracked once per completed payment transaction.

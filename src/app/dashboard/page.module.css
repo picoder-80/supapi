@@ -221,6 +221,11 @@
   letter-spacing: 0.8px;
 }
 
+/* Hero strip: section labels on dark gradient */
+.sectionTitleHero {
+  color: #fff;
+}
+
 .sectionLink {
   font-size: 12px;
   color: var(--color-gold-dark);
