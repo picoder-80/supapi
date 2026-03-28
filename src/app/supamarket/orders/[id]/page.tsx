@@ -618,8 +618,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   };
 
   const scrollToSection = (sectionId: string) => {
-    if (typeof window === "undefined") return;
-    const el = document.getElementById(sectionId);
+    if (typeof window === "undefined" || !sectionId) return;
+    let el = document.getElementById(sectionId);
+    if (!el && sectionId !== "status-banner") {
+      el = document.getElementById("status-banner");
+    }
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -665,7 +668,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       if (!openDisc) return "return-refund-section";
       return "status-banner";
     }
-    if (buyerSide && order.status === "completed" && !order.has_review) return "review-section";
+    if (buyerSide && order.status === "completed") {
+      if (!order.has_review) return "review-section";
+      if (!order.review_reward_claimed) return "review-reward-claim-section";
+      return "order-delivery-section";
+    }
+    if (sellerSide && order.status === "completed") {
+      return "order-delivery-section";
+    }
     if (sellerSide && order.status === "delivered" && ["pending_seller", "buyer_return_shipped"].includes(String(order.return_request?.status ?? ""))) {
       return "seller-return-section";
     }
@@ -1100,7 +1110,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           </div>
         )}
         {isBuyer && order.status === "completed" && order.has_review && !order.review_reward_claimed && (
-          <div className={styles.reviewNudgeCard}>
+          <div className={styles.reviewNudgeCard} id="review-reward-claim-section">
             <div className={styles.reviewNudgeTitle}>🎁 Claim your {reviewRewardLabel}</div>
             <div className={styles.reviewNudgeSub}>Review is submitted. Tap below to claim your SC reward.</div>
             <button type="button" className={styles.reviewNudgeBtn} onClick={claimReviewReward} disabled={claimingReviewReward}>
@@ -1190,7 +1200,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         {/* Delivery / Meetup Info */}
         {(!wizardMode || showSecondaryDetails) && (
-        <div className={styles.section}>
+        <div className={styles.section} id="order-delivery-section">
           <div className={styles.sectionTitle}>
             {order.buying_method === "ship" ? "Delivery Info" : order.buying_method === "digital" ? "Digital Delivery Info" : "Meetup Info"}
           </div>
@@ -1696,7 +1706,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         )}
 
         {/* Buyer: return / refund first (replaces direct dispute while delivered) */}
-        {isBuyer && order.status === "delivered" && !dispute && (
+        {isBuyer && order.status === "delivered" && !hasOpenDispute && (
           <div className={styles.section} id="return-refund-section">
             <div className={styles.sectionTitle}>↩️ Return / refund</div>
             {order.return_request?.status === "pending_seller" ? (
