@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { returnCategoryLabel } from "@/lib/market/return-flow";
 import styles from "./page.module.css";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -82,7 +83,8 @@ const SELLER_ACTION_STATUSES = new Set([
   "disputed",
 ]);
 
-function timeAgo(iso: string) {
+
+
   const t = Date.now() - new Date(iso).getTime();
   if (t < 0) return "Just now";
   const mins = Math.floor(t / 60000);
@@ -338,7 +340,7 @@ export default function SellerHubPage() {
                       : "Buyer has shipped return — confirm receipt"}
                   </div>
                   <div className={styles.disputeAlertSub}>
-                    {rr.title} · {rr.amount_pi.toFixed(2)} π · {rr.category}
+                    {rr.title} · {rr.amount_pi.toFixed(2)} π · {returnCategoryLabel(rr.category)}
                   </div>
                   {rr.status === "pending_seller" && (
                     <div className={styles.disputeAlertSub} style={{ color: rr.urgent ? "#c53030" : "#718096" }}>
