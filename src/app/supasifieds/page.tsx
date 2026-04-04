@@ -257,8 +257,6 @@ function SupasifiedsContent() {
   };
 
   const hasFilters = Boolean(category || q || categoryDeep);
-  const premiumPlacements = [...listings.filter((l) => l.is_boosted)].slice(0, 4);
-  const premiumSlots = Array.from({ length: 4 }, (_, i) => premiumPlacements[i] ?? null);
 
   return (
     <div className={styles.page}>
@@ -564,120 +562,13 @@ function SupasifiedsContent() {
               </div>
             )}
 
-            <div
-              style={{
-                background: "#fff",
-                border: "1px solid var(--color-border)",
-                borderRadius: 14,
-                padding: 12,
-                marginBottom: 12,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <strong style={{ color: "var(--color-text)" }}>⭐ Sponsored Listings</strong>
-                <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Top 4 slots</span>
-              </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                  gap: 10,
-                }}
-              >
-                {premiumSlots.map((slot, idx) =>
-                  slot ? (
-                    <Link
-                      key={slot.id}
-                      href={`${appBase}/${slot.id}`}
-                      style={{
-                        display: "block",
-                        border: "1px solid #f2d08a",
-                        borderRadius: 12,
-                        overflow: "hidden",
-                        background: "#fffaf0",
-                        textDecoration: "none",
-                        color: "inherit",
-                      }}
-                    >
-                      <div style={{ position: "relative", height: 90, background: "#f5f5f5" }}>
-                        {slot.images?.[0] ? (
-                          <img
-                            src={slot.images[0]}
-                            alt={slot.title}
-                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                          />
-                        ) : (
-                          <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center" }}>⭐</div>
-                        )}
-                        <span
-                          style={{
-                            position: "absolute",
-                            top: 6,
-                            left: 6,
-                            fontSize: 10,
-                            fontWeight: 800,
-                            padding: "2px 6px",
-                            borderRadius: 999,
-                            background: "rgba(26,26,46,0.8)",
-                            color: "#fff",
-                          }}
-                        >
-                          PREMIUM
-                        </span>
-                      </div>
-                      <div style={{ padding: 8 }}>
-                        <div
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 700,
-                            lineHeight: 1.25,
-                            minHeight: 30,
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                          }}
-                        >
-                          {slot.title}
-                        </div>
-                        <div style={{ marginTop: 4, fontSize: 12, color: "var(--color-gold-dark)", fontWeight: 700 }}>
-                          {formatPiPriceDisplay(slot.price_display, "Contact seller")}
-                        </div>
-                      </div>
-                    </Link>
-                  ) : (
-                    <div
-                      key={`slot-${idx}`}
-                      style={{
-                        border: "1px dashed #d6d6d6",
-                        borderRadius: 12,
-                        background: "#fafafa",
-                        minHeight: 146,
-                        display: "grid",
-                        placeItems: "center",
-                        textAlign: "center",
-                        padding: 10,
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: 20, marginBottom: 6 }}>📣</div>
-                        <div style={{ fontSize: 12, fontWeight: 700 }}>Premium slot #{idx + 1}</div>
-                        <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Boost to appear here</div>
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
-
-            <div className={styles.resultsHeader}>
-              <span className={styles.resultsCount}>{loading ? "..." : `${total} ads`}</span>
-              {hasFilters && (
+            {hasFilters && (
+              <div className={styles.resultsHeader}>
                 <button type="button" className={styles.clearFilters} onClick={resetFilters}>
                   Clear filters ✕
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             {loading ? (
               <div className={styles.grid}>

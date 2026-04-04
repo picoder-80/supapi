@@ -14,8 +14,15 @@ interface Listing {
   category: string; subcategory?: string; category_deep?: string;
   condition: string; buying_method: string;
   location: string; views: number; likes: number; created_at: string;
-  country_code: string; ship_worldwide: boolean; is_boosted?: boolean; boost_tier?: string;
+  country_code: string; ship_worldwide: boolean; is_boosted?: boolean; boost_tier?: string; spotlight_expires_at?: string | null;
   seller: { id: string; username: string; display_name: string | null; avatar_url: string | null; kyc_status: string };
+}
+interface CarouselAd {
+  id: string;
+  image_url: string;
+  headline: string;
+  cta_label: string;
+  link_url: string;
 }
 
 const SORT_OPTIONS = [
@@ -61,10 +68,28 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (code: st
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const labelUpper =
+    value === "WORLDWIDE" ? "Worldwide" : selected.name;
+  const leadIcon = value === "WORLDWIDE" ? "🌍" : selected.flag;
+
   return (
     <div ref={ref} className={styles.countrySelect}>
-      <button type="button" className={styles.countryBtn} onClick={() => setOpen(p => !p)}>
-        {selected.flag} {selected.name} ▾
+      <button
+        type="button"
+        className={styles.countryPillMarket}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        onClick={() => setOpen((p) => !p)}
+      >
+        <span className={styles.countryPillMarketIcon} aria-hidden>
+          {leadIcon}
+        </span>
+        <span className={styles.countryPillMarketRight}>
+          <span className={styles.countryPillMarketBadge}>{labelUpper}</span>
+          <span className={styles.countryPillMarketChevron} aria-hidden>
+            ▾
+          </span>
+        </span>
       </button>
       {open && (
         <div className={styles.countryDropdown}>
@@ -101,6 +126,9 @@ function MarketPageContent() {
   const [total, setTotal]           = useState(0);
   const [deliveredCount, setDeliveredCount] = useState<number | null>(null);
   const [totalPiTransactions, setTotalPiTransactions] = useState<number | null>(null);
+  const [carouselAds, setCarouselAds] = useState<CarouselAd[]>([]);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [carouselPaused, setCarouselPaused] = useState(false);
   const [loading, setLoading]       = useState(true);
   const [page, setPage]             = useState(1);
   const [country, setCountry]       = useState("MY");
@@ -136,6 +164,28 @@ function MarketPageContent() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    fetch(`/api/supamarket/carousel?t=${Date.now()}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && Array.isArray(d.data)) setCarouselAds(d.data);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (carouselAds.length <= 1 || carouselPaused) return;
+    const timer = window.setInterval(() => {
+      setCarouselIndex((prev) => (prev + 1) % carouselAds.length);
+    }, 4000);
+    return () => window.clearInterval(timer);
+  }, [carouselAds.length, carouselPaused]);
+
+  useEffect(() => {
+    if (!carouselAds.length) setCarouselIndex(0);
+    else if (carouselIndex >= carouselAds.length) setCarouselIndex(0);
+  }, [carouselAds.length, carouselIndex]);
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
@@ -363,6 +413,69 @@ function MarketPageContent() {
 
       {/* ── Body ── */}
       <div className={styles.body}>
+        {carouselAds.length > 0 && (
+          <div className={styles.carouselCardWrap}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <strong style={{ color: "var(--color-text)" }}>🎠 Sponsored Carousel</strong>
+              <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Paid sponsor</span>
+            </div>
+            <div
+              className={styles.carouselViewport}
+              onMouseEnter={() => setCarouselPaused(true)}
+              onMouseLeave={() => setCarouselPaused(false)}
+              onTouchStart={() => setCarouselPaused(true)}
+              onTouchEnd={() => setCarouselPaused(false)}
+            >
+              <div className={styles.carouselTrack} style={{ transform: `translateX(-${carouselIndex * 100}%)` }}>
+                {carouselAds.map((ad) => (
+                  <Link
+                    key={ad.id}
+                    href={ad.link_url}
+                    target={ad.link_url.startsWith("http") ? "_blank" : undefined}
+                    rel={ad.link_url.startsWith("http") ? "noopener noreferrer" : undefined}
+                    className={styles.carouselSlide}
+                  >
+                    <div style={{ height: 120, background: "#f5f5f5" }}>
+                      <img src={ad.image_url} alt={ad.headline} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    </div>
+                    <div style={{ padding: 10, display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+                      <div
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          lineHeight: 1.3,
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {ad.headline}
+                      </div>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--color-gold-dark)", whiteSpace: "nowrap" }}>
+                        {ad.cta_label || "View"}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+            {carouselAds.length > 1 && (
+              <div className={styles.carouselDots}>
+                {carouselAds.map((ad, idx) => (
+                  <button
+                    key={ad.id}
+                    type="button"
+                    className={`${styles.carouselDot} ${idx === carouselIndex ? styles.carouselDotActive : ""}`}
+                    aria-label={`Go to sponsored ad ${idx + 1}`}
+                    onClick={() => setCarouselIndex(idx)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className={styles.resultsHeader}>
           <span className={styles.resultsCount}>{loading ? "..." : `${total} listings`}</span>
           {hasFilters && <button type="button" className={styles.clearFilters} onClick={resetFilters}>Clear filters ✕</button>}
@@ -396,11 +509,16 @@ function MarketPageContent() {
                       ? <img src={l.images[0]} alt={l.title} className={styles.cardImgEl} />
                       : <div className={styles.cardImgPlaceholder}>🛍️</div>
                     }
-                    {l.is_boosted && (
-                      <div className={styles.boostBadge}>
-                        {l.boost_tier === "gold" ? "👑" : l.boost_tier === "silver" ? "🥈" : "🥉"} Boosted
-                      </div>
-                    )}
+                    <div className={styles.badgeStack}>
+                      {l.is_boosted && (
+                        <div className={styles.boostBadge}>
+                          {l.boost_tier === "gold" ? "👑" : l.boost_tier === "silver" ? "🥈" : "🥉"} Boost
+                        </div>
+                      )}
+                      {l.spotlight_expires_at && new Date(l.spotlight_expires_at) > new Date() && (
+                        <div className={styles.boostBadge}>⭐ Spotlight</div>
+                      )}
+                    </div>
                   </div>
                   <div className={styles.cardBody}>
                     <div className={styles.cardTitle}>{l.title}</div>

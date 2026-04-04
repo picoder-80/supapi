@@ -556,21 +556,32 @@ export default function SupasifiedsMyListingsPage() {
                   <div className={styles.listingActions}>
                     {st === "active" && (
                       <>
-                        <button
-                          type="button"
-                          className={styles.actionBtn}
-                          title="Boost"
-                          onClick={() =>
-                            setBoostListing({
-                              id: String(listing.id),
-                              title: String(listing.title ?? ""),
-                              image: (listing.images as string[])?.[0],
-                              priceLabel: formatPiPriceDisplay(String(listing.price_display ?? ""), ""),
-                            })
-                          }
+                        {isBoost ? (
+                          <button
+                            type="button"
+                            className={styles.actionBtn}
+                            title={`Boost active until ${formatBoostExpiry(boostExpiryIso)}`}
+                            disabled
+                          >
+                            ✅
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={styles.actionBtn}
+                            title="Boost"
+                            onClick={() =>
+                              setBoostListing({
+                                id: String(listing.id),
+                                title: String(listing.title ?? ""),
+                                image: (listing.images as string[])?.[0],
+                                priceLabel: formatPiPriceDisplay(String(listing.price_display ?? ""), ""),
+                              })
+                            }
                         >
                           🚀
                         </button>
+                        )}
                         <Link href={`${appBase}/${listing.id}/edit`} className={styles.actionBtn} title="Edit">
                           ✏️
                         </Link>

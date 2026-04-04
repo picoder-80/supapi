@@ -169,6 +169,66 @@
   color: var(--color-gold-dark);
 }
 
+.toolsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.toolCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg);
+  text-decoration: none;
+  transition: all 0.18s ease;
+}
+
+.toolCard:hover {
+  border-color: rgba(245, 166, 35, 0.35);
+  box-shadow: 0 3px 12px rgba(245, 166, 35, 0.08);
+  transform: translateY(-1px);
+}
+
+.toolIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(245, 166, 35, 0.1);
+  flex-shrink: 0;
+}
+
+.toolBody {
+  min-width: 0;
+  flex: 1;
+}
+
+.toolLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.toolSub {
+  font-size: 11px;
+  color: var(--color-text-light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toolArrow {
+  color: var(--color-gold);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
 /* ── Period Pills ── */
 .periodWrap {
   display: flex;
@@ -458,6 +518,9 @@
   .scGrid {
     grid-template-columns: 1fr;
   }
+  .toolsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .referralGrid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -494,6 +557,9 @@
   }
   .treasuryGrid,
   .scGrid {
+    grid-template-columns: 1fr;
+  }
+  .toolsGrid {
     grid-template-columns: 1fr;
   }
   .referralGrid {

@@ -94,6 +94,15 @@ export default function AdminDashboardPage() {
   const [referralStats, setReferralStats] = useState<ReferralStatsData | null>(null);
   const [supaChatRevenue, setSupaChatRevenue] = useState<SupaChatRevenueData | null>(null);
   const [aiProviderAlerts, setAiProviderAlerts] = useState<AIProviderAlert[]>([]);
+  const [piNetwork, setPiNetwork] = useState<{
+    healthy: boolean;
+    latency_ms: number;
+    health: string;
+    slot: number | null;
+    version: { "solana-core"?: string; "feature-set"?: number } | null;
+    checked_at: string;
+    error: string | null;
+  } | null>(null);
   const [period, setPeriod] = useState<"all" | "month" | "week">("all");
   const [loading,    setLoading]    = useState(true);
   const [msg, setMsg] = useState("");
@@ -134,14 +143,16 @@ export default function AdminDashboardPage() {
       safeFetch("/api/admin/referral?type=stats", token),
       safeFetch(`/api/admin/supachat/revenue?period=${period}`, token),
       safeFetch("/api/admin/supaminds", token),
+      safeFetch("/api/admin/pi-network", token),
     ])
-      .then(([t, sc, rs, sr, sm]) => {
+      .then(([t, sc, rs, sr, sm, pn]) => {
       if (t?.success) setTreasury(t.data);
       else setMsg("Failed to load treasury.");
       if (sc?.success) setScWallet(sc.data);
       if (rs?.success) setReferralStats(rs.data);
       if (sr?.success) setSupaChatRevenue(sr.data);
       if (sm?.success) setAiProviderAlerts(sm.data?.ai_runtime_alerts ?? []);
+      if (pn?.success) setPiNetwork(pn.data);
       })
       .finally(() => setLoading(false));
   }, [period]);
@@ -231,6 +242,57 @@ export default function AdminDashboardPage() {
           </div>
         ) : (
           <div className={styles.empty}>✅ All AI providers healthy — no quota alerts.</div>
+        )}
+      </div>
+
+      <div className={styles.section}>
+        <div className={styles.sectionRow}>
+          <h2 className={styles.sectionTitle}><span className={styles.sectionIcon}>🪐</span> Pi Testnet Network</h2>
+          <span className={styles.sectionLink} style={{ cursor: "default" }}>
+            {piNetwork ? `Checked ${new Date(piNetwork.checked_at).toLocaleTimeString()}` : "Checking..."}
+          </span>
+        </div>
+        {!piNetwork ? (
+          <div className={styles.loading}>Connecting to Pi Testnet RPC...</div>
+        ) : (
+          <div className={styles.panel}>
+            <div className={styles.row}>
+              <div className={styles.rowInfo}>
+                <div className={styles.rowTitle}>Network Health</div>
+                <div className={styles.rowSub}>rpc.testnet.minepi.com</div>
+              </div>
+              <span className={`${styles.badge} ${piNetwork.healthy ? styles.badgeOk : styles.badgeWarn}`}>
+                {piNetwork.healthy ? "✅ Healthy" : `❌ ${piNetwork.error ?? "Unreachable"}`}
+              </span>
+            </div>
+            <div className={styles.row}>
+              <div className={styles.rowInfo}>
+                <div className={styles.rowTitle}>Latency</div>
+                <div className={styles.rowSub}>Round-trip to RPC server</div>
+              </div>
+              <span className={`${styles.badge} ${piNetwork.latency_ms < 500 ? styles.badgeOk : styles.badgeWarn}`}>
+                {piNetwork.latency_ms}ms
+              </span>
+            </div>
+            {piNetwork.slot != null && (
+              <div className={styles.row}>
+                <div className={styles.rowInfo}>
+                  <div className={styles.rowTitle}>Current Slot</div>
+                  <div className={styles.rowSub}>Latest confirmed block slot</div>
+                </div>
+                <span className={styles.badge}>{Number(piNetwork.slot).toLocaleString()}</span>
+              </div>
+            )}
+            {piNetwork.version && (
+              <div className={styles.row}>
+                <div className={styles.rowInfo}>
+                  <div className={styles.rowTitle}>Node Version</div>
+                  <div className={styles.rowSub}>Solana-compatible core</div>
+                </div>
+                <span className={styles.badge}>{piNetwork.version["solana-core"] ?? "-"}</span>
+              </div>
+            )}
+          </div>
         )}
       </div>
 

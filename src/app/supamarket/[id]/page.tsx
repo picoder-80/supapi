@@ -376,6 +376,10 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
   const conditionLabel = CONDITIONS.find(c => c.id === listing.condition)?.label ?? listing.condition;
   const methodLabel    = BUYING_METHODS.find(m => m.id === listing.buying_method);
   const isOwnListing   = user?.id === listing.seller.id;
+  const isBoostActive =
+    Boolean(listing.is_boosted) &&
+    Boolean(listing.boost_expires_at) &&
+    new Date(String(listing.boost_expires_at)).getTime() > Date.now();
   const images         = listing.images?.length ? listing.images : [];
   const isDigitalListing = listing.buying_method === "digital" || listing.type === "digital";
 
@@ -529,7 +533,14 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
         {isOwnListing && (
           <div className={styles.bottomActions}>
             {listing.status === "active" && (
-              <button className={styles.ownerBoostBtn} onClick={() => setShowBoost(true)}>🚀 Boost</button>
+              <button
+                className={styles.ownerBoostBtn}
+                onClick={() => setShowBoost(true)}
+                disabled={isBoostActive}
+                title={isBoostActive ? `Boost active until ${new Date(String(listing.boost_expires_at)).toLocaleString()}` : "Boost listing"}
+              >
+                {isBoostActive ? "✅ Boost Active" : "🚀 Boost"}
+              </button>
             )}
             <Link href={`/supamarket/${id}/edit`} className={styles.manageBtn}>Edit Listing</Link>
             <Link href="/supamarket/my-listings" className={styles.manageBtn}>Manage Listings →</Link>
@@ -782,7 +793,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
       )}
 
       {/* Boost sheet (own listing) */}
-      {showBoost && isOwnListing && listing.status === "active" && (
+      {showBoost && isOwnListing && listing.status === "active" && !isBoostActive && (
         <div className={styles.boostOverlay} onClick={() => !boosting && setShowBoost(false)}>
           <div className={styles.boostSheet} onClick={e => e.stopPropagation()}>
             <div className={styles.boostHeader}>

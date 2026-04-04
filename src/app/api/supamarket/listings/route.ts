@@ -54,6 +54,40 @@ function sortByBoostPriority<T extends { is_boosted?: boolean | null; boost_tier
   });
 }
 
+function applyActiveBoostFallback<T extends { id?: string; is_boosted?: boolean | null; boost_tier?: string | null; boost_expires_at?: string | null }>(
+  rows: T[],
+  boostMap: Map<string, { tier: string | null; expires_at: string | null }>
+): T[] {
+  return rows.map((row) => {
+    const id = String(row.id ?? "");
+    if (!id) return row;
+    const active = boostMap.get(id);
+    if (!active) return row;
+    return {
+      ...row,
+      is_boosted: true,
+      boost_tier: active.tier ?? row.boost_tier ?? null,
+      boost_expires_at: active.expires_at ?? row.boost_expires_at ?? null,
+    };
+  });
+}
+
+function applyActiveSpotlightFallback<T extends { id?: string; spotlight_expires_at?: string | null }>(
+  rows: T[],
+  spotlightMap: Map<string, string>
+): T[] {
+  return rows.map((row) => {
+    const id = String(row.id ?? "");
+    if (!id) return row;
+    const expiresAt = spotlightMap.get(id);
+    if (!expiresAt) return row;
+    return {
+      ...row,
+      spotlight_expires_at: expiresAt,
+    };
+  });
+}
+
 function getUserId(req: NextRequest): string | null {
   try {
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
@@ -141,7 +175,41 @@ export async function GET(req: NextRequest) {
       }
 
       // Legacy schema fallback (without newer columns like category_deep/is_boosted/country_code).
-      let legacyQuery = supabase
+      let compatQuery = supabase
+        .from("listings")
+        .select(
+          `id, title, description, price_pi, category, subcategory, condition, buying_method, images, stock, status, location, views, likes, created_at, is_boosted, boost_tier, boost_expires_at, seller:seller_id ( id, username, display_name, avatar_url, kyc_status )`,
+          { count: "exact" }
+        )
+        .eq("status", "active")
+        .or("stock.gt.0,stock.is.null");
+
+      if (category) compatQuery = compatQuery.eq("category", category);
+      if (subcategory) compatQuery = compatQuery.eq("subcategory", subcategory);
+      if (condition) compatQuery = compatQuery.eq("condition", condition);
+      if (method) compatQuery = compatQuery.or(`buying_method.eq.${method},buying_method.eq.both`);
+      if (q) compatQuery = compatQuery.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+      if (sellerUser?.trim()) {
+        const { data: u } = await supabase.from("users").select("id").eq("username", sellerUser.trim()).single();
+        if (u) compatQuery = compatQuery.eq("seller_id", u.id);
+      }
+
+      if (sort === "price_asc") compatQuery = compatQuery.order("price_pi", { ascending: true });
+      else if (sort === "price_desc") compatQuery = compatQuery.order("price_pi", { ascending: false });
+      else if (sort === "popular") compatQuery = compatQuery.order("views", { ascending: false });
+      else compatQuery = compatQuery.order("created_at", { ascending: false });
+
+      const compatRes = await compatQuery.range(offset, offset + limit - 1);
+      if (!compatRes.error) {
+        data = (compatRes.data ?? []).map((row: any) => ({
+          ...row,
+          category_deep: "",
+          country_code: null,
+          ship_worldwide: false,
+        }));
+        count = compatRes.count ?? 0;
+      } else {
+        let legacyQuery = supabase
         .from("listings")
         .select(
           `id, title, description, price_pi, category, subcategory, condition, buying_method, images, stock, status, location, views, likes, created_at, seller:seller_id ( id, username, display_name, avatar_url, kyc_status )`,
@@ -150,36 +218,37 @@ export async function GET(req: NextRequest) {
         .eq("status", "active")
         .or("stock.gt.0,stock.is.null");
 
-      if (category) legacyQuery = legacyQuery.eq("category", category);
-      if (subcategory) legacyQuery = legacyQuery.eq("subcategory", subcategory);
-      if (condition) legacyQuery = legacyQuery.eq("condition", condition);
-      if (method) legacyQuery = legacyQuery.or(`buying_method.eq.${method},buying_method.eq.both`);
-      if (q) legacyQuery = legacyQuery.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
-      if (sellerUser?.trim()) {
-        const { data: u } = await supabase.from("users").select("id").eq("username", sellerUser.trim()).single();
-        if (u) legacyQuery = legacyQuery.eq("seller_id", u.id);
+        if (category) legacyQuery = legacyQuery.eq("category", category);
+        if (subcategory) legacyQuery = legacyQuery.eq("subcategory", subcategory);
+        if (condition) legacyQuery = legacyQuery.eq("condition", condition);
+        if (method) legacyQuery = legacyQuery.or(`buying_method.eq.${method},buying_method.eq.both`);
+        if (q) legacyQuery = legacyQuery.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+        if (sellerUser?.trim()) {
+          const { data: u } = await supabase.from("users").select("id").eq("username", sellerUser.trim()).single();
+          if (u) legacyQuery = legacyQuery.eq("seller_id", u.id);
+        }
+
+        if (sort === "price_asc") legacyQuery = legacyQuery.order("price_pi", { ascending: true });
+        else if (sort === "price_desc") legacyQuery = legacyQuery.order("price_pi", { ascending: false });
+        else if (sort === "popular") legacyQuery = legacyQuery.order("views", { ascending: false });
+        else legacyQuery = legacyQuery.order("created_at", { ascending: false });
+
+        const legacyRes = await legacyQuery.range(offset, offset + limit - 1);
+        if (legacyRes.error) {
+          return NextResponse.json({ success: false, error: legacyRes.error.message }, { status: 500 });
+        }
+
+        data = (legacyRes.data ?? []).map((row: any) => ({
+          ...row,
+          category_deep: "",
+          country_code: null,
+          ship_worldwide: false,
+          is_boosted: false,
+          boost_tier: null,
+          boost_expires_at: null,
+        }));
+        count = legacyRes.count ?? 0;
       }
-
-      if (sort === "price_asc") legacyQuery = legacyQuery.order("price_pi", { ascending: true });
-      else if (sort === "price_desc") legacyQuery = legacyQuery.order("price_pi", { ascending: false });
-      else if (sort === "popular") legacyQuery = legacyQuery.order("views", { ascending: false });
-      else legacyQuery = legacyQuery.order("created_at", { ascending: false });
-
-      const legacyRes = await legacyQuery.range(offset, offset + limit - 1);
-      if (legacyRes.error) {
-        return NextResponse.json({ success: false, error: legacyRes.error.message }, { status: 500 });
-      }
-
-      data = (legacyRes.data ?? []).map((row: any) => ({
-        ...row,
-        category_deep: "",
-        country_code: null,
-        ship_worldwide: false,
-        is_boosted: false,
-        boost_tier: null,
-        boost_expires_at: null,
-      }));
-      count = legacyRes.count ?? 0;
     }
 
     // Safety fallback for legacy rows:
@@ -203,7 +272,54 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const listings = sortByBoostPriority(data ?? [], sort);
+    let rows = data ?? [];
+    try {
+      const listingIds = rows.map((r: any) => String(r.id ?? "")).filter(Boolean);
+      if (listingIds.length) {
+        const { data: activeBoosts } = await supabase
+          .from("listing_boosts")
+          .select("listing_id, tier, expires_at, boosted_at")
+          .in("listing_id", listingIds)
+          .gt("expires_at", new Date().toISOString())
+          .order("boosted_at", { ascending: false });
+
+        if (activeBoosts?.length) {
+          const boostMap = new Map<string, { tier: string | null; expires_at: string | null }>();
+          for (const b of activeBoosts) {
+            const key = String((b as any).listing_id ?? "");
+            if (!key || boostMap.has(key)) continue;
+            boostMap.set(key, {
+              tier: (b as any).tier ?? null,
+              expires_at: (b as any).expires_at ?? null,
+            });
+          }
+          rows = applyActiveBoostFallback(rows as any[], boostMap) as typeof rows;
+        }
+
+        const { data: activeSpotlights } = await supabase
+          .from("market_spotlights")
+          .select("listing_id, expires_at, starts_at")
+          .in("listing_id", listingIds)
+          .eq("is_active", true)
+          .gt("expires_at", new Date().toISOString())
+          .order("starts_at", { ascending: false });
+
+        if (activeSpotlights?.length) {
+          const spotlightMap = new Map<string, string>();
+          for (const s of activeSpotlights) {
+            const key = String((s as any).listing_id ?? "");
+            const expiresAt = String((s as any).expires_at ?? "");
+            if (!key || !expiresAt || spotlightMap.has(key)) continue;
+            spotlightMap.set(key, expiresAt);
+          }
+          rows = applyActiveSpotlightFallback(rows as any[], spotlightMap) as typeof rows;
+        }
+      }
+    } catch {
+      // Best-effort fallback; ignore when listing_boosts table is unavailable.
+    }
+
+    const listings = sortByBoostPriority(rows, sort);
 
     return NextResponse.json({ success: true, data: { listings, total: count ?? 0, page, limit } });
   } catch {

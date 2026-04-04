@@ -180,6 +180,10 @@ export default function SupasifiedsDetailPage({ params }: { params: Promise<{ id
 
   const isOwner = user?.id === row.seller.id;
   const images = row.images?.length ? row.images : [];
+  const isBoostActive =
+    Boolean(row.is_boosted) &&
+    Boolean(row.boost_expires_at) &&
+    new Date(String(row.boost_expires_at)).getTime() > Date.now();
   const phone = row.contact_phone?.trim();
   const wa = row.contact_whatsapp?.trim();
   const waDigits = wa ? digitsOnly(wa) : "";
@@ -314,8 +318,14 @@ export default function SupasifiedsDetailPage({ params }: { params: Promise<{ id
         {isOwner && (
           <div className={styles.bottomActions}>
             {row.status === "active" && (
-              <button type="button" className={styles.ownerBoostBtn} onClick={() => setShowBoost(true)}>
-                🚀 Boost (SC)
+              <button
+                type="button"
+                className={styles.ownerBoostBtn}
+                onClick={() => setShowBoost(true)}
+                disabled={isBoostActive}
+                title={isBoostActive ? `Boost active until ${new Date(String(row.boost_expires_at)).toLocaleString()}` : "Boost ad"}
+              >
+                {isBoostActive ? "✅ Boost Active" : "🚀 Boost (SC)"}
               </button>
             )}
             <Link href={`${appBase}/${id}/edit`} className={styles.manageBtn}>
@@ -328,7 +338,7 @@ export default function SupasifiedsDetailPage({ params }: { params: Promise<{ id
         )}
       </div>
 
-      {showBoost && isOwner && row.status === "active" && (
+      {showBoost && isOwner && row.status === "active" && !isBoostActive && (
         <div className={styles.boostOverlay} onClick={() => !boosting && setShowBoost(false)}>
           <div className={styles.boostSheet} onClick={(e) => e.stopPropagation()}>
             <div className={styles.boostHeader}>

@@ -14,6 +14,26 @@ const BOOST_TIERS: Record<string, { sc: number; hrs: number; label: string }> = 
   gold:   { sc: 500, hrs: 72,  label: "👑 Gold · 72h"   },
 };
 
+type CarouselPackageConfig = { days: number; sc: number; label: string };
+type SpotlightPackageConfig = { days: number; sc: number; label: string };
+type AutoRepostPackageConfig = { id: string; interval_hours: number; days: number; sc: number; label: string };
+
+const DEFAULT_CAROUSEL_PACKAGES: CarouselPackageConfig[] = [
+  { days: 3, sc: 180, label: "3 days carousel ad" },
+  { days: 7, sc: 360, label: "7 days carousel ad" },
+  { days: 14, sc: 650, label: "14 days carousel ad" },
+];
+const DEFAULT_SPOTLIGHT_PACKAGES: SpotlightPackageConfig[] = [
+  { days: 3, sc: 120, label: "3 days category spotlight" },
+  { days: 7, sc: 250, label: "7 days category spotlight" },
+  { days: 14, sc: 450, label: "14 days category spotlight" },
+];
+const DEFAULT_AUTOREPOST_PACKAGES: AutoRepostPackageConfig[] = [
+  { id: "24h_7d", interval_hours: 24, days: 7, sc: 120, label: "Every 24h / 7d" },
+  { id: "12h_7d", interval_hours: 12, days: 7, sc: 200, label: "Every 12h / 7d" },
+  { id: "6h_14d", interval_hours: 6, days: 14, sc: 420, label: "Every 6h / 14d" },
+];
+
 function timeAgo(iso: string) {
   const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
   return d === 0 ? "Today" : d === 1 ? "Yesterday" : `${d}d ago`;
@@ -58,6 +78,15 @@ export default function MyListingsPage() {
   const [boostTier, setBoostTier]       = useState<string>("");
   const [boosting, setBoosting]         = useState(false);
   const [scBalance, setScBalance]       = useState<number | null>(null);
+  const [promoteTab, setPromoteTab]     = useState<"boost" | "spotlight" | "autorepost" | "carousel">("boost");
+  const [spotlightDays, setSpotlightDays] = useState(7);
+  const [autorepostPkg, setAutorepostPkg] = useState("24h_7d");
+  const [carouselDays, setCarouselDays] = useState(7);
+  const [carouselHeadline, setCarouselHeadline] = useState("");
+  const [promoting, setPromoting] = useState(false);
+  const [carouselPackages, setCarouselPackages] = useState<CarouselPackageConfig[]>(DEFAULT_CAROUSEL_PACKAGES);
+  const [spotlightPackages, setSpotlightPackages] = useState<SpotlightPackageConfig[]>(DEFAULT_SPOTLIGHT_PACKAGES);
+  const [autorepostPackages, setAutorepostPackages] = useState<AutoRepostPackageConfig[]>(DEFAULT_AUTOREPOST_PACKAGES);
 
   const token = () => typeof window !== "undefined" ? localStorage.getItem("supapi_token") ?? "" : "";
 
@@ -112,6 +141,30 @@ export default function MyListingsPage() {
 
   useEffect(() => { if (user) fetchScBalance(); }, [user, fetchScBalance]);
 
+  useEffect(() => {
+    fetch("/api/supamarket/promote/config")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d?.success || !d.data) return;
+        if (Array.isArray(d.data.carouselPackages) && d.data.carouselPackages.length) {
+          setCarouselPackages(d.data.carouselPackages);
+          const hasCurrent = d.data.carouselPackages.some((x: CarouselPackageConfig) => x.days === carouselDays);
+          if (!hasCurrent) setCarouselDays(d.data.carouselPackages[0].days);
+        }
+        if (Array.isArray(d.data.spotlightPackages) && d.data.spotlightPackages.length) {
+          setSpotlightPackages(d.data.spotlightPackages);
+          const hasCurrent = d.data.spotlightPackages.some((x: SpotlightPackageConfig) => x.days === spotlightDays);
+          if (!hasCurrent) setSpotlightDays(d.data.spotlightPackages[0].days);
+        }
+        if (Array.isArray(d.data.autorepostPackages) && d.data.autorepostPackages.length) {
+          setAutorepostPackages(d.data.autorepostPackages);
+          const hasCurrent = d.data.autorepostPackages.some((x: AutoRepostPackageConfig) => x.id === autorepostPkg);
+          if (!hasCurrent) setAutorepostPkg(d.data.autorepostPackages[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const handleBoost = async () => {
     if (!boostListing || !boostTier || !BOOST_TIERS[boostTier]) return;
     const t = token();
@@ -128,6 +181,7 @@ export default function MyListingsPage() {
         showToast(`Boosted! ${BOOST_TIERS[boostTier].label}`);
         setBoostListing(null);
         setBoostTier("");
+        setPromoteTab("boost");
         fetchListings();
         fetchScBalance();
       } else {
@@ -155,6 +209,81 @@ export default function MyListingsPage() {
       }
     } catch { showToast("Something went wrong", "error"); }
     setActionId(null);
+  };
+
+  const handleSpotlight = async () => {
+    if (!boostListing) return;
+    const t = token();
+    if (!t) return;
+    setPromoting(true);
+    try {
+      const r = await fetch("/api/supamarket/promote/spotlight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ listing_id: boostListing.id, duration_days: spotlightDays }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        showToast("Category spotlight activated");
+        fetchListings();
+        fetchScBalance();
+      } else showToast(d.error ?? "Spotlight failed", "error");
+    } catch {
+      showToast("Something went wrong", "error");
+    }
+    setPromoting(false);
+  };
+
+  const handleAutoRepost = async () => {
+    if (!boostListing) return;
+    const t = token();
+    if (!t) return;
+    setPromoting(true);
+    try {
+      const r = await fetch("/api/supamarket/promote/autorepost", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ listing_id: boostListing.id, package_id: autorepostPkg }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        showToast("Auto-repost activated");
+        fetchListings();
+        fetchScBalance();
+      } else showToast(d.error ?? "Auto-repost failed", "error");
+    } catch {
+      showToast("Something went wrong", "error");
+    }
+    setPromoting(false);
+  };
+
+  const handleCarousel = async () => {
+    if (!boostListing) return;
+    const t = token();
+    if (!t) return;
+    setPromoting(true);
+    try {
+      const r = await fetch("/api/supamarket/promote/carousel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({
+          listing_id: boostListing.id,
+          image_url: boostListing.image || "",
+          headline: (carouselHeadline || boostListing.title).trim(),
+          cta_label: "View Listing",
+          link_url: `/supamarket/${boostListing.id}`,
+          duration_days: carouselDays,
+        }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        showToast("Carousel ad is live");
+        fetchScBalance();
+      } else showToast(d.error ?? "Carousel failed", "error");
+    } catch {
+      showToast("Something went wrong", "error");
+    }
+    setPromoting(false);
   };
 
   const handleDeleteListing = async (id: string) => {
@@ -347,7 +476,12 @@ export default function MyListingsPage() {
           ) : (
             filtered.map(listing => {
               const meta    = STATUS_META[listing.status] ?? STATUS_META.active;
-              const isBoost = listing.is_boosted && listing.boost_expires_at && new Date(listing.boost_expires_at) > new Date();
+              const boostExpiryIso = typeof listing.boost_expires_at === "string" ? listing.boost_expires_at : "";
+              const spotlightExpiryIso = typeof listing.spotlight_expires_at === "string" ? listing.spotlight_expires_at : "";
+              const carouselExpiryIso = typeof listing.carousel_expires_at === "string" ? listing.carousel_expires_at : "";
+              const isBoost = Boolean(listing.is_boosted) && Boolean(boostExpiryIso) && new Date(boostExpiryIso) > new Date();
+              const isSpotlight = Boolean(spotlightExpiryIso) && new Date(spotlightExpiryIso) > new Date();
+              const isCarousel = Boolean(carouselExpiryIso) && new Date(carouselExpiryIso) > new Date();
               const statusClass = STATUS_CLASS[listing.status] ?? styles.statusActive;
               return (
                 <div key={listing.id} className={styles.listingRow}>
@@ -356,7 +490,19 @@ export default function MyListingsPage() {
                       ? <img src={listing.images[0]} alt="" className={styles.listingImgEl} />
                       : <span>🛍️</span>
                     }
-                    {isBoost && <span className={styles.boostIndicator}>🚀</span>}
+                    <div className={styles.badgeStack}>
+                      {isBoost && (
+                        <div className={styles.boostBadge}>
+                          {listing.boost_tier === "gold" ? "👑" : listing.boost_tier === "silver" ? "🥈" : "🥉"} Boost
+                        </div>
+                      )}
+                      {isSpotlight && (
+                        <div className={styles.spotlightBadge}>⭐ Spotlight</div>
+                      )}
+                      {isCarousel && (
+                        <div className={styles.carouselBadge}>🎠 Carousel</div>
+                      )}
+                    </div>
                   </Link>
 
                   <div className={styles.listingInfo}>
@@ -373,7 +519,17 @@ export default function MyListingsPage() {
                       <span>📦 {listing.stock ?? 0} left</span>
                       {isBoost && (
                         <span className={styles.boostExpiry}>
-                          🚀 until {formatBoostExpiry(String(listing.boost_expires_at))}
+                          🚀 until {formatBoostExpiry(boostExpiryIso)}
+                        </span>
+                      )}
+                      {isSpotlight && (
+                        <span className={styles.spotlightExpiry}>
+                          ⭐ Spotlight until {formatBoostExpiry(spotlightExpiryIso)}
+                        </span>
+                      )}
+                      {isCarousel && (
+                        <span className={styles.carouselExpiry}>
+                          🎠 Carousel until {formatBoostExpiry(carouselExpiryIso)}
                         </span>
                       )}
                     </div>
@@ -382,20 +538,30 @@ export default function MyListingsPage() {
                   <div className={styles.listingActions}>
                     {listing.status === "active" && (
                       <>
-                        <button
-                          className={styles.actionBtn}
-                          title="Boost"
-                          onClick={() =>
-                            setBoostListing({
-                              id: listing.id,
-                              title: listing.title,
-                              image: listing.images?.[0],
-                              pricePi: Number(listing.price_pi ?? 0),
-                            })
-                          }
-                        >
-                          🚀
-                        </button>
+                        {isBoost ? (
+                          <button
+                            className={styles.actionBtn}
+                            title={`Boost active until ${formatBoostExpiry(boostExpiryIso)}`}
+                            disabled
+                          >
+                            ✅
+                          </button>
+                        ) : (
+                          <button
+                            className={styles.actionBtn}
+                            title="Boost"
+                            onClick={() =>
+                              setBoostListing({
+                                id: listing.id,
+                                title: listing.title,
+                                image: listing.images?.[0],
+                                pricePi: Number(listing.price_pi ?? 0),
+                              })
+                            }
+                          >
+                            🚀
+                          </button>
+                        )}
                         <Link href={`/supamarket/${listing.id}/edit`} className={styles.actionBtn} title="Edit">✏️</Link>
                         <button
                           className={styles.actionBtn}
@@ -445,11 +611,20 @@ export default function MyListingsPage() {
 
       {/* Boost modal */}
       {boostListing && (
-        <div className={styles.boostOverlay} onClick={() => !boosting && setBoostListing(null)}>
+        <div className={styles.boostOverlay} onClick={() => !boosting && !promoting && setBoostListing(null)}>
           <div className={styles.boostSheet} onClick={e => e.stopPropagation()}>
             <div className={styles.boostHeader}>
-              <div className={styles.boostTitle}>🚀 Boost Listing</div>
-              <button className={styles.boostClose} onClick={() => !boosting && setBoostListing(null)}>✕</button>
+              <div className={styles.boostTitle}>📣 Promote ad</div>
+              <button
+                className={styles.boostClose}
+                onClick={() => {
+                  if (boosting || promoting) return;
+                  setBoostListing(null);
+                  setPromoteTab("boost");
+                }}
+              >
+                ✕
+              </button>
             </div>
             <div className={styles.boostBody}>
               <div className={styles.boostSummary}>
@@ -464,23 +639,134 @@ export default function MyListingsPage() {
                 </div>
               </div>
               {scBalance != null && <div className={styles.boostBalance}>Your SC Balance: <strong>{scBalance}</strong></div>}
-              <div className={styles.boostStepTitle}>Select boost tier</div>
-              <div className={styles.boostTiers}>
-                {(Object.entries(BOOST_TIERS) as [string, { sc: number; hrs: number; label: string }][]).map(([tier, info]) => (
+              <div className={styles.boostTiers} style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
+                {[
+                  ["boost", "🚀 Boost"],
+                  ["spotlight", "⭐ Spotlight"],
+                  ["autorepost", "🔁 Auto-repost"],
+                  ["carousel", "🎠 Carousel"],
+                ].map(([id, label]) => (
                   <button
-                    key={tier}
-                    className={`${styles.boostTier} ${boostTier === tier ? styles.boostTierActive : ""}`}
-                    onClick={() => setBoostTier(tier)}
-                    disabled={scBalance != null && scBalance < info.sc}
+                    key={id}
+                    type="button"
+                    className={`${styles.boostTier} ${promoteTab === id ? styles.boostTierActive : ""}`}
+                    onClick={() => setPromoteTab(id as "boost" | "spotlight" | "autorepost" | "carousel")}
                   >
-                    <span className={styles.boostTierLabel}>{info.label}</span>
-                    <span className={styles.boostTierSc}>{info.sc} SC</span>
+                    <span className={styles.boostTierLabel}>{label}</span>
                   </button>
                 ))}
               </div>
-              <button className={styles.boostBtn} disabled={!boostTier || boosting} onClick={handleBoost}>
-                {boosting ? "Processing..." : `Boost for ${boostTier ? BOOST_TIERS[boostTier].sc : 0} SC`}
-              </button>
+              <div className={styles.boostBalance}>
+                {promoteTab === "boost" && "Boost lifts your listing priority for a limited time so it appears higher in results."}
+                {promoteTab === "spotlight" && "Category spotlight for SupaMarket is coming soon."}
+                {promoteTab === "autorepost" && "Auto-repost for SupaMarket is coming soon."}
+                {promoteTab === "carousel" && "Carousel ads for SupaMarket is coming soon."}
+              </div>
+
+              {promoteTab === "boost" && (
+                <>
+                  <div className={styles.boostStepTitle}>Select boost tier</div>
+                  <div className={styles.boostTiers}>
+                    {(Object.entries(BOOST_TIERS) as [string, { sc: number; hrs: number; label: string }][]).map(([tier, info]) => (
+                      <button
+                        key={tier}
+                        className={`${styles.boostTier} ${boostTier === tier ? styles.boostTierActive : ""}`}
+                        onClick={() => setBoostTier(tier)}
+                        disabled={scBalance != null && scBalance < info.sc}
+                      >
+                        <span className={styles.boostTierLabel}>{info.label}</span>
+                        <span className={styles.boostTierSc}>{info.sc} SC</span>
+                      </button>
+                    ))}
+                  </div>
+                  <button className={styles.boostBtn} disabled={!boostTier || boosting} onClick={handleBoost}>
+                    {boosting ? "Processing..." : `Boost for ${boostTier ? BOOST_TIERS[boostTier].sc : 0} SC`}
+                  </button>
+                </>
+              )}
+
+              {promoteTab === "spotlight" && (
+                <>
+                  <div className={styles.boostStepTitle}>Category spotlight duration</div>
+                  <div className={styles.boostTiers}>
+                    {spotlightPackages.map((opt) => (
+                      <button
+                        key={opt.days}
+                        type="button"
+                        className={`${styles.boostTier} ${spotlightDays === opt.days ? styles.boostTierActive : ""}`}
+                        onClick={() => setSpotlightDays(opt.days)}
+                        disabled={scBalance != null && scBalance < opt.sc}
+                      >
+                        <span className={styles.boostTierLabel}>{opt.days} days</span>
+                        <span className={styles.boostTierSc}>{opt.sc} SC</span>
+                      </button>
+                    ))}
+                  </div>
+                  <button type="button" className={styles.boostBtn} disabled={promoting} onClick={handleSpotlight}>
+                    {promoting ? "Processing..." : "Activate spotlight"}
+                  </button>
+                </>
+              )}
+
+              {promoteTab === "autorepost" && (
+                <>
+                  <div className={styles.boostStepTitle}>Auto-repost package</div>
+                  <div className={styles.boostTiers}>
+                    {autorepostPackages.map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        className={`${styles.boostTier} ${autorepostPkg === opt.id ? styles.boostTierActive : ""}`}
+                        onClick={() => setAutorepostPkg(opt.id)}
+                        disabled={scBalance != null && scBalance < opt.sc}
+                      >
+                        <span className={styles.boostTierLabel}>{opt.label}</span>
+                        <span className={styles.boostTierSc}>{opt.sc} SC</span>
+                      </button>
+                    ))}
+                  </div>
+                  <button type="button" className={styles.boostBtn} disabled={promoting} onClick={handleAutoRepost}>
+                    {promoting ? "Processing..." : "Activate auto-repost"}
+                  </button>
+                </>
+              )}
+
+              {promoteTab === "carousel" && (
+                <>
+                  <div className={styles.boostStepTitle}>Carousel ad setup</div>
+                  <input
+                    className={styles.input}
+                    value={carouselHeadline}
+                    onChange={(e) => setCarouselHeadline(e.target.value)}
+                    placeholder="Headline (optional)"
+                  />
+                  <div className={styles.boostTiers}>
+                    {carouselPackages.map((opt) => (
+                      <button
+                        key={opt.days}
+                        type="button"
+                        className={`${styles.boostTier} ${carouselDays === opt.days ? styles.boostTierActive : ""}`}
+                        onClick={() => setCarouselDays(opt.days)}
+                        disabled={scBalance != null && scBalance < opt.sc}
+                      >
+                        <span className={styles.boostTierLabel}>{opt.days} days</span>
+                        <span className={styles.boostTierSc}>{opt.sc} SC</span>
+                      </button>
+                    ))}
+                  </div>
+                  {!boostListing.image && (
+                    <div className={styles.boostBalance}>Add at least 1 image to this listing before running carousel ads.</div>
+                  )}
+                  <button
+                    type="button"
+                    className={styles.boostBtn}
+                    disabled={promoting || !boostListing.image}
+                    onClick={handleCarousel}
+                  >
+                    {promoting ? "Processing..." : "Launch carousel ad"}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
