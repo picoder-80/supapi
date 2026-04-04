@@ -108,28 +108,57 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // SC reward for first post
+  /** +20 SC when this user has exactly one Livvi row (the post we just inserted). */
+  let firstPostBonusGranted = false;
   try {
-    const { count } = await supabase.from("supa_livvi_posts")
-      .select("id", { count: "exact", head: true }).eq("user_id", userId);
-    if (count === 1) {
+    const { count, error: countErr } = await supabase
+      .from("supa_livvi_posts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    if (!countErr && count === 1) {
       await supabase.from("supapi_credits").upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
-      const { data: wallet } = await supabase.from("supapi_credits")
-        .select("balance, total_earned").eq("user_id", userId).single();
-      if (wallet) {
+      const { data: wallet, error: walletErr } = await supabase
+        .from("supapi_credits")
+        .select("balance, total_earned")
+        .eq("user_id", userId)
+        .single();
+
+      if (!walletErr && wallet) {
         const sc = 20;
-        await supabase.from("supapi_credits").update({
-          balance: wallet.balance + sc,
-          total_earned: wallet.total_earned + sc,
-        }).eq("user_id", userId);
-        await supabase.from("credit_transactions").insert({
-          user_id: userId, type: "earn", activity: "first_supa_livvi_post",
-          amount: sc, balance_after: wallet.balance + sc,
-          note: "✨ First SupaLivvi post bonus!",
-        });
+        const prevBal = Number(wallet.balance ?? 0);
+        const prevEarned = Number(wallet.total_earned ?? 0);
+        const nextBal = prevBal + sc;
+
+        const { error: upErr } = await supabase
+          .from("supapi_credits")
+          .update({
+            balance: nextBal,
+            total_earned: prevEarned + sc,
+          })
+          .eq("user_id", userId);
+
+        if (!upErr) {
+          const { error: txErr } = await supabase.from("credit_transactions").insert({
+            user_id: userId,
+            type: "earn",
+            activity: "first_supa_livvi_post",
+            amount: sc,
+            balance_after: nextBal,
+            note: "✨ First SupaLivvi post bonus!",
+          });
+          if (!txErr) firstPostBonusGranted = true;
+          else console.error("[supa-livvi POST] credit_transactions insert", txErr.message);
+        } else {
+          console.error("[supa-livvi POST] supapi_credits update", upErr.message);
+        }
+      } else if (walletErr) {
+        console.error("[supa-livvi POST] supapi_credits select", walletErr.message);
       }
     }
-  } catch {}
+  } catch (e) {
+    console.error("[supa-livvi POST] first post bonus", e);
+  }
 
-  return NextResponse.json({ success: true, data: post });
+  return NextResponse.json({ success: true, data: post, firstPostBonusGranted });
 }

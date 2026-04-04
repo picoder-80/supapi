@@ -76,6 +76,15 @@ export default function SupaLivviPage() {
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("livvi_first_bonus") !== "1") return;
+    sessionStorage.removeItem("livvi_first_bonus");
+    setToast({ msg: "+20 SC added — first SupaLivvi post bonus.", type: "success" });
+    const t = setTimeout(() => setToast(null), 4500);
+    return () => clearTimeout(t);
+  }, []);
+
   const handleLike = async (post: Post, e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
     if (!user) { router.push("/dashboard"); return; }
@@ -129,9 +138,12 @@ export default function SupaLivviPage() {
       <div className={styles.header}>
         <div className={styles.headerInner}>
           <div className={styles.brandRow}>
-            <div>
+            <div className={styles.brandText}>
+              <span className={styles.heroBadge}>Lifestyle · Discovery</span>
               <h1 className={styles.brandName}>✨ SupaLivvi</h1>
-              <p className={styles.brandTagline}>Pi Lifestyle & Discovery</p>
+              <p className={styles.brandTagline}>
+                Share moments, tips, and Pi life — discover posts from pioneers worldwide.
+              </p>
             </div>
             <Link href="/supa-livvi/create" className={styles.createBtn}>
               + Post
@@ -142,6 +154,7 @@ export default function SupaLivviPage() {
           <div className={styles.catScroll}>
             {CATEGORIES.map(c => (
               <button
+                type="button"
                 key={c.id}
                 className={`${styles.catPill} ${category === c.id ? styles.catPillActive : ""}`}
                 onClick={() => setCategory(c.id)}
@@ -154,12 +167,14 @@ export default function SupaLivviPage() {
           {/* Tabs */}
           <div className={styles.tabs}>
             <button
+              type="button"
               className={`${styles.tab} ${tab === "trending" ? styles.tabActive : ""}`}
               onClick={() => setTab("trending")}
             >
               🔥 Trending
             </button>
             <button
+              type="button"
               className={`${styles.tab} ${tab === "latest" ? styles.tabActive : ""}`}
               onClick={() => setTab("latest")}
             >
@@ -214,8 +229,8 @@ export default function SupaLivviPage() {
                     {/* Multi-image nav */}
                     {hasMulti && (
                       <>
-                        <button className={styles.imgPrev} onClick={e => prevImg(post.id, post.images.length, e)}>‹</button>
-                        <button className={styles.imgNext} onClick={e => nextImg(post.id, post.images.length, e)}>›</button>
+                        <button type="button" className={styles.imgPrev} onClick={e => prevImg(post.id, post.images.length, e)}>‹</button>
+                        <button type="button" className={styles.imgNext} onClick={e => nextImg(post.id, post.images.length, e)}>›</button>
                         <div className={styles.imgDots}>
                           {post.images.map((_, idx) => (
                             <span key={idx} className={`${styles.imgDot} ${idx === imgIndex ? styles.imgDotActive : ""}`} />
@@ -277,12 +292,14 @@ export default function SupaLivviPage() {
                     {/* Actions */}
                     <div className={styles.cardActions}>
                       <button
+                        type="button"
                         className={`${styles.actionBtn} ${post.liked ? styles.actionLiked : ""}`}
                         onClick={e => handleLike(post, e)}
                       >
                         {post.liked ? "❤️" : "🤍"} {post.like_count > 0 ? post.like_count : ""}
                       </button>
                       <button
+                        type="button"
                         className={`${styles.actionBtn} ${post.saved ? styles.actionSaved : ""}`}
                         onClick={e => handleSave(post, e)}
                       >
@@ -324,8 +341,8 @@ export default function SupaLivviPage() {
                 )}
                 {selectedPost.images.length > 1 && (
                   <>
-                    <button className={styles.imgPrev} onClick={e => prevImg(selectedPost.id, selectedPost.images.length, e)}>‹</button>
-                    <button className={styles.imgNext} onClick={e => nextImg(selectedPost.id, selectedPost.images.length, e)}>›</button>
+                    <button type="button" className={styles.imgPrev} onClick={e => prevImg(selectedPost.id, selectedPost.images.length, e)}>‹</button>
+                    <button type="button" className={styles.imgNext} onClick={e => nextImg(selectedPost.id, selectedPost.images.length, e)}>›</button>
                     <div className={styles.imgDots}>
                       {selectedPost.images.map((_, idx) => (
                         <span key={idx} className={`${styles.imgDot} ${idx === imgIndex ? styles.imgDotActive : ""}`} />
@@ -379,12 +396,14 @@ export default function SupaLivviPage() {
 
                 <div className={styles.modalActions}>
                   <button
+                    type="button"
                     className={`${styles.modalActionBtn} ${selectedPost.liked ? styles.actionLiked : ""}`}
                     onClick={e => handleLike(selectedPost, e)}
                   >
                     {selectedPost.liked ? "❤️" : "🤍"} {selectedPost.like_count} Likes
                   </button>
                   <button
+                    type="button"
                     className={`${styles.modalActionBtn} ${selectedPost.saved ? styles.actionSaved : ""}`}
                     onClick={e => handleSave(selectedPost, e)}
                   >
@@ -392,7 +411,7 @@ export default function SupaLivviPage() {
                   </button>
                 </div>
 
-                <button className={styles.modalCloseBtn} onClick={() => setSelectedPost(null)}>
+                <button type="button" className={styles.modalCloseBtn} onClick={() => setSelectedPost(null)}>
                   Close
                 </button>
               </div>

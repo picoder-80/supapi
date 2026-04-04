@@ -3,20 +3,25 @@
 
 .page {
   min-height: 100vh;
+  min-height: 100dvh;
   background: #FFFAF5;
-  font-family: 'DM Sans', sans-serif;
-  padding-bottom: 80px;
+  font-family: var(--font-sans);
+  padding-bottom: calc(var(--bottomnav-h, 64px) + env(safe-area-inset-bottom, 0px) + 24px);
+  box-sizing: border-box;
 }
 
+/* In-flow bar only: sticky was overlapping form fields while scrolling (content slid under z-index). */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  background: linear-gradient(135deg, #1A1A2E 0%, #0F3460 100%);
-  position: sticky;
-  top: 60px;
-  z-index: 40;
+  background: var(--supa-topbar-gradient);
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
 }
 
 .backBtn {
@@ -26,13 +31,13 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
 }
 
 .title {
-  font-family: 'DM Serif Display', serif;
+  font-family: var(--font-sans);
   font-size: 20px;
-  font-weight: 400;
+  font-weight: 800;
   color: white;
   margin: 0;
 }
@@ -46,7 +51,7 @@
   border-radius: 20px;
   border: none;
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   transition: background 150ms;
 }
 .postBtn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -88,9 +93,69 @@
 
 .imageRow {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
 }
+
+.imageFieldCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.imageActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.chooseFileBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1.5px solid #E8E2DA;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1A1A2E;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: border-color 150ms, background 150ms;
+}
+.chooseFileBtn:hover {
+  border-color: #F5A623;
+  background: rgba(245, 166, 35, 0.06);
+}
+
+.useUrlLink {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #718096;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: var(--font-sans);
+}
+.useUrlLink:hover { color: #F5A623; }
 
 .imagePreview {
   width: 52px;
@@ -123,10 +188,14 @@
   font-size: 13px;
   color: #1A1A2E;
   background: white;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   transition: border-color 150ms;
 }
 .imageInput:focus { outline: none; border-color: #F5A623; }
+.imageInput:disabled {
+  opacity: 0.65;
+  background: #f7fafc;
+}
 
 .removeImageBtn {
   background: none;
@@ -149,7 +218,7 @@
   cursor: pointer;
   width: 100%;
   margin-top: 4px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   transition: border-color 150ms;
 }
 .addImageBtn:hover { border-color: #F5A623; color: #F5A623; }
@@ -164,7 +233,7 @@
   color: #1A1A2E;
   background: white;
   resize: none;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   line-height: 1.6;
   box-sizing: border-box;
   transition: border-color 150ms;
@@ -196,7 +265,7 @@
   cursor: pointer;
   transition: all 150ms;
   text-align: center;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
 }
 .catOpt:hover { border-color: #F5A623; }
 .catOptActive {
@@ -220,7 +289,7 @@
   font-size: 13px;
   color: #1A1A2E;
   background: white;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   transition: border-color 150ms;
 }
 .hashInput:focus { outline: none; border-color: #F5A623; }
@@ -234,7 +303,7 @@
   padding: 0 18px;
   border-radius: 12px;
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
 }
 
 .hashList {
@@ -275,7 +344,7 @@
   font-size: 13px;
   color: #1A1A2E;
   background: white;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   box-sizing: border-box;
   transition: border-color 150ms;
 }
@@ -310,5 +379,5 @@
   border: none;
   border-radius: 24px;
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
 }

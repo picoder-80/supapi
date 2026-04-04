@@ -4,15 +4,25 @@
 
 .page {
   min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   background: var(--color-bg);
   font-family: var(--font-sans);
-  padding-bottom: 90px;
+  padding-bottom: calc(var(--bottomnav-h, 64px) + env(safe-area-inset-bottom, 0px) + 88px);
+  box-sizing: border-box;
+}
+
+.page :where(button, a, input, textarea, select):focus-visible {
+  outline: none;
+  box-shadow: var(--supa-focus-ring);
 }
 
 /* ── Toast ── */
 .toast {
   position: fixed;
-  top: 70px;
+  top: calc(var(--app-header-height, 60px) + 10px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
@@ -28,38 +38,75 @@
 .toastError   { background: #FFF0EE; color: #C53030; border: 1px solid #FEB2B2; }
 @keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(-10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
 
-/* ── Hero (same as homepage, not sticky — scrolls with page) ── */
+/* ── Hero (aligned with SupaMarket / homepage — scrolls with page) ── */
 .header {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  width: 100%;
+  max-width: 100%;
+  background: var(--supa-topbar-gradient);
   color: var(--color-white);
-  padding: var(--space-6) var(--space-4) 0;
+  padding: var(--space-5) var(--space-4) 0;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.header::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 120% 80% at 100% 0%, rgba(245, 166, 35, 0.12), transparent 55%);
+  pointer-events: none;
 }
 
 .headerInner {
+  position: relative;
+  z-index: 1;
   padding: 0 0 var(--space-4);
 }
 
 .brandRow {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: var(--space-3);
   margin-bottom: var(--space-4);
+}
+
+.brandText {
+  flex: 1;
+  min-width: 0;
+}
+
+.heroBadge {
+  display: inline-block;
+  background: rgba(245, 166, 35, 0.2);
+  border: 1px solid var(--color-gold);
+  color: var(--color-gold);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .brandName {
   font-family: var(--font-sans);
-  font-size: clamp(22px, 5vw, 28px);
-  font-weight: 700;
+  font-size: clamp(26px, 6vw, 32px);
+  font-weight: 800;
   color: white;
-  margin: 0 0 2px;
+  margin: 0 0 4px;
   letter-spacing: -0.5px;
+  line-height: 1.1;
 }
 
 .brandTagline {
-  font-size: 12px;
-  color: rgba(255,255,255,0.6);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.72);
   margin: 0;
-  letter-spacing: 0.5px;
+  line-height: 1.45;
+  max-width: 36ch;
 }
 
 .createBtn {
@@ -72,6 +119,7 @@
   text-decoration: none;
   transition: var(--transition);
   flex-shrink: 0;
+  align-self: center;
   font-family: var(--font-sans);
 }
 .createBtn:hover { background: var(--color-gold-dark); transform: translateY(-1px); }

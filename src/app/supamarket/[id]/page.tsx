@@ -17,6 +17,9 @@ interface Listing {
   images: string[]; stock: number; status: string; location: string;
   views: number; likes: number; created_at: string; type: string;
   liked?: boolean;
+  is_boosted?: boolean;
+  boost_tier?: string | null;
+  boost_expires_at?: string | null;
   seller: { id: string; username: string; display_name: string | null; avatar_url: string | null; kyc_status: string; created_at: string; rating_avg?: number; rating_count?: number; sales_count?: number };
 }
 

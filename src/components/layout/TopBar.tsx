@@ -12,10 +12,7 @@ const navLinks = [
   { href: "/",            label: "🏠 Home"         },
   { href: "/dashboard",   label: "👤 Dashboard"     },
   { href: "/supamarket",      label: "🛍️ SupaMarket"    },
-  { href: "/supaskil",        label: "💼 SupaSkil"      },
   { href: "/supaminds",       label: "🧠 SupaMinds"     },
-  { href: "/supademy",     label: "📚 SupaDemy"      },
-  { href: "/stay",        label: "🏡 SupaStay"      },
   { href: "/supanova",      label: "🎮 SupaNova"       },
   { href: "/newsfeed",    label: "📰 Newsfeed"      },
   { href: "/supafeeds", label: "📱 SupaFeeds"    },
@@ -34,10 +31,8 @@ const navLinks = [
   { href: "/pioneers",    label: "🌍 Pioneers"      },
   { href: "/supa-livvi",  label: "✨ SupaLivvi"     },
   { href: "/supa-saylo",  label: "🧵 SupaSaylo"     },
-  { href: "/supabulk",          label: "📦 SupaBulk"        },
   { href: "/supaauto",  label: "🚗 SupaAuto"        },
   { href: "/domus",            label: "🏠 SupaDomus"       },
-  { href: "/supaendoro",           label: "🛞 SupaEndoro"      },
 ];
 
 export default function TopBar() {

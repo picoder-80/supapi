@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyToken } from "@/lib/auth/jwt";
 
-export const config = {
-  api: { bodyParser: false },
-};
-
-// Disable Next.js body size limit for video uploads
+// App Router: multipart handled via req.formData(); Pages `config` is not supported here.
 export const maxDuration = 60;
 
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
